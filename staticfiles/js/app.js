@@ -101,6 +101,7 @@ function stepactive() {
 }
 function connectors_breadCrumbs() {
     var gsrc = $('.source_name').html();
+    console.log(gsrc);
     $('.connectors-way').html(gsrc);
     $('.nav.side-menu > li').removeClass('active');
     $('.connectors-way').addClass('active');

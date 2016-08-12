@@ -12,7 +12,7 @@
             </div>
             <div class="profile_info">
                 <span>Welcome,</span>
-                <h2>John Doe</h2>
+                <h2>{{ request.user.email }}</h2>
             </div>
         </div>
         <!-- /menu profile quick info -->
@@ -21,18 +21,18 @@
         <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
             <div class="menu_section">
                 <ul class="nav side-menu">
-                    <li>
-                        <a><i class="fa fa-home"></i> Task <span class="fa fa-chevron-down"></span></a>
+                    <li class="active">
+                        <a><i class="fa fa-home"></i> Gears <span class="fa fa-chevron-down"></span></a>
                         <ul class="nav child_menu">
-                            <li><a href="/">New task</a></li>
-                            <li><a href="#">My tasks</a></li>
+                            <li><a href="{% url 'gear:create' %}">New gear</a></li>
+                            <li><a href="{% url 'gear:list' %}">My gears</a></li>
                         </ul>
                     </li>
                     <li>
-                        <a><i class="fa fa-edit"></i> Back up <span class="fa fa-chevron-down"></span></a>
+                        <a><i class="fa fa-edit"></i> Plugs <span class="fa fa-chevron-down"></span></a>
                         <ul class="nav child_menu">
-                            <li><a href="form.html">My backups</a></li>
-                            <li><a href="form_advanced.html">Make a new one</a></li>
+                            <li><a href="{% url 'plug:create' %}">New plug</a></li>
+                            <li><a href="{% url 'plug:list' %}">My plugs</a></li>
                         </ul>
                     </li>
                     <li>

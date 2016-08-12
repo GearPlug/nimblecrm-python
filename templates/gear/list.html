@@ -1,0 +1,16 @@
+{% extends 'commons/site_base.html' %}
+{% load static %}
+{% load bootstrap_tags %}
+
+{% block body %}
+<div>gear list</div>
+<div>
+    {% for gear in object_list %}
+    <div>
+        {{ gear.name }}
+        <a href="{% url 'gear:update' pk=gear.id %}">Editar</a>
+        <a href="{% url 'gear:delete' pk=gear.id %}">Eliminar</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

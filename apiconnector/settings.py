@@ -41,9 +41,17 @@ INSTALLED_APPS = [
     # 3rd
     'account',
     'oauth2_provider',
+    'rest_framework',
+    'bootstrap_toolkit',
+    'widget_tweaks',
+    'django_forms_bootstrap',
     #
     'apps.home',
     'apps.api',
+    'apps.user',
+    'apps.gear',
+    'apps.plug',
+    'apps.gp',
 
 ]
 
@@ -64,7 +72,7 @@ ROOT_URLCONF = 'apiconnector.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['templates', '/home/gustavo/Environments/apiconnector/lib/python3.5/site-packages/account/templates'],
+        'DIRS': ['templates', ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -72,6 +80,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                "account.context_processors.account",
             ],
         },
     },
@@ -125,5 +134,15 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "staticfiles"),
+]
+
 #
 CORS_ORIGIN_ALLOW_ALL = True
+
+ACCOUNT_EMAIL_UNIQUE = True
+ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/'
+ACCOUNT_SIGNUP_REDIRECT_URL = '/dashboard/'
+
+AUTHENTICATION_BACKENDS = ['account.auth_backends.EmailAuthenticationBackend',]
