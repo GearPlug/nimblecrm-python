@@ -1,0 +1,113 @@
+{% load static %}
+{#{% block body_base %}#}
+{#    <div id="content_body">#}
+{#        {% block body %}{% endblock %}#}
+{#    </div>#}
+{#{% endblock %}#}
+{##}
+{#{% block footer_base %}#}
+{#    <hr/>#}
+{#    <footer>#}
+{#        <div class="container">#}
+{#            {% block footer %}{% endblock %}#}
+{#        </div>#}
+{#    </footer>#}
+{#{% endblock %}#}
+
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    {% block meta_base %}
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <meta name="description" content="">
+        <meta name="author" content="">
+        {% block meta_tags %}{% endblock %}
+    {% endblock %}
+    <title>{% block head_title_base %}{% if SITE_NAME %}{{ SITE_NAME }} | {% endif %}{% block head_title %}
+    {% endblock %}{% endblock %}</title>
+    {% block base_styles %}
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+              integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+              crossorigin="anonymous">
+        {% block styles %}
+        {% endblock %}
+    {% endblock %}
+    {% block html5shim %}
+        {#        <!-- HTML5 shim, for IE6-8 support of HTML elements -->#}
+        {#        <!--[if lt IE 9]>#}
+        {#                <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.2/html5shiv.min.js"></script>#}
+        {#            <![endif]-->#}
+    {% endblock %}
+    {% block extra_head_base %}
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        {% block head_meta_tags %}{% endblock %}{% block extra_head %}{% endblock %}
+    {% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}" id="{% block body_id %}{% endblock %}"
+        {% block body_extra_attributes %}{% endblock %}>
+<div class="container body">
+    <div class="main_container">
+        <!--SIDEBAR-->
+        {% include 'commons/sidebar.html' %}
+        <!--SIDEBAR-->
+        <div class="top_nav">
+            <div class="nav_menu">
+                <nav>
+                    <div class="nav toggle">
+                        <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+                    </div>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li class="">
+                            <a href="javascript:;" class="user-profile dropdown-toggle" data-toggle="dropdown"
+                               aria-expanded="false">
+                                <img src="{% static 'img/user_profile_picture.jpg' %}" alt="">John Doe
+                                <span class=" fa fa-angle-down"></span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-usermenu pull-right">
+                                <li><a href="javascript:;"> Profile</a></li>
+                                <li>
+                                    <a href="{% url 'account_settings' %}">
+                                        <span class="badge bg-red pull-right">50%</span>
+                                        <span>Settings</span>
+                                    </a>
+                                </li>
+                                <li><a href="javascript:;">Help</a></li>
+                                <li><a href="{% url 'account_logout' %}"><i class="fa fa-sign-out pull-right"></i> Log Out</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        {% block body_base %}
+            <div class="right_col" role="main">
+                {% block body %}{% endblock %}
+            </div>
+        {% endblock %}
+    </div>
+</div>
+<footer>
+    <div class="pull-right">
+        Gentelella - Bootstrap Admin Template by <a href="https://colorlib.com">Colorlib</a>
+    </div>
+    <div class="clearfix"></div>
+</footer>
+{% block base_scripts %}
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"
+            integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    {% block scripts %}{% endblock %}
+{% endblock %}
+
+{% block extra_body_base %}
+    {% block extra_body %}{% endblock %}
+{% endblock %}
+</body>
+</html>
+
+

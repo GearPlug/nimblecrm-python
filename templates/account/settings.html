@@ -1,0 +1,22 @@
+{% extends "commons/site_base.html" %}
+
+{% load i18n %}
+{% load bootstrap_tags %}
+
+
+{% block head_title %}{% trans "Account" %}{% endblock %}
+
+{% block body %}
+    <div class="row">
+        <div class="col-md-5">
+            <form method="POST" action="{% url "account_settings" %}">
+                <legend>{% trans "Account" %}</legend>
+                {% csrf_token %}
+                {{ form|as_bootstrap }}
+                <button class="btn btn-primary" type="submit">{% trans "Save" %}</button>
+            </form>
+        </div>
+
+    <a href="{% url 'account_delete' %}">Delete account</a>
+    </div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "commons/anonymous_base.html" %}
+{% load static %}
+{% load account_tags %}
+{% load i18n %}
+{% load widget_tweaks %}
+{% load bootstrap_tags %}
+
+{% block title %}{% trans "Sign up" %}{% endblock %}
+
+{% block body %}
+    <div class="login-home">
+        <div class="loginpage">
+            <div class="login-page">
+                <div class="form col-sm-4 col-sm-offset-3">
+                    <form class="login-form form-horizontal" action="{% url "account_login" %}" method="post"
+                          autocomplete="off">
+                        {% csrf_token %}
+                        <div class="logo">
+                            <img src="{% static 'img/logo_gearplug.png' %}">
+                        </div>
+                        <p>Enter your e-mail acount and your password to sign up</p>
+                        {% render_field form.email class+="form-control input-md validate[required,custom[email]]" placeholder="Email" %}
+                        {% render_field form.password class+="form-control input-md" placeholder="Password" %}
+                        {% render_field form.password_confirm class+="form-control input-md" placeholder="Password" %}
+                        <button id="singlebutton" name="singlebutton">Sign Up</button>
+                        {% if form.error %}
+                            <div class="error">{{ form.error }}</div>
+                        {% endif %}
+                        <p class="message">Already registered? <a href="{% url 'account_login' %}">Log in</a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#id_username').focus();
+        });
+    </script>
+{% endblock %}

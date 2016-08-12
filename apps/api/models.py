@@ -1,9 +1,7 @@
 from django.db import models
-from django.contrib.auth.models import User
 from django.contrib import admin
+from apps.user.models import User
 
-
-# Create your models here.
 
 class Connector(models.Model):
     name = models.CharField('name', max_length=120)
