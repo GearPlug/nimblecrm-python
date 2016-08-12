@@ -3,9 +3,9 @@
 {% load bootstrap_tags %}
 
 {% block body %}
-<div>update gear</div>
+<div>update connection</div>
 <div>
-    <form class="create-gear-form form-horizontal" action="{% url 'gear:create' %}" method="post" autocomplete="off">
+    <form class="create-connection-form form-horizontal" action="{% url 'connection:create' %}" method="post" autocomplete="off">
         {% csrf_token %}
         {{ form|as_bootstrap }}
         <button id="singlebutton" name="singlebutton">update name</button>

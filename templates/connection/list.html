@@ -3,11 +3,11 @@
 {% load bootstrap_tags %}
 
 {% block body %}
-<div>gear list</div>
+<div>connection list</div>
 <div>
     {% for connection in object_list %}
     <div>
-        {{ gear.name }}
+        {{ connection.name }}
         <a href="{% url 'connection:update' pk=connection.id %}">Editar</a>
         <a href="{% url 'connection:delete' pk=connection.id %}">Eliminar</a>
     </div>
