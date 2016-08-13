@@ -24,6 +24,9 @@ INSTALLED_APPS = [
     'apps.home',
     'apps.api',
     'apps.user',
+    'apps.gear',
+    'apps.plug',
+    'apps.gp',
 
 ]
 
@@ -52,6 +55,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                "account.context_processors.account",
             ],
         },
     },
@@ -116,6 +120,7 @@ ACCOUNT_EMAIL_UNIQUE = True
 ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = False
 ACCOUNT_USER_DISPLAY = lambda user: user.email
 ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/'
+ACCOUNT_SIGNUP_REDIRECT_URL = '/dashboard/'
 
 #
 CORS_ORIGIN_ALLOW_ALL = True

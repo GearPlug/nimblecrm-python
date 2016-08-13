@@ -1,0 +1,16 @@
+{% extends 'commons/site_base.html' %}
+{% load static %}
+{% load bootstrap_tags %}
+
+{% block body %}
+<div>connection list</div>
+<div>
+    {% for connection in object_list %}
+    <div>
+        {{ connection.name }}
+        <a href="{% url 'connection:update' pk=connection.id %}">Editar</a>
+        <a href="{% url 'connection:delete' pk=connection.id %}">Eliminar</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

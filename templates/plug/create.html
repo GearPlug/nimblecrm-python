@@ -1,0 +1,17 @@
+{% extends 'commons/site_base.html' %}
+{% load static %}
+{% load bootstrap_tags %}
+
+{% block body %}
+<div>new plug</div>
+<div>
+    <form class="create-plug-form form-horizontal" action="{% url 'plug:create' %}" method="post" autocomplete="off">
+        {% csrf_token %}
+        {{ form|as_bootstrap }}
+        <button id="singlebutton" name="singlebutton">Create plug</button>
+        {% if form.error %}
+        <div class="error">{{ form.error }}</div>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

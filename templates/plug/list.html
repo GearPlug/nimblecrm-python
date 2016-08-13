@@ -1,0 +1,16 @@
+{% extends 'commons/site_base.html' %}
+{% load static %}
+{% load bootstrap_tags %}
+
+{% block body %}
+<div>plug list</div>
+<div>
+    {% for plug in object_list %}
+    <div>
+        {{ plug.name }}
+        <a href="{% url 'plug:update' pk=plug.id %}">Editar</a>
+        <a href="{% url 'plug:delete' pk=plug.id %}">Eliminar</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
