@@ -5,10 +5,12 @@
 {% block body %}
     <div>connector list</div>
     <div>
-        <form method="post">
-            {% for field in form %}
-                {{ field }}
-            {% endfor %}
-        </form>
+        {% for connector in object_list %}
+            <div>
+                <a href="{% url 'connection:create' connector_id=connector.id %}">
+                    {{ connector.name }}
+                </a>
+            </div>
+        {% endfor %}
     </div>
 {% endblock %}

@@ -70,6 +70,6 @@ class DeleteConnectionView(DeleteView):
 #         return self.get(request, *args, **kwargs)
 
 
-class ListConnectorView(FormView):
-    form_class = SelectConnectorForm
+class ListConnectorView(ListView):
+    model = Connector
     template_name = '%s/list_connector.html' % app_name
