@@ -22,17 +22,24 @@
             <div class="menu_section">
                 <ul class="nav side-menu">
                     <li class="active">
-                        <a><i class="fa fa-home"></i> Gears <span class="fa fa-chevron-down"></span></a>
+                        <a><i class="fa fa-gear"></i> Gears <span class="fa fa-chevron-down"></span></a>
                         <ul class="nav child_menu">
                             <li><a href="{% url 'gear:create' %}">New gear</a></li>
                             <li><a href="{% url 'gear:list' %}">My gears</a></li>
                         </ul>
                     </li>
                     <li>
-                        <a><i class="fa fa-edit"></i> Plugs <span class="fa fa-chevron-down"></span></a>
+                        <a><i class="fa fa-plug"></i> Plugs <span class="fa fa-chevron-down"></span></a>
                         <ul class="nav child_menu">
                             <li><a href="{% url 'plug:create' %}">New plug</a></li>
                             <li><a href="{% url 'plug:list' %}">My plugs</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a><i class="fa fa-wifi"></i> Connections <span class="fa fa-chevron-down"></span></a>
+                        <ul class="nav child_menu">
+                            <li><a href="{% url 'connection:list_connector' %}">New connection</a></li>
+                            <li><a href="{% url 'connection:list' %}">My connections</a></li>
                         </ul>
                     </li>
                     <li>

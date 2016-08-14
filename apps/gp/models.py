@@ -25,11 +25,13 @@ class Action(models.Model):
     description = models.CharField('description', max_length=300)
     is_active = models.BooleanField('is active', default=False)
 
+    @property
     def is_source(self):
-        return self.atype == 'source'
+        return self.action_type == 'source'
 
+    @property
     def is_target(self):
-        return self.atype == 'target'
+        return self.action_type == 'target'
 
     def __str__(self):
         return self.name
@@ -56,7 +58,7 @@ class MySQLConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE)
     name = models.CharField('name', max_length=120)
     host = models.CharField('host', max_length=40)
-    database = models.CharField('host', max_length=40)
+    database = models.CharField('database', max_length=40)
     port = models.CharField('port', max_length=5)
     connection_user = models.CharField('user', max_length=40)
     connection_password = models.CharField('host', max_length=40)

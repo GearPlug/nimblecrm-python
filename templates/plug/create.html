@@ -5,7 +5,7 @@
 {% block body %}
 <div>new plug</div>
 <div>
-    <form class="create-plug-form form-horizontal" action="{% url 'plug:create' %}" method="post" autocomplete="off">
+    <form class="create-plug-form form-horizontal" action="" method="post" autocomplete="off">
         {% csrf_token %}
         {{ form|as_bootstrap }}
         <button id="singlebutton" name="singlebutton">Create plug</button>

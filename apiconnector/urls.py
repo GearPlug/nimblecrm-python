@@ -9,6 +9,7 @@ urlpatterns = [
                   url(r'^admin/', admin.site.urls),
                   url(r'^gear/', include('apps.gear.urls', namespace='gear')),
                   url(r'^plug/', include('apps.plug.urls', namespace='plug')),
+                  url(r'^connection/', include('apps.connection.urls', namespace='connection')),
                   url(r'^account/', include('apps.user.urls')),
                   url(r'^account/', include('account.urls')),
                   url(r'^', include('apps.home.urls', namespace='home')),

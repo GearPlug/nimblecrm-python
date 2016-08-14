@@ -1,3 +1,4 @@
+from django.forms.models import model_to_dict
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView
 from django.urls import reverse_lazy
 from apps.plug.apps import APP_NAME as app_name
@@ -17,6 +18,7 @@ class CreatePlugView(CreateView):
     model = Plug
     fields = ['name']
     template_name = '%s/create.html' % app_name
+    success_url = reverse_lazy('%s:list' % app_name)
 
     def form_valid(self, form):
         form.instance.user = self.request.user
@@ -26,21 +28,23 @@ class CreatePlugView(CreateView):
         return super(CreatePlugView, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        for arg in args:
-            for attr in arg:
-                print(attr)
         return super(CreatePlugView, self).post(*args, **kwargs)
 
     def get_success_url(self):
-        self.request.session['plug'] = self.object
-        return reverse_lazy('%s:update' % app_name, kwargs={'pk': self.object.id})
+        self.request.session['plug'] = model_to_dict(self.object)
+        print(self.request.session['plug'])
+        return self.success_url
 
 
 class UpdatePlugView(UpdateView):
     model = Plug
-    fields = ['name', 'connection', 'action']
+    fields = ['name', ]
     template_name = '%s/update.html' % app_name
     success_url = reverse_lazy('%s:list' % app_name)
+
+    def get(self, *args, **kwargs):
+        print(self.request.session['plug'])
+        return super(UpdatePlugView, self).get(*args, **kwargs)
 
 
 class DeletePlugView(DeleteView):

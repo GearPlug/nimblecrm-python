@@ -1,4 +1,8 @@
-# from apps.api.models import Task
-# from django.forms import forms
-#
-# class TaskModelForm(forms.ModelForm):
+from django import forms
+from apps.gp.models import Connector
+
+
+class SelectConnectorForm(forms.Form):
+    connector = forms.ModelChoiceField(queryset=Connector.objects.filter(is_active=True),
+                                       widget=forms.RadioSelect(),
+                                       initial=1)

@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'apps.user',
     'apps.gear',
     'apps.plug',
+    'apps.connection',
     'apps.gp',
 
 ]

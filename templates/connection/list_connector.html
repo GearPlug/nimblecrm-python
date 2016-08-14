@@ -1,0 +1,14 @@
+{% extends 'commons/site_base.html' %}
+{% load static %}
+{% load bootstrap_tags %}
+
+{% block body %}
+    <div>connector list</div>
+    <div>
+        <form method="post">
+            {% for field in form %}
+                {{ field }}
+            {% endfor %}
+        </form>
+    </div>
+{% endblock %}
