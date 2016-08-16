@@ -20,6 +20,8 @@ INSTALLED_APPS = [
     'oauth2_provider',
     'rest_framework',
     'widget_tweaks',
+    'debug_toolbar',
+    'facebook',
     #
     'apps.home',
     'apps.api',
@@ -39,8 +41,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    #'account.middleware.LocaleMiddleware',  # account app
-    #'account.middleware.TimezoneMiddleware',  # account app
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    # 'account.middleware.LocaleMiddleware',  # account app
+    # 'account.middleware.TimezoneMiddleware',  # account app
 ]
 
 ROOT_URLCONF = 'apiconnector.urls'
@@ -48,7 +51,7 @@ ROOT_URLCONF = 'apiconnector.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['templates',],
+        'DIRS': ['templates', ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -125,3 +128,9 @@ ACCOUNT_SIGNUP_REDIRECT_URL = '/dashboard/'
 
 #
 CORS_ORIGIN_ALLOW_ALL = True
+
+# SETTINGS CENTRALIZADOS
+
+FACEBOOK_APP_ID = '1731160853833926'
+FACEBOOK_APP_SECRET = '0e6b58b4982c602374c13fb47c418805'
+FACEBOOK_GRAPH_VERSION = '2.6'

@@ -32,19 +32,21 @@ class CreatePlugView(CreateView):
 
     def get_success_url(self):
         self.request.session['plug'] = model_to_dict(self.object)
-        print(self.request.session['plug'])
         return self.success_url
 
 
 class UpdatePlugView(UpdateView):
     model = Plug
-    fields = ['name', ]
+    fields = ['name', 'connection', 'action']
     template_name = '%s/update.html' % app_name
     success_url = reverse_lazy('%s:list' % app_name)
 
     def get(self, *args, **kwargs):
-        print(self.request.session['plug'])
         return super(UpdatePlugView, self).get(*args, **kwargs)
+
+
+class UpdatePlugAddActionView(UpdatePlugView):
+    fields = ['name', 'action']
 
 
 class DeletePlugView(DeleteView):

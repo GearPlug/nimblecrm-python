@@ -5,10 +5,10 @@
 {% block body %}
 <div>update connection</div>
 <div>
-    <form class="create-connection-form form-horizontal" action="{% url 'connection:create' %}" method="post" autocomplete="off">
+    <form class="create-connection-form form-horizontal" action="" method="post" autocomplete="off">
         {% csrf_token %}
         {{ form|as_bootstrap }}
-        <button id="singlebutton" name="singlebutton">update name</button>
+        <button id="singlebutton" name="singlebutton">update connection</button>
         {% if form.error %}
         <div class="error">{{ form.error }}</div>
         {% endif %}

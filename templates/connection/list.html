@@ -8,8 +8,6 @@
     {% for connection in object_list %}
     <div>
         {{ connection.name }}
-        <a href="{% url 'connection:update' pk=connection.id %}">Editar</a>
-        <a href="{% url 'connection:delete' pk=connection.id %}">Eliminar</a>
     </div>
     {% endfor %}
 </div>

@@ -29,7 +29,7 @@ class CreateGearView(CreateView):
 
 class UpdateGearView(UpdateView):
     model = Gear
-    fields = ['name']
+    fields = ['name', 'source', 'target']
     template_name = '%s/update.html' % app_name
     success_url = reverse_lazy('%s:list' % app_name)
 

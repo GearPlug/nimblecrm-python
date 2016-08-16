@@ -44,24 +44,42 @@ class ActionSpecification(models.Model):
 
 class Connection(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    connector = models.ForeignKey(Connector, default=2, on_delete=models.CASCADE)
+
+    @property
+    def name(self):
+        available_connections = ['connection_facebook', 'connection_mysql']
+        for con in available_connections:
+            if hasattr(self, con):
+                return str(getattr(self, con))
+        return 'Object not found'
+
+    def __str__(self):
+        return self.name
 
 
 class FacebookConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE)
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_facebook')
     name = models.CharField('name', max_length=120)
     id_page = models.CharField('id page', max_length=300)
     id_form = models.CharField('id form', max_length=300)
     token = models.CharField('token', max_length=300)
 
+    def __str__(self):
+        return self.name
+
 
 class MySQLConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE)
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mysql')
     name = models.CharField('name', max_length=120)
     host = models.CharField('host', max_length=40)
     database = models.CharField('database', max_length=40)
     port = models.CharField('port', max_length=5)
     connection_user = models.CharField('user', max_length=40)
-    connection_password = models.CharField('host', max_length=40)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
 
 
 class Plug(models.Model):
@@ -69,6 +87,9 @@ class Plug(models.Model):
     connection = models.ForeignKey(Connection, null=True, on_delete=models.CASCADE)
     action = models.ForeignKey(Action, null=True, on_delete=models.CASCADE)
     user = models.ForeignKey(User)
+
+    def __str__(self):
+        return self.name
 
 
 class PlugSpecification(models.Model):

@@ -3,8 +3,6 @@ from django.conf.urls import url, include
 from django.conf.urls.static import static
 from django.contrib import admin
 
-from apps.user import urls as user_urls
-
 urlpatterns = [
                   url(r'^admin/', admin.site.urls),
                   url(r'^gear/', include('apps.gear.urls', namespace='gear')),
@@ -17,3 +15,10 @@ urlpatterns = [
                   url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
                   url(r'^o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
               ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+if settings.DEBUG:
+    import debug_toolbar
+
+    urlpatterns += [
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    ]
