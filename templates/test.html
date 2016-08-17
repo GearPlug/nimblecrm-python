@@ -1,17 +1,32 @@
 {% extends 'commons/site_base.html' %}
 
 {% block body %}
-{{ data }}
+
 
 <form method="post" action="{% url 'connection:ajax_update_facebook_token' pk=1 %}" id="update_token">
     <input id="facebook_token" type="hidden" name="token" value="">
-
 </form>
+
 <button id="btnLogin" onclick="">Facebook login</button>
+<div>
+    {% if form_list %}
+    <select>
+        {% for form in form_list %}
+        <option value="{{ form.id }}">{{ form.name }}</option>
+        {% endfor %}
+    </select>
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+$(document).ready(function(){
+    $('button#btnLogin').click(function(){
+        console.log("hola");
+        fbLogin();
+    });
+});
     function getCookie(name) {
         var cookieValue = null;
         if (document.cookie && document.cookie != '') {
@@ -59,7 +74,11 @@
   var pageTokens = new Array();
   function statusChangeCallback(response) {
       if (response.status === 'connected') {
-      getPages();
+      console.log(response.authResponse.accessToken);
+        getPages();
+        globalVars = {
+            accessToken: response.authResponse.accessToken
+       };
         $('#facebook_token').val(response.authResponse.accessToken);
         $('#update_token').submit();
       } else if (response.status === 'not_authorized') {
@@ -67,10 +86,6 @@
       } else {
         $('#btnLogin').show();
       }
-      globalVars = {
-            accessToken: response.authResponse.accessToken
-      };
-      getPages();
   }
 
     $('form#update_token').submit(function(){
@@ -135,15 +150,14 @@
            //selectList.appendChild(option);
 
            pageTokens[i] = [page.id ,pages[i].access_token];
-           console.log(pageTokens[i]);
+           //console.log(pageTokens[i]);
        }
            $("#list").prepend("<option value='' selected='selected'>Selecciona una Pagina</option>");
      });
-
-    $('#buttonActivate').click(function(){
-        fbLogin();
-    });
    }
+
+
+
 
 
 

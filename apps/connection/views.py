@@ -3,12 +3,12 @@ from django.urls import reverse_lazy
 from apps.connection.apps import APP_NAME as app_name
 from apps.gp.models import Connection, Connector, FacebookConnection, MySQLConnection
 from apps.gp.connector_enum import ConnectorEnum
-from django.http import JsonResponse
-import facebook
 import requests
 from apiconnector.settings import FACEBOOK_APP_ID, FACEBOOK_APP_SECRET, FACEBOOK_GRAPH_VERSION
 import hmac
+import facebook
 import hashlib
+import json
 
 
 class ListConnectionView(ListView):
@@ -79,41 +79,66 @@ class ListConnectorView(ListView):
     template_name = '%s/list_connector.html' % app_name
 
 
-class GenerateAppToken(TemplateView):
-    template_name = 'test.html'
+class AJAXFacebookGetAvailableConnectionsView(TemplateView):
+    template_name = 'ajax_response.html'
 
-    def get(self, request, *args, **kwargs):
-        return super(GenerateAppToken, )
+    def get_context_data(self, *args, **kwargs):
+        context = super(TestConnectionView, self).get_context_data(**kwargs)
+        print(kwargs)
+        token = ''
+        graph = facebook.GraphAPI(version=FACEBOOK_GRAPH_VERSION)  # Crea el objeto para interactuar con GRAPH API
+        graph.access_token = graph.get_app_access_token(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)  # ACCESS TOKEN DE LA APP
+        r = requests.get('https://graph.facebook.com/v%s/me/accounts' % FACEBOOK_GRAPH_VERSION,
+                         params={'access_token': token,
+                                 'appsecret_proof': generate_app_secret_proof(FACEBOOK_APP_SECRET,
+                                                                              token)})
+        fb_conn_list = json.loads(r.text)['data']
+        return context
 
 
 class TestConnectionView(TemplateView):
     template_name = 'test.html'
 
     def get_context_data(self, *args, **kwargs):
+        connection_id = 1
         context = super(TestConnectionView, self).get_context_data(**kwargs)
-        r = requests.get('https://graph.facebook.com/oauth/access_token',
-                         params={'client_id': FACEBOOK_APP_ID, 'client_secret': FACEBOOK_APP_SECRET,
-                                 'grant_type': 'client_credentials'})
-        if r.status_code == 200:
-            token = r.text.split('=')[1]
-            # print(token)
-        else:
-            token = None
-        if token is not None:
-            con = FacebookConnection.objects.values('token').get(pk=1)
-            print(con['token'])
-            graph = facebook.GraphAPI(access_token=con['token'], version=FACEBOOK_GRAPH_VERSION)
-            access_token = graph.get_app_access_token(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET, False)
-            print(access_token)
-            appsecret_proof = hmac.new(bytes(FACEBOOK_APP_SECRET.encode()), con['token'].encode(),
-                                       hashlib.sha256).hexdigest()
-            form = graph.get_object(id='1712285499010965', appsecret_proof=appsecret_proof)
-            # form = graph.get_connections(id='me', connection_name='friends', appsecret_proof=appsecret_proof)
-            print('form')
-            print(form)
-        # r2 = requests.get('https://graph.facebook.com/v2.6/%s/leads' % '1712285499010965',
-        #                   params={'appsecret_proof': token})
-        # print(r2.status_code)
+        facebook_connection = FacebookConnection.objects.get(pk=connection_id)
+
+        graph = facebook.GraphAPI(version=FACEBOOK_GRAPH_VERSION)  # Crea el objeto para interactuar con GRAPH API
+        graph.access_token = graph.get_app_access_token(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)  # ACCESS TOKEN DE LA APP
+
+        try:
+            # r = requests.get('https://graph.facebook.com/v%s/oauth/access_token' % FACEBOOK_GRAPH_VERSION,
+            #                  params={'grant_type': 'fb_exchange_token', 'client_id': FACEBOOK_APP_ID,
+            #                          'client_secret': FACEBOOK_APP_SECRET,
+            #                          'fb_exchange_token': facebook_connection.token})
+
+            # PIDE LAS CONNECTIONS ASOCIADAS AL USER. USA EL TOKEN DEL USUARIO Y EL SECRET ES USERTOKEN+APPSECRET
+            r = requests.get('https://graph.facebook.com/v%s/me/accounts' % FACEBOOK_GRAPH_VERSION,
+                             params={'access_token': facebook_connection.token,
+                                     'appsecret_proof': generate_app_secret_proof(FACEBOOK_APP_SECRET,
+                                                                                  facebook_connection.token)})
+            fb_conn_list = json.loads(r.text)['data']
+            fconn_list = []
+            npi_list = []
+            for form in fb_conn_list:
+                fconn_list.append({'id': form['id'], 'name': form['name']})
+                r2 = requests.get(
+                    'https://graph.facebook.com/v%s/%s/leadgen_forms' % (FACEBOOK_GRAPH_VERSION, form['id']),
+                    params={'access_token': facebook_connection.token,
+                            'appsecret_proof': generate_app_secret_proof(FACEBOOK_APP_SECRET,
+                                                                         facebook_connection.token)})
+                npi_list.append(json.loads(r2.text)['data'])
+            form_list = []
+            for item in npi_list:
+                for f in item:
+                    form_list.append({'id': f['id'], 'name': f['name'], 'page_id': f['page_id']})
+
+            # print(form_list)
+            context['conn_list'] = fconn_list
+            context['form_list'] = form_list
+        except Exception as e:
+            print(e)
         context['data'] = 'hola'
         return context
 
@@ -128,18 +153,24 @@ class AJAXSetUserFacebookToken(UpdateView):
         return super(AJAXSetUserFacebookToken, self).dispatch(request, *args, **kwargs)
 
     def form_valid(self, form, *args, **kwargs):
-        print('valid')
+        print(form.instance.token)
         return super(AJAXSetUserFacebookToken, self).form_valid(form, *args, **kwargs)
 
     def form_invalid(self, form, *args, **kwargs):
-        print('invalid')
         return super(AJAXSetUserFacebookToken, self).form_valid(form, *args, **kwargs)
 
     def post(self, *args, **kwargs):
-        if self.request.is_ajax():
-            self.success_url = '/'
         return super(AJAXSetUserFacebookToken, self).post(*args, **kwargs)
 
     def get(self, *args, **kwargs):
-        print("get")
         return super(AJAXSetUserFacebookToken, self).get(*args, **kwargs)
+
+
+
+def generate_app_secret_proof(app_secret, access_token):
+    h = hmac.new(
+        app_secret.encode('utf-8'),
+        msg=access_token.encode('utf-8'),
+        digestmod=hashlib.sha256
+    )
+    return h.hexdigest()
