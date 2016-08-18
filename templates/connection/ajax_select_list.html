@@ -1,1 +1,7 @@
-hola
+{% block base_select %}
+    <select id="{% block select_id %}{% endblock %}" class="{% block select_class %}{% endblock %}">
+        {% block select_options %}
+            <option>---------</option>
+        {% endblock %}
+    </select>
+{% endblock %}

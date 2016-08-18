@@ -3,109 +3,61 @@
 {% load bootstrap_tags %}
 
 {% block body %}
-<div>new connection: {{ connection }}</div>
-
-<button id="btnLogin" onclick="">Facebook login</button>
-
-<div id="connection_list">
-
-</div>
-<div id="form_list">
-
-</div>
-<div>
-    <form style="display:none;" class="create-connection-form form-horizontal" action="" method="post"
-          autocomplete="off">
-        {% csrf_token %}
-        {{ form|as_bootstrap }}
-        <button id="singlebutton" name="singlebutton">Create connection</button>
-        {% if form.error %}
-        <div class="error">{{ form.error }}</div>
-        {% endif %}
-    </form>
-</div>
+    <div>
+        {% block body_title %}
+            new connection: {{ connection }}
+        {% endblock %}
+    </div>
+    {% block body_content %}{% endblock %}
 {% endblock %}
 
 {% block scripts %}
-{{ block.super }}
-<script type="text/javascript">
-    function getCookie(name) {
-        var cookieValue = null;
-        if (document.cookie && document.cookie != '') {
-            var cookies = document.cookie.split(';');
-            for (var i = 0; i < cookies.length; i++) {
-                var cookie = jQuery.trim(cookies[i]);
-                // Does this cookie string begin with the name we want?
-                if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+    {{ block.super }}
+    <script type="text/javascript">
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie != '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
                 }
             }
+            return cookieValue;
         }
-        return cookieValue;
-    }
 
-    function csrfSafeMethod(method) {
-        // these HTTP methods do not require CSRF protection
-        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-    }
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
 
-    function sameOrigin(url) {
-        // test that a given url is a same-origin URL
-        // url could be relative or scheme relative or absolute
-        var host = document.location.host; // host + port
-        var protocol = document.location.protocol;
-        var sr_origin = '//' + host;
-        var origin = protocol + sr_origin;
-        // Allow absolute or scheme relative URLs to same origin
-        return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
-            (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
-            // or any other URL that isn't scheme relative or absolute i.e relative.
-            !(/^(\/\/|http:|https:).*/.test(url));
-    }
+        function sameOrigin(url) {
+            // test that a given url is a same-origin URL
+            // url could be relative or scheme relative or absolute
+            var host = document.location.host; // host + port
+            var protocol = document.location.protocol;
+            var sr_origin = '//' + host;
+            var origin = protocol + sr_origin;
+            // Allow absolute or scheme relative URLs to same origin
+            return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+                    (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+                    // or any other URL that isn't scheme relative or absolute i.e relative.
+                    !(/^(\/\/|http:|https:).*/.test(url));
+        }
 
-    $(document).ready(function(){
-        $.ajaxSetup({
-            beforeSend: function(xhr, settings) {
-                if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
-                    var csrftoken = getCookie('csrftoken');
-                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        $(document).ready(function () {
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
+                        var csrftoken = getCookie('csrftoken');
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                    }
                 }
-            }
+            });
         });
-
-        (function(d, s, id) {
-            var js, fjs = d.getElementsByTagName(s)[0];
-            if (d.getElementById(id)) return;
-            js = d.createElement(s); js.id = id;
-            js.src = "//connect.facebook.net/en_US/sdk.js";
-            fjs.parentNode.insertBefore(js, fjs);
-        }(document, 'script', 'facebook-jssdk'));
-
-        window.fbAsyncInit = function() {
-            FB.init({
-                appId      : '1731160853833926',
-                cookie     : true,  // enable cookies to allow the server to access
-                         // the session
-                xfbml      : true,  // parse social plugins on this page
-                version    : 'v2.6' // use graph api version 2.5
-            });
-            FB.getLoginStatus(function(response) {
-                statusChangeCallback(response);
-            });
-        };
-
-        function fbLogin() {
-            FB.login(function(response){
-                if (response.authResponse) {
-                    window.location.reload(false);
-                }
-            }, {scope: 'manage_pages'});
-        };
-
-
-    });
-
-
-</script>
+    </script>
 {% endblock %}

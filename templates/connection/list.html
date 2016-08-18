@@ -3,12 +3,13 @@
 {% load bootstrap_tags %}
 
 {% block body %}
-<div>connection list</div>
-<div>
-    {% for connection in object_list %}
+    <div>connection list</div>
     <div>
-        {{ connection.name }}
+        {% for connection in object_list %}
+            <div>
+                {{ connection.name }}
+                <a href="{% url 'connection:update' pk=connection.related_id connector_id=connection.connector.id %}">edit</a>
+            </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
 {% endblock %}

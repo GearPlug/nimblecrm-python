@@ -54,6 +54,14 @@ class Connection(models.Model):
                 return str(getattr(self, con))
         return 'Object not found'
 
+    @property
+    def related_id(self):
+        available_connections = ['connection_facebook', 'connection_mysql']
+        for con in available_connections:
+            if hasattr(self, con):
+                return str(getattr(self, con).id)
+        return 'Object not found'
+
     def __str__(self):
         return self.name
 
