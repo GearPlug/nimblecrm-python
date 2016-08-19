@@ -1,8 +1,10 @@
+from django.db.models import F
 from django.forms.models import model_to_dict
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.urls import reverse_lazy
 from apps.plug.apps import APP_NAME as app_name
-from apps.gp.models import Plug, Connection
+from apps.gp.models import Plug, PlugSpecification
+from apps.plug.forms import PlugSpecificationFormSet, PlugSpecificationForm
 
 
 class ListPlugView(ListView):
@@ -31,7 +33,6 @@ class CreatePlugView(CreateView):
         return super(CreatePlugView, self).post(*args, **kwargs)
 
     def get_success_url(self):
-        self.request.session['plug'] = model_to_dict(self.object)
         return self.success_url
 
 
@@ -44,6 +45,9 @@ class UpdatePlugView(UpdateView):
     def get(self, *args, **kwargs):
         return super(UpdatePlugView, self).get(*args, **kwargs)
 
+    def get_context_data(self, *args, **kwargs):
+        return super(UpdatePlugView, self).get_context_data(*args, **kwargs)
+
 
 class UpdatePlugAddActionView(UpdatePlugView):
     fields = ['name', 'action']
@@ -55,6 +59,27 @@ class DeletePlugView(DeleteView):
     success_url = reverse_lazy('%s:list' % app_name)
 
 
-class CreateConnectionView(CreateView):
-    model = Connection
-    template_name = 'connection/create.html'
+class CreatePlugSpecificationsView(CreateView):
+    model = PlugSpecification
+    template_name = '%s/specifications/create.html' % app_name
+    fields = ['plug', 'action_specification', 'value']
+    success_url = reverse_lazy('%s:list' % app_name)
+
+    def get(self, request, *args, **kwargs):
+        return super(CreatePlugSpecificationsView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return super(CreatePlugSpecificationsView, self).post(request, *args, **kwargs)
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(CreatePlugSpecificationsView, self).get_context_data(*args, **kwargs)
+        plug_id = self.kwargs.pop('plug_id', 0)
+        plug = Plug.objects.filter(pk=plug_id).select_related('connection__connector').get(pk=plug_id)
+        action_list = plug.connection.connector.action.all().filter(plug__action=plug.action)
+        action_specification_list = []
+        for action in action_list:
+            for esp in action.action_specification.all():
+                action_specification_list.append(esp)
+        context['action_specification_list'] = action_specification_list
+        context['plug_id'] = plug_id
+        return context

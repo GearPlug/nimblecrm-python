@@ -3,18 +3,16 @@
 {% load bootstrap_tags %}
 
 {% block body %}
-<div>update plug</div>
-<div>
-    <form class="create-plug-form form-horizontal" action="" method="post" autocomplete="off">
-        {% csrf_token %}
-        {{ form|as_bootstrap }}
-        <button id="singlebutton" name="singlebutton">update plug</button>
-        {% if form.error %}
-        <div class="error">{{ form.error }}</div>
-        {% endif %}
-    </form>
-
-
-    <a href="{% url 'connection:list_connector' %}?next= {% url 'plug:update' pk=form.instance.id %}">Create Conection</a>
-</div>
+    <div>update plug</div>
+    <div>
+        <form class="update-plug-form form-horizontal" action="" method="post" autocomplete="off">
+            {% csrf_token %}
+            {{ form|as_bootstrap }}
+            <button>update plug</button>
+            {% if form.error %}
+                <div class="error">{{ form.error }}</div>
+            {% endif %}
+        </form>
+        <a href="{% url 'plug:create_specification' plug_id=form.instance.id %}">Create Specifications</a>
+    </div>
 {% endblock %}

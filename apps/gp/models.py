@@ -19,7 +19,7 @@ class Connector(models.Model):
 
 class Action(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
-    connector = models.ForeignKey(Connector, on_delete=models.CASCADE)
+    connector = models.ForeignKey(Connector, on_delete=models.CASCADE, related_name='action')
     action_type = models.CharField(choices=ACTION_TYPE, max_length=7, default='source')
     name = models.CharField('name', max_length=120)
     description = models.CharField('description', max_length=300)
@@ -38,8 +38,11 @@ class Action(models.Model):
 
 
 class ActionSpecification(models.Model):
-    action = models.ForeignKey(Action)
+    action = models.ForeignKey(Action, on_delete=models.CASCADE, related_name='action_specification')
     name = models.CharField('name', max_length=30)
+
+    def __str__(self):
+        return self.action.name + ': ' + self.name
 
 
 class Connection(models.Model):
@@ -101,9 +104,12 @@ class Plug(models.Model):
 
 
 class PlugSpecification(models.Model):
-    plug = models.ForeignKey(Plug, on_delete=models.CASCADE)
+    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='plug_specification')
     action_specification = models.ForeignKey(ActionSpecification)
     value = models.CharField('value', max_length=1000)
+
+    class Meta:
+        unique_together = ['plug', 'action_specification']
 
 
 class Gear(models.Model):

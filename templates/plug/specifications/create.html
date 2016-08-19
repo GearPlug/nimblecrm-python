@@ -1,0 +1,46 @@
+{% extends 'commons/site_base.html' %}
+{% load static %}
+{% load bootstrap_tags %}
+
+{% block body %}
+    <div>new plug specification</div>
+    <div>
+        <select id="specification_id">
+            {% for action_specification in action_specification_list %}
+                <option value="{{ action_specification.id }}">{{ action_specification.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" id="especification_field">
+        <input type="hidden" id="plug_id" value="{{ plug_id }}">
+        <button id="btnCreateSpecification">Create Specification</button>
+        <form id="formCreatePlugSpecification" style="display: none;" class="create-plug-form form-horizontal" action=""
+              method="post"
+              autocomplete="off">
+            {% csrf_token %}
+            {{ form }}
+            {% if form.error %}
+                <div class="error">{{ form.error }}</div>
+            {% endif %}
+        </form>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            $('button#btnCreateSpecification').click(function () {
+                var plug_id = $('input#plug_id').val();
+                var specification_id = $('select#specification_id').val();
+                var value = $('input#especification_field').val();
+                $('input#id_value').val(value);
+                $('select#id_action_specification').val(specification_id);
+                $('select#id_plug').val(plug_id);
+                $('select#id_action_specification').change();
+                $('select#id_plug').change();
+                $('form#formCreatePlugSpecification').submit();
+                return false;
+            })
+        })
+    </script>
+{% endblock %}

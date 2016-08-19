@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 from django.http import JsonResponse
 from apps.connection.apps import APP_NAME as app_name
 from apps.gp.models import Connection, Connector, FacebookConnection, MySQLConnection
-from apps.gp.connector_enum import ConnectorEnum
+from apps.gp.enum import ConnectorEnum
 import requests
 from apiconnector.settings import FACEBOOK_APP_ID, FACEBOOK_APP_SECRET, FACEBOOK_GRAPH_VERSION
 import hmac
