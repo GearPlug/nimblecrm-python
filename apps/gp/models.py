@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib import admin
 from apps.user.models import User
 
+connections = ['connection_facebook', 'connection_mysql']
+
 
 class Connector(models.Model):
     name = models.CharField('name', max_length=120)
@@ -51,7 +53,7 @@ class Connection(models.Model):
 
     @property
     def name(self):
-        available_connections = ['connection_facebook', 'connection_mysql']
+        available_connections = connections
         for con in available_connections:
             if hasattr(self, con):
                 return str(getattr(self, con))
@@ -59,10 +61,18 @@ class Connection(models.Model):
 
     @property
     def related_id(self):
-        available_connections = ['connection_facebook', 'connection_mysql']
+        available_connections = connections
         for con in available_connections:
             if hasattr(self, con):
                 return str(getattr(self, con).id)
+        return 'Object not found'
+
+    @property
+    def related_connection(self):
+        available_connections = connections
+        for con in available_connections:
+            if hasattr(self, con):
+                return getattr(self, con)
         return 'Object not found'
 
     def __str__(self):
@@ -113,10 +123,24 @@ class PlugSpecification(models.Model):
 
 
 class Gear(models.Model):
-    name = models.CharField('Name', max_length=120)
+    name = models.CharField('name', max_length=120)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     source = models.ForeignKey(Plug, null=True, on_delete=models.CASCADE, related_name='source_plug')
     target = models.ForeignKey(Plug, null=True, on_delete=models.CASCADE, related_name='target_plug')
+
+
+class StoredData(models.Model):
+    plug = models.ForeignKey(Plug, related_name='pulled_data', )
+    name = models.CharField('name', max_length=300)
+    value = models.CharField('value', max_length=3000)
+    datetime = models.DateTimeField(auto_now_add=True)
+    object_id = models.CharField('object_id', max_length=50, null=False)
+
+    class Meta:
+        unique_together = ['plug', 'object_id', 'name']
+
+    def __str__(self):
+        return '%s %s %s' % (self.id, self.name, self.object_id)
 
 
 admin.site.register(Connector)

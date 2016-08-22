@@ -9,6 +9,6 @@ class MapForm(forms.Form):
             extra = kwargs.pop('extra')
             super(MapForm, self).__init__(*args, **kwargs)
             for i, field in enumerate(extra):
-                self.fields[field] = forms.CharField(label=field)
+                self.fields['custom_%s' % i] = forms.CharField(label=field)
         except:
-            print("FORM: no extra")
+            super(MapForm, self).__init__(*args, **kwargs)

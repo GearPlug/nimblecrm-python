@@ -13,6 +13,13 @@
                 <div class="error">{{ form.error }}</div>
             {% endif %}
         </form>
+        {% for sp in form.instance.plug_specification.all %}
+            <div>
+                {{ sp.action_specification.name }}: {{ sp.value }}
+                <a href="{% url 'plug:update_specification' pk=sp.id %}">Edit</a>
+            </div>
+        {% endfor %}
+
         <a href="{% url 'plug:create_specification' plug_id=form.instance.id %}">Create Specifications</a>
     </div>
 {% endblock %}

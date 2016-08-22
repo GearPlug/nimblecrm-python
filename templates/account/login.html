@@ -26,7 +26,8 @@
                         {% if form.error %}
                             <div class="error">{{ form.error }}</div>
                         {% endif %}
-                        <p class="message">Not registered? <a href="{% url 'account_signup' %}">Create an account</a></p>
+                        <p class="message">Not registered? <a href="{% url 'account_signup' %}">Create an account</a>
+                        </p>
                     </form>
                 </div>
             </div>
@@ -41,8 +42,8 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script src="{% static 'vendor/js/jquery.validationEngine.js' %}"></script>
-    <script src="{% static 'vendor/js/jquery.validationEngine-es.js' %}"></script>
+    <script src="{% static 'js/jquery.validationEngine.js' %}"></script>
+    <script src="{% static 'js/jquery.validationEngine-es.js' %}"></script>
     <script type="text/javascript">
         $(document).ready(function () {
             $("form").validationEngine();

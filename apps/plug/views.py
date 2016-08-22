@@ -83,3 +83,10 @@ class CreatePlugSpecificationsView(CreateView):
         context['action_specification_list'] = action_specification_list
         context['plug_id'] = plug_id
         return context
+
+
+class UpdatePlugSpecificationsView(UpdateView):
+    model = PlugSpecification
+    template_name = '%s/specifications/update.html' % app_name
+    fields = ['value']
+    success_url = reverse_lazy('%s:list' % app_name)

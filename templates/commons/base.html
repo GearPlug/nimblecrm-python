@@ -48,7 +48,7 @@
                         <li class="">
                             <a href="javascript:;" class="user-profile dropdown-toggle" data-toggle="dropdown"
                                aria-expanded="false">
-                                <img src="{% static 'img/user_profile_picture.jpg' %}" alt="">John Doe
+                                <img src="{% static 'img/user_profile_picture.jpg' %}" alt="">{{ request.user.email }}
                                 <span class=" fa fa-angle-down"></span>
                             </a>
                             <ul class="dropdown-menu dropdown-usermenu pull-right">

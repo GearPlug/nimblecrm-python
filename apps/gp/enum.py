@@ -18,7 +18,7 @@ class ConnectorEnum(Enum):
 
     def get_fields(connector):
         if connector == ConnectorEnum.Facebook:
-            return ['name', 'id_page', 'id_form']
+            return ['name', 'id_page', 'id_form', 'token']
         elif connector == ConnectorEnum.MySQL:
             return ['name', 'host', 'port', 'database', 'connection_user', 'connection_password']
 
