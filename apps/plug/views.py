@@ -1,10 +1,7 @@
-from django.db.models import F
-from django.forms.models import model_to_dict
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.urls import reverse_lazy
 from apps.plug.apps import APP_NAME as app_name
 from apps.gp.models import Plug, PlugSpecification
-from apps.plug.forms import PlugSpecificationFormSet, PlugSpecificationForm
 
 
 class ListPlugView(ListView):

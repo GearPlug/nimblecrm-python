@@ -3,11 +3,10 @@ from django.urls import reverse_lazy
 from django.http import JsonResponse
 from apiconnector.settings import FACEBOOK_APP_ID, FACEBOOK_APP_SECRET, FACEBOOK_GRAPH_VERSION
 from apps.gp.views import TemplateViewWithPost
-from apps.gp.models import FacebookConnection
+from apps.gp.models import StoredData
 import facebook
 import json
 import requests
-from apps.connection.apps import APP_NAME as app_name
 import hmac
 import hashlib
 
@@ -84,6 +83,7 @@ def facebook_request(url, token):
     r = requests.get('%s/v%s/%s' % (base_graph_url, FACEBOOK_GRAPH_VERSION, url),
                      params={'access_token': token,
                              'appsecret_proof': generate_app_secret_proof(FACEBOOK_APP_SECRET, token)})
+    #print(r.url)
     try:
         return json.loads(r.text)['data']
     except Exception as e:

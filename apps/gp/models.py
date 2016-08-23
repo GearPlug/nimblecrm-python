@@ -105,7 +105,7 @@ class MySQLConnection(models.Model):
 
 class Plug(models.Model):
     name = models.CharField('name', max_length=120)
-    connection = models.ForeignKey(Connection, null=True, on_delete=models.CASCADE)
+    connection = models.ForeignKey(Connection, null=True, on_delete=models.CASCADE, related_name='plug')
     action = models.ForeignKey(Action, null=True, on_delete=models.CASCADE)
     user = models.ForeignKey(User)
 
@@ -130,14 +130,14 @@ class Gear(models.Model):
 
 
 class StoredData(models.Model):
-    plug = models.ForeignKey(Plug, related_name='pulled_data', )
+    connection = models.ForeignKey(Connection, related_name='stored_data', default=1)
     name = models.CharField('name', max_length=300)
     value = models.CharField('value', max_length=3000)
     datetime = models.DateTimeField(auto_now_add=True)
     object_id = models.CharField('object_id', max_length=50, null=False)
 
     class Meta:
-        unique_together = ['plug', 'object_id', 'name']
+        unique_together = ['connection', 'object_id', 'name']
 
     def __str__(self):
         return '%s %s %s' % (self.id, self.name, self.object_id)

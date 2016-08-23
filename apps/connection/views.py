@@ -1,12 +1,13 @@
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, TemplateView
 from django.urls import reverse_lazy
 from apps.connection.apps import APP_NAME as app_name
-from apps.gp.models import Connection, Connector
+from apps.gp.models import Connection, Connector, StoredData
 from apps.gp.enum import ConnectorEnum
 from apps.gp.views import TemplateViewWithPost
+
 # IMPORT CENTRALIZADO
 from apps.connection.myviews.FacebookViews import AJAXFacebookBaseView, AJAXFacebookGetAvailableConnectionsView, \
-    AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, extend_facebook_token
+    AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, extend_facebook_token, facebook_request
 from apps.connection.myviews.MySQLViews import AJAXMySQLTestConnection
 
 
@@ -34,8 +35,16 @@ class CreateConnectionView(CreateView):
             form.instance.connection = c
             if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Facebook:
                 token = self.request.POST.get('token', '')
-                new_token = extend_facebook_token(token)
-                form.instance.token = new_token
+                long_user_access_token = extend_facebook_token(token)
+                pages = facebook_request('me/accounts', long_user_access_token)
+                page_token = None
+                for page in pages:
+                    if page['id'] == form.instance.id_page:
+                        page_token = page['access_token']
+                        break
+                if page_token:
+                    form.instance.token = page_token
+                self.fetch_facebook_leads(form.instance)
             return super(CreateConnectionView, self).form_valid(form)
 
     def get(self, *args, **kwargs):
@@ -57,6 +66,19 @@ class CreateConnectionView(CreateView):
         context['connection'] = ConnectorEnum.get_connector(self.kwargs['connector_id']).name
         return context
 
+    def fetch_facebook_leads(self, facebook_connection, *args, **kwargs):
+        item_list = []
+        leads = facebook_request('%s/leads' % facebook_connection.id_form, facebook_connection.token)
+        for item in leads:
+            for lead in item['field_data']:
+                item_list.append(StoredData(name=lead['name'], value=lead['values'][0], object_id=item['id'],
+                                            connection=facebook_connection.connection))
+        stored_data = [(item.connection, item.object_id, item.name) for item in
+                       StoredData.objects.filter(connection=facebook_connection.connection)]
+        for item in item_list:
+            if (item.connection, item.object_id, item.name) not in stored_data:
+                item.save()
+
 
 class UpdateConnectionView(UpdateView):
     model = Connection
@@ -74,14 +96,9 @@ class UpdateConnectionView(UpdateView):
     def post(self, *args, **kwargs):
         if self.kwargs['connector_id'] is not None:
             self.model, self.fields = ConnectorEnum.get_connector_data(self.kwargs['connector_id'])
+            if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Facebook:
+                self.template_name = '%s/%s/update.html' % (app_name, ConnectorEnum.Facebook.name.lower())
         return super(UpdateConnectionView, self).post(*args, **kwargs)
-
-    def form_valid(self, form):
-        if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Facebook:
-            token = self.request.POST.get('token', '')
-            new_token = extend_facebook_token(token)
-            form.instance.token = new_token
-        return super(UpdateConnectionView, self).form_valid(form)
 
 
 class DeleteConnectionView(DeleteView):

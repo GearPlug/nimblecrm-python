@@ -1,5 +1,6 @@
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.urls import reverse_lazy
+from django.db.utils import IntegrityError
 from apps.gear.apps import APP_NAME as app_name
 from apps.gp.models import Gear, Plug, PlugSpecification, StoredData
 from apps.gear.forms import MapForm
@@ -48,6 +49,7 @@ class CreateGearMapView(FormView):
     template_name = 'gear/map/create.html'
     form_class = MapForm
     form_field_list = []
+    source_object_list = []
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -71,6 +73,7 @@ class CreateGearMapView(FormView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(CreateGearMapView, self).get_context_data(**kwargs)
+        context['source_object_list'] = self.source_object_list
         return context
 
     def get_form(self, *args, **kwargs):
@@ -88,16 +91,8 @@ class CreateGearMapView(FormView):
                 connection_data[field] = getattr(related, field)
             else:
                 connection_data[field] = ''
-        target_data_list = self.get_source_data_list(c, plug, connection_data)
-        # print(target_data_list)
-        item_list = []
-        for item in target_data_list:
-            for lead in item['field_data']:
-                item_list.append(
-                    StoredData(plug=plug, name=lead['name'], value=lead['values'][0], object_id=item['id']))
-        print(item_list)
+        self.source_object_list = [item['name'] for item in self.get_source_data_list(c, plug.connection, connection_data)]
 
-    # Modifica el formulario para target.
     def plug_as_target(self, plug, *args, **kwargs):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
         fields = ConnectorEnum.get_fields(c)
@@ -109,16 +104,11 @@ class CreateGearMapView(FormView):
             else:
                 connection_data[field] = ''
         form_data = self.get_mysql_table_info(c, plug, connection_data)
-        self.form_field_list = []
-        for item in form_data:
-            self.form_field_list.append(item['name'])
+        self.form_field_list = [item['name'] for item in form_data if item['is_primary'] is not True]
 
-    def get_source_data_list(self, Connector, plug, connection_data):
+    def get_source_data_list(self, Connector, connection, connection_data):
         if Connector == ConnectorEnum.Facebook:
-            print("f")
-            url = '%s/leads' % connection_data['id_form']
-            token = connection_data['token']
-            return facebook_request(url, token)
+            return StoredData.objects.filter(connection=connection).values('name').distinct()
         return []
 
     def get_mysql_table_info(self, Connector, plug, connection_data):
@@ -140,6 +130,7 @@ class CreateGearMapView(FormView):
                 for item in cursor:
                     table_data.append(
                         {'name': item[0], 'type': item[1], 'null': 'YES' == item[2], 'is_primary': item[3] == 'PRI'})
+                print(table_data)
             except Exception as e:
                 print(e)
         return table_data

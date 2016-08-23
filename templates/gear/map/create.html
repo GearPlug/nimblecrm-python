@@ -1,10 +1,27 @@
 {% extends 'commons/site_base.html' %}
 {% load bootstrap_tags %}
+{% load static %}
 
 {% block body %}
     MAP: ss
     <form>
         {{ form|as_bootstrap }}
     </form>
-
+{% endblock %}
+{% block styles %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'vendor/jquery-ui-1.12.0/jquery-ui.min.css' %}">
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    {{ block.super }}
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
+    <script>
+        $(document).ready(function () {
+            var availableTags = [{% for item in source_object_list %}'{{ item }}',{% endfor %}];
+            $('input.form-control').autocomplete({
+                source: availableTags
+            });
+        })
+    </script>
 {% endblock %}

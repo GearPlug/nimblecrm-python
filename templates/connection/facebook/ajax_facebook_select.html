@@ -1,9 +1,8 @@
 {% extends 'connection/ajax_select_list.html' %}
-{% block select_id %}idTest{% endblock %}
+{% block select_id %}{{ id_select }}{% endblock %}
 
 {% block select_options %}
     {% for obj in object_list %}
-        <option value="{{ obj.id }}"
-                {% if obj.page_id %}page-id="{{ obj.page_id }}"{% endif %}>{{ obj.name }}</option>
+        <option value="{{ obj.id }}" >{{ obj.name }}</option>
     {% endfor %}
 {% endblock %}
