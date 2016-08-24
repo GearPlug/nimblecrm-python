@@ -1,7 +1,7 @@
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, TemplateView
 from django.urls import reverse_lazy
 from apps.connection.apps import APP_NAME as app_name
-from apps.gp.models import Connection, Connector, StoredData, FacebookConnection
+from apps.gp.models import Connection, Connector, StoredData, FacebookConnection, GearMap, Gear, GearMapData, Plug
 from apps.gp.enum import ConnectorEnum
 from apps.gp.views import TemplateViewWithPost
 
@@ -67,7 +67,6 @@ class CreateConnectionView(CreateView):
         return context
 
     def fetch_facebook_leads(self, facebook_connection, *args, **kwargs):
-        item_list = []
         leads = facebook_request('%s/leads' % facebook_connection.id_form, facebook_connection.token)
         stored_data = [(item.connection, item.object_id, item.name) for item in
                        StoredData.objects.filter(connection=facebook_connection.connection)]
@@ -117,7 +116,20 @@ class TestConnectionView(TemplateViewWithPost):
 
     def get_context_data(self, *args, **kwargs):
         context = super(TestConnectionView, self).get_context_data(**kwargs)
-        # fb = FacebookConnection.objects.get(pk=13)
-        # data = facebook_request('%s/leads' % fb.id_form, fb.token)
+        map_list = GearMap.objects.filter(is_active=True, gear__is_active=True) \
+            .select_related('gear__source', 'gear__target', )
+
+        for map in map_list:
+            stored = StoredData.objects.filter(connection=map.gear.source.connection)
+            print(stored)
+            map_data = GearMapData.objects.filter(gear_map=map)
+            print(map_data)
+            values_list = {data.target_name: data.source_value for data in map_data}
+            data_list = []
+            for item in stored:
+                if item.name in values_list.keys():
+                    final_value = values_list[item.name].replace('%%%%%s%%%%' % item.name, '%%%s%%' % item.value)
+                    data_list.append(final_value)
+            print(data_list)
         context['fb_data'] = []
         return context

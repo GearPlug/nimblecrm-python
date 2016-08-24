@@ -132,7 +132,7 @@ class Gear(models.Model):
 
 
 class GearMap(models.Model):
-    gear = models.ForeignKey(Gear, related_name='gear')
+    gear = models.ForeignKey(Gear, related_name='gear_map')
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
     is_active = models.BooleanField('is active', default=True)
@@ -142,9 +142,12 @@ class GearMap(models.Model):
 
 
 class GearMapData(models.Model):
-    gear_map = models.ForeignKey(GearMap, related_name='gear_map')
+    gear_map = models.OneToOneField(GearMap, related_name='gear_map_data')
     target_name = models.CharField('target name', max_length=300)
     source_value = models.CharField('source value', max_length=300)
+
+    def __str__(self):
+        return '%s: %s' % (self.target_name, self.source_value)
 
 
 class StoredData(models.Model):
