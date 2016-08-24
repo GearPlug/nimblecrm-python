@@ -95,6 +95,7 @@ class MySQLConnection(models.Model):
     name = models.CharField('name', max_length=120)
     host = models.CharField('host', max_length=40)
     database = models.CharField('database', max_length=40)
+    table = models.CharField('table', max_length=40)
     port = models.CharField('port', max_length=5)
     connection_user = models.CharField('user', max_length=40)
     connection_password = models.CharField('password', max_length=40)
@@ -127,6 +128,23 @@ class Gear(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     source = models.ForeignKey(Plug, null=True, on_delete=models.CASCADE, related_name='source_plug')
     target = models.ForeignKey(Plug, null=True, on_delete=models.CASCADE, related_name='target_plug')
+    is_active = models.BooleanField('is active', default=False)
+
+
+class GearMap(models.Model):
+    gear = models.ForeignKey(Gear, related_name='gear')
+    created = models.DateTimeField('created', auto_now_add=True)
+    last_update = models.DateTimeField('last update', auto_now=True)
+    is_active = models.BooleanField('is active', default=True)
+
+    class Meta:
+        unique_together = ['id', 'gear']
+
+
+class GearMapData(models.Model):
+    gear_map = models.ForeignKey(GearMap, related_name='gear_map')
+    target_name = models.CharField('target name', max_length=300)
+    source_value = models.CharField('source value', max_length=300)
 
 
 class StoredData(models.Model):

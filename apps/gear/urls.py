@@ -7,5 +7,5 @@ urlpatterns = [
     url(r'delete/(?P<pk>\d+)/$', DeleteGearView.as_view(), name='delete'),
     url(r'list/$', ListGearView.as_view(), name='list'),
 
-    url(r'^map/(?P<gear_id>\d+)/$', CreateGearMapView.as_view(), name='homepage'),
+    url(r'^map/(?P<gear_id>\d+)/$', CreateGearMapView.as_view(), name='map'),
 ]

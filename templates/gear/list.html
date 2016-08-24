@@ -10,6 +10,7 @@
         {{ gear.name }}
         <a href="{% url 'gear:update' pk=gear.id %}">Editar</a>
         <a href="{% url 'gear:delete' pk=gear.id %}">Eliminar</a>
+        <a href="{% url 'gear:map' gear_id=gear.id %}">Start Mapping</a>
     </div>
     {% endfor %}
 </div>

@@ -4,8 +4,10 @@
 
 {% block body %}
     MAP: ss
-    <form>
+    <form method="POST" action="" class="">
+        {% csrf_token %}
         {{ form|as_bootstrap }}
+        <button>Create Map</button>
     </form>
 {% endblock %}
 {% block styles %}

@@ -10,20 +10,15 @@ class ConnectorEnum(Enum):
         connector = ConnectorEnum.get_connector(connector)
         return ConnectorEnum.get_model(connector), ConnectorEnum.get_fields(connector)
 
-    def get_connector(connector):
-        connector = int(connector)
+    def get_connector(connector_id):
+        connector_id = int(connector_id)
         for field in ConnectorEnum:
-            if connector == int(field.value):
+            if connector_id == int(field.value):
                 return field
 
     def get_fields(connector):
-        if connector == ConnectorEnum.Facebook:
-            return ['name', 'id_page', 'id_form', 'token']
-        elif connector == ConnectorEnum.MySQL:
-            return ['name', 'host', 'port', 'database', 'connection_user', 'connection_password']
+        model = apps.get_model('gp', '%sConnection' % connector.name)
+        return [f.name for f in model._meta.get_fields() if f.name != 'id' and f.name != 'connection']
 
     def get_model(connector):
-        if connector == ConnectorEnum.Facebook:
-            return apps.get_model('gp', '%sConnection' % ConnectorEnum.Facebook.name)
-        elif connector == ConnectorEnum.MySQL:
-            return apps.get_model('gp', '%sConnection' % ConnectorEnum.MySQL.name)
+        return apps.get_model('gp', '%sConnection' % connector.name)

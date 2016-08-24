@@ -2,10 +2,9 @@ from django.views.generic import CreateView, UpdateView, DeleteView, ListView, F
 from django.urls import reverse_lazy
 from django.db.utils import IntegrityError
 from apps.gear.apps import APP_NAME as app_name
-from apps.gp.models import Gear, Plug, PlugSpecification, StoredData
+from apps.gp.models import Gear, Plug, PlugSpecification, StoredData, GearMap, GearMapData
 from apps.gear.forms import MapForm
 from apps.gp.enum import ConnectorEnum
-from apps.connection.myviews.FacebookViews import facebook_request
 import MySQLdb
 
 
@@ -50,6 +49,7 @@ class CreateGearMapView(FormView):
     form_class = MapForm
     form_field_list = []
     source_object_list = []
+    success_url = reverse_lazy('%s:list' % app_name)
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -63,9 +63,22 @@ class CreateGearMapView(FormView):
         return super(CreateGearMapView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        gear_id = kwargs.pop('gear_id', 0)
+        gear = Gear.objects.filter(pk=gear_id).select_related('source', 'target').get(pk=gear_id)
+        target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
+            pk=gear.target.id)
+        self.plug_as_target(target_plug)
+        form = self.get_form()
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
 
     def form_valid(self, form, *args, **kwargs):
+        print(form.cleaned_data)
+        map = GearMap.objects.create(gear_id=self.kwargs['gear_id'], is_active=False)
+        map_data = []
+        for field in form:
+            map_data.append(
+                GearMapData(gear_map=map, target_name=field.name, source_value=form.cleaned_data[field.name]))
+        GearMapData.objects.bulk_create(map_data)
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
     def form_invalid(self, form, *args, **kwargs):
@@ -77,8 +90,8 @@ class CreateGearMapView(FormView):
         return context
 
     def get_form(self, *args, **kwargs):
-        kwargs['extra'] = self.form_field_list
-        return self.form_class(**kwargs)
+        form_class = self.get_form_class()
+        return form_class(extra=self.form_field_list, **self.get_form_kwargs())
 
     # asigna la lista de objetos del source
     def plug_as_source(self, plug, *args, **kwargs):
@@ -91,7 +104,9 @@ class CreateGearMapView(FormView):
                 connection_data[field] = getattr(related, field)
             else:
                 connection_data[field] = ''
-        self.source_object_list = [item['name'] for item in self.get_source_data_list(c, plug.connection, connection_data)]
+        # print(connection_data)
+        self.source_object_list = ['%%%%%s%%%%' % item['name'] for item in  # ==> %%field_name%%
+                                   self.get_source_data_list(c, plug.connection, connection_data)]
 
     def plug_as_target(self, plug, *args, **kwargs):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
@@ -124,13 +139,11 @@ class CreateGearMapView(FormView):
         if con:
             try:
                 cursor = con.cursor()
-                ps = PlugSpecification.objects.get(plug=plug, action_specification__name='table name')
                 # cursor.execute('USE %s' % connection_data['database'])
-                cursor.execute('DESCRIBE `%s`.`%s`' % (connection_data['database'], ps.value))
+                cursor.execute('DESCRIBE `%s`.`%s`' % (connection_data['database'], connection_data['table']))
                 for item in cursor:
                     table_data.append(
                         {'name': item[0], 'type': item[1], 'null': 'YES' == item[2], 'is_primary': item[3] == 'PRI'})
-                print(table_data)
             except Exception as e:
                 print(e)
         return table_data

@@ -1,7 +1,7 @@
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, TemplateView
 from django.urls import reverse_lazy
 from apps.connection.apps import APP_NAME as app_name
-from apps.gp.models import Connection, Connector, StoredData
+from apps.gp.models import Connection, Connector, StoredData, FacebookConnection
 from apps.gp.enum import ConnectorEnum
 from apps.gp.views import TemplateViewWithPost
 
@@ -69,15 +69,15 @@ class CreateConnectionView(CreateView):
     def fetch_facebook_leads(self, facebook_connection, *args, **kwargs):
         item_list = []
         leads = facebook_request('%s/leads' % facebook_connection.id_form, facebook_connection.token)
-        for item in leads:
-            for lead in item['field_data']:
-                item_list.append(StoredData(name=lead['name'], value=lead['values'][0], object_id=item['id'],
-                                            connection=facebook_connection.connection))
         stored_data = [(item.connection, item.object_id, item.name) for item in
                        StoredData.objects.filter(connection=facebook_connection.connection)]
-        for item in item_list:
-            if (item.connection, item.object_id, item.name) not in stored_data:
-                item.save()
+        new_data = []
+        for item in leads:
+            new_data = new_data + [StoredData(name=lead['name'], value=lead['values'][0], object_id=item['id'],
+                                              connection=facebook_connection.connection)
+                                   for lead in item['field_data']
+                                   if (facebook_connection.connection, item['id'], lead['name']) not in stored_data]
+        StoredData.objects.bulk_create(new_data)
 
 
 class UpdateConnectionView(UpdateView):
@@ -117,4 +117,7 @@ class TestConnectionView(TemplateViewWithPost):
 
     def get_context_data(self, *args, **kwargs):
         context = super(TestConnectionView, self).get_context_data(**kwargs)
+        # fb = FacebookConnection.objects.get(pk=13)
+        # data = facebook_request('%s/leads' % fb.id_form, fb.token)
+        context['fb_data'] = []
         return context
