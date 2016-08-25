@@ -132,7 +132,7 @@ class Gear(models.Model):
 
 
 class GearMap(models.Model):
-    gear = models.ForeignKey(Gear, related_name='gear_map')
+    gear = models.OneToOneField(Gear, related_name='gear_map')
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
     is_active = models.BooleanField('is active', default=True)
@@ -142,7 +142,7 @@ class GearMap(models.Model):
 
 
 class GearMapData(models.Model):
-    gear_map = models.OneToOneField(GearMap, related_name='gear_map_data')
+    gear_map = models.ForeignKey(GearMap, related_name='gear_map_data')
     target_name = models.CharField('target name', max_length=300)
     source_value = models.CharField('source value', max_length=300)
 
@@ -156,9 +156,6 @@ class StoredData(models.Model):
     value = models.CharField('value', max_length=3000)
     datetime = models.DateTimeField(auto_now_add=True)
     object_id = models.CharField('object_id', max_length=50, null=False)
-
-    class Meta:
-        unique_together = ['connection', 'object_id', 'name']
 
     def __str__(self):
         return '%s %s %s' % (self.id, self.name, self.object_id)
