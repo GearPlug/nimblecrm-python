@@ -1,9 +1,10 @@
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, TemplateView
 from django.urls import reverse_lazy
 from apps.connection.apps import APP_NAME as app_name
-from apps.gp.models import Connection, Connector, StoredData, FacebookConnection, GearMap, Gear, GearMapData, Plug
+from apps.gp.models import Connection, Connector, StoredData, GearMap, Gear, GearMapData, Plug
 from apps.gp.enum import ConnectorEnum
 from apps.gp.views import TemplateViewWithPost
+from apps.api.views import mysql_get_insert_values, mysql_trigger_create_row
 import re
 
 # IMPORT CENTRALIZADO
@@ -119,91 +120,17 @@ class TestConnectionView(TemplateViewWithPost):
         context = super(TestConnectionView, self).get_context_data(**kwargs)
         map_list = GearMap.objects.filter(is_active=True, gear__is_active=True) \
             .select_related('gear__source', 'gear__target', )
-
         for map in map_list:
+            print(map)
             stored = StoredData.objects.filter(connection=map.gear.source.connection)
             target_data = {data.target_name: data.source_value for data in GearMapData.objects.filter(gear_map=map)}
 
             source_data = [
                 {'id': item[0], 'data': {i.name: i.value for i in stored.filter(object_id=item[0])}}
                 for item in stored.values_list('object_id').distinct()]
-
-            sql_insert_list = self.get_mysql_inserts(source_data, target_data, 'puta')
-            print(sql_insert_list)
-
-            # for item in data_dict:
-            #     sql_values = []
-            #     for i, field in enumerate(item['data']):
-            #         if field in values_list.keys():
-            #             sql_values += '"%s"' % item['data'][field]
-            #             if i < len(item['data']) - 1:
-            #                 sql_values += ', '
-            # print(sql_insert)
-            # print(sql_values)
-            #     print(item['data'])
-            #     # INSERT INTO `apiConnector-00`.`test_save_leads` (`id`, `first_name`, `last_name`, `problem`, `extra_data`) VALUES ('', '2', '3', '4', '5');
-            #     table_info = table_info + ''
-
-            # print(data_dict)
-            # for item in stored:
-            #     if item.name in values_list.keys():
-            #         data_dict[str(item.id)][item.name] = values_list[item.name].replace('%%%%%s%%%%' % item.name,
-            #                                                                             item.value)
-            # print(data_dict)
+            connection = Connection.objects.get(plug=map.gear.target)
+            # Validar el conector del target para obtener el objeto o los objetos a enviar.
+            columns, insert_values = mysql_get_insert_values(source_data, target_data, connection.related_connection)
+            mysql_trigger_create_row(connection.related_connection, columns, insert_values)
         context['fb_data'] = []
         return context
-
-    def get_mysql_inserts(self, source_data, target_data, table, *args, **kwargs):
-        sql_table_name = table
-        sql_base_values = []
-        sql_table_info = []
-        for i, field in enumerate(target_data):
-            sql_table_info.append('"%s"' % field)
-            sql_base_values.append('"%s"' % target_data[field])
-
-        sql_base_insert = 'INSERT INTO %s (%s) VALUES(%s)' % \
-                          (sql_table_name, ','.join(sql_table_info), ','.join(sql_base_values))
-        # print(target_data)
-        sql_insert_list = []
-        sublist = ['%%%%%s%%%%' % key for key in target_data]
-        # print(sublist)
-        pattern = re.compile(r'\b(' + '|'.join(sublist) + r'\b)')
-
-        result = pattern.sub(lambda x: sublist[x.group()], sql_base_insert)
-
-        final_data = [{attribute: {'%%%%%s%%%%' % a: item[attribute][a] for a in
-                                   item[attribute]} if attribute == 'data' else item[attribute] for attribute in item}
-                      for item in source_data]
-
-        for item in final_data:
-            # print(item['data'].keys())
-            # for a in item['data']:
-            #     print(re.escape(a))
-            stri = '(%s)' % '|'.join([re.escape(a) for a in item['data']])
-            pattern = re.compile(r'%s' % stri)
-            result = pattern.sub(lambda x: item['data'][x.group()], sql_base_insert)
-            print(stri)
-            print(pattern)
-
-        s = 'Hola soy german'
-        d = {
-            'Hola': 'chao',
-            'soy': 'ya',
-            'german': 'me voy'
-        }
-
-        pattern = re.compile(r'\b(' + '|'.join(d.keys()) + r')\b')
-        result = pattern.sub(lambda x: d[x.group()], s)
-        # print(result)
-        # for item in source_data:
-        #     print(item)
-        
-        #target_data = ['uno', 'dos', 'tres']
-	    #sql_insert_base = 'INSERT INTO %s (%s) VALUES(%s)'%('tableA', ','.join(target_data), ','.join(['"%%%%%s%%%%"' % a for a in target_data]))
-	    #d = {'%%uno%%': 'hola','%%dos%%': 'ya', '%%tres%%': 'me voy',}
-	    #regex = '|'.join([re.escape('%%%%%s%%%%' % key) for key in target_data])
-	    #regex_obj = re.compile(regex)
-	    #print(regex)
-	    #print(regex_obj)
-	    #final = regex_obj.sub(lambda x: d[x.group()], sql_insert_base)
-	    #print(final)
