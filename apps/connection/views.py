@@ -197,3 +197,13 @@ class TestConnectionView(TemplateViewWithPost):
         # print(result)
         # for item in source_data:
         #     print(item)
+        
+        #target_data = ['uno', 'dos', 'tres']
+	    #sql_insert_base = 'INSERT INTO %s (%s) VALUES(%s)'%('tableA', ','.join(target_data), ','.join(['"%%%%%s%%%%"' % a for a in target_data]))
+	    #d = {'%%uno%%': 'hola','%%dos%%': 'ya', '%%tres%%': 'me voy',}
+	    #regex = '|'.join([re.escape('%%%%%s%%%%' % key) for key in target_data])
+	    #regex_obj = re.compile(regex)
+	    #print(regex)
+	    #print(regex_obj)
+	    #final = regex_obj.sub(lambda x: d[x.group()], sql_insert_base)
+	    #print(final)
