@@ -123,6 +123,17 @@ class PlugSpecification(models.Model):
         unique_together = ['plug', 'action_specification']
 
 
+class StoredData(models.Model):
+    connection = models.ForeignKey(Connection, related_name='stored_data', default=1)
+    name = models.CharField('name', max_length=300)
+    value = models.CharField('value', max_length=3000)
+    datetime = models.DateTimeField(auto_now_add=True)
+    object_id = models.CharField('object_id', max_length=50, null=False)
+
+    def __str__(self):
+        return '%s %s %s' % (self.id, self.name, self.object_id)
+
+
 class Gear(models.Model):
     name = models.CharField('name', max_length=120)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -136,6 +147,7 @@ class GearMap(models.Model):
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
     is_active = models.BooleanField('is active', default=True)
+    last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', default=1)
 
     class Meta:
         unique_together = ['id', 'gear']
@@ -148,17 +160,6 @@ class GearMapData(models.Model):
 
     def __str__(self):
         return '%s: %s' % (self.target_name, self.source_value)
-
-
-class StoredData(models.Model):
-    connection = models.ForeignKey(Connection, related_name='stored_data', default=1)
-    name = models.CharField('name', max_length=300)
-    value = models.CharField('value', max_length=3000)
-    datetime = models.DateTimeField(auto_now_add=True)
-    object_id = models.CharField('object_id', max_length=50, null=False)
-
-    def __str__(self):
-        return '%s %s %s' % (self.id, self.name, self.object_id)
 
 
 admin.site.register(Connector)
