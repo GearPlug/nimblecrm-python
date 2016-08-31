@@ -3,15 +3,16 @@
 {% load bootstrap_tags %}
 
 {% block body %}
-<div>new plug</div>
-<div>
-    <form class="create-plug-form form-horizontal" action="" method="post" autocomplete="off">
-        {% csrf_token %}
-        {{ form|as_bootstrap }}
-        <button id="singlebutton" name="singlebutton">Create plug</button>
-        {% if form.error %}
-        <div class="error">{{ form.error }}</div>
-        {% endif %}
-    </form>
-</div>
+    <div>new plug</div>
+    <div>
+        <form class="create-plug-form form-horizontal" action="" method="post" autocomplete="off">
+            {% csrf_token %}
+            {{ form|as_bootstrap }}
+            <button id="singlebutton" name="singlebutton">Create plug</button>
+            {% if form.error %}
+                <div class="error">{{ form.error }}</div>
+            {% endif %}
+        </form>
+        {% block extra %}{% endblock %}
+    </div>
 {% endblock %}

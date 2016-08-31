@@ -1,11 +1,13 @@
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.urls import reverse_lazy
-from django.db.utils import IntegrityError
 from apps.gear.apps import APP_NAME as app_name
-from apps.gp.models import Gear, Plug, PlugSpecification, StoredData, GearMap, GearMapData
+from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gear.forms import MapForm
 from apps.gp.enum import ConnectorEnum
+from apps.api.controllers import MySQLController
 import MySQLdb
+
+mysqlc = MySQLController()
 
 
 class ListGearView(ListView):
@@ -104,9 +106,9 @@ class CreateGearMapView(FormView):
                 connection_data[field] = getattr(related, field)
             else:
                 connection_data[field] = ''
-        # print(connection_data)
         self.source_object_list = ['%%%%%s%%%%' % item['name'] for item in  # ==> %%field_name%%
                                    self.get_source_data_list(c, plug.connection, connection_data)]
+        print(self.source_object_list)
 
     def plug_as_target(self, plug, *args, **kwargs):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
@@ -118,13 +120,16 @@ class CreateGearMapView(FormView):
                 connection_data[field] = getattr(related, field)
             else:
                 connection_data[field] = ''
-        form_data = self.get_mysql_table_info(c, plug, connection_data)
+        mysqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
+                                 connection_user=connection_data['connection_user'],
+                                 connection_password=connection_data['connection_password'],
+                                 database=connection_data['database'], table=connection_data['table'])
+        form_data = mysqlc.describe_table()
         self.form_field_list = [item['name'] for item in form_data if item['is_primary'] is not True]
 
     def get_source_data_list(self, Connector, connection, connection_data):
-        if Connector == ConnectorEnum.Facebook:
-            return StoredData.objects.filter(connection=connection).values('name').distinct()
-        return []
+        print(connection.id)
+        return StoredData.objects.filter(connection=connection).values('name').distinct()
 
     def get_mysql_table_info(self, Connector, plug, connection_data):
         table_data = []

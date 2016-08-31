@@ -34,6 +34,9 @@ class CreateConnectionView(CreateView):
     template_name = '%s/create.html' % app_name
     success_url = reverse_lazy('%s:list' % app_name)
 
+    def form_invalid(self, form, *args, **kwargs):
+        return super(CreateConnectionView, self).form_invalid(form, *args, **kwargs)
+
     def form_valid(self, form, *args, **kwargs):
         if self.kwargs['connector_id'] is not None:
             c = Connection.objects.create(user=self.request.user, connector_id=self.kwargs['connector_id'])
@@ -50,20 +53,22 @@ class CreateConnectionView(CreateView):
                 if page_token:
                     form.instance.token = page_token
                 fbc.download_leads_to_stored_data(form.instance)
-            return super(CreateConnectionView, self).form_valid(form)
+            return super(CreateConnectionView, self).form_valid(form, *args, **kwargs)
 
     def get(self, *args, **kwargs):
         if self.kwargs['connector_id'] is not None:
             self.model, self.fields = ConnectorEnum.get_connector_data(self.kwargs['connector_id'])
-            self.template_name = '%s/%s/create.html' % (
-                app_name, ConnectorEnum.get_connector(self.kwargs['connector_id']).name.lower())
+            name = 'ajax_create' if self.request.is_ajax() else 'create'
+            self.template_name = '%s/%s/%s.html' % (
+                app_name, ConnectorEnum.get_connector(self.kwargs['connector_id']).name.lower(), name)
         return super(CreateConnectionView, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
         if self.kwargs['connector_id'] is not None:
             self.model, self.fields = ConnectorEnum.get_connector_data(self.kwargs['connector_id'])
-            self.template_name = '%s/%s/create.html' % (
-                app_name, ConnectorEnum.get_connector(self.kwargs['connector_id']).name.lower())
+            name = 'ajax_create' if self.request.is_ajax() else 'create'
+            self.template_name = '%s/%s/%s.html' % (
+                app_name, ConnectorEnum.get_connector(self.kwargs['connector_id']).name.lower(), name)
         return super(CreateConnectionView, self).post(*args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):

@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'facebook',
     #
+    'apps.wizard',
     'apps.home',
     'apps.api',
     'apps.user',

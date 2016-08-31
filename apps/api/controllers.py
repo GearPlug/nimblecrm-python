@@ -30,11 +30,10 @@ class FacebookController(object):
         graph.access_token = graph.get_app_access_token(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
         r = requests.get('%s/v%s/%s' % (base_url, FACEBOOK_GRAPH_VERSION, url),
                          params=params)
-        logger.info('Facebook Controller >> Request sent: %s' % r.url)
+        # logger.info('Facebook Controller >> Request sent: %s' % r.url)
         try:
             return json.loads(r.text)['data']
         except KeyError:
-            print("KeyError")
             return r
         except Exception as e:
             print(e)
@@ -47,7 +46,7 @@ class FacebookController(object):
                   'client_secret': FACEBOOK_APP_SECRET,
                   'fb_exchange_token': token}
         r = self.send_request(url=url, params=params)
-        logger.info('Facebook Controller >> Token extend: %s' % r.url)
+        # logger.info('Facebook Controller >> Token extend: %s' % r.url)
         try:
             return json.loads(r.text)['access_token']
         except Exception as e:
@@ -80,13 +79,15 @@ class FacebookController(object):
                                               connection=connection.connection)
                                    for lead in item['field_data'] if
                                    (connection.connection, item['id'], lead['name']) not in stored_data]
-        logger.info('Facebook Controller >> NEW LEADS: %s' % new_data)
+        # logger.info('Facebook Controller >> NEW LEADS: %s' % new_data)
         # StoredData.objects.bulk_create(new_data)
 
 
 class MySQLController(object):
     connection = None
     cursor = None
+    database = None
+    table = None
 
     def __init__(self, *args, **kwargs):
         self.create_connection(*args, **kwargs)
@@ -96,13 +97,14 @@ class MySQLController(object):
         try:
             host = kwargs.pop('host', 'host')
             port = kwargs.pop('port', 'puerto')
-            database = kwargs.pop('database', 'database')
             user = kwargs.pop('connection_user', 'usuario')
             password = kwargs.pop('connection_password', 'clave')
+            self.database = kwargs.pop('database', 'database')
+            self.table = kwargs.pop('table', 'table')
         except:
             pass
         try:
-            self.connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=database)
+            self.connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self.database)
             self.cursor = self.connection.cursor()
             connection_reached = True
         except:
@@ -125,6 +127,12 @@ class MySQLController(object):
     def get_cursor(self):
         return self.cursor
 
-
     def describe_table(self):
-        pass
+        if self.table is not None and self.database is not None:
+            try:
+                self.cursor.execute('DESCRIBE `%s`.`%s`' % (self.database, self.table))
+                return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2], 'is_primary': item[3] == 'PRI'} for
+                        item in self.cursor]
+            except:
+                print('Error ')
+        return []

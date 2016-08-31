@@ -1,0 +1,49 @@
+{% extends 'plug/create.html' %}
+{% load static %}
+{% block extra %}
+    <h2>Create connection</h2>
+    <input id="connectorList" type="text" placeholder="Select a connector">
+    <div>
+        {% for connector in connector_list %}
+            <div>
+                <a href="{% url 'wizard:create_connection' connector_id=connector.id %}" class="ajaxConnection">
+                    {{ connector.name }}
+                </a>
+
+            </div>
+        {% endfor %}
+    </div>
+    <div id="newConnectionWrapper">
+
+    </div>
+{% endblock %}
+
+{% block styles %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'vendor/jquery-ui-1.12.0/jquery-ui.min.css' %}">
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
+    <script type="application/javascript">
+        $(document).ready(function () {
+            var availableTags = [{% for item in connector_list %}'{{ item.name }}',{% endfor %}];
+            $('input#connectorList').autocomplete({
+                source: availableTags
+            });
+            $('a.ajaxConnection').click(function () {
+                $.ajax({
+                    method: "GET",
+                    url: $(this).attr('href'),
+                }).done(function (response) {
+                    $('div#newConnectionWrapper').html(response);
+                });
+                return false;
+            })
+            {% if request.session.auto_select_connection_id != None %}
+                $('select#id_connection').val({{ request.session.auto_select_connection_id }});
+                $('select#id_connection').change();
+            {% endif %}
+        })
+    </script>
+{% endblock %}
