@@ -1,7 +1,8 @@
 {% load bootstrap_tags %}
 
 
-<form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
+<form id="formCreateConnection" class="create-connection-form form-horizontal"
+      action="{% url 'wizard:create_connection' connector_id=2 %}"
       method="post" autocomplete="off">
     {% csrf_token %}
     {{ form|as_bootstrap }}
@@ -23,25 +24,30 @@
         });
 
         $('button#btnCreateConnection').click(function () {
-            $('form#formCreateConnection').attr('action', "{% url 'connection:create' connector_id=2 %}");
+            $('form#formCreateConnection').attr('action', "{% url 'wizard:create_connection' connector_id=2 %}");
             $('form#formCreateConnection').attr('is_ajax', false);
         });
 
         $('form#formCreateConnection').submit(function () {
-            console.log($(this).attr('is_ajax'));
-            if ($(this).attr('is_ajax') == true || $(this).attr('is_ajax') == 'true') {
-                $.ajax({
-                    method: "POST",
-                    url: $(this).attr('action'),
-                    data: $('form#formCreateConnection').serialize(),
-                }).done(function (response) {
-                    if (response.data) {
-                        $('button#btnCreateConnection').prop("disabled", false);
-                        $('div#connectionTestResult').html('Connection is valid.');
-                    }
-                });
-                return false;
-            }
+            var test_url = "{% url 'connection:ajax_update_mysql_test_connection' %}";
+            var url = $(this).attr('action');
+            $.ajax({
+                method: "POST",
+                url: url,
+                data: $('form#formCreateConnection').serialize(),
+            }).done(function (response) {
+                if (response.data) {
+                    $('button#btnCreateConnection').prop("disabled", false);
+                    $('div#connectionTestResult').html('Connection is valid.');
+                } else {
+                    $('div#connectionTestResult').html('Connection is not valid.');
+                }
+                if (test_url != url) {
+                    location.reload()
+                }
+            });
+            return false;
+
         })
     });
 </script>

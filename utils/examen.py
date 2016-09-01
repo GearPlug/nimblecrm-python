@@ -3,9 +3,9 @@ import random
 
 def ej1():
     lista = []
-    for i in range(101):
+    for i in range(1, 101):
         string = str(i)
-        if i % 3 == 0:
+        if i % 3 == 0 and i:
             string += "bazz"
         if i % 5 == 0:
             string += "buzz"

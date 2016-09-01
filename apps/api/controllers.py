@@ -79,8 +79,8 @@ class FacebookController(object):
                                               connection=connection.connection)
                                    for lead in item['field_data'] if
                                    (connection.connection, item['id'], lead['name']) not in stored_data]
-        # logger.info('Facebook Controller >> NEW LEADS: %s' % new_data)
-        # StoredData.objects.bulk_create(new_data)
+            # logger.info('Facebook Controller >> NEW LEADS: %s' % new_data)
+            # StoredData.objects.bulk_create(new_data)
 
 
 class MySQLController(object):
@@ -93,7 +93,6 @@ class MySQLController(object):
         self.create_connection(*args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
-        connection_reached = False
         try:
             host = kwargs.pop('host', 'host')
             port = kwargs.pop('port', 'puerto')
@@ -106,11 +105,10 @@ class MySQLController(object):
         try:
             self.connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self.database)
             self.cursor = self.connection.cursor()
-            connection_reached = True
         except:
             self.connection = None
             print("Error reaching the database")
-        return connection_reached
+        return self.connection is not None
 
     def set_cursor(self):
         if self.connection is not None:
