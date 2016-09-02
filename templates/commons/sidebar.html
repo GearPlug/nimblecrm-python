@@ -22,6 +22,13 @@
             <div class="menu_section">
                 <ul class="nav side-menu">
                     <li class="active">
+                        <a><i class="fa fa-flash"></i> Wizard <span class="fa fa-chevron-down"></span></a>
+                        <ul class="nav child_menu">
+                            <li><a href="{% url 'wizard:create_gear' %}">New gear</a></li>
+                            <li><a href="{% url 'wizard:create_gear' %}">Set plugs</a></li>
+                        </ul>
+                    </li>
+                    <li class="active">
                         <a><i class="fa fa-gear"></i> Gears <span class="fa fa-chevron-down"></span></a>
                         <ul class="nav child_menu">
                             <li><a href="{% url 'gear:create' %}">New gear</a></li>

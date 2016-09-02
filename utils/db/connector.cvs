@@ -1,4 +1,0 @@
-1,Facebook,1,facebookConnector,gr_facebook,1,0
-2,MySQL,1,mysqlConnector,gr_mysql,1,1
-3,SugarCRM,1,sugarcrmConnector,gr_sugarcrm,1,1
-4,MailChimp,0,mailchimpConnector,gr_mailchimp,1,1

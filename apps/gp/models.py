@@ -50,6 +50,8 @@ class ActionSpecification(models.Model):
 class Connection(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     connector = models.ForeignKey(Connector, default=2, on_delete=models.CASCADE)
+    created = models.DateTimeField('created', auto_now_add=True)
+    last_update = models.DateTimeField('last update', auto_now=True)
 
     @property
     def name(self):
@@ -109,6 +111,9 @@ class Plug(models.Model):
     connection = models.ForeignKey(Connection, null=True, on_delete=models.CASCADE, related_name='plug')
     action = models.ForeignKey(Action, null=True, on_delete=models.CASCADE)
     user = models.ForeignKey(User)
+    is_active = models.BooleanField('is active', default=False)
+    created = models.DateTimeField('created', auto_now_add=True)
+    last_update = models.DateTimeField('last update', auto_now=True)
 
     def __str__(self):
         return self.name
@@ -140,6 +145,8 @@ class Gear(models.Model):
     source = models.ForeignKey(Plug, null=True, on_delete=models.CASCADE, related_name='source_plug')
     target = models.ForeignKey(Plug, null=True, on_delete=models.CASCADE, related_name='target_plug')
     is_active = models.BooleanField('is active', default=False)
+    created = models.DateTimeField('created', auto_now_add=True)
+    last_update = models.DateTimeField('last update', auto_now=True)
 
 
 class GearMap(models.Model):

@@ -1,0 +1,143 @@
+{% load bootstrap_tags %}
+<button id="btnLogin">Facebook login</button>
+
+<div>
+    <div id="connection_list">
+        <select>
+            <option>---------</option>
+        </select>
+    </div>
+</div>
+<div>
+    <div id="form_list">
+        <select>
+            <option>---------</option>
+        </select>
+    </div>
+</div>
+<button id="btnCheckLeads">test connection</button>
+<button id="btnCreateConnection">Save connection</button>
+<div>
+    <form id="formCreateConnection" style="display:none;" class="create-connection-form form-horizontal"
+          action="{% url 'wizard:create_connection' connector_id=1 %}"
+          method="post" autocomplete="off">
+        {% csrf_token %}
+        {{ form|as_bootstrap }}
+        {% if form.error %}
+            <div class="error">{{ form.error }}</div>
+        {% endif %}
+    </form>
+</div>
+
+
+<script type="application/javascript">
+    function fbLogin() {
+        FB.login(function (response) {
+            if (response.authResponse) {
+                window.location.reload(false);
+            }
+        }, {scope: 'manage_pages'});
+    }
+
+    function statusChangeCallback(response) {
+        if (response.status === 'connected') {
+            user_access_token = response.authResponse.accessToken;
+            loadFacebookConnections();
+        } else if (response.status === 'not_authorized') {
+            $('#btnLogin').show();
+        } else {
+            $('#btnLogin').show();
+        }
+    }
+
+    function loadFacebookConnections() {
+        $.ajax({
+            method: "POST",
+            url: "{% url 'connection:ajax_update_facebook_get_connections' %}",
+            data: {'user_access_token': user_access_token},
+        }).done(function (response) {
+            $('div#connection_list').html(response);
+            $('div#connection_list select').prepend("<option value='0' selected='selected'></option>");
+        });
+    }
+
+    $(document).ready(function () {
+        (function (d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s);
+            js.id = id;
+            js.src = "//connect.facebook.net/en_US/sdk.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+
+        window.fbAsyncInit = function () {
+            FB.init({
+                appId: '1731160853833926',
+                cookie: true,  // enable cookies to allow the server to access
+                // the session
+                xfbml: true,  // parse social plugins on this page
+                version: 'v2.6' // use graph api version 2.5
+            });
+            FB.getLoginStatus(function (response) {
+                statusChangeCallback(response);
+            });
+        }
+
+        $('button#btnLogin').click(function () {
+            fbLogin();
+        });
+
+        $(document).on('change', 'div#connection_list select', function () {
+            var connection_id = $('div#connection_list select').val();
+            $.ajax({
+                method: "POST",
+                url: "{% url 'connection:ajax_update_facebook_get_forms' %}",
+                data: {'user_access_token': user_access_token, 'connection_id': connection_id},
+            }).done(function (response) {
+                $('div#form_list').html(response);
+            });
+            return false;
+        });
+
+        $('button#btnCheckLeads').click(function () {
+            var form_id = $('div#form_list select').val();
+            $.ajax({
+                method: "POST",
+                url: "{% url 'connection:ajax_update_facebook_get_leads' %}",
+                data: {'user_access_token': user_access_token, 'form_id': form_id},
+            }).done(function (response) {
+                console.log(response.data);
+                if (response.data) {
+                    $('div#form_list').append('<p>Connection is valid.</p>');
+                }
+            });
+        });
+
+        $('button#btnCreateConnection').click(function () {
+            var form_id = $('div#form_list select').val();
+            var form_name = $('div#form_list select option:selected').html().trim();
+            var page_id = $('div#connection_list select').val();
+            $('form#formCreateConnection').find('input#id_name').val(form_name);
+            $('form#formCreateConnection').find('input#id_id_page').val(page_id);
+            $('form#formCreateConnection').find('input#id_id_form').val(form_id);
+            $('form#formCreateConnection').find('input#id_token').val(user_access_token);
+            $('form#formCreateConnection').submit();
+        });
+        $('form#formCreateConnection').submit(function () {
+            var url = $(this).attr('action');
+            console.log('url:' + url);
+            $.ajax({
+                method: "POST",
+                url: url,
+                data: $(this).serialize(),
+            }).done(function (response) {
+                if (response.data) {
+                    console.log('reload')
+                    location.reload();
+                }
+            });
+            return false;
+        })
+    })
+</script>

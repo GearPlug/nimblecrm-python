@@ -8,9 +8,12 @@ from apps.api.views import mysql_get_insert_values, mysql_trigger_create_row
 import re
 
 # IMPORT CENTRALIZADO
+from apps.api.controllers import FacebookController
 from apps.connection.myviews.FacebookViews import AJAXFacebookBaseView, AJAXFacebookGetAvailableConnectionsView, \
-    AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, extend_facebook_token, facebook_request
+    AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView
 from apps.connection.myviews.MySQLViews import AJAXMySQLTestConnection
+
+fbc = FacebookController()
 
 
 class ListConnectionView(ListView):
@@ -31,14 +34,17 @@ class CreateConnectionView(CreateView):
     template_name = '%s/create.html' % app_name
     success_url = reverse_lazy('%s:list' % app_name)
 
+    def form_invalid(self, form, *args, **kwargs):
+        return super(CreateConnectionView, self).form_invalid(form, *args, **kwargs)
+
     def form_valid(self, form, *args, **kwargs):
         if self.kwargs['connector_id'] is not None:
             c = Connection.objects.create(user=self.request.user, connector_id=self.kwargs['connector_id'])
             form.instance.connection = c
             if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Facebook:
                 token = self.request.POST.get('token', '')
-                long_user_access_token = extend_facebook_token(token)
-                pages = facebook_request('me/accounts', long_user_access_token)
+                long_user_access_token = fbc.extend_token(token)
+                pages = fbc.get_pages(long_user_access_token)
                 page_token = None
                 for page in pages:
                     if page['id'] == form.instance.id_page:
@@ -46,39 +52,29 @@ class CreateConnectionView(CreateView):
                         break
                 if page_token:
                     form.instance.token = page_token
-                self.fetch_facebook_leads(form.instance)
-            return super(CreateConnectionView, self).form_valid(form)
+                fbc.download_leads_to_stored_data(form.instance)
+            return super(CreateConnectionView, self).form_valid(form, *args, **kwargs)
 
     def get(self, *args, **kwargs):
         if self.kwargs['connector_id'] is not None:
             self.model, self.fields = ConnectorEnum.get_connector_data(self.kwargs['connector_id'])
-            self.template_name = '%s/%s/create.html' % (
-                app_name, ConnectorEnum.get_connector(self.kwargs['connector_id']).name.lower())
+            name = 'ajax_create' if self.request.is_ajax() else 'create'
+            self.template_name = '%s/%s/%s.html' % (
+                app_name, ConnectorEnum.get_connector(self.kwargs['connector_id']).name.lower(), name)
         return super(CreateConnectionView, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
         if self.kwargs['connector_id'] is not None:
             self.model, self.fields = ConnectorEnum.get_connector_data(self.kwargs['connector_id'])
-            self.template_name = '%s/%s/create.html' % (
-                app_name, ConnectorEnum.get_connector(self.kwargs['connector_id']).name.lower())
+            name = 'ajax_create' if self.request.is_ajax() else 'create'
+            self.template_name = '%s/%s/%s.html' % (
+                app_name, ConnectorEnum.get_connector(self.kwargs['connector_id']).name.lower(), name)
         return super(CreateConnectionView, self).post(*args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):
         context = super(CreateConnectionView, self).get_context_data(**kwargs)
         context['connection'] = ConnectorEnum.get_connector(self.kwargs['connector_id']).name
         return context
-
-    def fetch_facebook_leads(self, facebook_connection, *args, **kwargs):
-        leads = facebook_request('%s/leads' % facebook_connection.id_form, facebook_connection.token)
-        stored_data = [(item.connection, item.object_id, item.name) for item in
-                       StoredData.objects.filter(connection=facebook_connection.connection)]
-        new_data = []
-        for item in leads:
-            new_data = new_data + [StoredData(name=lead['name'], value=lead['values'][0], object_id=item['id'],
-                                              connection=facebook_connection.connection)
-                                   for lead in item['field_data']
-                                   if (facebook_connection.connection, item['id'], lead['name']) not in stored_data]
-        StoredData.objects.bulk_create(new_data)
 
 
 class UpdateConnectionView(UpdateView):
@@ -121,10 +117,8 @@ class TestConnectionView(TemplateViewWithPost):
         map_list = GearMap.objects.filter(is_active=True, gear__is_active=True) \
             .select_related('gear__source', 'gear__target', )
         for map in map_list:
-            print(map)
             stored = StoredData.objects.filter(connection=map.gear.source.connection)
             target_data = {data.target_name: data.source_value for data in GearMapData.objects.filter(gear_map=map)}
-
             source_data = [
                 {'id': item[0], 'data': {i.name: i.value for i in stored.filter(object_id=item[0])}}
                 for item in stored.values_list('object_id').distinct()]

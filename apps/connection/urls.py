@@ -12,12 +12,12 @@ urlpatterns = [
     url(r'test/$', TestConnectionView.as_view(), name='test_facebook'),
 
     # AJAX
-    url(r'ajax/update/facebook/get/connections/', AJAXFacebookGetAvailableConnectionsView.as_view(),
+    url(r'ajax/facebook/get/connections/', AJAXFacebookGetAvailableConnectionsView.as_view(),
         name='ajax_update_facebook_get_connections'),
-    url(r'ajax/update/facebook/get/forms/', AJAXFacebookGetAvailableFormsView.as_view(),
+    url(r'ajax/facebook/get/forms/', AJAXFacebookGetAvailableFormsView.as_view(),
         name='ajax_update_facebook_get_forms'),
-    url(r'ajax/update/facebook/get/leads/', AJAXFacebookGetAvailableLeadsView.as_view(),
+    url(r'ajax/facebook/get/leads/', AJAXFacebookGetAvailableLeadsView.as_view(),
         name='ajax_update_facebook_get_leads'),
-    url(r'ajax/update/mysql/test_connection/', AJAXMySQLTestConnection.as_view(),
+    url(r'ajax/mysql/test_connection/', AJAXMySQLTestConnection.as_view(),
         name='ajax_update_mysql_test_connection'),
 ]

@@ -1,6 +1,8 @@
 {% extends 'commons/site_base.html' %}
 {% load static %}
 {% load bootstrap_tags %}
+{% load widget_tweaks %}
+
 {% block body %}
 <div class="box-tool animated fadeInDown">
    <div class="box-title">
@@ -10,6 +12,9 @@
       <form class="create-gear-form form-horizontal" action="" method="post" autocomplete="off">
          {% csrf_token %}
          {{ form|as_bootstrap }}
+          {#            {% render_field form.name class+="form-control input-md" placeholder="Gear Name" %}#}
+          {#            {% render_field form.source class+="form-control input-md" %}#}
+          {#            {% render_field form.source class+="form-control input-md" %}#}
          <button id="singlebutton" name="singlebutton">update name</button>
          {% if form.error %}
          <div class="error">{{ form.error }}</div>
@@ -17,4 +22,7 @@
       </form>
    </div>
 </div>
-{% endblock %}
+
+
+            
+
