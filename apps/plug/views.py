@@ -19,7 +19,7 @@ class CreatePlugView(CreateView):
     template_name = '%s/create.html' % app_name
     success_url = reverse_lazy('%s:list' % app_name)
 
-    def form_valid(self, form):
+    def form_valid(self, form, *args, **kwargs):
         form.instance.user = self.request.user
         return super(CreatePlugView, self).form_valid(form)
 

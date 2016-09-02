@@ -107,13 +107,23 @@ class MySQLConnection(models.Model):
 
 
 class Plug(models.Model):
+    ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
     name = models.CharField('name', max_length=120)
     connection = models.ForeignKey(Connection, null=True, on_delete=models.CASCADE, related_name='plug')
     action = models.ForeignKey(Action, null=True, on_delete=models.CASCADE)
+    plug_type = models.CharField(choices=ACTION_TYPE, max_length=7, default='source')
     user = models.ForeignKey(User)
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
+
+    @property
+    def is_source(self):
+        return self.plug_type == 'source'
+
+    @property
+    def is_target(self):
+        return self.plug_type == 'target'
 
     def __str__(self):
         return self.name

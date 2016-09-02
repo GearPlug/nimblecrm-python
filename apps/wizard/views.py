@@ -1,7 +1,7 @@
 from apps.gear.views import CreateGearView, UpdateGearView
 from apps.plug.views import CreatePlugView, UpdatePlugAddActionView
 from apps.connection.views import CreateConnectionView
-from apps.gp.models import Connector, Connection
+from apps.gp.models import Connector, Connection, Action
 from apps.gp.enum import ConnectorEnum
 from apps.api.controllers import FacebookController
 from django.http import JsonResponse, HttpResponseRedirect
@@ -30,6 +30,11 @@ class CreatePlugView(CreatePlugView):
     template_name = 'plug/wizard/create.html'
     fields = ['name', 'connection', ]
 
+    def form_valid(self, form, *args, **kwargs):
+        form.instance.user = self.request.user
+        form.instance.plug_type = self.kwargs['plug_type']
+        return super(CreatePlugView, self).form_valid(form)
+
     def get(self, request, *args, **kwargs):
         return super(CreatePlugView, self).get(request, *args, **kwargs)
 
@@ -38,7 +43,7 @@ class CreatePlugView(CreatePlugView):
         querykw = {}
         if self.kwargs['plug_type'] == 'target':
             querykw['is_target'] = True
-        elif self.kwargs['plug_type'] == 'sourcer':
+        elif self.kwargs['plug_type'] == 'source':
             querykw['is_source'] = True
         context['connector_list'] = Connector.objects.filter(**querykw).values('id', 'name')
         return context
@@ -46,12 +51,19 @@ class CreatePlugView(CreatePlugView):
     def get_success_url(self, *args, **kwargs):
         self.request.session[
             'source_plug_id' if self.kwargs['plug_type'] == 'source' else 'target_plug_id'] = self.object.id
-        return reverse('')
+        return reverse('wizard:plug_set_action', kwargs={'pk': self.object.id, 'plug_type': self.kwargs['plug_type']})
 
 
 class UpdatePlugSetActionView(UpdatePlugAddActionView):
     fields = ['action']
-    template_name = ''
+    template_name = 'plug/wizard/update.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(UpdatePlugSetActionView, self).get_context_data(*args, **kwargs)
+        querykw = {'action_type': self.kwargs['plug_type'],'connector_id':1}
+        context['action_list'] = Action.objects.filter(**querykw)
+        print(context['action_list'])
+        return context
 
     def get_success_url(self):
         gear_id = self.request.session['gear_id'] if self.request.session['gear_id'] is not None else 0

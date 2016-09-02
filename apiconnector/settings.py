@@ -70,16 +70,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'apiconnector.wsgi.application'
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    # }
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'OPTIONS': {
-            'read_default_file': os.path.join(BASE_DIR, 'apiconnector/mysql.cnf', )
-        },
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'OPTIONS': {
+    #         'read_default_file': os.path.join(BASE_DIR, 'apiconnector/mysql.cnf', )
+    #     },
+    # }
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -100,47 +100,48 @@ LOGGING = {
         },
     },
     'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'log/debug.log'),
-            'formatter': 'verbose',
-        },
-        'production': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'log/production.log'),
-            'formatter': 'verbose',
-        },
-        'controller': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'log/controller.log'),
-            'formatter': 'simple',
-        },
+        #         'file': {
+        #             'level': 'DEBUG',
+        #             'class': 'logging.FileHandler',
+        #             'filename': os.path.join(BASE_DIR, 'log/debug.log'),
+        #             'formatter': 'verbose',
+        #         },
+        #         'production': {
+        #             'level': 'DEBUG',
+        #             'class': 'logging.FileHandler',
+        #             'filename': os.path.join(BASE_DIR, 'log/production.log'),
+        #             'formatter': 'verbose',
+        #         },
+        #         'controller': {
+        #             'level': 'DEBUG',
+        #             'class': 'logging.FileHandler',
+        #             'filename': os.path.join(BASE_DIR, 'log/controller.log'),
+        #             'formatter': 'simple',
+        #         },
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['file', ],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'apiconnector': {
-            'handlers': ['production', ],
-            'level': 'INFO',
-            'propagate': True,
-        },
+        # 'django': {
+        #     'handlers': ['file', ],
+        #     'level': 'DEBUG',
+        #     'propagate': True,
+        # },
+        # 'apiconnector': {
+        #     'handlers': ['production', ],
+        #     'level': 'INFO',
+        #     'propagate': True,
+        # },
         'controller': {
-            'handlers': ['controller', 'console'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
         },
     },
 }
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True

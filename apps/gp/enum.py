@@ -18,8 +18,6 @@ class ConnectorEnum(Enum):
 
     def get_fields(connector):
         model = apps.get_model('gp', '%sConnection' % connector.name)
-        for f in model:
-            print(f.name)
         return [f.name for f in model._meta.get_fields() if
                 f.name != 'id' and f.name != 'connection']
 

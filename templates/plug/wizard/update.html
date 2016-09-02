@@ -1,6 +1,9 @@
 {% extends 'plug/update.html' %}
 
 {% block extra %}
-
-    <form>hola</form>
+    <select>
+        {% for action in action_list %}
+            <option value="{{ action.id }}">{{ action.name }}</option>
+        {% endfor %}
+    </select>
 {% endblock %}
