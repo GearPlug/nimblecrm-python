@@ -3,8 +3,11 @@
 {% load bootstrap_tags %}
 
 {% block body %}
-<div>plug list</div>
-<div>
+<div class="box-tool animated fadeInDown">
+<div class="box-title">
+<h2>plug list</h2>
+</div>
+<div class="panel">
     {% for plug in object_list %}
     <div>
         {{ plug.name }}
@@ -12,5 +15,6 @@
         <a href="{% url 'plug:delete' pk=plug.id %}">Eliminar</a>
     </div>
     {% endfor %}
+</div>
 </div>
 {% endblock %}

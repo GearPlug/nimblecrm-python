@@ -4,21 +4,23 @@
 {% load widget_tweaks %}
 
 {% block body %}
-    <div>update gear</div>
-    <div>
-        <form class="create-gear-form form-horizontal" action="" method="post" autocomplete="off">
-            {% csrf_token %}
-            {{ form|as_bootstrap }}
-            {#            {% render_field form.name class+="form-control input-md" placeholder="Gear Name" %}#}
-            {#            {% render_field form.source class+="form-control input-md" %}#}
-            {#            {% render_field form.source class+="form-control input-md" %}#}
-            <a href="{% url 'wizard:create_plug' plug_type='source' %}">create SOURCE plug</a>
-            <a href="{% url 'wizard:create_plug' plug_type='target' %}">create TARGET plug</a>
-            <button id="singlebutton" name="singlebutton">update name</button>
-            {% if form.error %}
-                <div class="error">{{ form.error }}</div>
-            {% endif %}
-        </form>
+    <div class="box-tool animated fadeInDown">
+        <div class="box-title">
+            <h2>update gear</h2>
+        </div>
+        <div class="panel">
+            <form class="create-gear-form form-horizontal" action="" method="post" autocomplete="off">
+                {% csrf_token %}
+                {{ form|as_bootstrap }}
+                {#            {% render_field form.name class+="form-control input-md" placeholder="Gear Name" %}#}
+                {#            {% render_field form.source class+="form-control input-md" %}#}
+                {#            {% render_field form.source class+="form-control input-md" %}#}
+                <button id="singlebutton" name="singlebutton">update name</button>
+                {% if form.error %}
+                    <div class="error">{{ form.error }}</div>
+                {% endif %}
+            </form>
+        </div>
     </div>
 {% endblock %}
 
@@ -42,3 +44,4 @@
     {% endif %}
 
 {% endblock %}
+>>>>>>> 3c2ae911decf441e50408ad9408d7d880f1ce7c0

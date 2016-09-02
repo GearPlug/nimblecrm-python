@@ -1,17 +1,35 @@
 {% extends 'commons/site_base.html' %}
 {% load static %}
 {% load bootstrap_tags %}
-
 {% block body %}
-<div>gear list</div>
-<div>
-    {% for gear in object_list %}
-    <div>
-        {{ gear.name }}
-        <a href="{% url 'gear:update' pk=gear.id %}">Editar</a>
-        <a href="{% url 'gear:delete' pk=gear.id %}">Eliminar</a>
-        <a href="{% url 'gear:map' gear_id=gear.id %}">Start Mapping</a>
-    </div>
-    {% endfor %}
+<div class="box-tool animated fadeInDown list-panel-control">
+   <div class="box-title">
+      <h2>gear list</h2>
+   </div>
+   <div class="panel clearfix">
+      <ul>
+         {% for gear in object_list %}
+         <li>
+            <div class="name col-md-8 col-sm-6 col-xs-6">            
+               <p>{{ gear.name }}</p>
+            </div>
+            <div class="panel-control col-md-4 col-sm-6 col-xs-6">            
+               <p><a href="{% url 'gear:update' pk=gear.id %}"><i class="fa fa-pencil" aria-hidden="true"></i>  Editar</a></p>
+               <p><a href="{% url 'gear:map' gear_id=gear.id %}"><i class="fa fa-play" aria-hidden="true"></i>  Start Mapping</a></p>
+               <p><a href="{% url 'gear:delete' pk=gear.id %}"><i class="fa fa-trash" aria-hidden="true"></i>  Eliminar</a></p>
+            </div>
+         </li>
+         {% empty %}
+         <li>
+         <div class="List-empty">
+            <div class="panel">
+               <h1>You don't have any gears created yet...</h1>
+               <p>If you want to create your firts gear. Just click right <a href="/gear/create/">here</a></p>
+            </div>
+         </div>
+         </li>
+         {% endfor %}
+      </ul>
+   </div>
 </div>
 {% endblock %}

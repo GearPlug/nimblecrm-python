@@ -11,12 +11,11 @@
     <div class="login-home">
         <div class="loginpage">
             <div class="login-page">
-                <div class="form col-sm-4 col-sm-offset-3">
-                    <form class="login-form form-horizontal" action="{% url 'account_login' %}" method="post"
-                          autocomplete="off">
+                <div class="form col-md-4 col-sm-8 col-xs-12">
+                    <form class="login-form form-horizontal" action="{% url 'account_login' %}" method="post" autocomplete="off">
                         {% csrf_token %}
                         <div class="logo">
-                            <img src="{% static 'img/logo_gearplug.png' %}">
+                            <img src="{% static 'img/Logo_blanco.png' %}" class="img-responsive">
                         </div>
                         <p>Enter your e-mail acount and your password to sign in</p>
                         {{ form|as_bootstrap_inline }}
@@ -26,8 +25,7 @@
                         {% if form.error %}
                             <div class="error">{{ form.error }}</div>
                         {% endif %}
-                        <p class="message">Not registered? <a href="{% url 'account_signup' %}">Create an account</a>
-                        </p>
+                        <p class="message">Not registered? <a href="{% url 'account_signup' %}">Create an account</a></p>
                     </form>
                 </div>
             </div>

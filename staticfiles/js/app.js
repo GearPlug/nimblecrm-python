@@ -25,6 +25,9 @@
         connectors_breadCrumbs();
 
         //stepactive();
+        $('.nav.child_menu > li > a').click(function(){
+          $('.box-tool').addClass('fadeOutUp')
+        });
 
     })
     $(window).load(function () {
