@@ -15,6 +15,9 @@ class CreateGearView(CreateGearView):
 
     def get_success_url(self):
         self.request.session['gear_id'] = self.object.id
+        self.request.session['source_plug_id'] = None
+        self.request.session['target_plug_id'] = None
+        self.request.session['auto_select_connection_id'] = None
         return reverse('wizard:set_gear_plugs', kwargs={'pk': self.object.id})
 
 
@@ -60,7 +63,7 @@ class UpdatePlugSetActionView(UpdatePlugAddActionView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(UpdatePlugSetActionView, self).get_context_data(*args, **kwargs)
-        querykw = {'action_type': self.kwargs['plug_type'],'connector_id':1}
+        querykw = {'action_type': self.kwargs['plug_type'], 'connector_id': 1}
         context['action_list'] = Action.objects.filter(**querykw)
         print(context['action_list'])
         return context
