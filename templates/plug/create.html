@@ -3,8 +3,11 @@
 {% load bootstrap_tags %}
 
 {% block body %}
-<div>new plug</div>
-<div>
+<div class="box-tool animated fadeInDown">
+<div class="box-title">
+<h2>new plug</h2>
+</div>
+<div class="panel">
     <form class="create-plug-form form-horizontal" action="" method="post" autocomplete="off">
         {% csrf_token %}
         {{ form|as_bootstrap }}
@@ -13,5 +16,6 @@
         <div class="error">{{ form.error }}</div>
         {% endif %}
     </form>
+</div>
 </div>
 {% endblock %}

@@ -7,6 +7,7 @@
 {% block head_title %}{% trans "Account" %}{% endblock %}
 
 {% block body %}
+<div class="box-tool animated fadeInDown">
     <div class="row">
         <div class="col-md-5">
             <form method="POST" action="{% url "account_settings" %}">
@@ -18,5 +19,6 @@
         </div>
 
     <a href="{% url 'account_delete' %}">Delete account</a>
+    </div>
     </div>
 {% endblock %}

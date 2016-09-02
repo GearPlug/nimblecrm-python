@@ -3,12 +3,16 @@
 {% load bootstrap_tags %}
 
 {% block body %}
-<div>update plug</div>
-<div>
+<div class="box-tool animated fadeInDown">
+<div class="box-title">
+<h2>update plug</h2>
+</div>
+<div class="panel">
     <form class="delete-plug-form form-horizontal" action="" method="post">
         {% csrf_token %}
         <p>Are you sure you want to delete plug: "{{ object.name }}"?</p>
         <input type="submit" value="Confirm"/>
     </form>
+</div>
 </div>
 {% endblock %}

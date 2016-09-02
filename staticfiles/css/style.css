@@ -3,6 +3,7 @@
    */
    /* Move down content because we have a fixed navbar that is 50px tall */
    body {
+    background: #2d2d2d none repeat scroll 0 0;
    padding: 0;
    margin: 0 auto;
    width: 100%;
@@ -33,7 +34,7 @@
    margin: 0 auto;
    position: absolute;
    right: 0;
-   top: 10%;
+   top: 20%;
    width: 100%;
    }
    .centerct {
@@ -76,6 +77,15 @@
    text-align: center;
    width: 100%;
    }
+   .form .checkbox > label {
+    color: #fff;
+    width: 100%;
+  }
+  .form .checkbox input[type="checkbox"] {
+    margin-bottom: 0;
+    position: static;
+    width: 15%;
+  }
    .form button {
    background: #ed3b3d none repeat scroll 0 0;
    border: 0 none;
@@ -295,11 +305,7 @@
    .page-title .introw h1 {
     border-bottom: 1px solid #e6e9ed;
     padding-bottom: 8px;
-    }
-   .nav_title {
-   background: #ededed none repeat scroll 0 0;
-   border-right: 1px solid #ccc !important;
-   }
+    }   
    .site_title {
     padding: 4px 2px;
   }
@@ -308,22 +314,25 @@
    width: 100%;
    }
    .nav_menu {
+    background-color: #2d2d2d;
     margin-bottom: 0;
     position: static;
     }
-   .nav_title, .nav_menu {
-   background: #efefef none repeat scroll 0 0;
-   box-shadow: 0 2px 5px #c3c3c3;
-   }
+    .nav_title {
+    background-color: #424242;
+    }   
    .toggle a i {
    color: #888;
    }
    .left_col {
-   background: #ed3b3d none repeat scroll 0 0;
+   background: #2d2d2d none repeat scroll 0 0;
    }
    body .container.body .right_col {
    background-color: #f6f6f6;   
     overflow: hidden;
+   }
+   .nav.navbar-nav > li > a{
+    color: #888888 !important;
    }
    .nav.side-menu > li > a, .nav.child_menu > li > a {
    color: #fff;
@@ -354,7 +363,7 @@
    border-right: none;
    }
    .nav.side-menu li.active .nav.child_menu {
-   background: #2a3f54 none repeat scroll 0 0;
+   background: #424242 none repeat scroll 0 0;
    }
    .centertext {
     margin: 0 auto;
@@ -388,9 +397,6 @@
    line-height: 80px;
    width: 80px;
    }
-
-
-
    /*
    ** NEW MENU WIZARD **
    **
@@ -434,8 +440,6 @@
    ** NEW MENU WIZARD **
    **
    */
-
-
    .wizard_horizontal .buttonFinish {
    display: none;
    }
@@ -458,12 +462,12 @@
     }
     .stepContainer .centerct .info {
     text-align: center;
-}
+    }
     .StepTitle {
     font-size: 30px;
     height: auto;
     margin: 3% 0;
-}
+    }
     .name_task.top_search .form-control {
     border: 1px solid #34495e;
     border-radius: 25px;
@@ -509,7 +513,6 @@
         -webkit-animation: bubblingG 1.5s infinite alternate;
         -moz-animation: bubblingG 1.5s infinite alternate;
     }
-
     #bubblingG_1 {
       animation-delay: 0s;
         -o-animation-delay: 0s;
@@ -517,7 +520,6 @@
         -webkit-animation-delay: 0s;
         -moz-animation-delay: 0s;
     }
-
     #bubblingG_2 {
       animation-delay: 0.45s;
         -o-animation-delay: 0.45s;
@@ -525,7 +527,6 @@
         -webkit-animation-delay: 0.45s;
         -moz-animation-delay: 0.45s;
     }
-
     #bubblingG_3 {
       animation-delay: 0.9s;
         -o-animation-delay: 0.9s;
@@ -533,9 +534,6 @@
         -webkit-animation-delay: 0.9s;
         -moz-animation-delay: 0.9s;
     }
-
-
-
     @keyframes bubblingG {
       0% {
         width: 7px;
@@ -616,44 +614,44 @@
       }
     }
     #spinningSquaresG{
-  position:relative;
-  width:234px;
-  height:28px;
-  margin:auto;
-}
+      position:relative;
+      width:234px;
+      height:28px;
+      margin:auto;
+    }
 
-.spinningSquaresG{
-  position:absolute;
-  top:0;
-  background-color:rgb(0,0,0);
-  width:28px;
-  height:28px;
-  animation-name:bounce_spinningSquaresG;
-    -o-animation-name:bounce_spinningSquaresG;
-    -ms-animation-name:bounce_spinningSquaresG;
-    -webkit-animation-name:bounce_spinningSquaresG;
-    -moz-animation-name:bounce_spinningSquaresG;
-  animation-duration:1.5s;
-    -o-animation-duration:1.5s;
-    -ms-animation-duration:1.5s;
-    -webkit-animation-duration:1.5s;
-    -moz-animation-duration:1.5s;
-  animation-iteration-count:infinite;
-    -o-animation-iteration-count:infinite;
-    -ms-animation-iteration-count:infinite;
-    -webkit-animation-iteration-count:infinite;
-    -moz-animation-iteration-count:infinite;
-  animation-direction:normal;
-    -o-animation-direction:normal;
-    -ms-animation-direction:normal;
-    -webkit-animation-direction:normal;
-    -moz-animation-direction:normal;
-  transform:scale(.3);
-    -o-transform:scale(.3);
-    -ms-transform:scale(.3);
-    -webkit-transform:scale(.3);
-    -moz-transform:scale(.3);
-}
+    .spinningSquaresG{
+      position:absolute;
+      top:0;
+      background-color:rgb(0,0,0);
+      width:28px;
+      height:28px;
+      animation-name:bounce_spinningSquaresG;
+        -o-animation-name:bounce_spinningSquaresG;
+        -ms-animation-name:bounce_spinningSquaresG;
+        -webkit-animation-name:bounce_spinningSquaresG;
+        -moz-animation-name:bounce_spinningSquaresG;
+      animation-duration:1.5s;
+        -o-animation-duration:1.5s;
+        -ms-animation-duration:1.5s;
+        -webkit-animation-duration:1.5s;
+        -moz-animation-duration:1.5s;
+      animation-iteration-count:infinite;
+        -o-animation-iteration-count:infinite;
+        -ms-animation-iteration-count:infinite;
+        -webkit-animation-iteration-count:infinite;
+        -moz-animation-iteration-count:infinite;
+      animation-direction:normal;
+        -o-animation-direction:normal;
+        -ms-animation-direction:normal;
+        -webkit-animation-direction:normal;
+        -moz-animation-direction:normal;
+      transform:scale(.3);
+        -o-transform:scale(.3);
+        -ms-transform:scale(.3);
+        -webkit-transform:scale(.3);
+        -moz-transform:scale(.3);
+    }
 
 #spinningSquaresG_1{
   left:0;
@@ -726,9 +724,6 @@
     -webkit-animation-delay:1.64s;
     -moz-animation-delay:1.64s;
 }
-
-
-
 @keyframes bounce_spinningSquaresG{
   0%{
     transform:scale(1);
@@ -740,7 +735,6 @@
     background-color:rgb(255,255,255);
   }
 }
-
 @-o-keyframes bounce_spinningSquaresG{
   0%{
     -o-transform:scale(1);
@@ -752,7 +746,6 @@
     background-color:rgb(255,255,255);
   }
 }
-
 @-ms-keyframes bounce_spinningSquaresG{
   0%{
     -ms-transform:scale(1);
@@ -764,7 +757,6 @@
     background-color:rgb(255,255,255);
   }
 }
-
 @-webkit-keyframes bounce_spinningSquaresG{
   0%{
     -webkit-transform:scale(1);
@@ -776,7 +768,6 @@
     background-color:rgb(255,255,255);
   }
 }
-
 @-moz-keyframes bounce_spinningSquaresG{
   0%{
     -moz-transform:scale(1);
@@ -1099,7 +1090,62 @@
 .sugarcrm .inputs form input {
     border: 1px solid #FF1820;
 }
-
+.list-panel-control ul {
+    list-style: outside none none;
+    padding: 0;
+    width: 100%;
+}
+.list-panel-control ul li {
+    box-sizing: border-box;
+    display: block;
+    padding: 10px 0;
+    width: 100%;
+}
+.panel-control p {
+    display: inline-block;    
+    padding-right: 30px;
+}
+/*
+** Boxes
+*******************************************************/
+.box-tool {
+    border: 1px solid #ccc;
+    margin-top: 20px;
+    padding: 30px;
+    position: relative;
+}
+.box-title {
+    background-color: #f6f6f6;
+    padding: 0 10px;
+    position: absolute;
+    top: -26px;
+}
+.box-title > h2 {
+    font-size: 24px;
+    text-transform: capitalize;
+}
+.panel {
+    background-color: transparent;
+  }
+  .list-panel-control ul {
+    list-style: outside none none;
+    width: 100%;
+}
+.List-empty {
+    margin: 0 auto;
+    padding: 60px;
+    text-align: center;
+    width: 100%;
+}
+/*
+** Footer
+*******************************************************/
+.sidebar-footer {
+    background: #424242 none repeat scroll 0 0;
+}
+.sidebar-footer a {
+    background: #424242 none repeat scroll 0 0;
+}
 /*
 ** Responsive
 *******************************************************/
