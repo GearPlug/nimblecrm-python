@@ -1,23 +1,29 @@
 from apps.gear.views import CreateGearView, UpdateGearView
 from apps.plug.views import CreatePlugView, UpdatePlugAddActionView
 from apps.connection.views import CreateConnectionView
-from apps.gp.models import Connector, Connection, Action
+from apps.gp.models import Connector, Connection, Action, Plug
 from apps.gp.enum import ConnectorEnum
-from apps.api.controllers import FacebookController
+from apps.api.controllers import FacebookController, MySQLController
 from django.http import JsonResponse, HttpResponseRedirect
 from django.urls import reverse
+import copy
 
 fbc = FacebookController()
+mysqlc = MySQLController()
 
 
 class CreateGearView(CreateGearView):
     template_name = 'gear/create.html'
 
-    def get_success_url(self):
-        self.request.session['gear_id'] = self.object.id
+    def get(self, request, *args, **kwargs):
         self.request.session['source_plug_id'] = None
         self.request.session['target_plug_id'] = None
         self.request.session['auto_select_connection_id'] = None
+        self.request.session['gear_id'] = None
+        return super(CreateGearView, self).get(request, *args, **kwargs)
+
+    def get_success_url(self):
+        self.request.session['gear_id'] = self.object.id
         return reverse('wizard:set_gear_plugs', kwargs={'pk': self.object.id})
 
 
@@ -28,6 +34,11 @@ class SetGearPlugsView(UpdateGearView):
         self.request.session['gear_id'] = self.object.id
         return reverse('wizard:set_gear_plugs', kwargs={'pk': self.object.id})
 
+    def form_valid(self, form, *args, **kwargs):
+        self.request.session['source_plug_id'] = None
+        self.request.session['target_plug_id'] = None
+        return super(SetGearPlugsView, self).form_valid(form, *args, **kwargs)
+
 
 class CreatePlugView(CreatePlugView):
     template_name = 'plug/wizard/create.html'
@@ -37,9 +48,6 @@ class CreatePlugView(CreatePlugView):
         form.instance.user = self.request.user
         form.instance.plug_type = self.kwargs['plug_type']
         return super(CreatePlugView, self).form_valid(form)
-
-    def get(self, request, *args, **kwargs):
-        return super(CreatePlugView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):
         context = super(CreatePlugView, self).get_context_data(*args, **kwargs)
@@ -63,13 +71,24 @@ class UpdatePlugSetActionView(UpdatePlugAddActionView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(UpdatePlugSetActionView, self).get_context_data(*args, **kwargs)
-        querykw = {'action_type': self.kwargs['plug_type'], 'connector_id': 1}
+        querykw = {'action_type': self.kwargs['plug_type'], 'connector_id': self.object.connection.connector.id}
         context['action_list'] = Action.objects.filter(**querykw)
-        print(context['action_list'])
         return context
 
     def get_success_url(self):
-        gear_id = self.request.session['gear_id'] if self.request.session['gear_id'] is not None else 0
+        try:
+            gear_id = self.request.session['gear_id']
+        except:
+            gear_id = 0
+        if self.kwargs['plug_type'] == 'source':
+            c = ConnectorEnum.get_connector(self.object.connection.connector.id)
+            if c == ConnectorEnum.Facebook:
+                fbc.download_leads_to_stored_data(self.object.connection.related_connection)
+            elif c == ConnectorEnum.MySQL:
+                ping = mysqlc.create_connection(self.object.connection.related_connection)
+                if ping:
+                    res = mysqlc.select_all()
+
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 
@@ -92,7 +111,6 @@ class CreateConnectionView(CreateConnectionView):
                             break
                     if page_token:
                         form.instance.token = page_token
-                    fbc.download_leads_to_stored_data(form.instance)
             self.object = form.save()
             self.request.session['auto_select_connection_id'] = c.id
             return JsonResponse({'data': self.object.id is not None})

@@ -78,7 +78,7 @@ class Connection(models.Model):
         return 'Object not found'
 
     def __str__(self):
-        return self.name
+        return '%s' % self.name
 
 
 class FacebookConnection(models.Model):

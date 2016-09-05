@@ -70,7 +70,7 @@ class CreateGearMapView(FormView):
         target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
             pk=gear.target.id)
         self.plug_as_target(target_plug)
-        form = self.get_form()
+        # form = self.get_form()
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
 
     def form_valid(self, form, *args, **kwargs):
@@ -108,6 +108,7 @@ class CreateGearMapView(FormView):
                 connection_data[field] = ''
         self.source_object_list = ['%%%%%s%%%%' % item['name'] for item in  # ==> %%field_name%%
                                    self.get_source_data_list(c, plug.connection, connection_data)]
+        print("si")
         print(self.source_object_list)
 
     def plug_as_target(self, plug, *args, **kwargs):
@@ -128,7 +129,7 @@ class CreateGearMapView(FormView):
         self.form_field_list = [item['name'] for item in form_data if item['is_primary'] is not True]
 
     def get_source_data_list(self, Connector, connection, connection_data):
-        print(connection.id)
+        print(StoredData.objects.filter(connection=connection))
         return StoredData.objects.filter(connection=connection).values('name').distinct()
 
     def get_mysql_table_info(self, Connector, plug, connection_data):

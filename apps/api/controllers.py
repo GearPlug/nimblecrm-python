@@ -7,6 +7,7 @@ import hmac
 import hashlib
 import logging
 import MySQLdb
+import copy
 
 logger = logging.getLogger('controller')
 
@@ -79,8 +80,8 @@ class FacebookController(object):
                                               connection=connection.connection)
                                    for lead in item['field_data'] if
                                    (connection.connection, item['id'], lead['name']) not in stored_data]
-            # logger.info('Facebook Controller >> NEW LEADS: %s' % new_data)
-            # StoredData.objects.bulk_create(new_data)
+        logger.info('Facebook Controller >> NEW LEADS for connection: %s' % connection.id)
+        StoredData.objects.bulk_create(new_data)
 
 
 class MySQLController(object):
@@ -93,15 +94,29 @@ class MySQLController(object):
         self.create_connection(*args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
-        try:
-            host = kwargs.pop('host', 'host')
-            port = kwargs.pop('port', 'puerto')
-            user = kwargs.pop('connection_user', 'usuario')
-            password = kwargs.pop('connection_password', 'clave')
-            self.database = kwargs.pop('database', 'database')
-            self.table = kwargs.pop('table', 'table')
-        except:
-            pass
+        if args:
+            try:
+                connection = args[0]
+                host = connection.host
+                port = connection.port
+                user = connection.connection_user
+                password = connection.connection_password
+                self.database = connection.database
+                self.table = connection.table
+            except:
+                print("Error gettig the MySQL attributes")
+                pass
+        elif kwargs:
+            try:
+                host = kwargs.pop('host', 'host')
+                port = kwargs.pop('port', 'puerto')
+                user = kwargs.pop('connection_user', 'usuario')
+                password = kwargs.pop('connection_password', 'clave')
+                self.database = kwargs.pop('database', 'database')
+                self.table = kwargs.pop('table', 'table')
+            except:
+                print("Error gettig the MySQL attributes")
+                pass
         try:
             self.connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self.database)
             self.cursor = self.connection.cursor()
@@ -134,3 +149,18 @@ class MySQLController(object):
             except:
                 print('Error ')
         return []
+
+    def select_all(self):
+        if self.table is not None and self.database is not None:
+            try:
+                self.cursor.execute('SELECT * FROM `%s`.`%s`' % (self.database, self.table))
+                cursor_select_all = copy.copy(self.cursor)
+                self.describe_table()
+                cursor_describe = self.cursor
+                return [{column[0]: item[i] for i, column in enumerate(cursor_describe)} for item in cursor_select_all]
+            except:
+                print('Error ')
+        return []
+
+    def download_to_stored_data(self):
+        data = self.select_all()
