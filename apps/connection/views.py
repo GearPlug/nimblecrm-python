@@ -113,9 +113,11 @@ class TestConnectionView(TemplateViewWithPost):
     template_name = 'test.html'
 
     def get_context_data(self, *args, **kwargs):
+        print("hola")
         context = super(TestConnectionView, self).get_context_data(**kwargs)
         map_list = GearMap.objects.filter(is_active=True, gear__is_active=True) \
             .select_related('gear__source', 'gear__target', )
+        print(map_list)
         for map in map_list:
             stored = StoredData.objects.filter(connection=map.gear.source.connection)
             target_data = {data.target_name: data.source_value for data in GearMapData.objects.filter(gear_map=map)}

@@ -7,12 +7,14 @@ from apps.api.controllers import FacebookController, MySQLController
 from django.http import JsonResponse, HttpResponseRedirect
 from django.urls import reverse
 import copy
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 fbc = FacebookController()
 mysqlc = MySQLController()
 
 
-class CreateGearView(CreateGearView):
+class CreateGearView(LoginRequiredMixin, CreateGearView):
+    login_url = '/account/login/'
     template_name = 'gear/create.html'
 
     def get(self, request, *args, **kwargs):
@@ -27,7 +29,8 @@ class CreateGearView(CreateGearView):
         return reverse('wizard:set_gear_plugs', kwargs={'pk': self.object.id})
 
 
-class SetGearPlugsView(UpdateGearView):
+class SetGearPlugsView(LoginRequiredMixin, UpdateGearView):
+    login_url = '/account/login/'
     template_name = 'gear/update.html'
 
     def get_success_url(self):
@@ -40,7 +43,7 @@ class SetGearPlugsView(UpdateGearView):
         return super(SetGearPlugsView, self).form_valid(form, *args, **kwargs)
 
 
-class CreatePlugView(CreatePlugView):
+class CreatePlugView(LoginRequiredMixin, CreatePlugView):
     template_name = 'plug/wizard/create.html'
     fields = ['name', 'connection', ]
 
@@ -65,7 +68,7 @@ class CreatePlugView(CreatePlugView):
         return reverse('wizard:plug_set_action', kwargs={'pk': self.object.id, 'plug_type': self.kwargs['plug_type']})
 
 
-class UpdatePlugSetActionView(UpdatePlugAddActionView):
+class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
     fields = ['action']
     template_name = 'plug/wizard/update.html'
 
@@ -79,20 +82,22 @@ class UpdatePlugSetActionView(UpdatePlugAddActionView):
         try:
             gear_id = self.request.session['gear_id']
         except:
-            gear_id = 0
+            gear_id = None
+        if gear_id is None:
+            return reverse('wizard:create_gear')
         if self.kwargs['plug_type'] == 'source':
             c = ConnectorEnum.get_connector(self.object.connection.connector.id)
+            conn = self.object.connection.related_connection
             if c == ConnectorEnum.Facebook:
-                fbc.download_leads_to_stored_data(self.object.connection.related_connection)
+                fbc.download_leads_to_stored_data(conn)
             elif c == ConnectorEnum.MySQL:
-                ping = mysqlc.create_connection(self.object.connection.related_connection)
+                ping = mysqlc.create_connection(conn)
                 if ping:
-                    res = mysqlc.select_all()
-
+                    res = mysqlc.download_to_stored_data(conn)
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 
-class CreateConnectionView(CreateConnectionView):
+class CreateConnectionView(LoginRequiredMixin, CreateConnectionView):
     fields = []
 
     def form_valid(self, form, *args, **kwargs):

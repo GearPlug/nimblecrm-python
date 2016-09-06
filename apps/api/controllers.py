@@ -122,7 +122,6 @@ class MySQLController(object):
             self.cursor = self.connection.cursor()
         except:
             self.connection = None
-            print("Error reaching the database")
         return self.connection is not None
 
     def set_cursor(self):
@@ -150,6 +149,15 @@ class MySQLController(object):
                 print('Error ')
         return []
 
+    def get_primary_keys(self):
+        if self.table is not None and self.database is not None:
+            try:
+                self.cursor.execute('DESCRIBE `%s`.`%s`' % (self.database, self.table))
+                return [item[0] for item in self.cursor if item[3] == 'PRI']
+            except:
+                print('Error ')
+        return None
+
     def select_all(self):
         if self.table is not None and self.database is not None:
             try:
@@ -162,5 +170,18 @@ class MySQLController(object):
                 print('Error ')
         return []
 
-    def download_to_stored_data(self):
+    def download_to_stored_data(self, connection_object):
         data = self.select_all()
+        stored_data = [(item.connection, item.object_id, item.name) for item in
+                       StoredData.objects.filter(connection=connection_object.connection)]
+        id_list = self.get_primary_keys()
+        parsed_data = [{'id': tuple(item[key] for key in id_list),
+                        'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]} for
+                       item in data]
+        new_data = []
+        new_data = new_data + [StoredData(name=item['name'], value=item['value'], object_id=row['id'][0],
+                                          connection=connection_object.connection)
+                               for row in parsed_data for item in row['data'] if
+                               (connection_object.connection, row['id'][0], item['name']) not in stored_data]
+        logger.info('MySQL Controller >> NEW ROWs for connection: %s' % connection_object.connection.id)
+        StoredData.objects.bulk_create(new_data)

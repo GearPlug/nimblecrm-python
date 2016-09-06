@@ -60,8 +60,8 @@ class CreateGearMapView(FormView):
             pk=gear.source.id)
         target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
             pk=gear.target.id)
-        self.plug_as_target(target_plug)
-        self.plug_as_source(source_plug)
+        self.source_object_list = self.get_available_source_fields(source_plug)
+        self.form_field_list = self.get_target_field_list(target_plug)
         return super(CreateGearMapView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -69,12 +69,11 @@ class CreateGearMapView(FormView):
         gear = Gear.objects.filter(pk=gear_id).select_related('source', 'target').get(pk=gear_id)
         target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
             pk=gear.target.id)
-        self.plug_as_target(target_plug)
-        # form = self.get_form()
+        self.form_field_list = self.get_target_field_list(target_plug)
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
 
     def form_valid(self, form, *args, **kwargs):
-        print(form.cleaned_data)
+        print('form valid')
         map = GearMap.objects.create(gear_id=self.kwargs['gear_id'], is_active=False)
         map_data = []
         for field in form:
@@ -95,8 +94,7 @@ class CreateGearMapView(FormView):
         form_class = self.get_form_class()
         return form_class(extra=self.form_field_list, **self.get_form_kwargs())
 
-    # asigna la lista de objetos del source
-    def plug_as_source(self, plug, *args, **kwargs):
+    def get_available_source_fields(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
         fields = ConnectorEnum.get_fields(c)
         related = plug.connection.related_connection
@@ -106,50 +104,45 @@ class CreateGearMapView(FormView):
                 connection_data[field] = getattr(related, field)
             else:
                 connection_data[field] = ''
-        self.source_object_list = ['%%%%%s%%%%' % item['name'] for item in  # ==> %%field_name%%
-                                   self.get_source_data_list(c, plug.connection, connection_data)]
-        print("si")
-        print(self.source_object_list)
+        return ['%%%%%s%%%%' % item['name'] for item in self.get_source_data_list(c, plug.connection, connection_data)]
 
-    def plug_as_target(self, plug, *args, **kwargs):
+    def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
         fields = ConnectorEnum.get_fields(c)
         related = plug.connection.related_connection
         connection_data = {}
+        print(fields)
         for field in fields:
             if hasattr(related, field):
                 connection_data[field] = getattr(related, field)
             else:
                 connection_data[field] = ''
-        mysqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
-                                 connection_user=connection_data['connection_user'],
-                                 connection_password=connection_data['connection_password'],
-                                 database=connection_data['database'], table=connection_data['table'])
-        form_data = mysqlc.describe_table()
-        self.form_field_list = [item['name'] for item in form_data if item['is_primary'] is not True]
+        if c == ConnectorEnum.MySQL:
+            mysqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
+                                     connection_user=connection_data['connection_user'],
+                                     connection_password=connection_data['connection_password'],
+                                     database=connection_data['database'], table=connection_data['table'])
+            form_data = mysqlc.describe_table()
+            return [item['name'] for item in form_data if item['is_primary'] is not True]
+        else:
+            return []
+
+    # def plug_as_target(self, plug, *args, **kwargs):
+    #     c = ConnectorEnum.get_connector(plug.connection.connector.id)
+    #     fields = ConnectorEnum.get_fields(c)
+    #     related = plug.connection.related_connection
+    #     connection_data = {}
+    #     for field in fields:
+    #         if hasattr(related, field):
+    #             connection_data[field] = getattr(related, field)
+    #         else:
+    #             connection_data[field] = ''
+    #     mysqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
+    #                              connection_user=connection_data['connection_user'],
+    #                              connection_password=connection_data['connection_password'],
+    #                              database=connection_data['database'], table=connection_data['table'])
+    #     form_data = mysqlc.describe_table()
+    #     self.form_field_list = [item['name'] for item in form_data if item['is_primary'] is not True]
 
     def get_source_data_list(self, Connector, connection, connection_data):
-        print(StoredData.objects.filter(connection=connection))
         return StoredData.objects.filter(connection=connection).values('name').distinct()
-
-    def get_mysql_table_info(self, Connector, plug, connection_data):
-        table_data = []
-        try:
-            con = MySQLdb.connect(host=connection_data['host'], port=int(connection_data['port']),
-                                  user=connection_data['connection_user'],
-                                  passwd=connection_data['connection_password'],
-                                  db=connection_data['database'])
-        except:
-            con = None
-            print("Error reaching the database")
-        if con:
-            try:
-                cursor = con.cursor()
-                # cursor.execute('USE %s' % connection_data['database'])
-                cursor.execute('DESCRIBE `%s`.`%s`' % (connection_data['database'], connection_data['table']))
-                for item in cursor:
-                    table_data.append(
-                        {'name': item[0], 'type': item[1], 'null': 'YES' == item[2], 'is_primary': item[3] == 'PRI'})
-            except Exception as e:
-                print(e)
-        return table_data
