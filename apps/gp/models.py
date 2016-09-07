@@ -139,7 +139,8 @@ class PlugSpecification(models.Model):
 
 
 class StoredData(models.Model):
-    connection = models.ForeignKey(Connection, related_name='stored_data', default=1)
+    plug = models.ForeignKey(Plug, related_name='stored_data')
+    connection = models.ForeignKey(Connection, related_name='stored_data')
     name = models.CharField('name', max_length=300)
     value = models.CharField('value', max_length=3000)
     datetime = models.DateTimeField(auto_now_add=True)
@@ -164,7 +165,7 @@ class GearMap(models.Model):
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
     is_active = models.BooleanField('is active', default=True)
-    last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', default=1)
+    last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', null=True, default=None)
 
     class Meta:
         unique_together = ['id', 'gear']

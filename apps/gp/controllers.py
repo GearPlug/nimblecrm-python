@@ -16,9 +16,17 @@ class FacebookController(object):
     app_id = FACEBOOK_APP_ID
     app_secret = FACEBOOK_APP_SECRET
     base_graph_url = 'https://graph.facebook.com'
+    connection_object = None
+    plug = None
 
     def __init__(self, *args, **kwargs):
-        pass
+        if args:
+            self.connection_object = args[0]
+            try:
+                self.plug = args[1]
+            except:
+                print(
+                    "Error:FacebookController with connection: %s has no plug." % self.connection_object.connection.id)
 
     # Does a facebook request. Returns an array with the response or an empty array
     def send_request(self, url='', token='', base_url='', params=[]):
@@ -70,25 +78,36 @@ class FacebookController(object):
         url = '%s/leads' % form_id
         return self.send_request(url=url, token=access_token)
 
-    def download_leads_to_stored_data(self, connection):
-        leads = self.get_leads(connection.token, connection.id_form)
+    def download_leads_to_stored_data(self, connection_object, plug):
+        if plug is None:
+            plug = self.plug
+        leads = self.get_leads(connection_object.token, connection_object.id_form)
         stored_data = [(item.connection, item.object_id, item.name) for item in
-                       StoredData.objects.filter(connection=connection.connection)]
+                       StoredData.objects.filter(connection=connection_object.connection)]
         new_data = []
         for item in leads:
             new_data = new_data + [StoredData(name=lead['name'], value=lead['values'][0], object_id=item['id'],
-                                              connection=connection.connection)
+                                              connection=connection_object.connection, plug=plug)
                                    for lead in item['field_data'] if
-                                   (connection.connection, item['id'], lead['name']) not in stored_data]
-        logger.info('Facebook Controller >> NEW LEADS for connection: %s' % connection.id)
+                                   (connection_object.connection, item['id'], lead['name']) not in stored_data]
+        logger.info('Facebook Controller >> NEW LEADS for connection id:%s  Number of entries: %s' % (
+            connection_object.connection.id, len(new_data)))
         StoredData.objects.bulk_create(new_data)
+
+    def download_source_data(self):
+        if self.connection_object is not None and self.plug is not None:
+            self.download_leads_to_stored_data(self.connection_object)
+        else:
+            print("Error, there's no connection or plug")
 
 
 class MySQLController(object):
+    connection_object = None
     connection = None
     cursor = None
     database = None
     table = None
+    plug = None
 
     def __init__(self, *args, **kwargs):
         self.create_connection(*args, **kwargs)
@@ -96,16 +115,21 @@ class MySQLController(object):
     def create_connection(self, *args, **kwargs):
         if args:
             try:
-                connection = args[0]
-                host = connection.host
-                port = connection.port
-                user = connection.connection_user
-                password = connection.connection_password
-                self.database = connection.database
-                self.table = connection.table
+                self.connection_object = args[0]
+                host = self.connection_object.host
+                port = self.connection_object.port
+                user = self.connection_object.connection_user
+                password = self.connection_object.connection_password
+                self.database = self.connection_object.database
+                self.table = self.connection_object.table
             except:
                 print("Error gettig the MySQL attributes")
                 pass
+            try:
+                self.plug = args[1]
+            except:
+                print(
+                    "Error:MySQLController with connection: %s has no plug." % self.connection_object.connection.id)
         elif kwargs:
             try:
                 host = kwargs.pop('host', 'host')
@@ -170,18 +194,32 @@ class MySQLController(object):
                 print('Error ')
         return []
 
-    def download_to_stored_data(self, connection_object):
-        data = self.select_all()
-        stored_data = [(item.connection, item.object_id, item.name) for item in
+    def download_to_stored_data(self, connection_object, plug):
+        if plug is None:
+            plug = self.plug
+        source_data = self.select_all()
+        print(source_data)
+        print("\n----------------------\n")
+        stored_data = [(item.connection.id, item.object_id, item.name) for item in
                        StoredData.objects.filter(connection=connection_object.connection)]
         id_list = self.get_primary_keys()
-        parsed_data = [{'id': tuple(item[key] for key in id_list),
-                        'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]} for
-                       item in data]
+        parsed_source_data = [{'id': tuple(item[key] for key in id_list),
+                               'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}
+                              for item in source_data]
+        # for d in parsed_data:
+        #     print(d)
+        print("\n----------------------\n")
         new_data = []
         new_data = new_data + [StoredData(name=item['name'], value=item['value'], object_id=row['id'][0],
-                                          connection=connection_object.connection)
-                               for row in parsed_data for item in row['data'] if
-                               (connection_object.connection, row['id'][0], item['name']) not in stored_data]
-        logger.info('MySQL Controller >> NEW ROWs for connection: %s' % connection_object.connection.id)
-        StoredData.objects.bulk_create(new_data)
+                                          connection=connection_object.connection, plug=plug)
+                               for row in parsed_source_data for item in row['data'] if
+                               (connection_object.connection.id, row['id'][0], item['name']) not in stored_data]
+        # logger.info('MySQL Controller >> NEW ROWs for connection id:%s  Number of entries: %s' % (
+        #     connection_object.connection.id, len(new_data)))
+        # StoredData.objects.bulk_create(new_data)
+
+    def download_source_data(self):
+        if self.connection_object is not None and self.plug is not None:
+            self.download_to_stored_data(self.connection_object)
+        else:
+            print("Error, there's no connection or plug")

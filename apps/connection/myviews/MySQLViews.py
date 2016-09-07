@@ -1,8 +1,7 @@
-from apps.gp.views import TemplateViewWithPost
-import MySQLdb
 from django.http import JsonResponse
-from apps.connection.apps import APP_NAME as app_name
-from apps.api.controllers import MySQLController
+
+from apps.gp.controllers import MySQLController
+from apps.gp.views import TemplateViewWithPost
 
 mysqlc = MySQLController()
 

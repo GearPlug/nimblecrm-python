@@ -1,11 +1,12 @@
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.urls import reverse_lazy
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
+
 from apps.gear.apps import APP_NAME as app_name
-from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gear.forms import MapForm
+from apps.gp.controllers import MySQLController
 from apps.gp.enum import ConnectorEnum
-from apps.api.controllers import MySQLController
-import MySQLdb
+from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
+from apps.gp.views import TemplateViewWithPost
 
 mysqlc = MySQLController()
 
@@ -62,6 +63,8 @@ class CreateGearMapView(FormView):
             pk=gear.target.id)
         self.source_object_list = self.get_available_source_fields(source_plug)
         self.form_field_list = self.get_target_field_list(target_plug)
+        print(self.source_object_list)
+        print(self.form_field_list)
         return super(CreateGearMapView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -73,8 +76,9 @@ class CreateGearMapView(FormView):
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
 
     def form_valid(self, form, *args, **kwargs):
-        print('form valid')
-        map = GearMap.objects.create(gear_id=self.kwargs['gear_id'], is_active=False)
+        map = GearMap.objects.create(gear_id=self.kwargs['gear_id'], is_active=True)
+        map.gear.is_active = True
+        map.gear.save()
         map_data = []
         for field in form:
             map_data.append(
@@ -111,7 +115,6 @@ class CreateGearMapView(FormView):
         fields = ConnectorEnum.get_fields(c)
         related = plug.connection.related_connection
         connection_data = {}
-        print(fields)
         for field in fields:
             if hasattr(related, field):
                 connection_data[field] = getattr(related, field)
@@ -127,22 +130,13 @@ class CreateGearMapView(FormView):
         else:
             return []
 
-    # def plug_as_target(self, plug, *args, **kwargs):
-    #     c = ConnectorEnum.get_connector(plug.connection.connector.id)
-    #     fields = ConnectorEnum.get_fields(c)
-    #     related = plug.connection.related_connection
-    #     connection_data = {}
-    #     for field in fields:
-    #         if hasattr(related, field):
-    #             connection_data[field] = getattr(related, field)
-    #         else:
-    #             connection_data[field] = ''
-    #     mysqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
-    #                              connection_user=connection_data['connection_user'],
-    #                              connection_password=connection_data['connection_password'],
-    #                              database=connection_data['database'], table=connection_data['table'])
-    #     form_data = mysqlc.describe_table()
-    #     self.form_field_list = [item['name'] for item in form_data if item['is_primary'] is not True]
-
     def get_source_data_list(self, Connector, connection, connection_data):
         return StoredData.objects.filter(connection=connection).values('name').distinct()
+
+
+class GearMapGetSourceData(TemplateViewWithPost):
+    pass
+
+
+class GearMapSendTargetData(TemplateViewWithPost):
+    pass

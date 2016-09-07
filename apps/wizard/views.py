@@ -1,13 +1,13 @@
-from apps.gear.views import CreateGearView, UpdateGearView
-from apps.plug.views import CreatePlugView, UpdatePlugAddActionView
-from apps.connection.views import CreateConnectionView
-from apps.gp.models import Connector, Connection, Action, Plug
-from apps.gp.enum import ConnectorEnum
-from apps.api.controllers import FacebookController, MySQLController
-from django.http import JsonResponse, HttpResponseRedirect
-from django.urls import reverse
-import copy
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
+from django.urls import reverse
+
+from apps.connection.views import CreateConnectionView
+from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
+from apps.gp.controllers import FacebookController, MySQLController
+from apps.gp.enum import ConnectorEnum
+from apps.gp.models import Connector, Connection, Action, Gear
+from apps.plug.views import CreatePlugView, UpdatePlugAddActionView
 
 fbc = FacebookController()
 mysqlc = MySQLController()
@@ -35,6 +35,8 @@ class SetGearPlugsView(LoginRequiredMixin, UpdateGearView):
 
     def get_success_url(self):
         self.request.session['gear_id'] = self.object.id
+        if hasattr(self.object, 'source') and hasattr(self.object, 'target'):
+            return reverse('wizard:create_gear_map', kwargs={'gear_id': self.object.id})
         return reverse('wizard:set_gear_plugs', kwargs={'pk': self.object.id})
 
     def form_valid(self, form, *args, **kwargs):
@@ -44,6 +46,7 @@ class SetGearPlugsView(LoginRequiredMixin, UpdateGearView):
 
 
 class CreatePlugView(LoginRequiredMixin, CreatePlugView):
+    login_url = '/account/login/'
     template_name = 'plug/wizard/create.html'
     fields = ['name', 'connection', ]
 
@@ -69,6 +72,7 @@ class CreatePlugView(LoginRequiredMixin, CreatePlugView):
 
 
 class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
+    login_url = '/account/login/'
     fields = ['action']
     template_name = 'plug/wizard/update.html'
 
@@ -89,15 +93,16 @@ class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
             c = ConnectorEnum.get_connector(self.object.connection.connector.id)
             conn = self.object.connection.related_connection
             if c == ConnectorEnum.Facebook:
-                fbc.download_leads_to_stored_data(conn)
+                fbc.download_leads_to_stored_data(conn, self.object)
             elif c == ConnectorEnum.MySQL:
-                ping = mysqlc.create_connection(conn)
+                ping = mysqlc.create_connection(conn, self.object)
                 if ping:
-                    res = mysqlc.download_to_stored_data(conn)
+                    res = mysqlc.download_to_stored_data(conn, self.object)
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 
 class CreateConnectionView(LoginRequiredMixin, CreateConnectionView):
+    login_url = '/account/login/'
     fields = []
 
     def form_valid(self, form, *args, **kwargs):
@@ -124,3 +129,11 @@ class CreateConnectionView(LoginRequiredMixin, CreateConnectionView):
     def get_context_data(self, *args, **kwargs):
         context = super(CreateConnectionView, self).get_context_data(*args, **kwargs)
         return context
+
+
+class CreateGearMapView(LoginRequiredMixin, CreateGearMapView):
+    login_url = '/account/login/'
+    template_name = 'gear/map/create.html'
+
+    def get_success_url(self, *args, **kwargs):
+        return super(CreateGearMapView, self).get_success_url(*args, **kwargs)

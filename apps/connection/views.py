@@ -1,17 +1,13 @@
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView, TemplateView
 from django.urls import reverse_lazy
-from apps.connection.apps import APP_NAME as app_name
-from apps.gp.models import Connection, Connector, StoredData, GearMap, Gear, GearMapData, Plug
-from apps.gp.enum import ConnectorEnum
-from apps.gp.views import TemplateViewWithPost
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView
 from apps.api.views import mysql_get_insert_values, mysql_trigger_create_row
-import re
-
-# IMPORT CENTRALIZADO
-from apps.api.controllers import FacebookController
-from apps.connection.myviews.FacebookViews import AJAXFacebookBaseView, AJAXFacebookGetAvailableConnectionsView, \
-    AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView
-from apps.connection.myviews.MySQLViews import AJAXMySQLTestConnection
+from apps.connection.apps import APP_NAME as app_name
+from apps.connection.myviews.FacebookViews import *
+from apps.connection.myviews.MySQLViews import *
+from apps.gp.controllers import FacebookController
+from apps.gp.enum import ConnectorEnum
+from apps.gp.models import Connection, Connector, StoredData, GearMap, GearMapData
+from apps.gp.views import TemplateViewWithPost
 
 fbc = FacebookController()
 
@@ -113,11 +109,9 @@ class TestConnectionView(TemplateViewWithPost):
     template_name = 'test.html'
 
     def get_context_data(self, *args, **kwargs):
-        print("hola")
         context = super(TestConnectionView, self).get_context_data(**kwargs)
         map_list = GearMap.objects.filter(is_active=True, gear__is_active=True) \
             .select_related('gear__source', 'gear__target', )
-        print(map_list)
         for map in map_list:
             stored = StoredData.objects.filter(connection=map.gear.source.connection)
             target_data = {data.target_name: data.source_value for data in GearMapData.objects.filter(gear_map=map)}
