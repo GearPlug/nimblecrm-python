@@ -108,7 +108,8 @@ class CreateGearMapView(FormView):
                 connection_data[field] = getattr(related, field)
             else:
                 connection_data[field] = ''
-        return ['%%%%%s%%%%' % item['name'] for item in self.get_source_data_list(c, plug.connection, connection_data)]
+        print(connection_data)
+        return ['%%%%%s%%%%' % item['name'] for item in self.get_source_data_list(plug, plug.connection)]
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
@@ -130,8 +131,9 @@ class CreateGearMapView(FormView):
         else:
             return []
 
-    def get_source_data_list(self, Connector, connection, connection_data):
-        return StoredData.objects.filter(connection=connection).values('name').distinct()
+    def get_source_data_list(self, plug, connection):
+        print("get source data list")
+        return StoredData.objects.filter(plug=plug, connection=connection).values('name').distinct()
 
 
 class GearMapGetSourceData(TemplateViewWithPost):

@@ -1,11 +1,13 @@
 from enum import Enum
 from django.apps import apps
-from apps.gp.controllers import FacebookController, MySQLController
+from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController
 
 
 class ConnectorEnum(Enum):
     Facebook = 1
     MySQL = 2
+    SugarCRM = 3
+    MailChimp = 4
 
     def get_connector_data(connector):
         connector = ConnectorEnum.get_connector(connector)
@@ -33,4 +35,8 @@ class ConnectorEnum(Enum):
             return FacebookController
         elif connector == ConnectorEnum.MySQL:
             return MySQLController
+        elif connector == ConnectorEnum.SugarCRM:
+            return SugarCRMController
+        elif connector == ConnectorEnum.MailChimp:
+            return MailChimpController
         return None

@@ -66,6 +66,10 @@ class CreatePlugView(LoginRequiredMixin, CreatePlugView):
         return context
 
     def get_success_url(self, *args, **kwargs):
+        if self.request.session['gear_id'] is not None:
+            gear = Gear.objects.get(pk=self.request.session['gear_id'])
+            setattr(gear, self.kwargs['plug_type'], self.object)
+            gear.save()
         self.request.session[
             'source_plug_id' if self.kwargs['plug_type'] == 'source' else 'target_plug_id'] = self.object.id
         return reverse('wizard:plug_set_action', kwargs={'pk': self.object.id, 'plug_type': self.kwargs['plug_type']})

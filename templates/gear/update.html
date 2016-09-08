@@ -28,22 +28,22 @@
 
 {% block scripts %}
     {{ block.super }}
-    {% if request.session.source_plug_id != None %}
-        <script type="application/javascript">
-            $(document).ready(function () {
-                console.log("si hay source")
-                $('select#id_source').val({{ request.session.source_plug_id }});
-                $('select#id_source').change();
-            })
-        </script>
-    {% endif %}
-    {% if request.session.target_plug_id != None %}
-        <script type="application/javascript">
-            $(document).ready(function () {
-                console.log("si hay target")
-                $('select#id_target').val({{ request.session.target_plug_id }});
-                $('select#id_target').change();
-            })
-        </script>
-    {% endif %}
+{#    {% if request.session.source_plug_id != None %}#}
+{#        <script type="application/javascript">#}
+{#            $(document).ready(function () {#}
+{#                console.log("si hay source")#}
+{#                $('select#id_source').val({{ request.session.source_plug_id }});#}
+{#                $('select#id_source').change();#}
+{#            })#}
+{#        </script>#}
+{#    {% endif %}#}
+{#    {% if request.session.target_plug_id != None %}#}
+{#        <script type="application/javascript">#}
+{#            $(document).ready(function () {#}
+{#                console.log("si hay target")#}
+{#                $('select#id_target').val({{ request.session.target_plug_id }});#}
+{#                $('select#id_target').change();#}
+{#            })#}
+{#        </script>#}
+{#    {% endif %}#}
 {% endblock %}

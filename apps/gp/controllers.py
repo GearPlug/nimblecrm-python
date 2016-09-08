@@ -8,8 +8,26 @@ import hashlib
 import logging
 import MySQLdb
 import copy
+import sugarcrm
 
 logger = logging.getLogger('controller')
+
+
+class SugarCRMController(object):
+    user = None
+    password = None
+    url = None
+    connection_object = None
+
+    def __init__(self, *args, **kwargs):
+        self.create_connection(*args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            self.connection_object = args[0]
+            self.user = self.connection_object.connection_user
+            self.password = self.connection_object.connection_password
+            self.url = self.connection_object.url
 
 
 class FacebookController(object):
@@ -92,11 +110,12 @@ class FacebookController(object):
                                    (connection_object.connection, item['id'], lead['name']) not in stored_data]
         logger.info('Facebook Controller >> NEW LEADS for connection id:%s  Number of entries: %s' % (
             connection_object.connection.id, len(new_data)))
-        StoredData.objects.bulk_create(new_data)
+        if new_data:
+            StoredData.objects.bulk_create(new_data)
 
     def download_source_data(self):
         if self.connection_object is not None and self.plug is not None:
-            self.download_leads_to_stored_data(self.connection_object)
+            self.download_leads_to_stored_data(self.connection_object, self.plug)
         else:
             print("Error, there's no connection or plug")
 
@@ -198,28 +217,30 @@ class MySQLController(object):
         if plug is None:
             plug = self.plug
         source_data = self.select_all()
-        print(source_data)
-        print("\n----------------------\n")
         stored_data = [(item.connection.id, item.object_id, item.name) for item in
                        StoredData.objects.filter(connection=connection_object.connection)]
         id_list = self.get_primary_keys()
         parsed_source_data = [{'id': tuple(item[key] for key in id_list),
                                'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}
                               for item in source_data]
-        # for d in parsed_data:
-        #     print(d)
-        print("\n----------------------\n")
+
         new_data = []
         new_data = new_data + [StoredData(name=item['name'], value=item['value'], object_id=row['id'][0],
                                           connection=connection_object.connection, plug=plug)
                                for row in parsed_source_data for item in row['data'] if
-                               (connection_object.connection.id, row['id'][0], item['name']) not in stored_data]
-        # logger.info('MySQL Controller >> NEW ROWs for connection id:%s  Number of entries: %s' % (
-        #     connection_object.connection.id, len(new_data)))
-        # StoredData.objects.bulk_create(new_data)
+                               (connection_object.connection.id, str(row['id'][0]), item['name']) not in stored_data]
+        logger.info('MySQL Controller >> NEW ROWs for connection id:%s  Number of entries: %s' % (
+            connection_object.connection.id, len(new_data)))
+        if new_data:
+            StoredData.objects.bulk_create(new_data)
 
     def download_source_data(self):
         if self.connection_object is not None and self.plug is not None:
-            self.download_to_stored_data(self.connection_object)
+            self.download_to_stored_data(self.connection_object, self.plug)
         else:
             print("Error, there's no connection or plug")
+            # print("\n----------------------\n")
+
+
+class MailChimpController(object):
+    pass

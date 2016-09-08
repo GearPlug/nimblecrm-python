@@ -106,6 +106,17 @@ class MySQLConnection(models.Model):
         return self.name
 
 
+class SugarCRMConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_sugarcrm')
+    name = models.CharField('name', max_length=120)
+    url = models.CharField('host', max_length=40)
+    connection_user = models.CharField('user', max_length=40)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
+
+
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
     name = models.CharField('name', max_length=120)

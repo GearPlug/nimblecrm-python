@@ -43,9 +43,9 @@ def mysql_trigger_create_row(connection, target_data, values):
     return True
 
 
-def mysql_get_insert_values(source_data, target_data, *args, **kwargs):
-    tag_list = ['%s' % target_data[key] for key in target_data]
-    valid_target_data = [key for key in target_data]
+def mysql_get_insert_values(source_data, target_fields, *args, **kwargs):
+    tag_list = ['%s' % target_fields[key] for key in target_fields]
+    valid_target_data = [key for key in target_fields]
     d = [{attribute: {'%%%%%s%%%%' % a: item[attribute][a]
                       for a in item[attribute]} if attribute == 'data' else item[attribute] for attribute in item}
          for item in source_data]
