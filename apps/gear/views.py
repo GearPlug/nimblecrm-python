@@ -3,12 +3,13 @@ from django.views.generic import CreateView, UpdateView, DeleteView, ListView, F
 
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
-from apps.gp.controllers import MySQLController
+from apps.gp.controllers import MySQLController, SugarCRMController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
 
 mysqlc = MySQLController()
+scrmc = SugarCRMController()
 
 
 class ListGearView(ListView):
@@ -104,11 +105,7 @@ class CreateGearMapView(FormView):
         related = plug.connection.related_connection
         connection_data = {}
         for field in fields:
-            if hasattr(related, field):
-                connection_data[field] = getattr(related, field)
-            else:
-                connection_data[field] = ''
-        print(connection_data)
+            connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
         return ['%%%%%s%%%%' % item['name'] for item in self.get_source_data_list(plug, plug.connection)]
 
     def get_target_field_list(self, plug):
@@ -117,10 +114,8 @@ class CreateGearMapView(FormView):
         related = plug.connection.related_connection
         connection_data = {}
         for field in fields:
-            if hasattr(related, field):
-                connection_data[field] = getattr(related, field)
-            else:
-                connection_data[field] = ''
+            connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
+        print(connection_data)
         if c == ConnectorEnum.MySQL:
             mysqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
                                      connection_user=connection_data['connection_user'],
@@ -128,11 +123,16 @@ class CreateGearMapView(FormView):
                                      database=connection_data['database'], table=connection_data['table'])
             form_data = mysqlc.describe_table()
             return [item['name'] for item in form_data if item['is_primary'] is not True]
+        elif c == ConnectorEnum.SugarCRM:
+            con = scrmc.create_connection(url=connection_data['url'],
+                                          connection_user=connection_data['connection_user'],
+                                          connection_password=connection_data['connection_password'])
+        elif c == ConnectorEnum.MailChimp:
+            pass
         else:
             return []
 
     def get_source_data_list(self, plug, connection):
-        print("get source data list")
         return StoredData.objects.filter(plug=plug, connection=connection).values('name').distinct()
 
 

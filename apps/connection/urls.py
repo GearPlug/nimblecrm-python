@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from apps.connection.views import CreateConnectionView, ListConnectionView, ListConnectorView, TestConnectionView, \
     AJAXFacebookGetAvailableConnectionsView, AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
-    AJAXMySQLTestConnection, UpdateConnectionView
+    AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection
 
 urlpatterns = [
     url(r'create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create'),
@@ -20,4 +20,6 @@ urlpatterns = [
         name='ajax_update_facebook_get_leads'),
     url(r'ajax/mysql/test_connection/', AJAXMySQLTestConnection.as_view(),
         name='ajax_update_mysql_test_connection'),
+url(r'ajax/sugarcrm/test_connection/', AJAXSugarCRMTestConnection.as_view(),
+        name='ajax_sugarcrm_test_connection'),
 ]

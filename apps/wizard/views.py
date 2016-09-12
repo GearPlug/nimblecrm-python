@@ -4,13 +4,14 @@ from django.urls import reverse
 
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
-from apps.gp.controllers import FacebookController, MySQLController
+from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Connector, Connection, Action, Gear
-from apps.plug.views import CreatePlugView, UpdatePlugAddActionView
+from apps.gp.models import Connector, Connection, Action, Gear, Plug
+from apps.plug.views import CreatePlugView, UpdatePlugAddActionView, CreatePlugSpecificationsView
 
 fbc = FacebookController()
 mysqlc = MySQLController()
+scrmc = SugarCRMController()
 
 
 class CreateGearView(LoginRequiredMixin, CreateGearView):
@@ -102,7 +103,50 @@ class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
                 ping = mysqlc.create_connection(conn, self.object)
                 if ping:
                     res = mysqlc.download_to_stored_data(conn, self.object)
+            elif c == ConnectorEnum.SugarCRM:
+                print("In SugarCRM")
+            # Esto va antes
+            if len(self.object.action.action_specification.all()) > 0:
+                return reverse('wizard:plug_set_specifications',
+                               kwargs={'plug_id': self.object.id, 'plug_type': self.kwargs['plug_type']})
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
+
+
+class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsView):
+    login_url = '/account/login/'
+
+    def get_success_url(self):
+        try:
+            gear_id = self.request.session['gear_id']
+        except:
+            gear_id = None
+        if gear_id is None:
+            return reverse('wizard:create_gear')
+        c = ConnectorEnum.get_connector(self.object.plug.connection.connector.id)
+        conn = self.object.plug.connection.related_connection
+        if c == ConnectorEnum.Facebook:
+            fbc.download_leads_to_stored_data(conn, self.object)
+        elif c == ConnectorEnum.MySQL:
+            ping = mysqlc.create_connection(conn, self.object)
+            if ping:
+                res = mysqlc.download_to_stored_data(conn, self.object)
+        elif c == ConnectorEnum.SugarCRM:
+            ping = scrmc.create_connection(url=self.object.connection.related_connection.url,
+                                           connection_user=self.object.connection.related_connection.connection_user,
+                                           connection_password=self.object.connection.related_connection.connection_password)
+        return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(CreatePlugSpecificationView, self).get_context_data(*args, **kwargs)
+        plug = Plug.objects.get(pk=self.kwargs['plug_id'])
+        c = ConnectorEnum.get_connector(plug.connection.connector.id)
+        if c == ConnectorEnum.SugarCRM:
+            ping = scrmc.create_connection(url=plug.connection.related_connection.url,
+                                           connection_user=plug.connection.related_connection.connection_user,
+                                           connection_password=plug.connection.related_connection.connection_password)
+            modules = scrmc.get_available_modules()
+        context['available_options'] = [m.module_key for m in modules]
+        return context
 
 
 class CreateConnectionView(LoginRequiredMixin, CreateConnectionView):

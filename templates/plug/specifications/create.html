@@ -10,6 +10,7 @@
                 <option value="{{ action_specification.id }}">{{ action_specification.name }}</option>
             {% endfor %}
         </select>
+
         <input type="text" id="especification_field">
         <input type="hidden" id="plug_id" value="{{ plug_id }}">
         <button id="btnCreateSpecification">Create Specification</button>
@@ -24,9 +25,13 @@
         </form>
     </div>
 {% endblock %}
-
+{% block styles %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'vendor/jquery-ui-1.12.0/jquery-ui.min.css' %}">
+{% endblock %}
 {% block scripts %}
     {{ block.super }}
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
     <script type="application/javascript">
         $(document).ready(function () {
             $('button#btnCreateSpecification').click(function () {
@@ -41,6 +46,13 @@
                 $('form#formCreatePlugSpecification').submit();
                 return false;
             })
+            {% if available_options %}
+                var availableTags = [{% for item in available_options %}'{{ item }}',{% endfor %}];
+                $('input#especification_field').autocomplete({
+                    source: availableTags
+                });
+            {% endif %}
+
         })
     </script>
 {% endblock %}

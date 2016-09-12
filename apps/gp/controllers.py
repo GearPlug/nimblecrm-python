@@ -18,16 +18,33 @@ class SugarCRMController(object):
     password = None
     url = None
     connection_object = None
+    session = None
 
     def __init__(self, *args, **kwargs):
         self.create_connection(*args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
         if args:
-            self.connection_object = args[0]
-            self.user = self.connection_object.connection_user
-            self.password = self.connection_object.connection_password
-            self.url = self.connection_object.url
+            try:
+                self.connection_object = args[0]
+                self.user = self.connection_object.connection_user
+                self.password = self.connection_object.connection_password
+                self.url = self.connection_object.url
+            except:
+                print("Error gettig the SugarCRM attributes")
+        elif kwargs:
+            try:
+                self.url = kwargs.pop('url', 'url')
+                self.user = kwargs.pop('connection_user', 'usuario')
+                self.password = kwargs.pop('connection_password', 'clave')
+            except:
+                print("Error gettig the SugarCRM attributes")
+        if self.url is not None and self.user is not None and self.password is not None:
+            self.session = sugarcrm.Session(self.url, self.user, self.password)
+        return self.session is not None and self.session.session_id is not None
+
+    def get_available_modules(self):
+        return self.session.get_available_modules()
 
 
 class FacebookController(object):
