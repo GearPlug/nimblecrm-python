@@ -72,8 +72,8 @@ class CreatePlugSpecificationsView(CreateView):
         context = super(CreatePlugSpecificationsView, self).get_context_data(*args, **kwargs)
         plug_id = self.kwargs['plug_id']
         plug = Plug.objects.filter(pk=plug_id).select_related('connection__connector').get(pk=plug_id)
-        action_list = plug.connection.connector.action.all().filter(plug__action=plug.action)
-        # if esp not in []00000
+        action_list = plug.connection.connector.action.all().filter(plug__action=plug.action).distinct()
+        # if esp not in []
         action_specification_list = [esp for action in action_list for esp in action.action_specification.all()]
         context['action_specification_list'] = action_specification_list
         context['plug_id'] = plug_id

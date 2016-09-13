@@ -1,8 +1,7 @@
 {% load bootstrap_tags %}
 
 
-<form id="formCreateConnection" class="create-connection-form form-horizontal"
-      action="{% url 'wizard:create_connection' connector_id=2 %}"
+<form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
       method="post" autocomplete="off">
     {% csrf_token %}
     {{ form|as_bootstrap }}
@@ -17,19 +16,19 @@
 <script type="application/javascript">
     $(document).ready(function () {
         $('button#btnTestConnection').click(function () {
-            $('form#formCreateConnection').attr('action', "{% url 'connection:ajax_update_mysql_test_connection' %}");
+            $('form#formCreateConnection').attr('action', "{% url 'connection:ajax_sugarcrm_test_connection' %}");
             $('form#formCreateConnection').attr('is_ajax', true);
             $('form#formCreateConnection').submit();
             return false;
         });
 
         $('button#btnCreateConnection').click(function () {
-            $('form#formCreateConnection').attr('action', "{% url 'wizard:create_connection' connector_id=2 %}");
+            $('form#formCreateConnection').attr('action', "{% url 'wizard:create_connection' connector_id=3 %}");
             $('form#formCreateConnection').attr('is_ajax', false);
         });
 
         $('form#formCreateConnection').submit(function () {
-            var test_url = "{% url 'connection:ajax_update_mysql_test_connection' %}";
+            var test_url = "{% url 'connection:ajax_sugarcrm_test_connection' %}";
             var url = $(this).attr('action');
             $.ajax({
                 method: "POST",

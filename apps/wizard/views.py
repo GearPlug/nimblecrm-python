@@ -108,7 +108,7 @@ class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
             # Esto va antes
             if len(self.object.action.action_specification.all()) > 0:
                 return reverse('wizard:plug_set_specifications',
-                               kwargs={'plug_id': self.object.id, 'plug_type': self.kwargs['plug_type']})
+                               kwargs={'plug_id': self.object.id,})
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 
@@ -131,9 +131,12 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
             if ping:
                 res = mysqlc.download_to_stored_data(conn, self.object)
         elif c == ConnectorEnum.SugarCRM:
-            ping = scrmc.create_connection(url=self.object.connection.related_connection.url,
-                                           connection_user=self.object.connection.related_connection.connection_user,
-                                           connection_password=self.object.connection.related_connection.connection_password)
+            ping = scrmc.create_connection(url=self.object.plug.connection.related_connection.url,
+                                           connection_user=self.object.plug.connection.related_connection.connection_user,
+                                           connection_password=self.object.plug.connection.related_connection.connection_password)
+            data_list = scrmc.get_entry_list(self.object.value, )
+            print("si")
+            print(data_list)
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
     def get_context_data(self, *args, **kwargs):

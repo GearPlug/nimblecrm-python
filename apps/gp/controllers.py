@@ -46,6 +46,12 @@ class SugarCRMController(object):
     def get_available_modules(self):
         return self.session.get_available_modules()
 
+    def get_entries(self, module_name, id_list):
+        return self.session.get_entries(module_name, id_list)
+
+    def get_entry_list(self, module_name, fields=(), links=dict()):
+        return self.session.get_entry_list(self, module_name, )
+
 
 class FacebookController(object):
     app_id = FACEBOOK_APP_ID

@@ -20,6 +20,6 @@ urlpatterns = [
         name='ajax_update_facebook_get_leads'),
     url(r'ajax/mysql/test_connection/', AJAXMySQLTestConnection.as_view(),
         name='ajax_update_mysql_test_connection'),
-url(r'ajax/sugarcrm/test_connection/', AJAXSugarCRMTestConnection.as_view(),
+    url(r'ajax/sugarcrm/test_connection/', AJAXSugarCRMTestConnection.as_view(),
         name='ajax_sugarcrm_test_connection'),
 ]
