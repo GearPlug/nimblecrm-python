@@ -4,6 +4,7 @@ from apps.wizard.views import CreateGearView, SetGearPlugsView, CreatePlugView, 
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='create_gear'),
+    url(r'^gear/list/$', CreateGearView.as_view(), name='list_gear'),
     url(r'^gear/set/plugs/(?P<pk>\d+)/$', SetGearPlugsView.as_view(), name='set_gear_plugs'),
     url(r'^plug/create/(?P<plug_type>(source|target)+)/$', CreatePlugView.as_view(), name='create_plug'),
     url(r'^plug/(?P<pk>\d+)/(?P<plug_type>(source|target)+)/set/action/$', UpdatePlugSetActionView.as_view(),

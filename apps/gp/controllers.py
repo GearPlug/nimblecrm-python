@@ -13,12 +13,26 @@ import sugarcrm
 logger = logging.getLogger('controller')
 
 
+class CustomSugarObject(sugarcrm.SugarObject):
+    module = None
+
+    def __init__(self, module_name, *args, **kwargs):
+        self.module = module_name
+        return super(CustomSugarObject, self).__init__(*args, **kwargs)
+
+    @property
+    def query(self):
+        return ''
+
+
 class SugarCRMController(object):
     user = None
     password = None
     url = None
     connection_object = None
     session = None
+    plug = None
+    module = None
 
     def __init__(self, *args, **kwargs):
         self.create_connection(*args, **kwargs)
@@ -32,6 +46,15 @@ class SugarCRMController(object):
                 self.url = self.connection_object.url
             except:
                 print("Error gettig the SugarCRM attributes")
+            try:
+                self.plug = args[1]
+            except:
+                print(
+                    "Error:SugarCRMController with connection: %s has no plug." % self.connection_object.connection.id)
+            try:
+                self.module = args[2]
+            except:
+                print('Error:SugarCRMController. No module defined.')
         elif kwargs:
             try:
                 self.url = kwargs.pop('url', 'url')
@@ -49,8 +72,29 @@ class SugarCRMController(object):
     def get_entries(self, module_name, id_list):
         return self.session.get_entries(module_name, id_list)
 
-    def get_entry_list(self, module_name, fields=(), links=dict()):
-        return self.session.get_entry_list(self, module_name, )
+    def get_entry_list(self, module, fields=(), links=dict()):
+        custom_module = CustomSugarObject(module)
+        return self.session.get_entry_list(custom_module)
+
+    def download_module_to_stored_data(self, connection_object, plug, module):
+        data = self.get_entry_list(module)
+        stored_data = [(item.connection, item.object_id, item.name) for item in
+                       StoredData.objects.filter(connection=connection_object.connection, plug=plug)]
+        new_data = []
+        for item in data:
+            for column in item.fields:
+                if (connection_object.connection, item.id, column['name']) not in stored_data:
+                    new_data.append(StoredData(name=column['name'], value=column['value'], object_id=item.id,
+                                               connection=connection_object.connection, plug=plug))
+        if new_data:
+            StoredData.objects.bulk_create(new_data)
+        return True if new_data else False
+
+    def download_source_data(self):
+        if self.connection_object is not None and self.plug is not None and self.module is not None:
+            self.download_module_to_stored_data(self.connection_object, self.plug, self.module)
+        else:
+            print("Error, there's no connection or plug")
 
 
 class FacebookController(object):
@@ -124,7 +168,7 @@ class FacebookController(object):
             plug = self.plug
         leads = self.get_leads(connection_object.token, connection_object.id_form)
         stored_data = [(item.connection, item.object_id, item.name) for item in
-                       StoredData.objects.filter(connection=connection_object.connection)]
+                       StoredData.objects.filter(connection=connection_object.connection, plug=plug)]
         new_data = []
         for item in leads:
             new_data = new_data + [StoredData(name=lead['name'], value=lead['values'][0], object_id=item['id'],
@@ -241,7 +285,7 @@ class MySQLController(object):
             plug = self.plug
         source_data = self.select_all()
         stored_data = [(item.connection.id, item.object_id, item.name) for item in
-                       StoredData.objects.filter(connection=connection_object.connection)]
+                       StoredData.objects.filter(connection=connection_object.connection, plug=plug)]
         id_list = self.get_primary_keys()
         parsed_source_data = [{'id': tuple(item[key] for key in id_list),
                                'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}

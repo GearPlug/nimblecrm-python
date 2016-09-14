@@ -1,4 +1,17 @@
 import random
+import sugarcrm
+
+
+class CustomSugarObject(sugarcrm.SugarObject):
+    module = "CustomObject"
+
+    def __init__(self, module, *args, **kwargs):
+        self.module = module
+        return super(CustomSugarObject, self).__init__(*args, **kwargs)
+
+    @property
+    def query(self):
+        return ''
 
 
 def ej1():
@@ -28,6 +41,18 @@ def ej3():
     print(lista_c)
 
 
-ej1()
-ej2()
-ej3()
+def try_sugar(url, user, password):
+    session = sugarcrm.Session(url, user, password)
+    print(session.session_id)
+    custom_item = CustomSugarObject('Leads')
+    entries = session.get_entry_list(custom_item, )
+    for e in entries:
+        print(e.fields)
+        for f in e.fields:
+            print('%s: %s' % (f['name'], f['value']))
+
+
+# ej1()
+# ej2()
+# ej3()
+try_sugar('http://208.113.131.86/uat/uat/service/v4_1/rest.php', 'emarketing', 'zakaramk*')
