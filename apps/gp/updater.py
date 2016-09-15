@@ -27,7 +27,12 @@ def update_gears():
 
     for i, gear in enumerate(active_gears):
         print('Updating target for gear: %s. (%s%%)' % (i + 1, (i + 1) * percentil,))
-        stored_data = StoredData.objects.filter(connection=gear.source.connection, plug=gear.source)
+        kwargs = {'connection': gear.source.connection, 'plug': gear.source,}
+        if gear.gear_map.last_sent_stored_data_id is not None:
+            kwargs['id__gt'] = gear.gear_map.last_sent_stored_data_id
+        stored_data = StoredData.objects.filter(**kwargs)
+        if not stored_data:
+            continue
         connector = ConnectorEnum.get_connector(gear.target.connection.connector.id)
         target_fields = {data.target_name: data.source_value for data in
                          GearMapData.objects.filter(gear_map=gear.gear_map)}
@@ -37,8 +42,10 @@ def update_gears():
         if connector == ConnectorEnum.MySQL:
             columns, insert_values = mysql_get_insert_values(source_data, target_fields, connection.related_connection)
             mysql_trigger_create_row(connection.related_connection, columns, insert_values)
+        for item in stored_data:
+            print(item.id)
         print(stored_data.order_by('-id')[0].id)
-        gear.gear_map.last_sent_stored_data_id = stored_data.order_by('id')[0].id
+        gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
         gear.gear_map.save()
     print("Finished updating Gear's Target Plugs...")
     print("Integrity checks...")

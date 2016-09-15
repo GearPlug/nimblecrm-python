@@ -16,9 +16,10 @@ logger = logging.getLogger('controller')
 class CustomSugarObject(sugarcrm.SugarObject):
     module = None
 
-    def __init__(self, module_name, *args, **kwargs):
-        self.module = module_name
-        return super(CustomSugarObject, self).__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        if args:
+            self.module = args[0]
+        return super(CustomSugarObject, self).__init__(**kwargs)
 
     @property
     def query(self):
@@ -72,9 +73,13 @@ class SugarCRMController(object):
     def get_entries(self, module_name, id_list):
         return self.session.get_entries(module_name, id_list)
 
-    def get_entry_list(self, module, fields=(), links=dict()):
+    def get_entry_list(self, module, **kwargs):
         custom_module = CustomSugarObject(module)
-        return self.session.get_entry_list(custom_module)
+        return self.session.get_entry_list(custom_module, **kwargs)
+
+    def get_module_fields(self, module, **kwargs):
+        custom_module = CustomSugarObject(module)
+        return self.session.get_module_fields(custom_module, **kwargs)
 
     def download_module_to_stored_data(self, connection_object, plug, module):
         data = self.get_entry_list(module)

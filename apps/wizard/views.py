@@ -105,10 +105,11 @@ class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
                     res = mysqlc.download_to_stored_data(conn, self.object)
             elif c == ConnectorEnum.SugarCRM:
                 print("In SugarCRM")
-            # Esto va antes
-            if len(self.object.action.action_specification.all()) > 0:
-                return reverse('wizard:plug_set_specifications',
-                               kwargs={'plug_id': self.object.id,})
+                # Esto va antes
+        print(len(self.object.action.action_specification.all()))
+        if len(self.object.action.action_specification.all()) > 0:
+            return reverse('wizard:plug_set_specifications',
+                           kwargs={'plug_id': self.object.id,})
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 
