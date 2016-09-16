@@ -14,7 +14,7 @@ logger = logging.getLogger('controller')
 
 
 class CustomSugarObject(sugarcrm.SugarObject):
-    module = None
+    module = "CustomObject"
 
     def __init__(self, *args, **kwargs):
         if args:

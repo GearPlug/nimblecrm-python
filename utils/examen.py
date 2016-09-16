@@ -5,9 +5,10 @@ import sugarcrm
 class CustomSugarObject(sugarcrm.SugarObject):
     module = "CustomObject"
 
-    def __init__(self, module, *args, **kwargs):
-        self.module = module
-        return super(CustomSugarObject, self).__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        if args:
+            self.module = args[0]
+        return super(CustomSugarObject, self).__init__(**kwargs)
 
     @property
     def query(self):
@@ -45,11 +46,14 @@ def try_sugar(url, user, password):
     session = sugarcrm.Session(url, user, password)
     print(session.session_id)
     custom_item = CustomSugarObject('Leads')
+    modules = session.get_available_modules()
     entries = session.get_entry_list(custom_item, )
-    for e in entries:
-        print(e.fields)
-        for f in e.fields:
-            print('%s: %s' % (f['name'], f['value']))
+    print([e['name'] for e in entries[0].fields])
+    # fields = session.get_module_fields(custom_item, )
+    # print(fields)
+    params = {'last_name': 'prueba last name', 'phone_mobile': '1334434'}
+    new_lead = CustomSugarObject('Leads', **params)
+    a = session.set_entry(new_lead)
 
 
 # ej1()
