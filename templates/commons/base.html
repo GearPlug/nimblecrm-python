@@ -42,16 +42,26 @@
         <div class="top_nav">
             <div class="nav_menu">
                 <nav>
-                    <div class="nav toggle">
+                    <div class="nav toggle" style="display:none;">
                         <a id="menu_toggle"><i class="fa fa-bars"></i></a>
                     </div>
                     <ul class="nav navbar-nav navbar-right">
                         <li class="">
+                        
                             <a href="javascript:;" class="user-profile dropdown-toggle" data-toggle="dropdown"
                                aria-expanded="false">
-                                <img src="{% static 'img/user_profile_picture.jpg' %}" alt="">{{ request.user.email }}
+                                <div class="clearfix">
+                                <div class="img-user-bg">                               
+                                <img src="{% static 'img/user_profile_picture.jpg' %}" alt="">
+                               </div>
+                                <div class="user-things">                                
+                                {{ request.user.email }}                                
                                 <span class=" fa fa-angle-down"></span>
+                                </div>
+                                </div>
+                                
                             </a>
+
                             <ul class="dropdown-menu dropdown-usermenu pull-right">
                                 <li><a href="javascript:;"> Profile</a></li>
                                 <li>

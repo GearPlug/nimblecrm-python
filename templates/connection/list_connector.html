@@ -6,14 +6,24 @@
    <div class="box-title">
       <h2>connector list</h2>
    </div>
-   <div>
+
+   <div class="search-connetor">
+   <div class="container-4">
+      <input type="search" id="search" name="search" placeholder="search">
+      <button class="icon"><i class="fa fa-search"></i></button>
+   </div>
+   </div>
+
+   <ul class="list-connector">
       {% for connector in object_list %}
-      <div>
-         <a href="{% url 'connection:create' connector_id=connector.id %}">
+      <li>
+      <div class="gr_{{connector.name|lower}} go2Conn">
+         <a  href="{% url 'connection:create' connector_id=connector.id %}">
          {{ connector.name }}
          </a>
-      </div>
+         </div>
+      </li>
       {% endfor %}
-   </div>
+   </ul>
 </div>
 {% endblock %}
