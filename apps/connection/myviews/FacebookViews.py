@@ -1,7 +1,8 @@
-from django.views.generic import TemplateView
 from django.http import JsonResponse
+from django.views.generic import TemplateView
+
+from apps.gp.controllers import FacebookController
 from apps.gp.views import TemplateViewWithPost
-from apps.api.controllers import FacebookController
 
 fbc = FacebookController()
 

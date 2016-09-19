@@ -1,13 +1,15 @@
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.urls import reverse_lazy
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
+
 from apps.gear.apps import APP_NAME as app_name
-from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gear.forms import MapForm
+from apps.gp.controllers import MySQLController, SugarCRMController
 from apps.gp.enum import ConnectorEnum
-from apps.api.controllers import MySQLController
-import MySQLdb
+from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
+from apps.gp.views import TemplateViewWithPost
 
 mysqlc = MySQLController()
+scrmc = SugarCRMController()
 
 
 class ListGearView(ListView):
@@ -60,8 +62,10 @@ class CreateGearMapView(FormView):
             pk=gear.source.id)
         target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
             pk=gear.target.id)
-        self.plug_as_target(target_plug)
-        self.plug_as_source(source_plug)
+        self.source_object_list = self.get_available_source_fields(source_plug)
+        self.form_field_list = self.get_target_field_list(target_plug)
+        print(self.source_object_list)
+        print(self.form_field_list)
         return super(CreateGearMapView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -69,13 +73,13 @@ class CreateGearMapView(FormView):
         gear = Gear.objects.filter(pk=gear_id).select_related('source', 'target').get(pk=gear_id)
         target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
             pk=gear.target.id)
-        self.plug_as_target(target_plug)
-        form = self.get_form()
+        self.form_field_list = self.get_target_field_list(target_plug)
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
 
     def form_valid(self, form, *args, **kwargs):
-        print(form.cleaned_data)
-        map = GearMap.objects.create(gear_id=self.kwargs['gear_id'], is_active=False)
+        map = GearMap.objects.create(gear_id=self.kwargs['gear_id'], is_active=True)
+        map.gear.is_active = True
+        map.gear.save()
         map_data = []
         for field in form:
             map_data.append(
@@ -95,60 +99,52 @@ class CreateGearMapView(FormView):
         form_class = self.get_form_class()
         return form_class(extra=self.form_field_list, **self.get_form_kwargs())
 
-    # asigna la lista de objetos del source
-    def plug_as_source(self, plug, *args, **kwargs):
+    def get_available_source_fields(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
         fields = ConnectorEnum.get_fields(c)
         related = plug.connection.related_connection
         connection_data = {}
         for field in fields:
-            if hasattr(related, field):
-                connection_data[field] = getattr(related, field)
-            else:
-                connection_data[field] = ''
-        self.source_object_list = ['%%%%%s%%%%' % item['name'] for item in  # ==> %%field_name%%
-                                   self.get_source_data_list(c, plug.connection, connection_data)]
-        print(self.source_object_list)
+            connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
+        return ['%%%%%s%%%%' % item['name'] for item in self.get_source_data_list(plug, plug.connection)]
 
-    def plug_as_target(self, plug, *args, **kwargs):
+    def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
         fields = ConnectorEnum.get_fields(c)
         related = plug.connection.related_connection
         connection_data = {}
         for field in fields:
-            if hasattr(related, field):
-                connection_data[field] = getattr(related, field)
-            else:
-                connection_data[field] = ''
-        mysqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
-                                 connection_user=connection_data['connection_user'],
-                                 connection_password=connection_data['connection_password'],
-                                 database=connection_data['database'], table=connection_data['table'])
-        form_data = mysqlc.describe_table()
-        self.form_field_list = [item['name'] for item in form_data if item['is_primary'] is not True]
-
-    def get_source_data_list(self, Connector, connection, connection_data):
-        print(connection.id)
-        return StoredData.objects.filter(connection=connection).values('name').distinct()
-
-    def get_mysql_table_info(self, Connector, plug, connection_data):
-        table_data = []
-        try:
-            con = MySQLdb.connect(host=connection_data['host'], port=int(connection_data['port']),
-                                  user=connection_data['connection_user'],
-                                  passwd=connection_data['connection_password'],
-                                  db=connection_data['database'])
-        except:
-            con = None
-            print("Error reaching the database")
-        if con:
+            connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
+        if c == ConnectorEnum.MySQL:
+            mysqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
+                                     connection_user=connection_data['connection_user'],
+                                     connection_password=connection_data['connection_password'],
+                                     database=connection_data['database'], table=connection_data['table'])
+            form_data = mysqlc.describe_table()
+            return [item['name'] for item in form_data if item['is_primary'] is not True]
+        elif c == ConnectorEnum.SugarCRM:
+            ping = scrmc.create_connection(url=connection_data['url'],
+                                           connection_user=connection_data['connection_user'],
+                                           connection_password=connection_data['connection_password'])
             try:
-                cursor = con.cursor()
-                # cursor.execute('USE %s' % connection_data['database'])
-                cursor.execute('DESCRIBE `%s`.`%s`' % (connection_data['database'], connection_data['table']))
-                for item in cursor:
-                    table_data.append(
-                        {'name': item[0], 'type': item[1], 'null': 'YES' == item[2], 'is_primary': item[3] == 'PRI'})
-            except Exception as e:
-                print(e)
-        return table_data
+                return scrmc.get_module_fields(plug.plug_specification.all()[0].value)
+            except:
+                return []
+        elif c == ConnectorEnum.MailChimp:
+            pass
+        else:
+            return []
+
+    def get_source_data_list(self, plug, connection):
+        print(plug.id)
+        print(connection.id)
+        print(StoredData.objects.filter(plug=plug, connection=connection))
+        return StoredData.objects.filter(plug=plug, connection=connection).values('name').distinct()
+
+
+class GearMapGetSourceData(TemplateViewWithPost):
+    pass
+
+
+class GearMapSendTargetData(TemplateViewWithPost):
+    pass

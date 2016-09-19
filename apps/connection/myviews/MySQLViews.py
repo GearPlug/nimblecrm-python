@@ -1,8 +1,7 @@
-from apps.gp.views import TemplateViewWithPost
-import MySQLdb
 from django.http import JsonResponse
-from apps.connection.apps import APP_NAME as app_name
-from apps.api.controllers import MySQLController
+
+from apps.gp.controllers import MySQLController
+from apps.gp.views import TemplateViewWithPost
 
 mysqlc = MySQLController()
 
@@ -19,9 +18,4 @@ class AJAXMySQLTestConnection(TemplateViewWithPost):
         password = self.request.POST.get('connection_password', 'clave')
         ping = mysqlc.create_connection(name=name, host=host, port=int(port), connection_user=user,
                                         connection_password=password, database=database)
-        print(ping)
         return JsonResponse({'data': ping})
-
-    def get_context_data(self, **kwargs):
-        context = super(AJAXMySQLTestConnection, self).get_context_data(**kwargs)
-        return context

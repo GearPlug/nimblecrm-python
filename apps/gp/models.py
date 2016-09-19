@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib import admin
 from apps.user.models import User
 
-connections = ['connection_facebook', 'connection_mysql']
+connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm']
 
 
 class Connector(models.Model):
@@ -78,12 +78,12 @@ class Connection(models.Model):
         return 'Object not found'
 
     def __str__(self):
-        return self.name
+        return '%s' % self.name
 
 
 class FacebookConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_facebook')
-    name = models.CharField('name', max_length=120)
+    name = models.CharField('name', max_length=200)
     id_page = models.CharField('id page', max_length=300)
     id_form = models.CharField('id form', max_length=300)
     token = models.CharField('token', max_length=300)
@@ -94,13 +94,25 @@ class FacebookConnection(models.Model):
 
 class MySQLConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mysql')
-    name = models.CharField('name', max_length=120)
-    host = models.CharField('host', max_length=40)
-    database = models.CharField('database', max_length=40)
-    table = models.CharField('table', max_length=40)
-    port = models.CharField('port', max_length=5)
-    connection_user = models.CharField('user', max_length=40)
+    name = models.CharField('name', max_length=200)
+    host = models.CharField('host', max_length=200)
+    database = models.CharField('database', max_length=200)
+    table = models.CharField('table', max_length=200)
+    port = models.CharField('port', max_length=7)
+    connection_user = models.CharField('user', max_length=60)
     connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
+
+
+class SugarCRMConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_sugarcrm')
+    name = models.CharField('name', max_length=200)
+    url = models.CharField('url', max_length=200)
+    connection_user = models.CharField('user', max_length=200)
+    connection_password = models.CharField('password', max_length=200)
+    module = models.CharField('module', max_length=200, default='', blank=True)
 
     def __str__(self):
         return self.name
@@ -139,7 +151,8 @@ class PlugSpecification(models.Model):
 
 
 class StoredData(models.Model):
-    connection = models.ForeignKey(Connection, related_name='stored_data', default=1)
+    plug = models.ForeignKey(Plug, related_name='stored_data')
+    connection = models.ForeignKey(Connection, related_name='stored_data')
     name = models.CharField('name', max_length=300)
     value = models.CharField('value', max_length=3000)
     datetime = models.DateTimeField(auto_now_add=True)
@@ -152,8 +165,8 @@ class StoredData(models.Model):
 class Gear(models.Model):
     name = models.CharField('name', max_length=120)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    source = models.ForeignKey(Plug, null=True, on_delete=models.CASCADE, related_name='source_plug')
-    target = models.ForeignKey(Plug, null=True, on_delete=models.CASCADE, related_name='target_plug')
+    source = models.ForeignKey(Plug, null=True, on_delete=models.CASCADE, related_name='source_gear')
+    target = models.ForeignKey(Plug, null=True, on_delete=models.CASCADE, related_name='target_gear')
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
@@ -164,7 +177,7 @@ class GearMap(models.Model):
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
     is_active = models.BooleanField('is active', default=True)
-    last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', default=1)
+    last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', null=True, default=None)
 
     class Meta:
         unique_together = ['id', 'gear']

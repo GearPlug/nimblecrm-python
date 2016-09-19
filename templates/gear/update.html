@@ -15,33 +15,35 @@
                 {#            {% render_field form.name class+="form-control input-md" placeholder="Gear Name" %}#}
                 {#            {% render_field form.source class+="form-control input-md" %}#}
                 {#            {% render_field form.source class+="form-control input-md" %}#}
-                <button id="singlebutton" name="singlebutton">update name</button>
+                <button id="singlebutton" name="singlebutton">update</button>
                 {% if form.error %}
                     <div class="error">{{ form.error }}</div>
                 {% endif %}
             </form>
         </div>
+        <a href="{% url 'wizard:create_plug' plug_type='source' %}">create SOURCE plug</a>
+        <a href="{% url 'wizard:create_plug' plug_type='target' %}">create TARGET plug</a>
     </div>
 {% endblock %}
 
 {% block scripts %}
     {{ block.super }}
-    {% if request.session.source_plug_id != None %}
-        <script type="application/javascript">
-            $(document).ready(function () {
-                $('select#id_source').val({{ request.session.source_plug_id }});
-                $('select#id_source').change();
-            })
-        </script>
-    {% endif %}
-    {% if request.session.target_plug_id != None %}
-        <script type="application/javascript">
-            $(document).ready(function () {
-                $('select#id_target').val({{ request.session.target_plug_id }});
-                $('select#id_target').change();
-            })
-        </script>
-    {% endif %}
-
+{#    {% if request.session.source_plug_id != None %}#}
+{#        <script type="application/javascript">#}
+{#            $(document).ready(function () {#}
+{#                console.log("si hay source")#}
+{#                $('select#id_source').val({{ request.session.source_plug_id }});#}
+{#                $('select#id_source').change();#}
+{#            })#}
+{#        </script>#}
+{#    {% endif %}#}
+{#    {% if request.session.target_plug_id != None %}#}
+{#        <script type="application/javascript">#}
+{#            $(document).ready(function () {#}
+{#                console.log("si hay target")#}
+{#                $('select#id_target').val({{ request.session.target_plug_id }});#}
+{#                $('select#id_target').change();#}
+{#            })#}
+{#        </script>#}
+{#    {% endif %}#}
 {% endblock %}
->>>>>>> 3c2ae911decf441e50408ad9408d7d880f1ce7c0
