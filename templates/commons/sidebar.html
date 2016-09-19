@@ -1,81 +1,83 @@
 {% load static %}
 <div class="col-md-3 left_col">
-    <div class="left_col scroll-view">
-        <div class="navbar nav_title" style="border: 0;">
-            <a href="/" class="site_title"><img src="{% static 'img/Logo_color_bla.png' %}"></a>
-        </div>
-        <div class="clearfix"></div>
-        <!-- menu profile quick info -->
-        <div class="profile hide">
-            <div class="profile_pic">
-                <img src="{% static 'img/user_profile_picture.jpg' %}" alt="..." class="img-circle profile_img">
+   <div class="left_col scroll-view">
+      <div class="navbar nav_title" style="border: 0;">
+         <a href="/" class="site_title"><img src="{% static 'img/grren_logo.png' %}" class="img-responsive big-logo" alt="Gear Plug"><img src="{% static 'img/small_green_logo.png' %}" class="img-responsive small-logo hide" alt="Gear Plug"></a>
+      </div>
+      <div class="clearfix"></div>
+      <!-- menu profile quick info -->
+      <div class="profile hide">
+         <div class="profile_pic">
+            <img src="{% static 'img/user_profile_picture.jpg' %}" alt="..." class="img-circle profile_img">
+         </div>
+         <div class="profile_info">
+            <span>Welcome,</span>
+            <h2>{{ request.user.email }}</h2>
+         </div>
+      </div>
+      <!-- /menu profile quick info -->
+      <br/>
+      <!-- sidebar menu -->
+      <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
+         <div class="menu_section">
+            <ul class="nav side-menu">
+               <li class="active">
+                  <a><i class="big-icon fa fa-flash"></i>Wizard<span class="fa fa-chevron-down"></span></a>
+                  <ul class="nav child_menu">
+                     <li><a href="{% url 'wizard:create_gear' %}">New gear</a></li>
+                     <li><a href="{% url 'wizard:create_gear' %}">Set plugs</a></li>
+                  </ul>
+               </li>
+               <li class="active">
+                  <a><i class="big-icon fa fa-gear"></i>Gears<span class="fa fa-chevron-down"></span></a>
+                  <ul class="nav child_menu">
+                     <li><a href="{% url 'gear:create' %}">New gear</a></li>
+                     <li><a href="{% url 'gear:list' %}">My gears</a></li>
+                  </ul>
+               </li>
+               <li>
+                  <a><i class="big-icon fa fa-plug"></i>Plugs<span class="fa fa-chevron-down"></span></a>
+                  <ul class="nav child_menu">
+                     <li><a href="{% url 'plug:create' %}">New plug</a></li>
+                     <li><a href="{% url 'plug:list' %}">My plugs</a></li>
+                  </ul>
+               </li>
+               <li>
+                  <a><i class="big-icon fa fa-wifi"></i>Connections<span class="fa fa-chevron-down"></span></a>
+                  <ul class="nav child_menu">
+                     <li><a href="{% url 'connection:list_connector' %}">New connection</a></li>
+                     <li><a href="{% url 'connection:list' %}">My connections</a></li>
+                  </ul>
+               </li>
+               <li>
+                  <a><i class="fa fa-desktop"></i>Help!<span class="fa fa-chevron-down"></span></a>
+                  <ul class="nav child_menu">
+                     <li><a href="general_elements.html">How to start?</a></li>
+                  </ul>
+               </li>
+               <li class="connectors-way"></li>
+            </ul>
+            <div class="arrow">
+               <a href="#"></a>
             </div>
-            <div class="profile_info">
-                <span>Welcome,</span>
-                <h2>{{ request.user.email }}</h2>
-            </div>
-        </div>
-        <!-- /menu profile quick info -->
-        <br/>
-        <!-- sidebar menu -->
-        <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
-            <div class="menu_section">
-                <ul class="nav side-menu">
-                    <li class="active">
-                        <a><i class="fa fa-flash"></i> Wizard <span class="fa fa-chevron-down"></span></a>
-                        <ul class="nav child_menu">
-                            <li><a href="{% url 'wizard:create_gear' %}">New gear</a></li>
-                            <li><a href="{% url 'wizard:create_gear' %}">Set plugs</a></li>
-                        </ul>
-                    </li>
-                    <li class="active">
-                        <a><i class="fa fa-gear"></i> Gears <span class="fa fa-chevron-down"></span></a>
-                        <ul class="nav child_menu">
-                            <li><a href="{% url 'gear:create' %}">New gear</a></li>
-                            <li><a href="{% url 'gear:list' %}">My gears</a></li>
-                        </ul>
-                    </li>
-                    <li>
-                        <a><i class="fa fa-plug"></i> Plugs <span class="fa fa-chevron-down"></span></a>
-                        <ul class="nav child_menu">
-                            <li><a href="{% url 'plug:create' %}">New plug</a></li>
-                            <li><a href="{% url 'plug:list' %}">My plugs</a></li>
-                        </ul>
-                    </li>
-                    <li>
-                        <a><i class="fa fa-wifi"></i> Connections <span class="fa fa-chevron-down"></span></a>
-                        <ul class="nav child_menu">
-                            <li><a href="{% url 'connection:list_connector' %}">New connection</a></li>
-                            <li><a href="{% url 'connection:list' %}">My connections</a></li>
-                        </ul>
-                    </li>
-                    <li>
-                        <a><i class="fa fa-desktop"></i> Help! <span class="fa fa-chevron-down"></span></a>
-                        <ul class="nav child_menu">
-                            <li><a href="general_elements.html">How to start?</a></li>
-                        </ul>
-                    </li>
-
-                    <li class="connectors-way"></li>
-                </ul>
-            </div>
-        </div>
-        <!-- /sidebar menu -->
-        <!-- /menu footer buttons -->
-        <div class="sidebar-footer hidden-small">
-            <a data-toggle="tooltip" data-placement="top" title="Settings">
-                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
-            </a>
-            <a data-toggle="tooltip" data-placement="top" title="FullScreen">
-                <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span>
-            </a>
-            <a data-toggle="tooltip" data-placement="top" title="Lock">
-                <span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span>
-            </a>
-            <a data-toggle="tooltip" data-placement="top" title="Logout">
-                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
-            </a>
-        </div>
-        <!-- /menu footer buttons -->
-    </div>
+         </div>
+      </div>
+      <!-- /sidebar menu -->
+      <!-- /menu footer buttons -->
+      <div class="sidebar-footer hidden-small hide">
+         <a data-toggle="tooltip" data-placement="top" title="Settings">
+         <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+         </a>
+         <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+         <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span>
+         </a>
+         <a data-toggle="tooltip" data-placement="top" title="Lock">
+         <span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span>
+         </a>
+         <a data-toggle="tooltip" data-placement="top" title="Logout">
+         <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+         </a>
+      </div>
+      <!-- /menu footer buttons -->
+   </div>
 </div>
