@@ -101,6 +101,12 @@ class SugarCRMController(object):
         else:
             print("Error, there's no connection or plug")
 
+    def set_entry(self, obj):
+        return self.session.set_entry(obj)
+
+    def set_entries(self, obj_list):
+        return self.session.set_entries(obj_list)
+
 
 class FacebookController(object):
     app_id = FACEBOOK_APP_ID
@@ -115,8 +121,7 @@ class FacebookController(object):
             try:
                 self.plug = args[1]
             except:
-                print(
-                    "Error:FacebookController with connection: %s has no plug." % self.connection_object.connection.id)
+                print("Error:FacebookController with connection: %s has no plug" % self.connection_object.connection.id)
 
     # Does a facebook request. Returns an array with the response or an empty array
     def send_request(self, url='', token='', base_url='', params=[]):

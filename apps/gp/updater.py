@@ -42,9 +42,6 @@ def update_gears():
         if connector == ConnectorEnum.MySQL:
             columns, insert_values = mysql_get_insert_values(source_data, target_fields, connection.related_connection)
             mysql_trigger_create_row(connection.related_connection, columns, insert_values)
-        for item in stored_data:
-            print(item.id)
-        print(stored_data.order_by('-id')[0].id)
         gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
         gear.gear_map.save()
     print("Finished updating Gear's Target Plugs...")

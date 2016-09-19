@@ -45,15 +45,17 @@ def ej3():
 def try_sugar(url, user, password):
     session = sugarcrm.Session(url, user, password)
     print(session.session_id)
-    custom_item = CustomSugarObject('Leads')
-    modules = session.get_available_modules()
-    entries = session.get_entry_list(custom_item, )
-    print([e['name'] for e in entries[0].fields])
+    # custom_item = CustomSugarObject('Leads')
+    # modules = session.get_available_modules()
+    # entries = session.get_entry_list(custom_item, )
+    # print([e['name'] for e in entries[0].fields])
     # fields = session.get_module_fields(custom_item, )
     # print(fields)
     params = {'last_name': 'prueba last name', 'phone_mobile': '1334434'}
+    params2 = {'last_name': 'prueba yonis name', 'phone_mobile': '5432'}
     new_lead = CustomSugarObject('Leads', **params)
-    a = session.set_entry(new_lead)
+    new_lead2 = CustomSugarObject('Leads', **params2)
+    a = session.set_entries([new_lead,new_lead2])
 
 
 # ej1()
