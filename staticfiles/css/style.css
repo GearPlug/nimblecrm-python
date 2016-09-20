@@ -1120,6 +1120,10 @@ text-decoration: underline;
   .container-4:hover button.icon:hover{
     background: #ceff00;
   }
+  .nav-sm .level-one {
+    font-size: 10px !important;
+    text-transform: none;
+}
 /*
 ** Footer
 *******************************************************/
