@@ -56,7 +56,10 @@ def mysql_get_insert_values(source_data, target_fields, *args, **kwargs):
     for v in values:
         if len(v) < len(column_order):
             failed_data_list.append(values.pop(values.index(v)))
-    print(failed_data_list)
+    if failed_data_list:
+        print("The next data failed to be delivered:")
+        for i in failed_data_list:
+            print(i)
     return column_order, values
 
     # for item in d:

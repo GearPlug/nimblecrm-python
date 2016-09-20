@@ -2,8 +2,10 @@ from apps.gp.models import Gear, StoredData, GearMapData, PlugSpecification
 from apps.gp.enum import ConnectorEnum
 from apps.api.views import mysql_get_insert_values, mysql_trigger_create_row
 from apps.gp.controllers import SugarCRMController
+from apiconnector.celery import app
 
 
+@app.task
 def update_gears():
     print("Starting to update gears...")
     active_gears = Gear.objects.filter(is_active=True, gear_map__is_active=True).select_related('gear_map')
@@ -55,3 +57,4 @@ def update_gears():
         gear.gear_map.save()
     print("Finished updating Gear's Target Plugs...")
     print("Integrity checks...")
+    return True

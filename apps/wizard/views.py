@@ -147,6 +147,8 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                                            connection_user=plug.connection.related_connection.connection_user,
                                            connection_password=plug.connection.related_connection.connection_password)
             modules = scrmc.get_available_modules()
+        else:
+            modules = []
         context['available_options'] = [m.module_key for m in modules]
         return context
 

@@ -107,6 +107,15 @@ class SugarCRMController(object):
     def set_entries(self, obj_list):
         return self.session.set_entries(obj_list)
 
+    def send_stored_data(self, source_data):
+        if self.plug is not None:
+            module_name = self.plug.plug_specification.all()[0].value
+            obj_list = []
+            for item in source_data:
+                obj_list.append(CustomSugarObject(module_name, **item['data']))
+            return self.set_entries(obj_list)
+        raise ControllerError
+
 
 class FacebookController(object):
     app_id = FACEBOOK_APP_ID
@@ -306,8 +315,8 @@ class MySQLController(object):
                                           connection=connection_object.connection, plug=plug)
                                for row in parsed_source_data for item in row['data'] if
                                (connection_object.connection.id, str(row['id'][0]), item['name']) not in stored_data]
-        logger.info('MySQL Controller >> NEW ROWs for connection id:%s  Number of entries: %s' % (
-            connection_object.connection.id, len(new_data)))
+        # logger.info('MySQL Controller >> NEW ROWs for connection id:%s  Number of entries: %s' % (
+        #     connection_object.connection.id, len(new_data)))
         if new_data:
             StoredData.objects.bulk_create(new_data)
 
@@ -320,4 +329,8 @@ class MySQLController(object):
 
 
 class MailChimpController(object):
+    pass
+
+
+class ControllerError(Exception):
     pass

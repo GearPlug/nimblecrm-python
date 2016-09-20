@@ -7,6 +7,6 @@ class MapForm(forms.Form):
             extra = kwargs.pop('extra')
             super(MapForm, self).__init__(*args, **kwargs)
             for field in extra:
-                self.fields['%s' % field] = forms.CharField(label=field)
+                self.fields['%s' % field] = forms.CharField(label=field, required=False)
         except:
             super(MapForm, self).__init__(*args, **kwargs)
