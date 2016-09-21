@@ -9,6 +9,7 @@ import logging
 import MySQLdb
 import copy
 import sugarcrm
+import re
 
 logger = logging.getLogger('controller')
 
@@ -107,13 +108,30 @@ class SugarCRMController(object):
     def set_entries(self, obj_list):
         return self.session.set_entries(obj_list)
 
-    def send_stored_data(self, source_data):
+    def send_stored_data(self, source_data, target_fields):
+        # print(source_data)
+        # print(target_fields)
+        final_data = []
+        available_target_fields_map = {}
+        valid_target_fields = []
+        for field in target_fields:
+            if target_fields[field] != '':
+                available_target_fields_map[target_fields[field]] = field
+                valid_target_fields.append(target_fields[field])
+        for obj in source_data:
+            obj_dict = {}
+            for field in obj['data']:
+                field_name = '%%%%%s%%%%' % field
+                if field_name in valid_target_fields:
+                    obj_dict[available_target_fields_map[field_name]] = obj['data'][field.replace('%', '')]
+            final_data.append(obj_dict)
         if self.plug is not None:
             module_name = self.plug.plug_specification.all()[0].value
             obj_list = []
-            for item in source_data:
-                obj_list.append(CustomSugarObject(module_name, **item['data']))
+            for item in final_data:
+                obj_list.append(CustomSugarObject(module_name, **item))
             return self.set_entries(obj_list)
+
         raise ControllerError
 
 

@@ -62,9 +62,6 @@ def mysql_get_insert_values(source_data, target_fields, *args, **kwargs):
             print(i)
     return column_order, values
 
-    # for item in d:
-    #     insert_values.append(regex_obj.sub(lambda x: item['data'][x.group()], sql_base_insert))
-
     # sql_base_insert = 'INSERT INTO %s (%s) VALUES(%s)' % \
     #                   (sql_table_name, ','.join(sql_columns), ','.join(sql_insert_tags))
     # tag_list = ['%s' % target_data[key] for key in target_data]

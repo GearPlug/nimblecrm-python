@@ -29,10 +29,13 @@ def update_gears():
         print('Updating target for gear: %s. (%s%%)' % (i + 1, (i + 1) * percentil,))
         kwargs = {'connection': gear.source.connection, 'plug': gear.source,}
         if gear.gear_map.last_sent_stored_data_id is not None:
+            print(gear.gear_map.last_sent_stored_data_id)
             kwargs['id__gt'] = gear.gear_map.last_sent_stored_data_id
         print(kwargs)
         stored_data = StoredData.objects.filter(**kwargs)
         print('%s %s' % (gear.source.connection.id, gear.source.id))
+        print(stored_data)
+        len(stored_data)
         if not stored_data:
             print("no data")
             continue
@@ -49,7 +52,7 @@ def update_gears():
         elif connector == ConnectorEnum.SugarCRM:
             controller_class = ConnectorEnum.get_controller(connector)
             controller = controller_class(gear.target.connection.related_connection, gear.target)
-            controller.send_stored_data(source_data)
+            controller.send_stored_data(source_data, target_fields)
             print("Sugar target")
         gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
         gear.gear_map.save()
