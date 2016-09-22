@@ -2,8 +2,10 @@ from apps.gp.models import Gear, StoredData, GearMapData, PlugSpecification
 from apps.gp.enum import ConnectorEnum
 from apps.api.views import mysql_get_insert_values, mysql_trigger_create_row
 from apps.gp.controllers import SugarCRMController
+from apiconnector.celery import app
 
 
+@app.task
 def update_gears():
     print("Starting to update gears...")
     active_gears = Gear.objects.filter(is_active=True, gear_map__is_active=True).select_related('gear_map')
@@ -29,13 +31,10 @@ def update_gears():
         print('Updating target for gear: %s. (%s%%)' % (i + 1, (i + 1) * percentil,))
         kwargs = {'connection': gear.source.connection, 'plug': gear.source,}
         if gear.gear_map.last_sent_stored_data_id is not None:
-            print(gear.gear_map.last_sent_stored_data_id)
             kwargs['id__gt'] = gear.gear_map.last_sent_stored_data_id
         print(kwargs)
         stored_data = StoredData.objects.filter(**kwargs)
         print('%s %s' % (gear.source.connection.id, gear.source.id))
-        print(stored_data)
-        len(stored_data)
         if not stored_data:
             print("no data")
             continue
@@ -52,9 +51,10 @@ def update_gears():
         elif connector == ConnectorEnum.SugarCRM:
             controller_class = ConnectorEnum.get_controller(connector)
             controller = controller_class(gear.target.connection.related_connection, gear.target)
-            controller.send_stored_data(source_data, target_fields)
+            controller.send_stored_data(source_data)
             print("Sugar target")
         gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
         gear.gear_map.save()
     print("Finished updating Gear's Target Plugs...")
     print("Integrity checks...")
+    return True

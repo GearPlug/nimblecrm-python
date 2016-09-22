@@ -154,7 +154,7 @@ class StoredData(models.Model):
     plug = models.ForeignKey(Plug, related_name='stored_data')
     connection = models.ForeignKey(Connection, related_name='stored_data')
     name = models.CharField('name', max_length=300)
-    value = models.CharField('value', max_length=3000)
+    value = models.CharField('value', max_length=3000, default='', blank=True)
     datetime = models.DateTimeField(auto_now_add=True)
     object_id = models.CharField('object_id', max_length=50, null=False)
 

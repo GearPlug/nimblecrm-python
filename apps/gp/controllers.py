@@ -9,6 +9,7 @@ import logging
 import MySQLdb
 import copy
 import sugarcrm
+import re
 
 logger = logging.getLogger('controller')
 
@@ -101,6 +102,38 @@ class SugarCRMController(object):
         else:
             print("Error, there's no connection or plug")
 
+    def set_entry(self, obj):
+        return self.session.set_entry(obj)
+
+    def set_entries(self, obj_list):
+        return self.session.set_entries(obj_list)
+
+    def send_stored_data(self, source_data, target_fields):
+        # print(source_data)
+        # print(target_fields)
+        final_data = []
+        available_target_fields_map = {}
+        valid_target_fields = []
+        for field in target_fields:
+            if target_fields[field] != '':
+                available_target_fields_map[target_fields[field]] = field
+                valid_target_fields.append(target_fields[field])
+        for obj in source_data:
+            obj_dict = {}
+            for field in obj['data']:
+                field_name = '%%%%%s%%%%' % field
+                if field_name in valid_target_fields:
+                    obj_dict[available_target_fields_map[field_name]] = obj['data'][field.replace('%', '')]
+            final_data.append(obj_dict)
+        if self.plug is not None:
+            module_name = self.plug.plug_specification.all()[0].value
+            obj_list = []
+            for item in final_data:
+                obj_list.append(CustomSugarObject(module_name, **item))
+            return self.set_entries(obj_list)
+
+        raise ControllerError
+
 
 class FacebookController(object):
     app_id = FACEBOOK_APP_ID
@@ -115,8 +148,7 @@ class FacebookController(object):
             try:
                 self.plug = args[1]
             except:
-                print(
-                    "Error:FacebookController with connection: %s has no plug." % self.connection_object.connection.id)
+                print("Error:FacebookController with connection: %s has no plug" % self.connection_object.connection.id)
 
     # Does a facebook request. Returns an array with the response or an empty array
     def send_request(self, url='', token='', base_url='', params=[]):
@@ -301,8 +333,8 @@ class MySQLController(object):
                                           connection=connection_object.connection, plug=plug)
                                for row in parsed_source_data for item in row['data'] if
                                (connection_object.connection.id, str(row['id'][0]), item['name']) not in stored_data]
-        logger.info('MySQL Controller >> NEW ROWs for connection id:%s  Number of entries: %s' % (
-            connection_object.connection.id, len(new_data)))
+        # logger.info('MySQL Controller >> NEW ROWs for connection id:%s  Number of entries: %s' % (
+        #     connection_object.connection.id, len(new_data)))
         if new_data:
             StoredData.objects.bulk_create(new_data)
 
@@ -315,4 +347,8 @@ class MySQLController(object):
 
 
 class MailChimpController(object):
+    pass
+
+
+class ControllerError(Exception):
     pass

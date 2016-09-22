@@ -23,6 +23,8 @@
                 <div class="error">{{ form.error }}</div>
             {% endif %}
         </form>
+
+        <a href="{% url 'wizard:set_gear_plugs' pk=request.session.gear_id|default:0 %}">Skip</a>
     </div>
 {% endblock %}
 {% block styles %}

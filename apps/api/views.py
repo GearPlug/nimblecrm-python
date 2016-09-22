@@ -56,11 +56,11 @@ def mysql_get_insert_values(source_data, target_fields, *args, **kwargs):
     for v in values:
         if len(v) < len(column_order):
             failed_data_list.append(values.pop(values.index(v)))
-    print(failed_data_list)
+    if failed_data_list:
+        print("The next data failed to be delivered:")
+        for i in failed_data_list:
+            print(i)
     return column_order, values
-
-    # for item in d:
-    #     insert_values.append(regex_obj.sub(lambda x: item['data'][x.group()], sql_base_insert))
 
     # sql_base_insert = 'INSERT INTO %s (%s) VALUES(%s)' % \
     #                   (sql_table_name, ','.join(sql_columns), ','.join(sql_insert_tags))

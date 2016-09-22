@@ -28,8 +28,7 @@
         {#            <![endif]-->#}
     {% endblock %}
     {% block extra_head_base %}
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        {% block head_meta_tags %}{% endblock %}{% block extra_head %}{% endblock %}
+        {% block extra_head %}{% endblock %}
     {% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}" id="{% block body_id %}{% endblock %}"
