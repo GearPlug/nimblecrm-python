@@ -64,8 +64,8 @@ class CreateGearMapView(FormView):
             pk=gear.target.id)
         self.source_object_list = self.get_available_source_fields(source_plug)
         self.form_field_list = self.get_target_field_list(target_plug)
-        print(self.source_object_list)
-        print(self.form_field_list)
+        # print(self.source_object_list)
+        # print(self.form_field_list)
         return super(CreateGearMapView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -127,7 +127,7 @@ class CreateGearMapView(FormView):
                                            connection_user=connection_data['connection_user'],
                                            connection_password=connection_data['connection_password'])
             try:
-                return scrmc.get_module_fields(plug.plug_specification.all()[0].value)
+                return scrmc.get_module_fields(plug.plug_specification.all()[0].value, get_structure=True)
             except:
                 return []
         elif c == ConnectorEnum.MailChimp:
