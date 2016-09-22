@@ -3,7 +3,7 @@
    */
    /* Move down content because we have a fixed navbar that is 50px tall */
    body {
-    background: #2d2d2d none repeat scroll 0 0;
+    background: #222222 none repeat scroll 0 0;
    padding: 0;
    margin: 0 auto;
    width: 100%;
@@ -917,10 +917,11 @@ li.active .big-icon {
     width: 100%;
 }
 .list-panel-control .panel ul li {
-    border: 1px solid;
+    background: #4f4f4f none repeat scroll 0 0;    
+    box-shadow: 8px 10px 5px #000;
     display: inline-block;
     height: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 30px;
     padding: 10px 0;
     width: 100%;
 }
@@ -928,6 +929,7 @@ li.active .big-icon {
     border: medium none !important;
 }
 .list-panel-control .name p {
+    color: #fff;
     font-size: 16px;
     margin: 10px;
     text-transform: capitalize;
@@ -947,6 +949,7 @@ li.active .big-icon {
     padding: 0 15px;
 }
 .panel-control a {
+    color: #ceff00;
     font-size: 16px;
 }
 .panel-control a .fa {
@@ -975,13 +978,13 @@ li.active .big-icon {
 .box-tool .form-horizontal button {
     background-color: #181818;
     border: medium none;
-    border-radius: 6px;
+    border-radius: 5px;
     color: #ceff00;
     float: right;
-    font-size: 9px;
+    font-size: 12px;
     font-weight: bold;
-    margin:0;
-    padding: 7px 13px;
+    margin: 0;
+    padding: 10px 20px;
     text-transform: uppercase;
 }
 .box-tool .form-horizontal button:hover {
@@ -1120,6 +1123,10 @@ text-decoration: underline;
   .container-4:hover button.icon:hover{
     background: #ceff00;
   }
+  .nav-sm .level-one {
+    font-size: 10px !important;
+    text-transform: none;
+}
 /*
 ** Footer
 *******************************************************/
