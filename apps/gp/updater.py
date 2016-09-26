@@ -8,14 +8,15 @@ def update_gears():
     print("Starting to update gears...")
     active_gears = Gear.objects.filter(is_active=True, gear_map__is_active=True).select_related('gear_map')
     gear_amount = len(active_gears)
-    print("A total of %s gears will be updated." % len(active_gears))
-    # print(active_gears)
-    # Download source data
     try:
         percentil = 100 / gear_amount
+        print("A total of %s gears will be updated." % len(active_gears))
     except ZeroDivisionError:
-        print("no gears.")
+        print("There are no gears to update.")
         return
+    # print(active_gears)
+    # Download source data
+
     for i, gear in enumerate(active_gears):
         update_source_plug(i, gear, percentil)
     # g = Gear.objects.get(pk=12)
@@ -41,13 +42,14 @@ def update_source_plug(i, gear, percentil):
 
 
 def update_target_plug(i, gear, percentil):
-    print('Updating target for gear: %s. (%s%%)' % (i + 1, (i + 1) * percentil,))
+    print('Updating target for gear: %s. (%s%%)' % (gear.id, (i + 1) * percentil,))
     kwargs = {'connection': gear.source.connection, 'plug': gear.source,}
     if gear.gear_map.last_sent_stored_data_id is not None:
         kwargs['id__gt'] = gear.gear_map.last_sent_stored_data_id
-    print(kwargs)
+    # print(kwargs)
     stored_data = StoredData.objects.filter(**kwargs)
     if not stored_data:
+        print("no data")
         return
     connector = ConnectorEnum.get_connector(gear.target.connection.connector.id)
     target_fields = {data.target_name: data.source_value for data in
@@ -55,7 +57,7 @@ def update_target_plug(i, gear, percentil):
     source_data = [{'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}}
                    for item in stored_data.values_list('object_id').distinct()]
     connection = gear.target.connection
-    print(connector)
+    # print(connector)
     if connector == ConnectorEnum.MySQL:
         columns, insert_values = mysql_get_insert_values(source_data, target_fields, connection.related_connection)
         mysql_trigger_create_row(connection.related_connection, columns, insert_values)
@@ -63,6 +65,6 @@ def update_target_plug(i, gear, percentil):
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class(gear.target.connection.related_connection, gear.target)
         controller.send_stored_data(source_data, target_fields)
-        print("Sugar target")
-    gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
-    gear.gear_map.save()
+        # print("Sugar target")
+    # gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
+    # gear.gear_map.save()

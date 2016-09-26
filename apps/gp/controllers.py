@@ -28,6 +28,10 @@ class CustomSugarObject(sugarcrm.SugarObject):
 
 
 class SugarCRMController(object):
+    """
+    Controller for the SugarCRM API
+
+    """
     user = None
     password = None
     url = None
@@ -108,32 +112,46 @@ class SugarCRMController(object):
     def set_entries(self, obj_list):
         return self.session.set_entries(obj_list)
 
+    # def send_stored_data(self, source_data, target_fields):
+    #     # print(source_data)
+    #     # print(target_fields)
+    #     final_data = []
+    #     available_target_fields_map = {}
+    #     valid_target_fields = []
+    #     for field in target_fields:
+    #         if target_fields[field] != '':
+    #             available_target_fields_map[target_fields[field]] = field
+    #             valid_target_fields.append(target_fields[field])
+    #     for obj in source_data:
+    #         obj_dict = {}
+    #         for field in obj['data']:
+    #             field_name = '%%%%%s%%%%' % field
+    #             if field_name in valid_target_fields:
+    #                 obj_dict[available_target_fields_map[field_name]] = obj['data'][field.replace('%', '')]
+    #                 print("field: %s " % field)
+    #             print('\n')
+    #         final_data.append(obj_dict)
+    #     for obj in final_data:
+    #         print(obj)
+    #     if self.plug is not None:
+    #         module_name = self.plug.plug_specification.all()[0].value
+    #         obj_list = []
+    #         for item in final_data:
+    #             obj_list.append(CustomSugarObject(module_name, **item))
+    #     # return self.set_entries(obj_list)
+    #     raise ControllerError
+
     def send_stored_data(self, source_data, target_fields):
-        # print(source_data)
-        # print(target_fields)
-        final_data = []
-        available_target_fields_map = {}
-        valid_target_fields = []
-        for field in target_fields:
-            if target_fields[field] != '':
-                available_target_fields_map[target_fields[field]] = field
-                valid_target_fields.append(target_fields[field])
-        for obj in source_data:
-            obj_dict = {}
-            for field in obj['data']:
-                field_name = '%%%%%s%%%%' % field
-                if field_name in valid_target_fields:
-                    obj_dict[available_target_fields_map[field_name]] = obj['data'][field.replace('%', '')]
-            final_data.append(obj_dict)
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
         if self.plug is not None:
             module_name = self.plug.plug_specification.all()[0].value
-            obj_list = []
-            for item in final_data:
-                obj_list.append(CustomSugarObject(module_name, **item))
+            for obj in data_list:
+                obj_list.append(CustomSugarObject(module_name, **obj))
+            for item in obj_list:
+                print("%s %s %s" % (item, item.module, item.name))
             return self.set_entries(obj_list)
-
         raise ControllerError
-
 
 class FacebookController(object):
     app_id = FACEBOOK_APP_ID
@@ -343,7 +361,6 @@ class MySQLController(object):
             self.download_to_stored_data(self.connection_object, self.plug)
         else:
             print("Error, there's no connection or plug")
-            # print("\n----------------------\n")
 
 
 class MailChimpController(object):
@@ -352,3 +369,25 @@ class MailChimpController(object):
 
 class ControllerError(Exception):
     pass
+
+
+def get_dict_with_source_data(source_data, target_fields):
+    valid_map = {}
+    result = []
+    for field in target_fields:
+        if target_fields[field] != '':
+            valid_map[field] = target_fields[field]
+    for obj in source_data:
+        user_dict = {}
+        for field in valid_map:
+            kw = valid_map[field].split(' ')
+            values = []
+            for i, w in enumerate(kw):
+                # print(w)
+                if w in ['%%%%%s%%%%' % k for k in obj['data'].keys()]:
+                    values.append(obj['data'][w.replace('%', '')])
+                else:
+                    values.append(w)
+            user_dict[field] = ' '.join(values)
+        result.append(user_dict)
+    return result
