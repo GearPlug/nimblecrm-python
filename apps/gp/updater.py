@@ -23,6 +23,7 @@ def update_gears():
 
     for i, gear in enumerate(active_gears):
         is_first = True if gear.gear_map.last_sent_stored_data_id is None else False
+        print("first: %s" % is_first)
         update_target_plug(i, gear, percentil, is_first=is_first)
     print("Finished updating Gear's Target Plugs...")
     print("Integrity checks...")
@@ -45,8 +46,6 @@ def update_target_plug(i, gear, percentil, is_first=False):
     kwargs = {'connection': gear.source.connection, 'plug': gear.source,}
     if gear.gear_map.last_sent_stored_data_id is not None:
         kwargs['id__gt'] = gear.gear_map.last_sent_stored_data_id
-    if is_first:
-        pass
     stored_data = StoredData.objects.filter(**kwargs)
     if not stored_data:
         print("no data")

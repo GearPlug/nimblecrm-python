@@ -144,6 +144,7 @@ class SugarCRMController(object):
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
         data_list = get_dict_with_source_data(source_data, target_fields)
+        print(is_first)
         if is_first:
             print("is_first")
             if data_list:
