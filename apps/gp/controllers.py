@@ -141,17 +141,23 @@ class SugarCRMController(object):
     #     # return self.set_entries(obj_list)
     #     raise ControllerError
 
-    def send_stored_data(self, source_data, target_fields):
+    def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
         data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            print("is_first")
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
         if self.plug is not None:
             module_name = self.plug.plug_specification.all()[0].value
             for obj in data_list:
                 obj_list.append(CustomSugarObject(module_name, **obj))
-            for item in obj_list:
-                print("%s %s %s" % (item, item.module, item.name))
-            return self.set_entries(obj_list)
-        raise ControllerError
+                return self.set_entries(obj_list)
+        raise ControllerError("There's no plug")
+
 
 class FacebookController(object):
     app_id = FACEBOOK_APP_ID
@@ -222,6 +228,7 @@ class FacebookController(object):
         if plug is None:
             plug = self.plug
         leads = self.get_leads(connection_object.token, connection_object.id_form)
+        print(leads)
         stored_data = [(item.connection, item.object_id, item.name) for item in
                        StoredData.objects.filter(connection=connection_object.connection, plug=plug)]
         new_data = []
@@ -265,7 +272,6 @@ class MySQLController(object):
                 self.table = self.connection_object.table
             except:
                 print("Error gettig the MySQL attributes")
-                pass
             try:
                 self.plug = args[1]
             except:

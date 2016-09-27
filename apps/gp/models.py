@@ -178,6 +178,8 @@ class GearMap(models.Model):
     last_update = models.DateTimeField('last update', auto_now=True)
     is_active = models.BooleanField('is active', default=True)
     last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', null=True, default=None)
+    last_sent_stored_data_creation_date = models.DateTimeField('last sent storeddata creation date', null=True, default=None)
+    created = models.DateTimeField('created', auto_now_add=True)
 
     class Meta:
         unique_together = ['id', 'gear']

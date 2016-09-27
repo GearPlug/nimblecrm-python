@@ -47,26 +47,33 @@ def try_sugar(url, user, password):
     session = sugarcrm.Session(url, user, password)
     print(session.session_id)
     lead = sugarcrm.Lead()
-    print("Lead: %s" % lead.query)
-    # custom_item = CustomSugarObject('Leads',)
-    # modules = session.get_available_modules()
-    entries = session.get_entry_list(lead, max_results=10)
-    # fields = session.get_module_fields(custom_item, get_structure=True)
-    # for f in entries:
-    #     print(f.email1 == 'omalave@gmail.com')
-    # print('%s %s:  %s' % (f['type'], len(f['options']), f['options']))
-    # for c in f['options']:
-    #     print('%s: %s' % (f['options'][c]['name'], f['options'][c]['value']))
-    # print("\n")
-    # print(fields)
-    # print(fields)
-    # params = {'module': 'Leads', 'first_name': 'Esperanza', 'phone_mobile': '3145114385',
-    #           'comentario_prospecto_c': 'Mucho dolor en el coxis y parte de la cadera derecha.',
-    #           'last_name': 'Valencia Sanchez'}
-    # params2 = {'last_name': 'prueba yonis name', 'phone_mobile': '5432'}
-    # new_lead = CustomSugarObject('Leads', **params)
-    # new_lead2 = CustomSugarObject('Leads', **params2)
-    # a = session.set_entries([new_lead, ])
+    s = session.get_entry_list(lead,  max_results=99, order_by='date_entered')
+    print(len(s))
+    for i in s:
+        print(i.fields)
+
+        # print("Lead: %s\n%s" % (lead.fields, lead.query))
+        # params = {'module': 'Leads', 'first_name': 'Esperanza', 'phone_mobile': '3145114385',
+        #           'comentario_prospecto_c': 'Mucho dolor en el coxis y parte de la cadera derecha.',
+        #           'last_name': 'Valencia Sanchez'}
+        # custom_item = CustomSugarObject('Leads', **params)
+        # print("custom_item: %s\n%s" % (custom_item.fields, custom_item.query))
+        # modules = session.get_available_modules()
+        # entries = session.get_entry_list(lead, max_results=10)
+        # fields = session.get_module_fields(custom_item, get_structure=True)
+        # for f in entries:
+        #     print(f.email1 == 'omalave@gmail.com')
+        # print('%s %s:  %s' % (f['type'], len(f['options']), f['options']))
+        # for c in f['options']:
+        #     print('%s: %s' % (f['options'][c]['name'], f['options'][c]['value']))
+        # print("\n")
+        # print(fields)
+        # print(fields)
+
+        # params2 = {'last_name': 'prueba yonis name', 'phone_mobile': '5432'}
+        # new_lead = CustomSugarObject('Leads', **params)
+        # new_lead2 = CustomSugarObject('Leads', **params2)
+        # a = session.set_entries([new_lead, ])
 
 
 def try_sub_dict(s, d):

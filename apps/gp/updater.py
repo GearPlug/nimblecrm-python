@@ -19,12 +19,11 @@ def update_gears():
 
     for i, gear in enumerate(active_gears):
         update_source_plug(i, gear, percentil)
-    # g = Gear.objects.get(pk=12)
-    # update_source_plug(1, g, 1)
     print("Finished updating Gear's Source Plugs...")
 
     for i, gear in enumerate(active_gears):
-        update_target_plug(i, gear, percentil)
+        is_first = True if gear.gear_map.last_sent_stored_data_id is None else False
+        update_target_plug(i, gear, percentil, is_first=is_first)
     print("Finished updating Gear's Target Plugs...")
     print("Integrity checks...")
 
@@ -41,12 +40,13 @@ def update_source_plug(i, gear, percentil):
     controller.download_source_data()
 
 
-def update_target_plug(i, gear, percentil):
+def update_target_plug(i, gear, percentil, is_first=False):
     print('Updating target for gear: %s. (%s%%)' % (gear.id, (i + 1) * percentil,))
     kwargs = {'connection': gear.source.connection, 'plug': gear.source,}
     if gear.gear_map.last_sent_stored_data_id is not None:
         kwargs['id__gt'] = gear.gear_map.last_sent_stored_data_id
-    # print(kwargs)
+    if is_first:
+        pass
     stored_data = StoredData.objects.filter(**kwargs)
     if not stored_data:
         print("no data")
@@ -64,7 +64,6 @@ def update_target_plug(i, gear, percentil):
     elif connector == ConnectorEnum.SugarCRM:
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class(gear.target.connection.related_connection, gear.target)
-        controller.send_stored_data(source_data, target_fields)
-        # print("Sugar target")
-    # gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
-    # gear.gear_map.save()
+        entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
+    gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
+    gear.gear_map.save()

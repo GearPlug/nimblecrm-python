@@ -26,8 +26,9 @@ class MapForm(forms.Form):
 
                     if 'options' in field and field['options']:
                         custom_field = forms.ChoiceField
-                        choices = tuple((field['options'][choice]['name'], field['options'][choice]['value'])
-                                        for choice in field['options'])
+                        choices = tuple('') + tuple(
+                            (field['options'][choice]['name'], field['options'][choice]['value'])
+                            for choice in field['options'])
                         params['choices'] = choices
                     else:
                         if 'len' in field:
@@ -46,7 +47,7 @@ class MapForm(forms.Form):
                                 custom_field = forms.CharField
                         else:
                             custom_field = forms.CharField
-                print('name: %s, %s, %s' % (name, custom_field, params))
+                # print('name: %s, %s, %s' % (name, custom_field, params))
                 # if custom_field != forms.ChoiceField:
                 self.fields[name] = custom_field(**params)
         except Exception as e:
