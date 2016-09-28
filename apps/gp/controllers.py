@@ -144,19 +144,17 @@ class SugarCRMController(object):
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
         data_list = get_dict_with_source_data(source_data, target_fields)
-        print(is_first)
         if is_first:
-            print("is_first")
             if data_list:
                 try:
-                    data_list = [data_list[-1]]
+                    data_list = [data_list[0]]
                 except:
                     data_list = []
         if self.plug is not None:
             module_name = self.plug.plug_specification.all()[0].value
             for obj in data_list:
                 obj_list.append(CustomSugarObject(module_name, **obj))
-                return self.set_entries(obj_list)
+            return self.set_entries(obj_list)
         raise ControllerError("There's no plug")
 
 
@@ -229,7 +227,7 @@ class FacebookController(object):
         if plug is None:
             plug = self.plug
         leads = self.get_leads(connection_object.token, connection_object.id_form)
-        print(leads)
+        # print(leads)
         stored_data = [(item.connection, item.object_id, item.name) for item in
                        StoredData.objects.filter(connection=connection_object.connection, plug=plug)]
         new_data = []
@@ -239,7 +237,7 @@ class FacebookController(object):
                                    for lead in item['field_data'] if
                                    (connection_object.connection, item['id'], lead['name']) not in stored_data]
         logger.info('Facebook Controller >> NEW LEADS for connection id:%s  Number of entries: %s' % (
-            connection_object.connection.id, len(new_data)))
+            connection_object.connection.id, len(new_data) // len(leads[0]['field_data'])))
         if new_data:
             StoredData.objects.bulk_create(new_data)
 
@@ -330,19 +328,29 @@ class MySQLController(object):
                 print('Error ')
         return None
 
-    def select_all(self):
-        if self.table is not None and self.database is not None:
+    def select_all(self, limit=30):
+        if self.table is not None and self.database is not None and self.plug is not None:
             try:
-                self.cursor.execute('SELECT * FROM `%s`.`%s`' % (self.database, self.table))
+                order_by = self.plug.plug_specification.all()[0].value
+            except:
+                order_by = None
+            select = 'SELECT * FROM `%s`.`%s`' % (self.database, self.table)
+            if order_by is not None:
+                select += 'ORDER BY %s DESC ' % order_by
+            if limit is not None and isinstance(limit, int):
+                select += 'LIMIT %s' % limit
+            try:
+                self.cursor.execute(select)
                 cursor_select_all = copy.copy(self.cursor)
                 self.describe_table()
                 cursor_describe = self.cursor
                 return [{column[0]: item[i] for i, column in enumerate(cursor_describe)} for item in cursor_select_all]
-            except:
-                print('Error ')
+            except Exception as e:
+                print(e)
         return []
 
     def download_to_stored_data(self, connection_object, plug):
+        print("downloading mysql data")
         if plug is None:
             plug = self.plug
         source_data = self.select_all()
@@ -352,7 +360,6 @@ class MySQLController(object):
         parsed_source_data = [{'id': tuple(item[key] for key in id_list),
                                'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}
                               for item in source_data]
-
         new_data = []
         new_data = new_data + [StoredData(name=item['name'], value=item['value'], object_id=row['id'][0],
                                           connection=connection_object.connection, plug=plug)

@@ -85,5 +85,5 @@ def try_sub_dict(s, d):
 # ej1()
 # ej2()
 # ej3()
-try_sugar('http://208.113.131.86/uat/uat/service/v4_1/rest.php', 'emarketing', 'zakaramk*')
+# try_sugar('http://208.113.131.86/uat/uat/service/v4_1/rest.php', 'emarketing', 'zakaramk*')
 # try_sub_dict('Hola soy german!', {'german': 'daniel'})

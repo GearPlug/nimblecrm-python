@@ -23,7 +23,6 @@ def update_gears():
 
     for i, gear in enumerate(active_gears):
         is_first = True if gear.gear_map.last_sent_stored_data_id is None else False
-        print("first: %s" % is_first)
         update_target_plug(i, gear, percentil, is_first=is_first)
     print("Finished updating Gear's Target Plugs...")
     print("Integrity checks...")
@@ -64,5 +63,6 @@ def update_target_plug(i, gear, percentil, is_first=False):
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class(gear.target.connection.related_connection, gear.target)
         entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
+        print('data %s' % len(source_data))
     gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
     gear.gear_map.save()

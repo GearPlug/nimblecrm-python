@@ -136,9 +136,6 @@ class CreateGearMapView(FormView):
             return []
 
     def get_source_data_list(self, plug, connection):
-        print(plug.id)
-        print(connection.id)
-        print(StoredData.objects.filter(plug=plug, connection=connection))
         return StoredData.objects.filter(plug=plug, connection=connection).values('name').distinct()
 
 
