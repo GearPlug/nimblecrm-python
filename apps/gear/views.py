@@ -116,10 +116,12 @@ class CreateGearMapView(FormView):
         for field in fields:
             connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
         if c == ConnectorEnum.MySQL:
+            print("in mysql")
             mysqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
                                      connection_user=connection_data['connection_user'],
                                      connection_password=connection_data['connection_password'],
                                      database=connection_data['database'], table=connection_data['table'])
+            print(mysqlc.describe_table())
             form_data = mysqlc.describe_table()
             return [item['name'] for item in form_data if item['is_primary'] is not True]
         elif c == ConnectorEnum.SugarCRM:

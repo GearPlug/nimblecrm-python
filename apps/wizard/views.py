@@ -1,7 +1,6 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.urls import reverse
-
+from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController

@@ -86,8 +86,8 @@ class SugarCRMController(object):
         custom_module = CustomSugarObject(module)
         return self.session.get_module_fields(custom_module, **kwargs)
 
-    def download_module_to_stored_data(self, connection_object, plug, module):
-        data = self.get_entry_list(module)
+    def download_module_to_stored_data(self, connection_object, plug, module, limit=29):
+        data = self.get_entry_list(module, max_results=limit)
         stored_data = [(item.connection, item.object_id, item.name) for item in
                        StoredData.objects.filter(connection=connection_object.connection, plug=plug)]
         new_data = []

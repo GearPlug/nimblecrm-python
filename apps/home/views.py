@@ -1,9 +1,10 @@
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 from apps.user.views import LoginView
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
-class DashBoardView(TemplateView):
+class DashBoardView(LoginRequiredMixin, TemplateView):
     template_name = 'home/dashboard.html'
 
     def get(self, *args, **kwargs):
@@ -15,7 +16,7 @@ class DashBoardView(TemplateView):
         return context
 
 
-class HomeView(LoginView):
+class HomeView(LoginRequiredMixin, LoginView):
     template_name = 'home/index.html'
     success_url = '/dashboard/'
 

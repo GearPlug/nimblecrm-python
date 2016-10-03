@@ -4,6 +4,7 @@ from django import forms
 class MapForm(forms.Form):
     def __init__(self, *args, **kwargs):
         try:
+            print("a")
             extra = kwargs.pop('extra')
             super(MapForm, self).__init__(*args, **kwargs)
             # print(extra)
@@ -11,7 +12,6 @@ class MapForm(forms.Form):
                 if isinstance(field, str):
                     self.fields['%s' % field] = forms.CharField(label=field, required=False)
                 elif isinstance(field, dict):
-                    # else:
                     params = {'required': False}
                     if 'label' in field:
                         params['label'] = field['label']
@@ -47,9 +47,7 @@ class MapForm(forms.Form):
                                 custom_field = forms.CharField
                         else:
                             custom_field = forms.CharField
-                # print('name: %s, %s, %s' % (name, custom_field, params))
-                # if custom_field != forms.ChoiceField:
-                self.fields[name] = custom_field(**params)
+                    self.fields[name] = custom_field(**params)
         except Exception as e:
-            print(e)
+            raise
             super(MapForm, self).__init__(*args, **kwargs)

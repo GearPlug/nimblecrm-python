@@ -118,6 +118,19 @@ class SugarCRMConnection(models.Model):
         return self.name
 
 
+class MailChimpConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mailchimp')
+    name = models.CharField('name', max_length=200)
+    url = models.CharField('url', max_length=200)
+    connection_user = models.CharField('user', max_length=200)
+    connection_password = models.CharField('password', max_length=200)
+    api_key = models.CharField('api key', max_length=200)
+    module = models.CharField('module', max_length=200, default='', blank=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
     name = models.CharField('name', max_length=120)
@@ -178,7 +191,8 @@ class GearMap(models.Model):
     last_update = models.DateTimeField('last update', auto_now=True)
     is_active = models.BooleanField('is active', default=True)
     last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', null=True, default=None)
-    last_sent_stored_data_creation_date = models.DateTimeField('last sent storeddata creation date', null=True, default=None)
+    last_sent_stored_data_creation_date = models.DateTimeField('last sent storeddata creation date', null=True,
+                                                               default=None)
     created = models.DateTimeField('created', auto_now_add=True)
 
     class Meta:
