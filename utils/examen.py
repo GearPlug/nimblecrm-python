@@ -2,6 +2,7 @@ import random
 import sugarcrm
 from mailchimp3 import MailChimp
 import re
+import hashlib
 
 
 class CustomSugarObject(sugarcrm.SugarObject):
@@ -55,26 +56,35 @@ def try_sugar(url, user, password):
 
 
 def try_mailchimp(user, password):
+    m = hashlib.md5()
     client = MailChimp(user, password)
+
     result = client.list.all()
-    lists = []
-    for l in result['lists']:
-        lists.append({'name': l['name'], 'id': l['id']})
+    lists = [{'name': l['name'], 'id': l['id']} for l in result['lists']]
     print(lists)
-    jhon = {
-        'email_address': 'lucas.doe@gmail.com',
-        'status': 'subscribed',
-        'merge_fields': {
-            'FNAME': 'John',
-            'LNAME': 'Doe',
-        },
-    }
+    email = 'lucas.doe@gmail.com'
+    m.update(email.encode())
     idp = '540db784d6'
+
+    # jhon = {
+    #     'email_address': 'lucas.doe@gmail.com',
+    #     'status': 'subscribed',
+    #     'merge_fields': {
+    #         'FNAME': 'John',
+    #         'LNAME': 'Doe',
+    #     },
+    # }
     # result = client.member.create(idp, jhon)
-    result = client.member.all(idp, email=jhon['email_address'], fields="members.email_address", get_all=True)
-    for i in result['members']:
-        print(i)
-        # result = client.member.delete()
+
+    # result = client.member.get(idp, m.hexdigest())
+    # print(result['status'])
+    # if result['status'] == 404:
+    #     print("Error")
+    # else:
+    #     print('%s %s %s' % (result['email_address'], '%s %s'%(result['merge_fields']['FNAME'],result['merge_fields']['LNAME']), result['id']))
+
+    result = client.member.update(idp, m.hexdigest(), {'status': 'unsubscribed'})
+    print(result)
 
 
 def try_sub_dict(s, d):

@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib import admin
 from apps.user.models import User
 
-connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm']
+connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp']
 
 
 class Connector(models.Model):
@@ -52,6 +52,7 @@ class Connection(models.Model):
     connector = models.ForeignKey(Connector, default=2, on_delete=models.CASCADE)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
+    is_deleted = models.BooleanField('is deleted', default=False)
 
     @property
     def name(self):
@@ -112,7 +113,6 @@ class SugarCRMConnection(models.Model):
     url = models.CharField('url', max_length=200)
     connection_user = models.CharField('user', max_length=200)
     connection_password = models.CharField('password', max_length=200)
-    module = models.CharField('module', max_length=200, default='', blank=True)
 
     def __str__(self):
         return self.name
@@ -123,9 +123,7 @@ class MailChimpConnection(models.Model):
     name = models.CharField('name', max_length=200)
     url = models.CharField('url', max_length=200)
     connection_user = models.CharField('user', max_length=200)
-    connection_password = models.CharField('password', max_length=200)
     api_key = models.CharField('api key', max_length=200)
-    module = models.CharField('module', max_length=200, default='', blank=True)
 
     def __str__(self):
         return self.name
@@ -178,8 +176,8 @@ class StoredData(models.Model):
 class Gear(models.Model):
     name = models.CharField('name', max_length=120)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    source = models.ForeignKey(Plug, null=True, on_delete=models.CASCADE, related_name='source_gear')
-    target = models.ForeignKey(Plug, null=True, on_delete=models.CASCADE, related_name='target_gear')
+    source = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='source_gear')
+    target = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='target_gear')
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
@@ -190,7 +188,7 @@ class GearMap(models.Model):
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
     is_active = models.BooleanField('is active', default=True)
-    last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', null=True, default=None)
+    last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', null=True, default=None, on_delete=models.SET_NULL)
     last_sent_stored_data_creation_date = models.DateTimeField('last sent storeddata creation date', null=True,
                                                                default=None)
     created = models.DateTimeField('created', auto_now_add=True)

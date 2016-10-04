@@ -11,9 +11,9 @@ BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
 CELERYBEAT_SCHEDULE = {
-    'update-plugs-5-minutes': {
+    'update-plugs-1-minutes': {
         'task': 'apps.gp.tasks.update_gears',
-        'schedule': timedelta(minutes=1),
+        'schedule': timedelta(minutes=1, seconds=30),
     },
 }
 
