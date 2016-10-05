@@ -16,3 +16,46 @@
     </form>
 {% endblock %}
 
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+
+        $(document).ready(function () {
+            (function (d, s, id) {
+                var js, fjs = d.getElementsByTagName(s)[0];
+                if (d.getElementById(id)) return;
+                js = d.createElement(s);
+                js.id = id;
+                js.src = "//connect.facebook.net/en_US/sdk.js";
+                fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));
+
+
+            $('button#btnTestConnection').click(function () {
+                $.ajax({
+                    method: "POST",
+                    url: "{% url 'connection:ajax_mailchimp_test_connection' %}",
+                    data: $('form#formCreateConnection').serialize(),
+                }).done(function (response) {
+                    if (response.data) {
+                        $('div#connectionTestResult').html('<p>Connection is valid.</p>');
+                        $('button#btnCreateConnection').prop("disabled", false);
+                    }
+                });
+                return false;
+            });
+
+            $('button#btnCreateConnection').click(function () {
+                var form_id = $('div#form_list select').val();
+                var form_name = $('div#form_list select option:selected').html().trim();
+                var page_id = $('div#connection_list select').val();
+                $('input#id_name').val(form_name);
+                $('input#id_id_page').val(page_id);
+                $('input#id_id_form').val(form_id);
+                $('input#id_token').val(user_access_token);
+                $('form#formCreateConnection').submit();
+            });
+        })
+    </script>
+{% endblock %}

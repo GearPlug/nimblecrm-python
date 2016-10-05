@@ -12,9 +12,7 @@ class AJAXMailChimpTestConnection(TemplateViewWithPost):
     succes_url = ''
 
     def post(self, request, *args, **kwargs):
-        name = self.request.POST.get('name', 'nombre')
-        url = self.request.POST.get('url', 'url')
         user = self.request.POST.get('connection_user', 'usuario')
-        password = self.request.POST.get('api_key', 'clave')
-        ping = mcc.create_connection(url=url, connection_user=user, connection_password=password, )
+        api_key = self.request.POST.get('api_key', 'clave')
+        ping = mcc.create_connection(user=user, api_key=api_key, )
         return JsonResponse({'data': ping})

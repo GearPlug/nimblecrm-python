@@ -110,7 +110,6 @@
                     url: "{% url 'connection:ajax_update_facebook_get_leads' %}",
                     data: {'user_access_token': user_access_token, 'form_id': form_id},
                 }).done(function (response) {
-                    console.log(response.data);
                     if (response.data) {
                         $('div#form_list').append('<p>Connection is valid.</p>');
                     }

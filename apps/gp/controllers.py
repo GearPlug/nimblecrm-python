@@ -9,38 +9,52 @@ import logging
 import MySQLdb
 import copy
 import sugarcrm
-import mailchimp3
+from mailchimp3 import MailChimp
 
 logger = logging.getLogger('controller')
 
 
 class MailChimpController(object):
-    connection_object = None
+    _connection_object = None
+    _plug = None
 
     def __init__(self, *args, **kwargs):
-        if args:
-            self.connection_object = args[0]
-            try:
-                self.plug = args[1]
-            except:
-                pass
+        self.create_connection(*args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
+        print("in")
         if args:
             try:
-                self.connection_object = args[0]
-                host = self.connection_object.host
-                port = self.connection_object.port
-                user = self.connection_object.connection_user
-                api_key = self.connection_object.a
-                self.database = self.connection_object.database
-                self.table = self.connection_object.table
-            except:
-                print("Error gettig the MySQL attributes")
+                self._connection_object = args[0]
+                user = self._connection_object.connection_user
+                api_key = self._connection_object.api_key
+                client = MailChimp(user, api_key)
+            except Exception as e:
+                print(e)
+                print("Error gettig the MailChimp attributes")
+                client = None
             try:
-                self.plug = args[1]
+                self._plug = args[1]
             except:
                 pass
+        if kwargs:
+            if 'user' in kwargs:
+                user = kwargs.pop('user')
+            if 'api_key' in kwargs:
+                api_key = kwargs.pop('api_key')
+            try:
+                client = MailChimp(user, api_key)
+            except Exception as e:
+                print(e)
+                print("Error gettig the MailChimp attributes")
+                client = None
+        try:
+            t = client.list.all()
+        except Exception as e:
+            print(e)
+            t = None
+        return t is not None
+
 
 class FacebookController(object):
     app_id = FACEBOOK_APP_ID

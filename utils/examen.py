@@ -58,13 +58,19 @@ def try_sugar(url, user, password):
 def try_mailchimp(user, password):
     m = hashlib.md5()
     client = MailChimp(user, password)
+    try:
+        t = client.list.all()
+    except Exception as e:
+        print(e)
+        t = None
+    print(t is not None)
 
-    result = client.list.all()
-    lists = [{'name': l['name'], 'id': l['id']} for l in result['lists']]
-    print(lists)
-    email = 'lucas.doe@gmail.com'
-    m.update(email.encode())
-    idp = '540db784d6'
+    # result = client.list.all()
+    # lists = [{'name': l['name'], 'id': l['id']} for l in result['lists']]
+    # print(lists)
+    # email = 'lucas.doe@gmail.com'
+    # m.update(email.encode())
+    # idp = '540db784d6'
 
     # jhon = {
     #     'email_address': 'lucas.doe@gmail.com',
@@ -83,8 +89,8 @@ def try_mailchimp(user, password):
     # else:
     #     print('%s %s %s' % (result['email_address'], '%s %s'%(result['merge_fields']['FNAME'],result['merge_fields']['LNAME']), result['id']))
 
-    result = client.member.update(idp, m.hexdigest(), {'status': 'unsubscribed'})
-    print(result)
+    # result = client.member.update(idp, m.hexdigest(), {'status': 'unsubscribed'})
+    # print(result)
 
 
 def try_sub_dict(s, d):
