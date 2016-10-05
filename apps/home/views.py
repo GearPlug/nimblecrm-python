@@ -16,7 +16,7 @@ class DashBoardView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class HomeView(LoginRequiredMixin, LoginView):
+class HomeView(LoginView):
     template_name = 'home/index.html'
     success_url = '/dashboard/'
 
