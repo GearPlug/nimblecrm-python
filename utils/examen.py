@@ -1,6 +1,8 @@
 import random
 import sugarcrm
+from mailchimp3 import MailChimp
 import re
+import hashlib
 
 
 class CustomSugarObject(sugarcrm.SugarObject):
@@ -46,21 +48,43 @@ def ej3():
 def try_sugar(url, user, password):
     session = sugarcrm.Session(url, user, password)
     print(session.session_id)
-    custom_item = CustomSugarObject('Leads')
-    modules = session.get_available_modules()
-    # print(modules)
-    # entries = session.get_entry_list(custom_item, )
-    # print([e['name'] for e in entries[0].fields])
-    fields = session.get_module_fields(custom_item, )
-    # print(fields)
-    # print(fields)
-    # params = {'module': 'Leads', 'first_name': 'Esperanza', 'phone_mobile': '3145114385',
-    #           'comentario_prospecto_c': 'Mucho dolor en el coxis y parte de la cadera derecha.',
-    #           'last_name': 'Valencia Sanchez'}
-    # params2 = {'last_name': 'prueba yonis name', 'phone_mobile': '5432'}
-    # new_lead = CustomSugarObject('Leads', **params)
-    # new_lead2 = CustomSugarObject('Leads', **params2)
-    # a = session.set_entries([new_lead, ])
+    lead = sugarcrm.Lead()
+    s = session.get_entry_list(lead, max_results=30, order_by='date_entered DESC')
+    print(len(s))
+    for i in s:
+        print(i.fields)
+
+
+def try_mailchimp(user, password):
+    m = hashlib.md5()
+    client = MailChimp(user, password)
+
+    result = client.list.all()
+    lists = [{'name': l['name'], 'id': l['id']} for l in result['lists']]
+    print(lists)
+    email = 'lucas.doe@gmail.com'
+    m.update(email.encode())
+    idp = '540db784d6'
+
+    # jhon = {
+    #     'email_address': 'lucas.doe@gmail.com',
+    #     'status': 'subscribed',
+    #     'merge_fields': {
+    #         'FNAME': 'John',
+    #         'LNAME': 'Doe',
+    #     },
+    # }
+    # result = client.member.create(idp, jhon)
+
+    # result = client.member.get(idp, m.hexdigest())
+    # print(result['status'])
+    # if result['status'] == 404:
+    #     print("Error")
+    # else:
+    #     print('%s %s %s' % (result['email_address'], '%s %s'%(result['merge_fields']['FNAME'],result['merge_fields']['LNAME']), result['id']))
+
+    result = client.member.update(idp, m.hexdigest(), {'status': 'unsubscribed'})
+    print(result)
 
 
 def try_sub_dict(s, d):
@@ -72,5 +96,6 @@ def try_sub_dict(s, d):
 # ej1()
 # ej2()
 # ej3()
-try_sugar('http://208.113.131.86/uat/uat/service/v4_1/rest.php', 'emarketing', 'zakaramk*')
+# try_sugar('http://208.113.131.86/uat/uat/service/v4_1/rest.php', 'emarketing', 'zakaramk*')
 # try_sub_dict('Hola soy german!', {'german': 'daniel'})
+try_mailchimp('MaxConceptLife63', '619813e972f8698c8029978a8dfc250d-us12')

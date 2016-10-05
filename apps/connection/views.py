@@ -5,6 +5,7 @@ from apps.connection.apps import APP_NAME as app_name
 from apps.connection.myviews.FacebookViews import *
 from apps.connection.myviews.MySQLViews import *
 from apps.connection.myviews.SugarCRMViews import *
+from apps.connection.myviews.MailChimpViews import *
 from apps.gp.controllers import FacebookController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connection, Connector, StoredData, GearMap, GearMapData

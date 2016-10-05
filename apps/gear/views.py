@@ -64,8 +64,8 @@ class CreateGearMapView(FormView):
             pk=gear.target.id)
         self.source_object_list = self.get_available_source_fields(source_plug)
         self.form_field_list = self.get_target_field_list(target_plug)
-        print(self.source_object_list)
-        print(self.form_field_list)
+        # print(self.source_object_list)
+        # print(self.form_field_list)
         return super(CreateGearMapView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -116,10 +116,12 @@ class CreateGearMapView(FormView):
         for field in fields:
             connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
         if c == ConnectorEnum.MySQL:
+            print("in mysql")
             mysqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
                                      connection_user=connection_data['connection_user'],
                                      connection_password=connection_data['connection_password'],
                                      database=connection_data['database'], table=connection_data['table'])
+            print(mysqlc.describe_table())
             form_data = mysqlc.describe_table()
             return [item['name'] for item in form_data if item['is_primary'] is not True]
         elif c == ConnectorEnum.SugarCRM:
@@ -127,7 +129,7 @@ class CreateGearMapView(FormView):
                                            connection_user=connection_data['connection_user'],
                                            connection_password=connection_data['connection_password'])
             try:
-                return scrmc.get_module_fields(plug.plug_specification.all()[0].value)
+                return scrmc.get_module_fields(plug.plug_specification.all()[0].value, get_structure=True)
             except:
                 return []
         elif c == ConnectorEnum.MailChimp:
@@ -136,9 +138,6 @@ class CreateGearMapView(FormView):
             return []
 
     def get_source_data_list(self, plug, connection):
-        print(plug.id)
-        print(connection.id)
-        print(StoredData.objects.filter(plug=plug, connection=connection))
         return StoredData.objects.filter(plug=plug, connection=connection).values('name').distinct()
 
 

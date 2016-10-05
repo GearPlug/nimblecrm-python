@@ -1,7 +1,6 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.urls import reverse
-
+from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController
@@ -99,14 +98,6 @@ class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
             conn = self.object.connection.related_connection
             if c == ConnectorEnum.Facebook:
                 fbc.download_leads_to_stored_data(conn, self.object)
-            elif c == ConnectorEnum.MySQL:
-                ping = mysqlc.create_connection(conn, self.object)
-                if ping:
-                    res = mysqlc.download_to_stored_data(conn, self.object)
-            elif c == ConnectorEnum.SugarCRM:
-                print("In SugarCRM")
-                # Esto va antes
-        # print(len(self.object.action.action_specification.all()))
         if len(self.object.action.action_specification.all()) > 0:
             return reverse('wizard:plug_set_specifications',
                            kwargs={'plug_id': self.object.id,})
