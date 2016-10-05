@@ -11,10 +11,11 @@
       <ul>
          {% for gear in object_list %}
          <li>
-            <div class="name col-md-8 col-sm-6 col-xs-6">
+            <div class="name col-md-7 col-sm-4 col-xs-12">
                <p>{{ gear.name }}</p>
+               <div class="tools-re"><a href="javascript:;"><i class="fa fa-wrench" aria-hidden="true"></i></a></div>
             </div>
-            <div class="panel-control col-md-4 col-sm-6 col-xs-6">
+            <div class="panel-control col-md-5 col-sm-8 col-xs-12">
                <p><a href="{% url 'gear:update' pk=gear.id %}" class="edit-btn"><i class="fa fa-pencil" aria-hidden="true"></i>  Editar</a></p>
                <p><a href="{% url 'gear:map' gear_id=gear.id %}" class="mapping-btn"><i class="fa fa-link" aria-hidden="true"></i>  Start Mapping</a></p>
                <p><a href="{% url 'gear:delete' pk=gear.id %}" class="delete-btn"><i class="fa fa-trash" aria-hidden="true"></i>  Eliminar</a></p>
