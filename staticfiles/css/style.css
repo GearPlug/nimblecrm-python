@@ -935,13 +935,16 @@ li.active .big-icon {
     text-transform: capitalize;
 }
 .list-panel-control h3 {    
-    color: #777777;
+    color: #fff;
     font-size: 21px;
     font-weight: bold;
     margin-bottom: 20px;
     padding-bottom: 5px;
     text-align: center;
     text-transform: uppercase;
+}
+.panel-control{
+  text-align: center;
 }
 .panel-control p {
     display: inline-block;
@@ -1143,10 +1146,43 @@ footer {
 ** Responsive
 *******************************************************/
 @media only screen and (max-width: 1920px) {
+  .tools-re{display: none;}
 }
 @media only screen and (max-width: 1280px) {
+  .arrow {
+    bottom: 20%;
+  }
+  .arrow.active {
+    bottom: -8%;
+  }
+  .box-tool {
+    padding: 70px 20px 20px;
+    width: 95%;
+  }
+  .panel {
+    padding: 0;
+  }
 }
 @media only screen and (max-width: 980px) {
+  .nav.toggle {
+    display: block !important;
+    padding-top: 30px;
+  }
+  .toggle a i {
+    color: #ceff00;
+  }
+  .big-logo {
+    display: none !important;
+  }
+  .small-logo {
+    display: inline-table !important;
+  }
+  .arrow {
+    display: none;
+  }
+  .nav-sm .nav.child_menu li.active, .nav-sm .nav.side-menu li.active-sm {
+    border-right: 5px solid #ceff00;
+  }
 }
 @media only screen and (max-width: 800px) {
   #connectors_main .searchbar {
@@ -1165,6 +1201,44 @@ footer {
   }
 }
 @media only screen and (max-width: 360px) {
+  .user-things {
+    display: none;
+  }
+  .navbar-nav .open .dropdown-menu {
+    top: 14%;
+    width: 100%;
+    z-index: 10000;
+  }
+  .box-tool {
+    width: 100%;
+  }
+  .tools-re {
+    display: block;
+    position: absolute;
+    right: 15px;
+    top: 10px;
+  }
+  .tools-re > a {
+    border: 1px solid;
+    border-radius: 17px;
+    color: #ceff00;
+    display: block;
+    height: 30px;
+    padding: 4px 0;
+    text-align: center;
+    width: 30px;
+  }
+  .panel-control{display: none;}
+  .panel-control p {
+    text-align: left;
+    width: 100%;
+  }
+  .panel-control a {
+    font-size: 12px;
+  }
+  .List-empty {
+    padding: 10px;
+  }
 }
 @media only screen and (max-width: 320px) {
 }
