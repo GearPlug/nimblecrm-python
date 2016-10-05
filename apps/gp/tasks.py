@@ -72,5 +72,5 @@ def update_target_plug(i, gear, percentil, is_first=False):
         controller = controller_class(gear.target.connection.related_connection, gear.target)
         entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
         print('data %s' % len(source_data))
-    # gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
-    # gear.gear_map.save()
+    gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
+    gear.gear_map.save()
