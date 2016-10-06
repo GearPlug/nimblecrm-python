@@ -44,18 +44,6 @@
                     }
                 });
                 return false;
-            });
-
-            $('button#btnCreateConnection').click(function () {
-                var form_id = $('div#form_list select').val();
-                var form_name = $('div#form_list select option:selected').html().trim();
-                var page_id = $('div#connection_list select').val();
-                $('input#id_name').val(form_name);
-                $('input#id_id_page').val(page_id);
-                $('input#id_id_form').val(form_id);
-                $('input#id_token').val(user_access_token);
-                $('form#formCreateConnection').submit();
-            });
-        })
+            })
     </script>
 {% endblock %}

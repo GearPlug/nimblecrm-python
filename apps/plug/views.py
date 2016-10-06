@@ -66,6 +66,7 @@ class CreatePlugSpecificationsView(CreateView):
         return super(CreatePlugSpecificationsView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        print(self.request.POST)
         return super(CreatePlugSpecificationsView, self).post(request, *args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):

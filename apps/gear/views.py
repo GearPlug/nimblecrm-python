@@ -3,13 +3,14 @@ from django.views.generic import CreateView, UpdateView, DeleteView, ListView, F
 
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
-from apps.gp.controllers import MySQLController, SugarCRMController
+from apps.gp.controllers import MySQLController, SugarCRMController, MailChimpController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
 
 mysqlc = MySQLController()
 scrmc = SugarCRMController()
+mcc = MailChimpController()
 
 
 class ListGearView(ListView):
@@ -33,6 +34,9 @@ class CreateGearView(CreateView):
 
     def get(self, *args, **kwargs):
         return super(CreateGearView, self).get(*args, **kwargs)
+
+    def get_queryset(self):
+        return self.model.objects.filter(user=self.request.user).prefetch_related()
 
 
 class UpdateGearView(UpdateView):
@@ -133,7 +137,7 @@ class CreateGearMapView(FormView):
             except:
                 return []
         elif c == ConnectorEnum.MailChimp:
-            pass
+            ping = mcc
         else:
             return []
 

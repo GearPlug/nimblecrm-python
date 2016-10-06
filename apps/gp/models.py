@@ -187,7 +187,8 @@ class GearMap(models.Model):
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
     is_active = models.BooleanField('is active', default=True)
-    last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', null=True, default=None, on_delete=models.SET_NULL)
+    last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', null=True, default=None,
+                                              on_delete=models.SET_NULL)
     last_sent_stored_data_creation_date = models.DateTimeField('last sent storeddata creation date', null=True,
                                                                default=None)
     created = models.DateTimeField('created', auto_now_add=True)
@@ -209,7 +210,6 @@ admin.site.register(Connector)
 admin.site.register(Action)
 admin.site.register(ActionSpecification)
 admin.site.register(Connection)
-admin.site.register(FacebookConnection)
 admin.site.register(Gear)
 admin.site.register(Plug)
 admin.site.register(PlugSpecification)

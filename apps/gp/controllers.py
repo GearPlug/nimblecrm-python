@@ -17,22 +17,22 @@ logger = logging.getLogger('controller')
 class MailChimpController(object):
     _connection_object = None
     _plug = None
+    _client = None
 
     def __init__(self, *args, **kwargs):
         self.create_connection(*args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
-        print("in")
         if args:
             try:
                 self._connection_object = args[0]
                 user = self._connection_object.connection_user
                 api_key = self._connection_object.api_key
-                client = MailChimp(user, api_key)
+                self._client = MailChimp(user, api_key)
             except Exception as e:
                 print(e)
                 print("Error gettig the MailChimp attributes")
-                client = None
+                self._client = None
             try:
                 self._plug = args[1]
             except:
@@ -43,17 +43,24 @@ class MailChimpController(object):
             if 'api_key' in kwargs:
                 api_key = kwargs.pop('api_key')
             try:
-                client = MailChimp(user, api_key)
+                self._client = MailChimp(user, api_key)
             except Exception as e:
                 print(e)
                 print("Error gettig the MailChimp attributes")
-                client = None
+                self._client = None
         try:
-            t = client.list.all()
+            t = self._client.list.all()
         except Exception as e:
             print(e)
             t = None
         return t is not None
+
+    def get_lists(self):
+        result = self._client.list.all()
+        try:
+            return [{'name': l['name'], 'id': l['id']} for l in result['lists']]
+        except:
+            return []
 
 
 class FacebookController(object):

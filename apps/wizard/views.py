@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
-from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController
+from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug
 from apps.plug.views import CreatePlugView, UpdatePlugAddActionView, CreatePlugSpecificationsView
@@ -11,6 +11,7 @@ from apps.plug.views import CreatePlugView, UpdatePlugAddActionView, CreatePlugS
 fbc = FacebookController()
 mysqlc = MySQLController()
 scrmc = SugarCRMController()
+mcc = MailChimpController()
 
 
 class CreateGearView(LoginRequiredMixin, CreateGearView):
@@ -139,9 +140,15 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                                            connection_user=plug.connection.related_connection.connection_user,
                                            connection_password=plug.connection.related_connection.connection_password)
             modules = scrmc.get_available_modules()
+            context['available_options'] = [m.module_key for m in modules]
+        elif c == ConnectorEnum.MailChimp:
+            ping = mcc.create_connection(user=plug.connection.related_connection.connection_user,
+                                         api_key=plug.connection.related_connection.api_key)
+            options = mcc.get_lists()
+            context['available_options'] = [(o['name'], o['id']) for o in options]
         else:
-            modules = []
-        context['available_options'] = [m.module_key for m in modules]
+            context['available_options'] = []
+        print(context['available_options'])
         return context
 
 

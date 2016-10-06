@@ -11,7 +11,19 @@
             {% endfor %}
         </select>
 
-        <input type="text" id="especification_field">
+        {% if available_options %}
+            <select id="especification_field">
+                {% for o in available_options %}
+                    {% if o.0 and o.1 %}
+                        <option value="{{ o.1 }}">{{ o.0 }}</option>
+                    {% else %}
+                        <option value="{{ o }}">{{ o }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        {% else %}
+            <input type="text" id="especification_field">
+        {% endif %}
         <input type="hidden" id="plug_id" value="{{ plug_id }}">
         <button id="btnCreateSpecification">Create Specification</button>
         <form id="formCreatePlugSpecification" style="display: none;" class="create-plug-form form-horizontal" action=""
@@ -39,7 +51,7 @@
             $('button#btnCreateSpecification').click(function () {
                 var plug_id = $('input#plug_id').val();
                 var specification_id = $('select#specification_id').val();
-                var value = $('input#especification_field').val();
+                var value = $('select#especification_field').val();
                 $('input#id_value').val(value);
                 $('select#id_action_specification').val(specification_id);
                 $('select#id_plug').val(plug_id);
@@ -48,13 +60,6 @@
                 $('form#formCreatePlugSpecification').submit();
                 return false;
             })
-            {% if available_options %}
-                var availableTags = [{% for item in available_options %}'{{ item }}',{% endfor %}];
-                $('input#especification_field').autocomplete({
-                    source: availableTags
-                });
-            {% endif %}
-
         })
     </script>
 {% endblock %}
