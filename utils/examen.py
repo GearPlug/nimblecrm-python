@@ -59,18 +59,25 @@ def try_mailchimp(user, password):
     m = hashlib.md5()
     client = MailChimp(user, password)
     try:
-        t = client.list.all()
+        tt = client.list.all()
+        print(tt)
+        idp = '540db784d6'
+        t = client.list._mc_client._get(url='lists/%s/merge-fields' % idp)
     except Exception as e:
         print(e)
         t = None
-    print(t is not None)
+    for k in t['merge_fields']:
+        for f in k:
+            print('%s-> %s' % (f, k[f]))
+        print('\n')
+    # print(t is not None)
 
     # result = client.list.all()
     # lists = [{'name': l['name'], 'id': l['id']} for l in result['lists']]
     # print(lists)
     # email = 'lucas.doe@gmail.com'
     # m.update(email.encode())
-    # idp = '540db784d6'
+    idp = '540db784d6'
 
     # jhon = {
     #     'email_address': 'lucas.doe@gmail.com',

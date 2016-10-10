@@ -4,7 +4,7 @@ from django.views.generic import CreateView, UpdateView, DeleteView, ListView, F
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from apps.gp.controllers import MySQLController, SugarCRMController, MailChimpController
-from apps.gp.enum import ConnectorEnum
+from apps.gp.enum import ConnectorEnum, MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
 
@@ -120,12 +120,10 @@ class CreateGearMapView(FormView):
         for field in fields:
             connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
         if c == ConnectorEnum.MySQL:
-            print("in mysql")
             mysqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
                                      connection_user=connection_data['connection_user'],
                                      connection_password=connection_data['connection_password'],
                                      database=connection_data['database'], table=connection_data['table'])
-            print(mysqlc.describe_table())
             form_data = mysqlc.describe_table()
             return [item['name'] for item in form_data if item['is_primary'] is not True]
         elif c == ConnectorEnum.SugarCRM:
@@ -137,7 +135,11 @@ class CreateGearMapView(FormView):
             except:
                 return []
         elif c == ConnectorEnum.MailChimp:
-            ping = mcc
+            list_id = plug.plug_specification.all()[0].value
+            ping = mcc.create_connection(user=connection_data['connection_user'], api_key=connection_data['api_key'])
+            fields = mcc.get_list_merge_fields(list_id)
+            fl = [MapField(f, controller=ConnectorEnum.MailChimp) for f in fields]
+            return fl
         else:
             return []
 

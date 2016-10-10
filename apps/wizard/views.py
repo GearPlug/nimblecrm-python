@@ -8,6 +8,8 @@ from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug
 from apps.plug.views import CreatePlugView, UpdatePlugAddActionView, CreatePlugSpecificationsView
 
+from django.shortcuts import render
+
 fbc = FacebookController()
 mysqlc = MySQLController()
 scrmc = SugarCRMController()

@@ -1,10 +1,10 @@
 from django import forms
+from apps.gp.enum import MapField
 
 
 class MapForm(forms.Form):
     def __init__(self, *args, **kwargs):
         try:
-            print("a")
             extra = kwargs.pop('extra')
             super(MapForm, self).__init__(*args, **kwargs)
             # print(extra)
@@ -12,7 +12,7 @@ class MapForm(forms.Form):
                 if isinstance(field, str):
                     self.fields['%s' % field] = forms.CharField(label=field, required=False)
                 elif isinstance(field, dict):
-                    params = {'required': False}
+                    params = {}
                     if 'label' in field:
                         params['label'] = field['label']
 
@@ -24,12 +24,21 @@ class MapForm(forms.Form):
                     if 'default' in field:
                         params['default'] = field['default']
 
+                    if 'required' in field:
+                        params['required'] = field['required']
+                    else:
+                        params['required'] = False
+
                     if 'options' in field and field['options']:
-                        custom_field = forms.ChoiceField
-                        choices = tuple('') + tuple(
-                            (field['options'][choice]['name'], field['options'][choice]['value'])
-                            for choice in field['options'])
-                        params['choices'] = choices
+                        if isinstance(field['options'], list):
+                            custom_field = forms.ChoiceField
+                            choices = tuple('') + tuple(
+                                (field['options'][choice]['name'], field['options'][choice]['value'])
+                                for choice in field['options'])
+                            params['choices'] = choices
+                        else:
+                            custom_field = forms.CharField
+                            # print("no es una lista de choices")
                     else:
                         if 'len' in field:
                             try:
@@ -48,6 +57,16 @@ class MapForm(forms.Form):
                         else:
                             custom_field = forms.CharField
                     self.fields[name] = custom_field(**params)
+                elif isinstance(field, MapField):
+                    params = {a: getattr(field, a) for a in field.attrs if a != 'field_type' and a != 'name'}
+                    if getattr(field, 'field_type') == 'text':
+                        custom_field = forms.CharField
+                    try:
+                        print(custom_field)
+                        print(params)
+                        self.fields[getattr(field, 'name')] = custom_field(**params)
+                    except UnboundLocalError:
+                        self.fields[name] = forms.CharField(**params)
         except Exception as e:
             raise
             super(MapForm, self).__init__(*args, **kwargs)

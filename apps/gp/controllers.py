@@ -62,6 +62,13 @@ class MailChimpController(object):
         except:
             return []
 
+    def get_list_merge_fields(self, list_id):
+        result = self._client.list._mc_client._get(url='lists/%s/merge-fields' % list_id)
+        try:
+            return result['merge_fields']
+        except:
+            return []
+
 
 class FacebookController(object):
     app_id = FACEBOOK_APP_ID
@@ -402,6 +409,8 @@ class SugarCRMController(object):
 
 class ControllerError(Exception):
     pass
+
+
 
 
 def get_dict_with_source_data(source_data, target_fields):

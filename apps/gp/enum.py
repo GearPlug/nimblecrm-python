@@ -40,3 +40,40 @@ class ConnectorEnum(Enum):
         elif connector == ConnectorEnum.MailChimp:
             return MailChimpController
         return None
+
+
+class MapField(object):
+    """
+    name = None
+    label = None
+    field_type = None
+    options = None
+    default = None
+    required = False
+    max_length = None
+    """
+
+    def __init__(self, d, controller=None, **kwargs):
+        if controller == ConnectorEnum.MailChimp:
+            if 'tag' in d:
+                self.name = d['tag']
+            if 'name' in d:
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'default_value' in d and d['default_value'] != '':
+                self.default = d['default_value']
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'options' in d:
+                if 'size' in d['options']:
+                    try:
+                        self.max_length = int(d['options']['size'])
+                    except:
+                        pass
+        else:
+            pass
+
+    @property
+    def attrs(self):
+        return [key for key, value in self.__dict__.items()]

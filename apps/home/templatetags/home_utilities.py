@@ -20,3 +20,8 @@ def has_related_object(list, obj):
         if hasattr(item, obj):
             return True
     return False
+
+
+@register.simple_tag()
+def is_list(a):
+    return isinstance(a, list)
