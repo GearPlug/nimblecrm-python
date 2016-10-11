@@ -1,5 +1,7 @@
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
+from django.http.response import JsonResponse
+from django.shortcuts import render
 
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
@@ -131,15 +133,19 @@ class CreateGearMapView(FormView):
                                            connection_user=connection_data['connection_user'],
                                            connection_password=connection_data['connection_password'])
             try:
-                return scrmc.get_module_fields(plug.plug_specification.all()[0].value, get_structure=True)
+                fields = scrmc.get_module_fields(plug.plug_specification.all()[0].value, get_structure=True)
+                return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields]
             except:
                 return []
         elif c == ConnectorEnum.MailChimp:
             list_id = plug.plug_specification.all()[0].value
-            ping = mcc.create_connection(user=connection_data['connection_user'], api_key=connection_data['api_key'])
-            fields = mcc.get_list_merge_fields(list_id)
-            fl = [MapField(f, controller=ConnectorEnum.MailChimp) for f in fields]
-            return fl
+            try:
+                ping = mcc.create_connection(user=connection_data['connection_user'],
+                                             api_key=connection_data['api_key'])
+                fields = mcc.get_list_merge_fields(list_id)
+                return [MapField(f, controller=ConnectorEnum.MailChimp) for f in fields]
+            except:
+                return []
         else:
             return []
 
@@ -153,3 +159,23 @@ class GearMapGetSourceData(TemplateViewWithPost):
 
 class GearMapSendTargetData(TemplateViewWithPost):
     pass
+
+
+def gear_toggle(request, gear_id):
+    if request.is_ajax() is True and request.method == 'POST':
+        try:
+            g = Gear.objects.get(pk=gear_id)
+            if g.user == request.user:
+                if g.gear_map.is_active is True:
+                    g.is_active = not g.is_active
+                    g.save()
+                else:
+                    return JsonResponse({'data': 'There\'s no active gear map.'})
+            else:
+                return JsonResponse({'data': "You don't have permission to toogle this gear."})
+        except Gear.DoesNotExist:
+            return JsonResponse({'data': 'Error invalid gear id.'})
+        except GearMap.DoesNotExist:
+            return JsonResponse({'data': 'There\'s no active gear map.'})
+        return JsonResponse({'data': g.is_active})
+    return JsonResponse({'data': 'request needs to be ajax'})

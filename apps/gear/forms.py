@@ -59,11 +59,14 @@ class MapForm(forms.Form):
                     self.fields[name] = custom_field(**params)
                 elif isinstance(field, MapField):
                     params = {a: getattr(field, a) for a in field.attrs if a != 'field_type' and a != 'name'}
-                    if getattr(field, 'field_type') == 'text':
+                    print(getattr(field, 'field_type'))
+                    if getattr(field, 'field_type') in ['text', 'varchar', 'url', 'name', 'id', 'relate']:
                         custom_field = forms.CharField
+                    elif getattr(field, 'field_type') == 'bool':
+                        custom_field = forms.BooleanField
+                    elif getattr(field, 'field_type') == 'enum':
+                        custom_field = forms.ChoiceField
                     try:
-                        print(custom_field)
-                        print(params)
                         self.fields[getattr(field, 'name')] = custom_field(**params)
                     except UnboundLocalError:
                         self.fields[name] = forms.CharField(**params)

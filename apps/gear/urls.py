@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from apps.gear.views import CreateGearView, UpdateGearView, DeleteGearView, ListGearView, CreateGearMapView
+from apps.gear.views import CreateGearView, UpdateGearView, DeleteGearView, ListGearView, CreateGearMapView, gear_toggle
 
 urlpatterns = [
     url(r'create/$', CreateGearView.as_view(), name='create'),
@@ -8,4 +8,5 @@ urlpatterns = [
     url(r'list/$', ListGearView.as_view(), name='list'),
 
     url(r'^map/(?P<gear_id>\d+)/$', CreateGearMapView.as_view(), name='map'),
+    url(r'^toggle/(?P<gear_id>\d+)/$', gear_toggle, name='toggle'),
 ]

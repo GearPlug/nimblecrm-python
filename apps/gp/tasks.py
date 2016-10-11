@@ -33,7 +33,7 @@ def update_gears():
     print("Integrity checks...")
     return True
 
-
+@app.task
 def update_source_plug(i, gear, percentil):
     print('Updating source for gear: %s. (%s%%)' % (i + 1, (i + 1) * percentil,))
     connector = ConnectorEnum.get_connector(gear.source.connection.connector.id)
@@ -45,7 +45,7 @@ def update_source_plug(i, gear, percentil):
         controller = controller_class(gear.source.connection.related_connection, gear.source)
     controller.download_source_data()
 
-
+@app.task
 def update_target_plug(i, gear, percentil, is_first=False):
     print('Updating target for gear: %s. (%s%%)' % (gear.id, (i + 1) * percentil,))
     kwargs = {'connection': gear.source.connection, 'plug': gear.source,}

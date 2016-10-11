@@ -181,6 +181,10 @@ class Gear(models.Model):
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
 
+    @property
+    def is_running(self):
+        return self.is_active and self.gear_map.is_active
+
 
 class GearMap(models.Model):
     gear = models.OneToOneField(Gear, related_name='gear_map')

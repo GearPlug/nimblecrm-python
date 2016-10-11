@@ -47,14 +47,31 @@ class MapField(object):
     name = None
     label = None
     field_type = None
-    options = None
+    options = None -> choices = None
     default = None
     required = False
     max_length = None
     """
 
     def __init__(self, d, controller=None, **kwargs):
-        if controller == ConnectorEnum.MailChimp:
+        if controller == ConnectorEnum.SugarCRM:
+            if 'name' in d:
+                self.name = d['name']
+            if 'label' in d:
+                self.label = d['label']
+            if 'options' in d:
+                if isinstance(d['options'], dict):
+                    self.choices = tuple('') + tuple((d['options'][choice]['name'], d['options'][choice]['value'])
+                                                     for choice in d['options'])
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'len' in d:
+                try:
+                    self.max_length = int(d['len'])
+                except:
+                    self.max_length = 200
+            # print('field %s' % self.attrs)
+        elif controller == ConnectorEnum.MailChimp:
             if 'tag' in d:
                 self.name = d['tag']
             if 'name' in d:
