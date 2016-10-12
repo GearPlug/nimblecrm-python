@@ -59,17 +59,41 @@ class MapForm(forms.Form):
                     self.fields[name] = custom_field(**params)
                 elif isinstance(field, MapField):
                     params = {a: getattr(field, a) for a in field.attrs if a != 'field_type' and a != 'name'}
-                    print(getattr(field, 'field_type'))
-                    if getattr(field, 'field_type') in ['text', 'varchar', 'url', 'name', 'id', 'relate']:
+                    field_type = getattr(field, 'field_type')
+                    print(field_type)
+                    if field_type in ['text', 'varchar', 'phone', 'url', 'name', 'id', 'relate', 'asigned_user_name',
+                                      'email']:
                         custom_field = forms.CharField
-                    elif getattr(field, 'field_type') == 'bool':
+                    elif field_type == 'bool':
+                        if 'max_length' in params:
+                            del (params['max_length'])
+                        if 'choices' in params:
+                            del (params['choices'])
                         custom_field = forms.BooleanField
-                    elif getattr(field, 'field_type') == 'enum':
+                    elif field_type == 'enum':
+                        if 'max_length' in params:
+                            del (params['max_length'])
                         custom_field = forms.ChoiceField
+                    elif field_type == 'date' or field_type == 'datetime':
+                        if 'max_length' in params:
+                            del (params['max_length'])
+                        if 'choices' in params:
+                            del (params['choices'])
+                        custom_field = forms.DateField
+                    elif field_type == 'datetime':
+                        if 'max_length' in params:
+                            del (params['max_length'])
+                        if 'choices' in params:
+                            del (params['choices'])
+                        custom_field = forms.DateTimeField
+                    # elif field_type == 'email':
+                    #     custom_field = forms.EmailField
                     try:
                         self.fields[getattr(field, 'name')] = custom_field(**params)
-                    except UnboundLocalError:
-                        self.fields[name] = forms.CharField(**params)
+                    except Exception as e:
+                        print(e)
+                        raise
+                        self.fields['noooo'] = forms.CharField(**params)
         except Exception as e:
             raise
             super(MapForm, self).__init__(*args, **kwargs)

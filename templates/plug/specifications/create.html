@@ -15,7 +15,7 @@
         {% if available_options %}
             <select id="especification_field">
                 {% for o in available_options %}
-                    {% if o|is_list and o.0 and o.1 %}
+                    {% if o|is_list or o|is_tuple and o.0 and o.1 %}
                         <option value="{{ o.1 }}">{{ o.0 }}</option>
                     {% else %}
                         <option value="{{ o }}">{{ o }}</option>

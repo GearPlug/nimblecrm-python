@@ -143,7 +143,10 @@ class CreateGearMapView(FormView):
                 ping = mcc.create_connection(user=connection_data['connection_user'],
                                              api_key=connection_data['api_key'])
                 fields = mcc.get_list_merge_fields(list_id)
-                return [MapField(f, controller=ConnectorEnum.MailChimp) for f in fields]
+                mfl = [MapField(f, controller=ConnectorEnum.MailChimp) for f in fields]
+                mfl.append(MapField({'tag': 'email_address', 'name': 'Email', 'required': True, 'type': 'email',
+                                     'options': {'size': 100}}, controller=ConnectorEnum.MailChimp))
+                return mfl
             except:
                 return []
         else:

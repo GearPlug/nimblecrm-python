@@ -58,18 +58,18 @@ def try_sugar(url, user, password):
 def try_mailchimp(user, password):
     m = hashlib.md5()
     client = MailChimp(user, password)
-    try:
-        tt = client.list.all()
-        print(tt)
-        idp = '540db784d6'
-        t = client.list._mc_client._get(url='lists/%s/merge-fields' % idp)
-    except Exception as e:
-        print(e)
-        t = None
-    for k in t['merge_fields']:
-        for f in k:
-            print('%s-> %s' % (f, k[f]))
-        print('\n')
+    # try:
+    #     tt = client.list.all()
+    #     print(tt)
+    #     idp = '540db784d6'
+    #     t = client.list._mc_client._get(url='lists/%s/merge-fields' % idp)
+    # except Exception as e:
+    #     print(e)
+    #     t = None
+    # for k in t['merge_fields']:
+    #     for f in k:
+    #         print('%s-> %s' % (f, k[f]))
+    #     print('\n')
     # print(t is not None)
 
     # result = client.list.all()
@@ -78,15 +78,22 @@ def try_mailchimp(user, password):
     # email = 'lucas.doe@gmail.com'
     # m.update(email.encode())
     idp = '540db784d6'
+    a = [{'email_address': 'jama.b@hotmail.com', 'merge_fields': {'LNAME': 'Bolivar Diaz', 'FNAME': 'Jacqueline Maria'},
+          'status': 'subscribed'}]
+    jhon = {
+        'email_address': 'lucas.doe@gmail.com',
+        'status': 'subscribed',
+        'merge_fields': {
+            'FNAME': 'John',
+            'LNAME': 'Doe',
+        },
+    }
+    result = client.member.create(idp, jhon)
+    print(result)
 
-    # jhon = {
-    #     'email_address': 'lucas.doe@gmail.com',
-    #     'status': 'subscribed',
-    #     'merge_fields': {
-    #         'FNAME': 'John',
-    #         'LNAME': 'Doe',
-    #     },
-    # }
+
+
+
     # result = client.member.create(idp, jhon)
 
     # result = client.member.get(idp, m.hexdigest())
@@ -109,6 +116,6 @@ def try_sub_dict(s, d):
 # ej1()
 # ej2()
 # ej3()
-# try_sugar('http://208.113.131.86/uat/uat/service/v4_1/rest.php', 'emarketing', 'zakaramk*')
+try_sugar('http://208.113.131.86/uat/uat/service/v4_1/rest.php', 'emarketing', 'zakaramk*')
 # try_sub_dict('Hola soy german!', {'german': 'daniel'})
-try_mailchimp('MaxConceptLife63', '619813e972f8698c8029978a8dfc250d-us12')
+# try_mailchimp('MaxConceptLife63', '619813e972f8698c8029978a8dfc250d-us12')

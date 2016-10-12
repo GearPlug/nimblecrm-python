@@ -69,6 +69,31 @@ class MailChimpController(object):
         except:
             return []
 
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[0]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            list_id = self._plug.plug_specification.all()[0].value
+            print(list_id)
+            for obj in data_list:
+                d = {'email_address': obj.pop('email_address'), 'status': 'subscribed',
+                     'merge_fields': {key: obj[key] for key in obj.keys()}}
+                obj_list.append(d)
+            print(obj_list)
+            for item in obj_list:
+                try:
+                    res = self._client.member.create(list_id, item)
+                except:
+                    res = 'User already exists'
+            return
+        raise ControllerError("Incomplete.")
+
 
 class FacebookController(object):
     app_id = FACEBOOK_APP_ID
@@ -364,8 +389,8 @@ class SugarCRMController(object):
         custom_module = CustomSugarObject(module)
         return self.session.get_module_fields(custom_module, **kwargs)
 
-    def download_module_to_stored_data(self, connection_object, plug, module, limit=29):
-        data = self.get_entry_list(module, max_results=limit)
+    def download_module_to_stored_data(self, connection_object, plug, module, limit=29, order_by="date_entered DESC"):
+        data = self.get_entry_list(module, max_results=limit, order_by=order_by)
         stored_data = [(item.connection, item.object_id, item.name) for item in
                        StoredData.objects.filter(connection=connection_object.connection, plug=plug)]
         new_data = []
@@ -374,6 +399,7 @@ class SugarCRMController(object):
                 if (connection_object.connection, item.id, column['name']) not in stored_data:
                     new_data.append(StoredData(name=column['name'], value=column['value'], object_id=item.id,
                                                connection=connection_object.connection, plug=plug))
+        print("new data: %s" % new_data)
         if new_data:
             StoredData.objects.bulk_create(new_data)
         return True if new_data else False
@@ -409,8 +435,6 @@ class SugarCRMController(object):
 
 class ControllerError(Exception):
     pass
-
-
 
 
 def get_dict_with_source_data(source_data, target_fields):
