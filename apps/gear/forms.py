@@ -61,8 +61,8 @@ class MapForm(forms.Form):
                     params = {a: getattr(field, a) for a in field.attrs if a != 'field_type' and a != 'name'}
                     field_type = getattr(field, 'field_type')
                     print(field_type)
-                    if field_type in ['text', 'varchar', 'phone', 'url', 'name', 'id', 'relate', 'asigned_user_name',
-                                      'email']:
+                    if field_type in ['text', 'varchar', 'phone', 'url', 'name', 'id', 'relate', 'assigned_user_name',
+                                      'email', 'image', 'fullname']:
                         custom_field = forms.CharField
                     elif field_type == 'bool':
                         if 'max_length' in params:
@@ -74,7 +74,7 @@ class MapForm(forms.Form):
                         if 'max_length' in params:
                             del (params['max_length'])
                         custom_field = forms.ChoiceField
-                    elif field_type == 'date' or field_type == 'datetime':
+                    elif field_type == 'date':
                         if 'max_length' in params:
                             del (params['max_length'])
                         if 'choices' in params:
@@ -86,6 +86,11 @@ class MapForm(forms.Form):
                         if 'choices' in params:
                             del (params['choices'])
                         custom_field = forms.DateTimeField
+                    elif field_type == 'float':
+                        length = int(params.pop('max_length'))
+                        params['max_digits'] = length
+                        params['decimal_places'] = 2
+                        custom_field = forms.DecimalField
                     # elif field_type == 'email':
                     #     custom_field = forms.EmailField
                     try:
@@ -93,7 +98,7 @@ class MapForm(forms.Form):
                     except Exception as e:
                         print(e)
                         raise
-                        self.fields['noooo'] = forms.CharField(**params)
+                        self.fields['custom_%s' % field] = forms.CharField(**params)
         except Exception as e:
             raise
             super(MapForm, self).__init__(*args, **kwargs)

@@ -40,10 +40,12 @@
         <a href="{% url 'wizard:set_gear_plugs' pk=request.session.gear_id|default:0 %}">Skip</a>
     </div>
 {% endblock %}
+
 {% block styles %}
     {{ block.super }}
     <link rel="stylesheet" href="{% static 'vendor/jquery-ui-1.12.0/jquery-ui.min.css' %}">
 {% endblock %}
+
 {% block scripts %}
     {{ block.super }}
     <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
@@ -52,7 +54,7 @@
             $('button#btnCreateSpecification').click(function () {
                 var plug_id = $('input#plug_id').val();
                 var specification_id = $('select#specification_id').val();
-                var value = $('select#especification_field').val();
+                var value = $('#especification_field').val();
                 $('input#id_value').val(value);
                 $('select#id_action_specification').val(specification_id);
                 $('select#id_plug').val(plug_id);

@@ -127,6 +127,7 @@ class CreateGearMapView(FormView):
                                      connection_password=connection_data['connection_password'],
                                      database=connection_data['database'], table=connection_data['table'])
             form_data = mysqlc.describe_table()
+            print(form_data)
             return [item['name'] for item in form_data if item['is_primary'] is not True]
         elif c == ConnectorEnum.SugarCRM:
             ping = scrmc.create_connection(url=connection_data['url'],

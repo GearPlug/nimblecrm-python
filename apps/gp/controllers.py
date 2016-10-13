@@ -363,7 +363,8 @@ class SugarCRMController(object):
             try:
                 self.module = args[2]
             except:
-                print('Error:SugarCRMController. No module defined.')
+                pass
+                #print('Error:SugarCRMController. No module defined.')
         elif kwargs:
             try:
                 self.url = kwargs.pop('url', 'url')

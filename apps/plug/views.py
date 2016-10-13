@@ -69,6 +69,15 @@ class CreatePlugSpecificationsView(CreateView):
         print(self.request.POST)
         return super(CreatePlugSpecificationsView, self).post(request, *args, **kwargs)
 
+    def form_valid(self, form, **kwargs):
+        print("yas")
+        return super(CreatePlugSpecificationsView, self).form_valid(form, **kwargs)
+
+    def form_invalid(self, form, **kwargs):
+        print("nos")
+        print(form.errors)
+        return super(CreatePlugSpecificationsView, self).form_invalid(form, **kwargs)
+
     def get_context_data(self, *args, **kwargs):
         context = super(CreatePlugSpecificationsView, self).get_context_data(*args, **kwargs)
         plug_id = self.kwargs['plug_id']

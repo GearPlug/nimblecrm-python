@@ -127,7 +127,6 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
             context['available_options'] = [(o['name'], o['id']) for o in options]
         else:
             context['available_options'] = []
-        print(context['available_options'])
         return context
 
     def get_success_url(self):
@@ -142,6 +141,7 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
         if c == ConnectorEnum.Facebook:
             fbc.download_leads_to_stored_data(conn, self.object.plug)
         elif c == ConnectorEnum.MySQL:
+            print("mysql")
             ping = mysqlc.create_connection(conn, self.object.plug)
             if ping:
                 res = mysqlc.download_to_stored_data(conn, self.object.plug)
