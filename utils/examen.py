@@ -56,7 +56,6 @@ def try_sugar(url, user, password):
 
 
 def try_mailchimp(user, password):
-    m = hashlib.md5()
     client = MailChimp(user, password)
     # try:
     #     tt = client.list.all()

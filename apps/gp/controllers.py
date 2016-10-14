@@ -80,12 +80,12 @@ class MailChimpController(object):
                     data_list = []
         if self._plug is not None:
             list_id = self._plug.plug_specification.all()[0].value
-            print(list_id)
+            # print(list_id)
             for obj in data_list:
                 d = {'email_address': obj.pop('email_address'), 'status': 'subscribed',
                      'merge_fields': {key: obj[key] for key in obj.keys()}}
                 obj_list.append(d)
-            print(obj_list)
+            # print(obj_list)
             for item in obj_list:
                 try:
                     res = self._client.member.create(list_id, item)
@@ -165,15 +165,13 @@ class FacebookController(object):
         if plug is None:
             plug = self.plug
         leads = self.get_leads(connection_object.token, connection_object.id_form)
-        # print(leads)
-        stored_data = [(item.connection, item.object_id, item.name) for item in
-                       StoredData.objects.filter(connection=connection_object.connection, plug=plug)]
         new_data = []
         for item in leads:
-            new_data = new_data + [StoredData(name=lead['name'], value=lead['values'][0], object_id=item['id'],
-                                              connection=connection_object.connection, plug=plug)
-                                   for lead in item['field_data'] if
-                                   (connection_object.connection, item['id'], lead['name']) not in stored_data]
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
+            if not q.exists():
+                for column in item['field_data']:
+                    new_data.append(StoredData(name=column['name'], value=column['values'][0], object_id=item['id'],
+                                               connection=connection_object.connection, plug=plug))
         logger.info('Facebook Controller >> NEW LEADS for connection id:%s  Number of entries: %s' % (
             connection_object.connection.id, len(new_data) // len(leads[0]['field_data'])))
         if new_data:
@@ -292,20 +290,18 @@ class MySQLController(object):
         print("downloading mysql data")
         if plug is None:
             plug = self.plug
-        source_data = self.select_all()
-        stored_data = [(item.connection.id, item.object_id, item.name) for item in
-                       StoredData.objects.filter(connection=connection_object.connection, plug=plug)]
+        data = self.select_all()
         id_list = self.get_primary_keys()
-        parsed_source_data = [{'id': tuple(item[key] for key in id_list),
-                               'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}
-                              for item in source_data]
+        parsed_data = [{'id': tuple(item[key] for key in id_list),
+                        'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}
+                       for item in data]
         new_data = []
-        new_data = new_data + [StoredData(name=item['name'], value=item['value'], object_id=row['id'][0],
-                                          connection=connection_object.connection, plug=plug)
-                               for row in parsed_source_data for item in row['data'] if
-                               (connection_object.connection.id, str(row['id'][0]), item['name']) not in stored_data]
-        # logger.info('MySQL Controller >> NEW ROWs for connection id:%s  Number of entries: %s' % (
-        #     connection_object.connection.id, len(new_data)))
+        for item in parsed_data:
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'][0])
+            if not q.exists():
+                for column in item['data']:
+                    new_data.append(StoredData(name=column['name'], value=column['value'], object_id=item['id'][0],
+                                               connection=connection_object.connection, plug=plug))
         if new_data:
             StoredData.objects.bulk_create(new_data)
 
@@ -364,7 +360,7 @@ class SugarCRMController(object):
                 self.module = args[2]
             except:
                 pass
-                #print('Error:SugarCRMController. No module defined.')
+                # print('Error:SugarCRMController. No module defined.')
         elif kwargs:
             try:
                 self.url = kwargs.pop('url', 'url')
@@ -392,15 +388,13 @@ class SugarCRMController(object):
 
     def download_module_to_stored_data(self, connection_object, plug, module, limit=29, order_by="date_entered DESC"):
         data = self.get_entry_list(module, max_results=limit, order_by=order_by)
-        stored_data = [(item.connection, item.object_id, item.name) for item in
-                       StoredData.objects.filter(connection=connection_object.connection, plug=plug)]
         new_data = []
         for item in data:
-            for column in item.fields:
-                if (connection_object.connection, item.id, column['name']) not in stored_data:
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item.id)
+            if not q.exists():
+                for column in item.fields:
                     new_data.append(StoredData(name=column['name'], value=column['value'], object_id=item.id,
                                                connection=connection_object.connection, plug=plug))
-        print("new data: %s" % new_data)
         if new_data:
             StoredData.objects.bulk_create(new_data)
         return True if new_data else False
@@ -450,7 +444,6 @@ def get_dict_with_source_data(source_data, target_fields):
             kw = valid_map[field].split(' ')
             values = []
             for i, w in enumerate(kw):
-                # print(w)
                 if w in ['%%%%%s%%%%' % k for k in obj['data'].keys()]:
                     values.append(obj['data'][w.replace('%', '')])
                 else:
