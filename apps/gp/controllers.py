@@ -14,9 +14,30 @@ from mailchimp3 import MailChimp
 logger = logging.getLogger('controller')
 
 
-class MailChimpController(object):
+class BaseController(object):
     _connection_object = None
     _plug = None
+
+    def __init__(self, *args, **kwargs):
+        self.create_connection(*args, kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        pass
+
+    def send_stored_data(self, *args, **kwargs):
+        pass
+
+    def download_to_stored_data(self, connection_object, plug):
+        pass
+
+    def download_source_data(self):
+        if self._connection_object is not None and self._plug is not None:
+            self.download_to_stored_data(self._connection_object, self._plug)
+        else:
+            print("Error, there's no connection or plug")
+
+
+class MailChimpController(BaseController):
     _client = None
 
     def __init__(self, *args, **kwargs):
@@ -79,18 +100,22 @@ class MailChimpController(object):
                 except:
                     data_list = []
         if self._plug is not None:
+            id_list = []
             list_id = self._plug.plug_specification.all()[0].value
-            # print(list_id)
             for obj in data_list:
                 d = {'email_address': obj.pop('email_address'), 'status': 'subscribed',
                      'merge_fields': {key: obj[key] for key in obj.keys()}}
                 obj_list.append(d)
-            # print(obj_list)
             for item in obj_list:
                 try:
+                    logger.info('%s-> sending stored data for Object: %s' % ('MailChimp', item['email_address']))
                     res = self._client.member.create(list_id, item)
+                    logger.info(
+                        '%s-> Object %s  successfully sent. Result: %s' % (
+                            'MailChimp', item['email_address'], res['id']))
                 except:
                     res = 'User already exists'
+                    logger.error('%s-> Object: %s  failed. Result: %s' % ('MailChimp', item['email_address'], res))
             return
         raise ControllerError("Incomplete.")
 
@@ -138,7 +163,6 @@ class FacebookController(object):
                   'client_secret': FACEBOOK_APP_SECRET,
                   'fb_exchange_token': token}
         r = self.send_request(url=url, params=params)
-        # logger.info('Facebook Controller >> Token extend: %s' % r.url)
         try:
             return json.loads(r.text)['access_token']
         except Exception as e:
@@ -172,9 +196,9 @@ class FacebookController(object):
                 for column in item['field_data']:
                     new_data.append(StoredData(name=column['name'], value=column['values'][0], object_id=item['id'],
                                                connection=connection_object.connection, plug=plug))
-        logger.info('Facebook Controller >> NEW LEADS for connection id:%s  Number of entries: %s' % (
-            connection_object.connection.id, len(new_data) // len(leads[0]['field_data'])))
         if new_data:
+            logger.info('Facebook-> Connection: %s  Entries: %s' % (
+                connection_object.connection.id, len(new_data) // len(leads[0]['field_data'])))
             StoredData.objects.bulk_create(new_data)
 
     def download_source_data(self):
@@ -287,7 +311,6 @@ class MySQLController(object):
         return []
 
     def download_to_stored_data(self, connection_object, plug):
-        print("downloading mysql data")
         if plug is None:
             plug = self.plug
         data = self.select_all()
@@ -303,6 +326,8 @@ class MySQLController(object):
                     new_data.append(StoredData(name=column['name'], value=column['value'], object_id=item['id'][0],
                                                connection=connection_object.connection, plug=plug))
         if new_data:
+            logger.info('MySQL-> Connection: %s  Entries: %s' % (
+                connection_object.connection.id, len(new_data) // len(parsed_data[0]['data'])))
             StoredData.objects.bulk_create(new_data)
 
     def download_source_data(self):
@@ -396,6 +421,8 @@ class SugarCRMController(object):
                     new_data.append(StoredData(name=column['name'], value=column['value'], object_id=item.id,
                                                connection=connection_object.connection, plug=plug))
         if new_data:
+            logger.info('SugarCRM-> Connection: %s  Entries: %s' % (
+                connection_object.connection.id, len(new_data) // len(data[0].fields)))
             StoredData.objects.bulk_create(new_data)
         return True if new_data else False
 
@@ -423,8 +450,19 @@ class SugarCRMController(object):
         if self.plug is not None:
             module_name = self.plug.plug_specification.all()[0].value
             for obj in data_list:
-                obj_list.append(CustomSugarObject(module_name, **obj))
-            return self.set_entries(obj_list)
+                try:
+                    logger.info('%s-> sending stored data for Object: %s' % ('SugarCRM', obj))
+                    id = self.set_entry(CustomSugarObject(module_name, **obj))
+                    logger.info(
+                        '%s-> Object %s  successfully sent. Result: %s' % ('MailChimp', obj, id))
+                    print(id)
+                    obj_list.append(id)
+                except Exception as e:
+                    print(e)
+                    logger.info(
+                        '%s-> Object %s  failed. Result: %s' % ('MailChimp', obj, None))
+            print(obj_list)
+            return obj_list
         raise ControllerError("There's no plug")
 
 

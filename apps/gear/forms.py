@@ -93,6 +93,9 @@ class MapForm(forms.Form):
                         custom_field = forms.DecimalField
                     # elif field_type == 'email':
                     #     custom_field = forms.EmailField
+                    if 'required' not in params:
+                        params['required'] = False
+
                     try:
                         self.fields[getattr(field, 'name')] = custom_field(**params)
                     except Exception as e:

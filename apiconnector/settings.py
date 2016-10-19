@@ -98,46 +98,65 @@ LOGGING = {
         'simple': {
             'format': '%(levelname)s %(message)s'
         },
+        'server': {
+            'formar': '%(message)s'
+        }
     },
     'handlers': {
-        #         'file': {
-        #             'level': 'DEBUG',
-        #             'class': 'logging.FileHandler',
-        #             'filename': os.path.join(BASE_DIR, 'log/debug.log'),
-        #             'formatter': 'verbose',
-        #         },
-        #         'production': {
-        #             'level': 'DEBUG',
-        #             'class': 'logging.FileHandler',
-        #             'filename': os.path.join(BASE_DIR, 'log/production.log'),
-        #             'formatter': 'verbose',
-        #         },
-        #         'controller': {
-        #             'level': 'DEBUG',
-        #             'class': 'logging.FileHandler',
-        #             'filename': os.path.join(BASE_DIR, 'log/controller.log'),
-        #             'formatter': 'simple',
-        #         },
+        'controller.file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'log/controller/general.log'),
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 50,
+            'formatter': 'verbose',
+        },
+        'request.file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'log/django/request.log'),
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 2,
+            'formatter': 'server',
+        },
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
+        'console.server': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'server',
+        },
+        'log_db': {
+            'level': 'INFO',
+            'class': 'apps.gp.handlers.DBHandler',
+            'model': 'apps.gp.models.GeneralLog',
+            'expiry': 86400,
+            'formatter': 'server',
+        },
+        'controller_db': {
+            'level': 'INFO',
+            'class': 'apps.gp.handlers.DBHandler',
+            'model': 'apps.gp.models.ControllerLog',
+            'expiry': 86400,
+            'formatter': 'server',
+        },
     },
     'loggers': {
-        # 'django': {
-        #     'handlers': ['file', ],
-        #     'level': 'DEBUG',
-        #     'propagate': True,
-        # },
-        # 'apiconnector': {
-        #     'handlers': ['production', ],
-        #     'level': 'INFO',
-        #     'propagate': True,
-        # },
-        'controller': {
+        'django': {
             'handlers': ['console'],
+            'propagate': True,
+            'level': 'WARN',
+        },
+        'controller': {
+            'handlers': ['log_db', 'controller_db'],
             'level': 'INFO',
             'propagate': True,
+        },
+        'django.server': {
+            'handlers': ['request.file', 'console.server'],
+            'level': 'INFO',
+            'propagate': False
         },
     },
 }

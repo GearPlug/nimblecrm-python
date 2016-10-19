@@ -210,6 +210,20 @@ class GearMapData(models.Model):
         return '%s: %s' % (self.target_name, self.source_value)
 
 
+class DBLogEntry(models.Model):
+    time = models.DateTimeField(auto_now_add=True)
+    level = models.CharField(max_length=10)
+    message = models.TextField()
+
+    class Meta:
+        abstract = True
+
+
+class GeneralLog(DBLogEntry):
+    module = models.CharField(max_length=30, blank=True, default='')
+    process = models.CharField(max_length=20, blank=True, default='')
+
+
 admin.site.register(Connector)
 admin.site.register(Action)
 admin.site.register(ActionSpecification)
