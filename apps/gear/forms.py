@@ -60,7 +60,7 @@ class MapForm(forms.Form):
                 elif isinstance(field, MapField):
                     params = {a: getattr(field, a) for a in field.attrs if a != 'field_type' and a != 'name'}
                     field_type = getattr(field, 'field_type')
-                    print(field_type)
+                    # print(field_type)
                     if field_type in ['text', 'varchar', 'phone', 'url', 'name', 'id', 'relate', 'assigned_user_name',
                                       'email', 'image', 'fullname']:
                         custom_field = forms.CharField

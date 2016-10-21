@@ -15,49 +15,54 @@ logger = logging.getLogger('controller')
 
 
 class BaseController(object):
+    """
+    Abstract controller class.
+    - The init calls the create_connection method.
+
+    """
     _connection_object = None
     _plug = None
 
-    def __init__(self, *args, **kwargs):
-        self.create_connection(*args, kwargs)
+    def __init__(self, *args):
+        self.create_connection(*args)
 
-    def create_connection(self, *args, **kwargs):
-        pass
+    def create_connection(self, *args):
+        if args:
+            self._connection_object = args[0]
+            try:
+                self._plug = args[1]
+            except:
+                pass
+            return
 
     def send_stored_data(self, *args, **kwargs):
-        pass
+        raise ControllerError('Not implemented yet.')
 
     def download_to_stored_data(self, connection_object, plug):
-        pass
+        raise ControllerError('Not implemented yet.')
 
     def download_source_data(self):
         if self._connection_object is not None and self._plug is not None:
             self.download_to_stored_data(self._connection_object, self._plug)
         else:
-            print("Error, there's no connection or plug")
+            raise ControllerError("There's no active connection or plug.")
 
 
 class MailChimpController(BaseController):
     _client = None
 
     def __init__(self, *args, **kwargs):
-        self.create_connection(*args, **kwargs)
+        BaseController.__init__(self, *args)
 
     def create_connection(self, *args, **kwargs):
-        if args:
+        super(MailChimpController, self).create_connection(*args)
+        if self._connection_object is not None:
             try:
-                self._connection_object = args[0]
-                user = self._connection_object.connection_user
-                api_key = self._connection_object.api_key
-                self._client = MailChimp(user, api_key)
+                self._client = MailChimp(self._connection_object.connection_user, self._connection_object.api_key)
             except Exception as e:
-                print(e)
                 print("Error gettig the MailChimp attributes")
+                print(e)
                 self._client = None
-            try:
-                self._plug = args[1]
-            except:
-                pass
         if kwargs:
             if 'user' in kwargs:
                 user = kwargs.pop('user')
@@ -103,19 +108,22 @@ class MailChimpController(BaseController):
             id_list = []
             list_id = self._plug.plug_specification.all()[0].value
             for obj in data_list:
-                d = {'email_address': obj.pop('email_address'), 'status': 'subscribed',
+                d = {'email_address': obj.pop('email_address'), 'status': 'susbscribed',
                      'merge_fields': {key: obj[key] for key in obj.keys()}}
                 obj_list.append(d)
+
+            extra = {'controller': 'mailchimp'}
             for item in obj_list:
                 try:
-                    logger.info('%s-> sending stored data for Object: %s' % ('MailChimp', item['email_address']))
                     res = self._client.member.create(list_id, item)
-                    logger.info(
-                        '%s-> Object %s  successfully sent. Result: %s' % (
-                            'MailChimp', item['email_address'], res['id']))
+                    extra['status'] = 'Successful'
+                    logger.info('%s-> Object %s  successfully sent. Result: %s' % (
+                        'MailChimp', item['email_address'], res['id']), extra=extra)
                 except:
                     res = 'User already exists'
-                    logger.error('%s-> Object: %s  failed. Result: %s' % ('MailChimp', item['email_address'], res))
+                    extra['status'] = 'Failed'
+                    logger.error('%s-> Object: %s  failed. Result: %s' % ('MailChimp', item['email_address'], res),
+                                 extra=extra)
             return
         raise ControllerError("Incomplete.")
 

@@ -143,6 +143,7 @@ class CreateGearMapView(FormView):
         elif c == ConnectorEnum.MailChimp:
             list_id = plug.plug_specification.all()[0].value
             try:
+                print("hess")
                 ping = mcc.create_connection(user=connection_data['connection_user'],
                                              api_key=connection_data['api_key'])
                 fields = mcc.get_list_merge_fields(list_id)

@@ -127,14 +127,7 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'server',
         },
-        'log_db': {
-            'level': 'INFO',
-            'class': 'apps.gp.handlers.DBHandler',
-            'model': 'apps.gp.models.GeneralLog',
-            'expiry': 86400,
-            'formatter': 'server',
-        },
-        'controller_db': {
+        'controller': {
             'level': 'INFO',
             'class': 'apps.gp.handlers.DBHandler',
             'model': 'apps.gp.models.ControllerLog',
@@ -143,21 +136,21 @@ LOGGING = {
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'propagate': True,
-            'level': 'WARN',
-        },
+        # 'django': {
+        #     'handlers': ['console'],
+        #     'propagate': True,
+        #     'level': 'WARN',
+        # },
         'controller': {
-            'handlers': ['log_db', 'controller_db'],
+            'handlers': ['controller', ],
             'level': 'INFO',
             'propagate': True,
         },
-        'django.server': {
-            'handlers': ['request.file', 'console.server'],
-            'level': 'INFO',
-            'propagate': False
-        },
+        # 'django.server': {
+        #     'handlers': ['request.file', 'console.server'],
+        #     'level': 'INFO',
+        #     'propagate': False
+        # },
     },
 }
 

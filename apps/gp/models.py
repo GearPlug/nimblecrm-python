@@ -219,9 +219,12 @@ class DBLogEntry(models.Model):
         abstract = True
 
 
-class GeneralLog(DBLogEntry):
+class ControllerLog(DBLogEntry):
+    STATUS = (('f', 'Failed'), ('s', 'Successful'))
     module = models.CharField(max_length=30, blank=True, default='')
     process = models.CharField(max_length=20, blank=True, default='')
+    status = models.CharField(max_length=2, blank=False, choices=STATUS, default='f')
+    controller = models.CharField(max_length=20, blank=True, default='')
 
 
 admin.site.register(Connector)

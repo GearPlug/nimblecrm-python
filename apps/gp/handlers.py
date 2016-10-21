@@ -28,7 +28,13 @@ class DBHandler(Handler, object):
 
             log_entry = model(level=record.levelname, message=self.format(record), module=record.module,
                               process=record.process)
+            if hasattr(record, 'controller'):
+                print("has cont %s" % record.controller)
+                log_entry.controller = record.controller
 
+            if hasattr(record, 'status'):
+                print("has stat %s" % record.status)
+                log_entry.status = record.status
             # test if msg is json and apply to log record object
             try:
                 data = json.loads(record.msg)
