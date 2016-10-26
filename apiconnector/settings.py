@@ -136,22 +136,18 @@ LOGGING = {
         },
     },
     'loggers': {
-        # 'django': {
-        #     'handlers': ['console'],
-        #     'propagate': True,
-        #     'level': 'WARN',
-        # },
         'controller': {
             'handlers': ['controller', ],
             'level': 'INFO',
             'propagate': True,
         },
-        # 'django.server': {
-        #     'handlers': ['request.file', 'console.server'],
-        #     'level': 'INFO',
-        #     'propagate': False
-        # },
     },
+}
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+    }
 }
 
 LANGUAGE_CODE = 'en-us'

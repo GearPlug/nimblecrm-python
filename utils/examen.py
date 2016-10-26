@@ -115,6 +115,12 @@ def try_sub_dict(s, d):
 # ej1()
 # ej2()
 # ej3()
-try_sugar('http://208.113.131.86/uat/uat/service/v4_1/rest.php', 'emarketing', 'zakaramk*')
+# try_sugar('http://208.113.131.86/uat/uat/service/v4_1/rest.php', 'emarketing', 'zakaramk*')
 # try_sub_dict('Hola soy german!', {'german': 'daniel'})
 # try_mailchimp('MaxConceptLife63', '619813e972f8698c8029978a8dfc250d-us12')
+
+d = {'a':1, 'b':2, 'c':3}
+e = d
+d['a'] = 5
+print(d)
+print(e)
