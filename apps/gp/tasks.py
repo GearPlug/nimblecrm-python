@@ -7,52 +7,35 @@ from django.core.cache import cache
 from hashlib import md5
 from celery.task.sets import TaskSet, subtask
 
-LOCK_EXPIRE = 60 * 5
+LOCK_EXPIRE = 60 * 1
 
 
 @app.task
 def update_gears():
-    name_hexdigest = md5('update_gears'.encode()).hexdigest()
-    lock_id = '{0}-lock'.format(name_hexdigest)
-    acquire_lock = lambda: cache.add(lock_id, 'true', LOCK_EXPIRE)
-    release_lock = lambda: cache.delete(lock_id)
-    if acquire_lock():
-        try:
-            print("Starting to update gears...")
-            active_gears = Gear.objects.filter(is_active=True, gear_map__is_active=True)
-            gear_amount = len(active_gears)
-            try:
-                percentil = 100 / gear_amount
-                print("A total of %s gears will be updated." % len(active_gears))
-            except ZeroDivisionError:
-                print("There are no gears to update.")
-                return
+    print("Starting to update gears...")
+    active_gears = Gear.objects.filter(is_active=True, gear_map__is_active=True)
+    gear_amount = len(active_gears)
+    try:
+        percentil = 100 / gear_amount
+        print("A total of %s gears will be updated." % len(active_gears))
+    except ZeroDivisionError:
+        print("There are no gears to update.")
+        return
 
-            for i, gear in enumerate(active_gears):
-                update_gear.s(i, gear.id, percentil).apply_async()
-                # update_source_plug.s(i, gear.id, percentil).apply_async()
-                # update_target_plug.s(i, gear.id, percentil).apply_async()
-        finally:
-            release_lock()
+    for i, gear in enumerate(active_gears):
+        update_source_plug.s(i, gear.id, percentil).apply_async()
+        update_target_plug.s(i, gear.id, percentil).apply_async()
     return True
-
-
-@app.task
-def update_gear(i, gear_id, percentil):
-    a = update_source_plug(i, gear_id, percentil)
-    if a is True:
-        update_target_plug.s(i, gear_id, percentil).apply_async()
-    return "Gear %s updated. %s%%" % (gear_id, percentil*(i+1))
 
 
 @app.task
 def update_source_plug(i, gear_id, percentil):
     gear = Gear.objects.get(pk=gear_id)
     name_hexdigest = md5('update_target'.encode()).hexdigest()
-    lock_id = '{0}-lock-{1}'.format(name_hexdigest, gear.id)
+    lock_id = '{0}-lock-{1}-source'.format(name_hexdigest, gear.id)
     acquire_lock = lambda: cache.add(lock_id, 'true', LOCK_EXPIRE)
     release_lock = lambda: cache.delete(lock_id)
-    # print('Updating source for gear: %s.' % (gear.id))
+    print('Updating source for gear: %s.' % (gear.id))
     if acquire_lock():
         try:
             connector = ConnectorEnum.get_connector(gear.source.connection.connector.id)
@@ -68,6 +51,7 @@ def update_source_plug(i, gear_id, percentil):
             return has_new_data
         finally:
             release_lock()
+    print("task locked")
     return False
 
 
@@ -76,7 +60,7 @@ def update_target_plug(i, gear_id, percentil):
     gear = Gear.objects.get(pk=gear_id)
     is_first = True if gear.gear_map.last_sent_stored_data_id is None else False
     name_hexdigest = md5('update_target'.encode()).hexdigest()
-    lock_id = '{0}-lock-{1}'.format(name_hexdigest, gear.id)
+    lock_id = '{0}-lock-{1}-target'.format(name_hexdigest, gear.id)
     acquire_lock = lambda: cache.add(lock_id, 'true', LOCK_EXPIRE)
     release_lock = lambda: cache.delete(lock_id)
     print('Updating target for gear: %s. (%s%%)' % (gear.id, (i + 1) * percentil,))
@@ -112,4 +96,5 @@ def update_target_plug(i, gear_id, percentil):
             gear.gear_map.save()
         finally:
             release_lock()
+    print("task locked ")
     return False

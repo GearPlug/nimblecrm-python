@@ -205,14 +205,12 @@ class FacebookController(BaseController):
                     item.save()
                     if (i + 1) % field_count == 0:
                         extra['status'] = 's'
-                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (item.object_id,
-                                                                                                       item.plug,
-                                                                                                       item.connection),
-                                       extra=extra)
+                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            item.object_id, item.plug.id, item.connection.id), extra=extra)
                 except:
                     extra['status'] = 'f'
                     self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                        item.object_id, item.name, item.plug, item.connection), extra=extra)
+                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
             return True
         return False
 
@@ -308,145 +306,14 @@ class MySQLController(BaseController):
                     item.save()
                     if (i + 1) % field_count == 0:
                         extra['status'] = 's'
-                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (item.object_id,
-                                                                                                       item.plug,
-                                                                                                       item.connection),
-                                       extra=extra)
+                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            item.object_id, item.plug.id, item.connection.id), extra=extra)
                 except:
                     extra['status'] = 'f'
                     self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                        item.object_id, item.name, item.plug, item.connection), extra=extra)
+                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
             return True
         return False
-
-
-class MySQLController2(object):
-    connection_object = None
-    connection = None
-    cursor = None
-    database = None
-    table = None
-    plug = None
-
-    def __init__(self, *args, **kwargs):
-        self.create_connection(*args, **kwargs)
-
-    def create_connection(self, *args, **kwargs):
-        if args:
-            try:
-                self.connection_object = args[0]
-                host = self.connection_object.host
-                port = self.connection_object.port
-                user = self.connection_object.connection_user
-                password = self.connection_object.connection_password
-                self.database = self.connection_object.database
-                self.table = self.connection_object.table
-            except:
-                print("Error gettig the MySQL attributes")
-            try:
-                self.plug = args[1]
-            except:
-                pass
-                # print(
-                #     "Error:MySQLController with connection: %s has no plug." % self.connection_object.connection.id)
-        elif kwargs:
-            try:
-                host = kwargs.pop('host', 'host')
-                port = kwargs.pop('port', 'puerto')
-                user = kwargs.pop('connection_user', 'usuario')
-                password = kwargs.pop('connection_password', 'clave')
-                self.database = kwargs.pop('database', 'database')
-                self.table = kwargs.pop('table', 'table')
-            except:
-                print("Error gettig the MySQL attributes")
-                pass
-        try:
-            self.connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self.database)
-            self.cursor = self.connection.cursor()
-        except:
-            self.connection = None
-        return self.connection is not None
-
-    def set_cursor(self):
-        if self.connection is not None:
-            try:
-                self.cursor = self.connection.cursor()
-                return True
-            except:
-                print("Error getting cursor")
-                return None
-        else:
-            print("Error no connection")
-            return None
-
-    def get_cursor(self):
-        return self.cursor
-
-    def describe_table(self):
-        if self.table is not None and self.database is not None:
-            try:
-                self.cursor.execute('DESCRIBE `%s`.`%s`' % (self.database, self.table))
-                return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2], 'is_primary': item[3] == 'PRI'} for
-                        item in self.cursor]
-            except:
-                print('Error ')
-        return []
-
-    def get_primary_keys(self):
-        if self.table is not None and self.database is not None:
-            try:
-                self.cursor.execute('DESCRIBE `%s`.`%s`' % (self.database, self.table))
-                return [item[0] for item in self.cursor if item[3] == 'PRI']
-            except:
-                print('Error ')
-        return None
-
-    def select_all(self, limit=30):
-        if self.table is not None and self.database is not None and self.plug is not None:
-            try:
-                order_by = self.plug.plug_specification.all()[0].value
-            except:
-                order_by = None
-            select = 'SELECT * FROM `%s`.`%s`' % (self.database, self.table)
-            if order_by is not None:
-                select += 'ORDER BY %s DESC ' % order_by
-            if limit is not None and isinstance(limit, int):
-                select += 'LIMIT %s' % limit
-            try:
-                self.cursor.execute(select)
-                cursor_select_all = copy.copy(self.cursor)
-                self.describe_table()
-                cursor_describe = self.cursor
-                return [{column[0]: item[i] for i, column in enumerate(cursor_describe)} for item in cursor_select_all]
-            except Exception as e:
-                print(e)
-        return []
-
-    def download_to_stored_data(self, connection_object, plug):
-        if plug is None:
-            plug = self.plug
-        data = self.select_all()
-        id_list = self.get_primary_keys()
-        parsed_data = [{'id': tuple(item[key] for key in id_list),
-                        'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}
-                       for item in data]
-        new_data = []
-        for item in parsed_data:
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'][0])
-            if not q.exists():
-                for column in item['data']:
-                    new_data.append(StoredData(name=column['name'], value=column['value'], object_id=item['id'][0],
-                                               connection=connection_object.connection, plug=plug))
-        if new_data:
-            logger.info('MySQL-> Connection: %s  Entries: %s' % (
-                connection_object.connection.id, len(new_data) // len(parsed_data[0]['data'])))
-            StoredData.objects.bulk_create(new_data)
-
-    def download_source_data(self):
-        if self.connection_object is not None and self.plug is not None:
-            self.download_to_stored_data(self.connection_object, self.plug)
-        else:
-            print("Error, there's no connection or plug")
 
 
 class CustomSugarObject(sugarcrm.SugarObject):
@@ -462,68 +329,55 @@ class CustomSugarObject(sugarcrm.SugarObject):
         return ''
 
 
-class SugarCRMController(object):
-    """
-    Controller for the SugarCRM API
-
-    """
-    user = None
-    password = None
-    url = None
-    connection_object = None
-    session = None
-    plug = None
-    module = None
+class SugarCRMController(BaseController):
+    _user = None
+    _password = None
+    _url = None
+    _session = None
+    _module = None
 
     def __init__(self, *args, **kwargs):
-        self.create_connection(*args, **kwargs)
+        super(SugarCRMController, self).__init__(*args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
-        if args:
+        super(SugarCRMController, self).create_connection(*args)
+        if self._connection_object is not None:
             try:
-                self.connection_object = args[0]
-                self.user = self.connection_object.connection_user
-                self.password = self.connection_object.connection_password
-                self.url = self.connection_object.url
-            except:
+                self._user = self._connection_object.connection_user
+                self._password = self._connection_object.connection_password
+                self._url = self._connection_object.url
+            except Exception as e:
                 print("Error gettig the SugarCRM attributes")
             try:
-                self.plug = args[1]
+                self._module = args[2]
             except:
                 pass
-                # print(
-                #     "Error:SugarCRMController with connection: %s has no plug." % self.connection_object.connection.id)
-            try:
-                self.module = args[2]
-            except:
-                pass
-                # print('Error:SugarCRMController. No module defined.')
-        elif kwargs:
-            try:
-                self.url = kwargs.pop('url', 'url')
-                self.user = kwargs.pop('connection_user', 'usuario')
-                self.password = kwargs.pop('connection_password', 'clave')
-            except:
-                print("Error gettig the SugarCRM attributes")
-        if self.url is not None and self.user is not None and self.password is not None:
-            self.session = sugarcrm.Session(self.url, self.user, self.password)
-        return self.session is not None and self.session.session_id is not None
+        if self._url is not None and self._user is not None and self._password is not None:
+            self._session = sugarcrm.Session(self._url, self._user, self._password)
+        return self._session is not None and self._session.session_id is not None
 
     def get_available_modules(self):
-        return self.session.get_available_modules()
+        return self._session.get_available_modules()
 
     def get_entries(self, module_name, id_list):
-        return self.session.get_entries(module_name, id_list)
+        return self._session.get_entries(module_name, id_list)
 
     def get_entry_list(self, module, **kwargs):
         custom_module = CustomSugarObject(module)
-        return self.session.get_entry_list(custom_module, **kwargs)
+        return self._session.get_entry_list(custom_module, **kwargs)
 
     def get_module_fields(self, module, **kwargs):
         custom_module = CustomSugarObject(module)
-        return self.session.get_module_fields(custom_module, **kwargs)
+        return self._session.get_module_fields(custom_module, **kwargs)
 
-    def download_module_to_stored_data(self, connection_object, plug, module, limit=29, order_by="date_entered DESC"):
+    def set_entry(self, obj):
+        return self._session.set_entry(obj)
+
+    def set_entries(self, obj_list):
+        return self._session.set_entries(obj_list)
+
+    def download_to_stored_data(self, connection_object, plug, limit=29, order_by="date_entered DESC"):
+        module = plug.plug_specification.all()[0].value  # Especificar que specification
         data = self.get_entry_list(module, max_results=limit, order_by=order_by)
         new_data = []
         for item in data:
@@ -533,25 +387,23 @@ class SugarCRMController(object):
                     new_data.append(StoredData(name=column['name'], value=column['value'], object_id=item.id,
                                                connection=connection_object.connection, plug=plug))
         if new_data:
-            logger.info('SugarCRM-> Connection: %s  Entries: %s' % (
-                connection_object.connection.id, len(new_data) // len(data[0].fields)))
-            StoredData.objects.bulk_create(new_data)
-        return True if new_data else False
-
-    def download_source_data(self):
-        if self.connection_object is not None and self.plug is not None and self.module is not None:
-            return self.download_module_to_stored_data(self.connection_object, self.plug, self.module)
-        else:
-            print("Error, there's no connection or plug")
-
-    def set_entry(self, obj):
-        return self.session.set_entry(obj)
-
-    def set_entries(self, obj_list):
-        return self.session.set_entries(obj_list)
+            field_count = len(data[0].fields)
+            extra = {'controller': 'sugarcrm'}
+            for i, item in enumerate(new_data):
+                try:
+                    item.save()
+                    if (i + 1) % field_count == 0:
+                        extra['status'] = 's'
+                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                except:
+                    extra['status'] = 'f'
+                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+            return True
+        return False
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
-        obj_list = []
         data_list = get_dict_with_source_data(source_data, target_fields)
         if is_first:
             if data_list:
@@ -559,20 +411,20 @@ class SugarCRMController(object):
                     data_list = [data_list[0]]
                 except:
                     data_list = []
-        if self.plug is not None:
-            module_name = self.plug.plug_specification.all()[0].value
-            for obj in data_list:
+        if self._plug is not None:
+            obj_list = []
+            module_name = self._plug.plug_specification.all()[0].value
+            extra = {'controller': 'sugarcrm'}
+            for item in data_list:
                 try:
-                    id = self.set_entry(CustomSugarObject(module_name, **obj))
-                    logger.info(
-                        '%s-> Object %s  successfully sent. Result: %s' % ('SugarCRM', obj, id))
-                    print(id)
+                    res = self.set_entry(CustomSugarObject(module_name, **item))
+                    extra['status'] = 's'
+                    self._log.info('Item: %s successfully sent.' % (res.id), extra=extra)
                     obj_list.append(id)
                 except Exception as e:
                     print(e)
-                    logger.info(
-                        '%s-> Object %s  failed. Result: %s' % ('SugarCRM', obj, None))
-            print(obj_list)
+                    extra['status'] = 'f'
+                    self._log.info('Item: %s failed to send.' % (res.id), extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
 
