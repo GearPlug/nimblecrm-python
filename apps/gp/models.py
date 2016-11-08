@@ -195,6 +195,7 @@ class GearMap(models.Model):
                                               on_delete=models.SET_NULL)
     last_sent_stored_data_creation_date = models.DateTimeField('last sent storeddata creation date', null=True,
                                                                default=None)
+    last_source_update = models.DateTimeField(null=True, default=None)
     created = models.DateTimeField('created', auto_now_add=True)
 
     class Meta:

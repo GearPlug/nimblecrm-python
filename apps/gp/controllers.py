@@ -9,6 +9,7 @@ import logging
 import MySQLdb
 import copy
 import sugarcrm
+import time
 from mailchimp3 import MailChimp
 
 logger = logging.getLogger('controller')
@@ -39,12 +40,12 @@ class BaseController(object):
     def send_stored_data(self, *args, **kwargs):
         raise ControllerError('Not implemented yet.')
 
-    def download_to_stored_data(self, connection_object, plug):
+    def download_to_stored_data(self, connection_object, plug, **kwargs):
         raise ControllerError('Not implemented yet.')
 
-    def download_source_data(self):
+    def download_source_data(self, **kwargs):
         if self._connection_object is not None and self._plug is not None:
-            return self.download_to_stored_data(self._connection_object, self._plug)
+            return self.download_to_stored_data(self._connection_object, self._plug, **kwargs)
         else:
             raise ControllerError("There's no active connection or plug.")
 
@@ -123,7 +124,7 @@ class MailChimpController(BaseController):
                     self._log.info('Email: %s  successfully sent. Result: %s.' % (item['email_address'], res['id']),
                                    extra=extra)
                 except:
-                    res = "User already exists."
+                    res = "User already exists"
                     extra['status'] = 'f'
                     self._log.error('Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
             return
@@ -146,12 +147,14 @@ class FacebookController(BaseController):
         )
         return h.hexdigest()
 
-    def _send_request(self, url='', token='', base_url='', params=[]):
+    def _send_request(self, url='', token='', base_url='', params=[], from_date=None):
         if not base_url:
             base_url = self._base_graph_url
         if not params:
             params = {'access_token': token,
                       'appsecret_proof': self._get_app_secret_proof(token)}
+        if from_date is not None:
+            params['from_date'] = from_date
         graph = facebook.GraphAPI(version=FACEBOOK_GRAPH_VERSION)
         graph.access_token = graph.get_app_access_token(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
         r = requests.get('%s/v%s/%s' % (base_url, FACEBOOK_GRAPH_VERSION, url),
@@ -181,14 +184,17 @@ class FacebookController(BaseController):
         url = 'me/accounts'
         return self._send_request(url=url, token=access_token)
 
-    def get_leads(self, access_token, form_id):
+    def get_leads(self, access_token, form_id, from_date=None):
         url = '%s/leads' % form_id
-        return self._send_request(url=url, token=access_token)
+        return self._send_request(url=url, token=access_token, from_date=from_date)
 
-    def download_to_stored_data(self, connection_object, plug):
+    def download_to_stored_data(self, connection_object, plug, from_date=None):
         if plug is None:
             plug = self._plug
-        leads = self.get_leads(connection_object.token, connection_object.id_form)
+        if from_date is not None:
+            from_date = int(time.mktime(from_date.timetuple()) * 1000)
+            print('from_date: %s' % from_date)
+        leads = self.get_leads(connection_object.token, connection_object.id_form, from_date=from_date)
         new_data = []
         for item in leads:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
@@ -283,7 +289,7 @@ class MySQLController(BaseController):
                 print(e)
         return []
 
-    def download_to_stored_data(self, connection_object, plug):
+    def download_to_stored_data(self, connection_object, plug, **kwargs):
         if plug is None:
             plug = self._plug
         data = self.select_all()
@@ -376,7 +382,7 @@ class SugarCRMController(BaseController):
     def set_entries(self, obj_list):
         return self._session.set_entries(obj_list)
 
-    def download_to_stored_data(self, connection_object, plug, limit=29, order_by="date_entered DESC"):
+    def download_to_stored_data(self, connection_object, plug, limit=29, order_by="date_entered DESC", **kwargs):
         module = plug.plug_specification.all()[0].value  # Especificar que specification
         data = self.get_entry_list(module, max_results=limit, order_by=order_by)
         new_data = []

@@ -47,6 +47,9 @@ class DBHandler(Handler, object):
 
             log_entry.save()
 
+            if log_entry.status == 'f':
+                print("failed")
+
             # in 20% of time, check and delete expired logs
             # if self.expiry and random.randint(1,5) == 1:
             #     model.objects.filter(time__lt = timezone.now() - datetime.timedelta(seconds=self.expiry)).delete()

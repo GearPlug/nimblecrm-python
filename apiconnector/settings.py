@@ -3,7 +3,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'nd65g3a23c!y%+a_%+v)!trnjh%c=gh(zg5!gsn*qo&b6*nsbb'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*',]
 SITE_ID = 1
 
 INSTALLED_APPS = [
@@ -170,7 +170,7 @@ AUTHENTICATION_BACKENDS = ['account.auth_backends.EmailAuthenticationBackend', ]
 
 # account app
 ACCOUNT_EMAIL_UNIQUE = True
-ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = False
+ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = True
 ACCOUNT_USER_DISPLAY = lambda user: user.email
 ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/'
 ACCOUNT_SIGNUP_REDIRECT_URL = '/dashboard/'
@@ -191,3 +191,13 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'America/Bogota'
+
+
+# Email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'gsaavedra@grplug.com'
+EMAIL_HOST_PASSWORD = ''
+# EMAIL_HOST_PASSWORD = 'zmdfnwqmlrsoxdqn'
+EMAIL_PORT = 587
