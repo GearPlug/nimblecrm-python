@@ -13,7 +13,7 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERYBEAT_SCHEDULE = {
     'update-plugs-1-minutes': {
         'task': 'apps.gp.tasks.update_gears',
-        'schedule': timedelta(seconds=30, ),  # , seconds=30
+        'schedule': timedelta(minutes=1, ),  # , seconds=30
     },
 }
 

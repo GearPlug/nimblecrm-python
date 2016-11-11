@@ -25,6 +25,9 @@ class ListGearView(ListView):
         context = super(ListGearView, self).get_context_data(**kwargs)
         return context
 
+    def get_queryset(self):
+        queryset = self.model._default_manager.all()
+        return queryset.filter(user=self.request.user)
 
 class CreateGearView(CreateView):
     model = Gear
