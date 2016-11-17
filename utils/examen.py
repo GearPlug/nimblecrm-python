@@ -8,18 +8,19 @@ import os
 from oauth2client import tools
 from oauth2client import client
 import requests
+import MySQLdb
 
-try:
-    import argparse
 
-    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-    print(flags)
-except ImportError:
-    flags = None
 
-SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly'
-CLIENT_SECRET_FILE = 'client_secret.json'
-APPLICATION_NAME = 'Google Sheets API Python Quickstart'
+def try_mysql():
+    host = '192.168.0.186'
+    port  = 3306
+    user = 'faker'
+    password = '123456'
+    db = 'fakedata'
+    a = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=db)
+    print(a)
+    a = "sudo celery -A apiconnector worker -l INFO --concurrency=10 -n worker1@%h"
 
 
 class CustomSugarObject(sugarcrm.SugarObject):
@@ -133,7 +134,7 @@ def try_google():
     flow = client.OAuth2WebServerFlow(
         client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
         client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
-        scope='https://www.googleapis.com/auth/spreadsheets',
+        scope='https://www.googleapis.com/auth/drive',
         redirect_uri='http://localhost/account/test/')
     auth_uri = flow.step1_get_authorize_url()
     print(auth_uri)
@@ -152,3 +153,4 @@ def try_google():
 # print(d)
 # print(e)
 try_google()
+# try_mysql()

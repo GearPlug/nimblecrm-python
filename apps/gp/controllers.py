@@ -242,6 +242,16 @@ class MySQLController(BaseController):
                 self._table = self._connection_object.table
             except Exception as e:
                 print("Error gettig the MySQL attributes")
+        else:
+            try:
+                host = kwargs.pop('host')
+                port = kwargs.pop('port')
+                user = kwargs.pop('connection_user')
+                password = kwargs.pop('connection_password')
+                self._database = kwargs.pop('database')
+                self._table = kwargs.pop('table')
+            except Exception as e:
+                print("Error gettig the MySQL attributes")
         try:
             self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self._database)
             self._cursor = self._connection.cursor()
@@ -268,7 +278,7 @@ class MySQLController(BaseController):
                 print('Error ')
         return None
 
-    def select_all(self, limit=30):
+    def select_all(self, limit=300):
         if self._table is not None and self._database is not None and self._plug is not None:
             try:
                 order_by = self._plug.plug_specification.all()[0].value

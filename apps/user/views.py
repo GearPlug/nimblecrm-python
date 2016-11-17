@@ -44,13 +44,29 @@ def email_test(request):
     http_auth = credentials.authorize(httplib2.Http())
     drive_service = discovery.build('drive', 'v3', http_auth)
     files = drive_service.files().list().execute()
-    print(files)
-    # for item in sheets:
-    #     print(item)
+    sheet_list = []
+    for f in files:
+        if f == 'files':
+            for i in files[f]:
+                sheet_list.append((i['id'], i['name']))
+        else:
+            print("%s: %s" % (f, files[f]))
+    print(sheet_list)
+    print(sheet_list[0])
+
+    spreadsheet_id = sheet_list[0][0]
+    sheets_service = discovery.build('sheets', 'v4', http_auth)
+    result = sheets_service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+    sheets = tuple(i['properties'] for i in result['sheets'])
+    res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id,
+                                                     range="1:1").execute()  # % sheets[0]['gridProperties']['rowCount']
+    values = res.get('values', [])
+    for v in values:
+        print(v)
+
     # from apps.gp.tasks import update_gears
     # update_gears.delay()
     # from django.core.mail import send_mail
     # send_mail('Subject here', 'Here is the message.', settings.EMAIL_HOST_USER, ['tavito.286@gmail.com'],
     #           fail_silently=False)
-    print("hola soy google")
-    return render(request, 'home/dashboard.html', {})
+    return render(request, 'home/dashboard.html', {'sheets': sheet_list})
