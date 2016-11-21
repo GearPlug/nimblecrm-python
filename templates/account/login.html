@@ -15,7 +15,7 @@
                     <form class="login-form form-horizontal" action="{% url 'account_login' %}" method="post" autocomplete="off">
                         {% csrf_token %}
                         <div class="logo">
-                            <img src="{% static 'img/Logo_blanco.png' %}" class="img-responsive">
+                            <img src="{% static 'img/Logo_Login_Gear_Plug.png' %}" class="img-responsive">
                         </div>
                         <p>Enter your e-mail acount and your password to sign in</p>
                         {{ form|as_bootstrap_inline }}
