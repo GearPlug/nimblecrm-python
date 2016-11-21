@@ -16,7 +16,7 @@ class AJAXFacebookBaseView(TemplateViewWithPost):
         context = super(AJAXFacebookBaseView, self).get_context_data(**kwargs)
         token = self.request.POST.get('user_access_token', '')
         url = kwargs.pop('url', '')
-        object_list = fbc.send_request(url, token)
+        object_list = fbc._send_request(url, token)
         if object_list:
             self.has_objects = True
         context['object_list'] = object_list

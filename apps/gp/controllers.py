@@ -50,6 +50,11 @@ class BaseController(object):
             raise ControllerError("There's no active connection or plug.")
 
 
+class GoogleSpreadSheetsController(BaseController):
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+
 class MailChimpController(BaseController):
     """
     MailChimpController Class
@@ -368,6 +373,14 @@ class SugarCRMController(BaseController):
                 self._module = args[2]
             except:
                 pass
+        else:
+            print("else")
+            try:
+                self._user = kwargs.pop('connection_user')
+                self._password = kwargs.pop('connection_password')
+                self._url = kwargs.pop('url')
+            except Exception as e:
+                print("Error gettig the MySQL attributes")
         if self._url is not None and self._user is not None and self._password is not None:
             self._session = sugarcrm.Session(self._url, self._user, self._password)
         return self._session is not None and self._session.session_id is not None
