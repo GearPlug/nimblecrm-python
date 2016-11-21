@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib import admin
 from apps.user.models import User
 
-connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp']
+connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp', 'connection_google_sheets']
 
 
 class Connector(models.Model):
@@ -123,6 +123,15 @@ class MailChimpConnection(models.Model):
     name = models.CharField('name', max_length=200)
     connection_user = models.CharField('user', max_length=200)
     api_key = models.CharField('api key', max_length=200)
+
+    def __str__(self):
+        return self.name
+
+
+class GoogleSheetsConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_google_sheets')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=90)
 
     def __str__(self):
         return self.name

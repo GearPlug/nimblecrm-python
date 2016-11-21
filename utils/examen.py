@@ -4,6 +4,24 @@ from mailchimp3 import MailChimp
 import re
 import hashlib
 
+import os
+from oauth2client import tools
+from oauth2client import client
+import requests
+import MySQLdb
+
+
+
+def try_mysql():
+    host = '192.168.0.186'
+    port  = 3306
+    user = 'faker'
+    password = '123456'
+    db = 'fakedata'
+    a = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=db)
+    print(a)
+    a = "sudo celery -A apiconnector worker -l INFO --concurrency=10 -n worker1@%h"
+
 
 class CustomSugarObject(sugarcrm.SugarObject):
     module = "CustomObject"
@@ -112,6 +130,16 @@ def try_sub_dict(s, d):
     print(result)
 
 
+def try_google():
+    flow = client.OAuth2WebServerFlow(
+        client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
+        client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
+        scope='https://www.googleapis.com/auth/drive',
+        redirect_uri='http://localhost/account/test/')
+    auth_uri = flow.step1_get_authorize_url()
+    print(auth_uri)
+
+
 # ej1()
 # ej2()
 # ej3()
@@ -119,8 +147,10 @@ def try_sub_dict(s, d):
 # try_sub_dict('Hola soy german!', {'german': 'daniel'})
 # try_mailchimp('MaxConceptLife63', '619813e972f8698c8029978a8dfc250d-us12')
 
-d = {'a':1, 'b':2, 'c':3}
-e = d
-d['a'] = 5
-print(d)
-print(e)
+# d = {'a':1, 'b':2, 'c':3}
+# e = d
+# d['a'] = 5
+# print(d)
+# print(e)
+try_google()
+# try_mysql()
