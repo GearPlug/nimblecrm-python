@@ -100,7 +100,7 @@ class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
             c = ConnectorEnum.get_connector(self.object.connection.connector.id)
             conn = self.object.connection.related_connection
             if c == ConnectorEnum.Facebook:
-                fbc.download_leads_to_stored_data(conn, self.object)
+                fbc.download_to_stored_data(conn, self.object)
         if len(self.object.action.action_specification.all()) > 0:
             return reverse('wizard:plug_set_specifications',
                            kwargs={'plug_id': self.object.id,})
