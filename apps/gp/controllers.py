@@ -344,7 +344,6 @@ class MySQLController(BaseController):
         insert = """INSERT INTO %s.%s(%s) VALUES (%s)""" % (
             self._database, self._table, """,""".join(item.keys()),
             """,""".join("""\"%s\"""" % i for i in item.values()))
-        print(insert)
         return insert
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
