@@ -341,11 +341,10 @@ class MySQLController(BaseController):
         return False
 
     def _get_insert_statement(self, item):
-        insert = """INSERT INTO %s (%s) VALUES (%s)""" % (
-            self._table, """,""".join(item.keys()), """,""".join("""\"%s\"""" % i for i in item.values()))
-
-        # self._table, """,""".join(item.keys()), ','.join("""\"%s\"""" % [item[i] for i in item.values()])
-        print("INSERT-> %s" % insert)
+        insert = """INSERT INTO %s.%s(%s) VALUES (%s)""" % (
+            self._database, self._table, """,""".join(item.keys()),
+            """,""".join("""\"%s\"""" % i for i in item.values()))
+        print(insert)
         return insert
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
@@ -362,7 +361,7 @@ class MySQLController(BaseController):
             for item in data_list:
                 try:
                     insert = self._get_insert_statement(item)
-                    a = self._cursor.execute(insert)
+                    self._cursor.execute(insert)
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
                     obj_list.append(self._cursor.lastrowid)
@@ -370,6 +369,10 @@ class MySQLController(BaseController):
                     print(e)
                     extra['status'] = 'f'
                     self._log.info('Item: %s failed to send.' % (self._cursor.lastrowid), extra=extra)
+            try:
+                self._connection.commit()
+            except:
+                self._connection.rollback()
             return obj_list
         raise ControllerError("There's no plug")
 
