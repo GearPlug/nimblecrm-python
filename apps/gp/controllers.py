@@ -65,15 +65,16 @@ class MailChimpController(BaseController):
         BaseController.__init__(self, *args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
-        super(MailChimpController, self).create_connection(*args)
-        if self._connection_object is not None:
-            try:
-                self._client = MailChimp(self._connection_object.connection_user, self._connection_object.api_key)
-            except Exception as e:
-                print("Error gettig the MailChimp attributes")
-                print(e)
-                self._client = None
-        if kwargs:
+        if args:
+            super(MailChimpController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._client = MailChimp(self._connection_object.connection_user, self._connection_object.api_key)
+                except Exception as e:
+                    print("Error getting the MailChimp attributes")
+                    print(e)
+                    self._client = None
+        elif not args and kwargs:
             if 'user' in kwargs:
                 user = kwargs.pop('user')
             if 'api_key' in kwargs:
@@ -81,13 +82,11 @@ class MailChimpController(BaseController):
             try:
                 self._client = MailChimp(user, api_key)
             except Exception as e:
-                print(e)
-                print("Error gettig the MailChimp attributes")
+                print("Error getting the MailChimp attributes")
                 self._client = None
         try:
             t = self._client.list.all()
         except Exception as e:
-            print(e)
             t = None
         return t is not None
 
@@ -236,18 +235,21 @@ class MySQLController(BaseController):
         super(MySQLController, self).__init__(*args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
-        super(MySQLController, self).create_connection(*args)
-        if self._connection_object is not None:
-            try:
-                host = self._connection_object.host
-                port = self._connection_object.port
-                user = self._connection_object.connection_user
-                password = self._connection_object.connection_password
-                self._database = self._connection_object.database
-                self._table = self._connection_object.table
-            except Exception as e:
-                print("Error gettig the MySQL attributes")
-        else:
+        if args:
+            super(MySQLController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    host = self._connection_object.host
+                    port = self._connection_object.port
+                    user = self._connection_object.connection_user
+                    password = self._connection_object.connection_password
+                    self._database = self._connection_object.database
+                    self._table = self._connection_object.table
+                except Exception as e:
+                    pass
+                    # raise
+                    print("Error getting the MySQL attributes")
+        elif not args and kwargs:
             try:
                 host = kwargs.pop('host')
                 port = kwargs.pop('port')
@@ -256,7 +258,9 @@ class MySQLController(BaseController):
                 self._database = kwargs.pop('database')
                 self._table = kwargs.pop('table')
             except Exception as e:
-                print("Error gettig the MySQL attributes")
+                pass
+                # raise
+                print("Error getting the MySQL attributes")
         try:
             self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self._database)
             self._cursor = self._connection.cursor()
@@ -336,6 +340,39 @@ class MySQLController(BaseController):
             return True
         return False
 
+    def _get_insert_statement(self, item):
+        insert = """INSERT INTO %s (%s) VALUES (%s)""" % (
+            self._table, """,""".join(item.keys()), """,""".join("""\"%s\"""" % i for i in item.values()))
+
+        # self._table, """,""".join(item.keys()), ','.join("""\"%s\"""" % [item[i] for i in item.values()])
+        print("INSERT-> %s" % insert)
+        return insert
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[0]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            obj_list = []
+            extra = {'controller': 'mysql'}
+            for item in data_list:
+                try:
+                    insert = self._get_insert_statement(item)
+                    a = self._cursor.execute(insert)
+                    extra['status'] = 's'
+                    self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
+                    obj_list.append(self._cursor.lastrowid)
+                except Exception as e:
+                    print(e)
+                    extra['status'] = 'f'
+                    self._log.info('Item: %s failed to send.' % (self._cursor.lastrowid), extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")
+
 
 class CustomSugarObject(sugarcrm.SugarObject):
     module = "CustomObject"
@@ -361,26 +398,26 @@ class SugarCRMController(BaseController):
         super(SugarCRMController, self).__init__(*args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
-        super(SugarCRMController, self).create_connection(*args)
-        if self._connection_object is not None:
-            try:
-                self._user = self._connection_object.connection_user
-                self._password = self._connection_object.connection_password
-                self._url = self._connection_object.url
-            except Exception as e:
-                print("Error gettig the SugarCRM attributes")
-            try:
-                self._module = args[2]
-            except:
-                pass
-        else:
-            print("else")
+        if args:
+            super(SugarCRMController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._user = self._connection_object.connection_user
+                    self._password = self._connection_object.connection_password
+                    self._url = self._connection_object.url
+                except Exception as e:
+                    print("Error getting the SugarCRM attributes")
+                try:
+                    self._module = args[2]
+                except:
+                    pass
+        elif not args and kwargs:
             try:
                 self._user = kwargs.pop('connection_user')
                 self._password = kwargs.pop('connection_password')
                 self._url = kwargs.pop('url')
             except Exception as e:
-                print("Error gettig the MySQL attributes")
+                print("Error getting the SugarCRM attributes")
         if self._url is not None and self._user is not None and self._password is not None:
             self._session = sugarcrm.Session(self._url, self._user, self._password)
         return self._session is not None and self._session.session_id is not None

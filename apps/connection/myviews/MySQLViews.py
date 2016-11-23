@@ -3,11 +3,10 @@ from django.http import JsonResponse
 from apps.gp.controllers import MySQLController
 from apps.gp.views import TemplateViewWithPost
 
-mysqlc = MySQLController()
-
 
 class AJAXMySQLTestConnection(TemplateViewWithPost):
     template_name = 'test.html'
+    mysqlc = MySQLController()
 
     def post(self, request, *args, **kwargs):
         name = self.request.POST.get('name', 'nombre')
@@ -16,6 +15,6 @@ class AJAXMySQLTestConnection(TemplateViewWithPost):
         database = self.request.POST.get('database', 'database')
         user = self.request.POST.get('connection_user', 'usuario')
         password = self.request.POST.get('connection_password', 'clave')
-        ping = mysqlc.create_connection(name=name, host=host, port=int(port), connection_user=user,
+        ping = self.mysqlc.create_connection(name=name, host=host, port=int(port), connection_user=user,
                                         connection_password=password, database=database)
         return JsonResponse({'data': ping})

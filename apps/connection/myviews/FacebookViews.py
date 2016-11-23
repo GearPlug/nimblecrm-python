@@ -4,19 +4,18 @@ from django.views.generic import TemplateView
 from apps.gp.controllers import FacebookController
 from apps.gp.views import TemplateViewWithPost
 
-fbc = FacebookController()
-
 
 # Vista base de facebook. Hace request utilizando el graph api.
 class AJAXFacebookBaseView(TemplateViewWithPost):
     template_name = 'connection/facebook/ajax_facebook_select.html'
     has_objects = False
+    fbc = FacebookController()
 
     def get_context_data(self, *args, **kwargs):
         context = super(AJAXFacebookBaseView, self).get_context_data(**kwargs)
         token = self.request.POST.get('user_access_token', '')
         url = kwargs.pop('url', '')
-        object_list = fbc._send_request(url, token)
+        object_list = self.fbc._send_request(url, token)
         if object_list:
             self.has_objects = True
         context['object_list'] = object_list

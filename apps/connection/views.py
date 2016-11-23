@@ -11,8 +11,6 @@ from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connection, Connector, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
 
-fbc = FacebookController()
-
 
 class ListConnectionView(ListView):
     model = Connection
@@ -31,6 +29,7 @@ class CreateConnectionView(CreateView):
     fields = []
     template_name = '%s/create.html' % app_name
     success_url = reverse_lazy('%s:list' % app_name)
+    fbc = FacebookController()
 
     def form_invalid(self, form, *args, **kwargs):
         return super(CreateConnectionView, self).form_invalid(form, *args, **kwargs)
@@ -41,7 +40,7 @@ class CreateConnectionView(CreateView):
             form.instance.connection = c
             if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Facebook:
                 token = self.request.POST.get('token', '')
-                long_user_access_token = fbc.extend_token(token)
+                long_user_access_token = self.fbc.extend_token(token)
                 pages = fbc.get_pages(long_user_access_token)
                 page_token = None
                 for page in pages:
@@ -50,7 +49,7 @@ class CreateConnectionView(CreateView):
                         break
                 if page_token:
                     form.instance.token = page_token
-                # fbc.download_leads_to_stored_data(form.instance)
+                    # fbc.download_leads_to_stored_data(form.instance)
             return super(CreateConnectionView, self).form_valid(form, *args, **kwargs)
 
     def get(self, *args, **kwargs):

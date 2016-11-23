@@ -142,9 +142,11 @@ def update_gear(gear_id):
 
             if target_connector == ConnectorEnum.MySQL:
                 controller = controller_class(gear.target.connection.related_connection, gear.target)
-                columns, insert_values = mysql_get_insert_values(source_data, target_fields,
-                                                                 gear.target.connection.related_connection)
-                mysql_trigger_create_row(gear.target.connection.related_connection, columns, insert_values)
+                controller.send_stored_data(source_data, target_fields)
+                # columns, insert_values = mysql_get_insert_values(source_data, target_fields,
+                #                                                  gear.target.connection.related_connection)
+
+                # mysql_trigger_create_row(gear.target.connection.related_connection, columns, insert_values)
             elif target_connector == ConnectorEnum.SugarCRM:
                 controller = controller_class(gear.target.connection.related_connection, gear.target)
                 entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
