@@ -318,7 +318,11 @@ class MySQLController(BaseController):
                        for item in data]
         new_data = []
         for item in parsed_data:
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'][0])
+            try:
+                q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'][0])
+            except IndexError:
+                q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                              object_id=None)
             if not q.exists():
                 for column in item['data']:
                     new_data.append(StoredData(name=column['name'], value=column['value'], object_id=item['id'][0],

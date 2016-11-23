@@ -128,13 +128,13 @@ class MailChimpConnection(models.Model):
         return self.name
 
 
-class GoogleSheetsConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_google_sheets')
-    name = models.CharField('name', max_length=200)
-    token = models.CharField('token', max_length=90)
-
-    def __str__(self):
-        return self.name
+# class GoogleSheetsConnection(models.Model):
+#     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_google_sheets')
+#     name = models.CharField('name', max_length=200)
+#     token = models.CharField('token', max_length=90)
+#
+#     def __str__(self):
+#         return self.name
 
 
 class Plug(models.Model):
@@ -175,7 +175,7 @@ class StoredData(models.Model):
     name = models.CharField('name', max_length=300)
     value = models.CharField('value', max_length=3000, default='', blank=True)
     datetime = models.DateTimeField(auto_now_add=True)
-    object_id = models.CharField('object_id', max_length=50, null=False)
+    object_id = models.CharField('object_id', max_length=50, null=True)
 
     def __str__(self):
         return '%s %s %s' % (self.id, self.name, self.object_id)
