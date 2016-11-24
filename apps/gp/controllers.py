@@ -322,7 +322,7 @@ class MySQLController(BaseController):
                 id_item = item['id'][0]
             except IndexError:
                 id_item = None
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'][0])
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id_item)
             if not q.exists():
                 for column in item['data']:
                     new_data.append(StoredData(name=column['name'], value=column['value'], object_id=id_item,

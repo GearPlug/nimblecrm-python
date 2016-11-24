@@ -13,7 +13,6 @@ from apps.gp.views import TemplateViewWithPost
 import logging
 
 mysqlc = MySQLController()
-scrmc = SugarCRMController()
 mcc = MailChimpController()
 
 
@@ -65,6 +64,7 @@ class CreateGearMapView(FormView):
     form_field_list = []
     source_object_list = []
     success_url = reverse_lazy('%s:list' % app_name)
+    scrmc = SugarCRMController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -135,11 +135,11 @@ class CreateGearMapView(FormView):
             # print(form_data)
             return [item['name'] for item in form_data if item['is_primary'] is not True]
         elif c == ConnectorEnum.SugarCRM:
-            ping = scrmc.create_connection(url=connection_data['url'],
+            ping = self.scrmc.create_connection(url=connection_data['url'],
                                            connection_user=connection_data['connection_user'],
                                            connection_password=connection_data['connection_password'])
             try:
-                fields = scrmc.get_module_fields(plug.plug_specification.all()[0].value, get_structure=True)
+                fields = self.scrmc.get_module_fields(plug.plug_specification.all()[0].value, get_structure=True)
                 return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields]
             except:
                 return []
