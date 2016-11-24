@@ -319,13 +319,13 @@ class MySQLController(BaseController):
         new_data = []
         for item in parsed_data:
             try:
-                q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'][0])
+                id_item = item['id'][0]
             except IndexError:
-                q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                              object_id=None)
+                id_item = None
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'][0])
             if not q.exists():
                 for column in item['data']:
-                    new_data.append(StoredData(name=column['name'], value=column['value'], object_id=item['id'][0],
+                    new_data.append(StoredData(name=column['name'], value=column['value'], object_id=id_item,
                                                connection=connection_object.connection, plug=plug))
         if new_data:
             field_count = len(parsed_data[0]['data'])
