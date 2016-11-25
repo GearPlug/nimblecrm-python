@@ -123,9 +123,7 @@ def update_gear(gear_id):
                                               gear.source.plug_specification.all()[0].value)
             else:
                 controller = controller_class(gear.source.connection.related_connection, gear.source)
-            print(controller_class)
             has_new_data = controller.download_source_data(from_date=gear.gear_map.last_source_update)
-            print(has_new_data)
             # TARGET
             target_connector = ConnectorEnum.get_connector(gear.target.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(target_connector)
@@ -134,14 +132,17 @@ def update_gear(gear_id):
             if gear.gear_map.last_sent_stored_data_id is not None:
                 kwargs['id__gt'] = gear.gear_map.last_sent_stored_data_id
             stored_data = StoredData.objects.filter(**kwargs)
+            print(stored_data)
             if not stored_data:
                 return False
+            print("pase")
             target_fields = {data.target_name: data.source_value for data in
                              GearMapData.objects.filter(gear_map=gear.gear_map)}
             source_data = [{'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}}
                            for item in stored_data.values_list('object_id').distinct()]
 
             if target_connector == ConnectorEnum.MySQL:
+                print("mysql")
                 controller = controller_class(gear.target.connection.related_connection, gear.target)
                 controller.send_stored_data(source_data, target_fields)
                 # columns, insert_values = mysql_get_insert_values(source_data, target_fields,
