@@ -122,9 +122,9 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                                             database=plug.connection.related_connection.database,
                                             table=plug.connection.related_connection.table)
             options = mysqlc.get_primary_keys()
-            print(options)
-            context['available_options'] = []
-        if c == ConnectorEnum.SugarCRM:
+            if isinstance(options, list) and options:
+                context['available_options'] = options
+        elif c == ConnectorEnum.SugarCRM:
             ping = scrmc.create_connection(url=plug.connection.related_connection.url,
                                            connection_user=plug.connection.related_connection.connection_user,
                                            connection_password=plug.connection.related_connection.connection_password)

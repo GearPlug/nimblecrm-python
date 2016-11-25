@@ -123,8 +123,9 @@ def update_gear(gear_id):
                                               gear.source.plug_specification.all()[0].value)
             else:
                 controller = controller_class(gear.source.connection.related_connection, gear.source)
+            print(controller_class)
             has_new_data = controller.download_source_data(from_date=gear.gear_map.last_source_update)
-
+            print(has_new_data)
             # TARGET
             target_connector = ConnectorEnum.get_connector(gear.target.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(target_connector)
@@ -157,7 +158,8 @@ def update_gear(gear_id):
             gear.gear_map.last_source_update = timezone.now()
             gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
             gear.gear_map.save()
-        except:
+        except Exception as e:
+            print("Exception in task \"%s\"")
             pass
         finally:
             release_lock()

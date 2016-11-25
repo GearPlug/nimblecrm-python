@@ -309,6 +309,7 @@ class MySQLController(BaseController):
         return []
 
     def download_to_stored_data(self, connection_object, plug, **kwargs):
+        print("Download to stored data")
         if plug is None:
             plug = self._plug
         data = self.select_all()
@@ -318,6 +319,7 @@ class MySQLController(BaseController):
                        for item in data]
         new_data = []
         for item in parsed_data:
+            print("item new")
             try:
                 id_item = item['id'][0]
             except IndexError:
@@ -327,6 +329,7 @@ class MySQLController(BaseController):
                 for column in item['data']:
                     new_data.append(StoredData(name=column['name'], value=column['value'], object_id=id_item,
                                                connection=connection_object.connection, plug=plug))
+        print(len(new_data))
         if new_data:
             field_count = len(parsed_data[0]['data'])
             extra = {'controller': 'mysql'}
