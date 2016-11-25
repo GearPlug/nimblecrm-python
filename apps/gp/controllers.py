@@ -163,6 +163,7 @@ class FacebookController(BaseController):
         graph.access_token = graph.get_app_access_token(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
         r = requests.get('%s/v%s/%s' % (base_url, FACEBOOK_GRAPH_VERSION, url),
                          params=params)
+        print(r.request)
         try:
             return json.loads(r.text)['data']
         except KeyError:
@@ -483,7 +484,6 @@ class SugarCRMController(BaseController):
                     data_list = [data_list[0]]
                 except:
                     data_list = []
-        print("in")
         if self._plug is not None:
             obj_list = []
             module_name = self._plug.plug_specification.all()[0].value
