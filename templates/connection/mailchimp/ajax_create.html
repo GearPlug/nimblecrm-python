@@ -1,8 +1,8 @@
 {% load bootstrap_tags %}
 
 
-<form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
-      method="post" autocomplete="off">
+<form id="formCreateConnection" class="create-connection-form form-horizontal"
+      action="{% url 'wizard:create_connection' connector_id=4 %}" method="post" autocomplete="off">
     {% csrf_token %}
     {{ form|as_bootstrap }}
     <button id="btnTestConnection">Test connection</button>
@@ -17,16 +17,6 @@
 <script type="application/javascript">
 
     $(document).ready(function () {
-        (function (d, s, id) {
-            var js, fjs = d.getElementsByTagName(s)[0];
-            if (d.getElementById(id)) return;
-            js = d.createElement(s);
-            js.id = id;
-            js.src = "//connect.facebook.net/en_US/sdk.js";
-            fjs.parentNode.insertBefore(js, fjs);
-        }(document, 'script', 'facebook-jssdk'));
-
-
         $('button#btnTestConnection').click(function () {
             $.ajax({
                 method: "POST",
