@@ -163,7 +163,6 @@ class FacebookController(BaseController):
         graph.access_token = graph.get_app_access_token(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
         r = requests.get('%s/v%s/%s' % (base_url, FACEBOOK_GRAPH_VERSION, url),
                          params=params)
-        print(r.request)
         try:
             return json.loads(r.text)['data']
         except KeyError:
@@ -198,7 +197,7 @@ class FacebookController(BaseController):
             plug = self._plug
         if from_date is not None:
             from_date = int(time.mktime(from_date.timetuple()) * 1000)
-            print('from_date: %s' % from_date)
+            # print('from_date: %s' % from_date)
         leads = self.get_leads(connection_object.token, connection_object.id_form, from_date=from_date)
         new_data = []
         for item in leads:

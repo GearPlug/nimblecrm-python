@@ -160,7 +160,7 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                 ping = scrmc.create_connection(url=self.object.plug.connection.related_connection.url,
                                                connection_user=self.object.plug.connection.related_connection.connection_user,
                                                connection_password=self.object.plug.connection.related_connection.connection_password)
-                data_list = scrmc.download_module_to_stored_data(conn, self.object.plug, self.object.value)
+                data_list = scrmc.download_to_stored_data(conn, self.object.plug, self.object.value)
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 

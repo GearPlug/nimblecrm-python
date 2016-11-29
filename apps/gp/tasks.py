@@ -132,23 +132,16 @@ def update_gear(gear_id):
             if gear.gear_map.last_sent_stored_data_id is not None:
                 kwargs['id__gt'] = gear.gear_map.last_sent_stored_data_id
             stored_data = StoredData.objects.filter(**kwargs)
-            print(stored_data)
             if not stored_data:
                 return False
-            print("pase")
             target_fields = {data.target_name: data.source_value for data in
                              GearMapData.objects.filter(gear_map=gear.gear_map)}
             source_data = [{'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}}
                            for item in stored_data.values_list('object_id').distinct()]
 
             if target_connector == ConnectorEnum.MySQL:
-                print("mysql")
                 controller = controller_class(gear.target.connection.related_connection, gear.target)
                 controller.send_stored_data(source_data, target_fields)
-                # columns, insert_values = mysql_get_insert_values(source_data, target_fields,
-                #                                                  gear.target.connection.related_connection)
-
-                # mysql_trigger_create_row(gear.target.connection.related_connection, columns, insert_values)
             elif target_connector == ConnectorEnum.SugarCRM:
                 controller = controller_class(gear.target.connection.related_connection, gear.target)
                 entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
