@@ -34,7 +34,6 @@ class LoginView(account.views.LoginView):
 
 def email_test(request):
     code = request.GET.get('code', None)
-    print(code)
     flow = client.OAuth2WebServerFlow(
         client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
         client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
@@ -53,14 +52,18 @@ def email_test(request):
             print("%s: %s" % (f, files[f]))
     print(sheet_list)
     print(sheet_list[0])
-
     spreadsheet_id = sheet_list[0][0]
     sheets_service = discovery.build('sheets', 'v4', http_auth)
     result = sheets_service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
-    sheets = tuple(i['properties'] for i in result['sheets'])
-    res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id,
-                                                     range="1:1").execute()  # % sheets[0]['gridProperties']['rowCount']
+    sheets = tuple(i['properties'] for i in result['sheets'])  # % sheets[0]['gridProperties']['rowCount']
+    res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range="1:1").execute()
     values = res.get('values', [])
+    try:
+        fields_count = len(values[0])
+    except IndexError:
+        fields_count = 0
+    print(fields_count)
+
     for v in values:
         print(v)
 

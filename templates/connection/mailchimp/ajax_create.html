@@ -1,6 +1,5 @@
 {% load bootstrap_tags %}
 
-
 <form id="formCreateConnection" class="create-connection-form form-horizontal"
       action="{% url 'wizard:create_connection' connector_id=4 %}" method="post" autocomplete="off">
     {% csrf_token %}
@@ -13,9 +12,7 @@
     {% endif %}
 </form>
 
-
 <script type="application/javascript">
-
     $(document).ready(function () {
         $('button#btnTestConnection').click(function () {
             $.ajax({

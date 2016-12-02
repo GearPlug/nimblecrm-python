@@ -61,8 +61,9 @@ class MapField(object):
                 self.label = d['label']
             if 'options' in d:
                 if isinstance(d['options'], dict):
-                    self.choices = tuple('') + tuple((d['options'][choice]['name'], d['options'][choice]['value'])
-                                                     for choice in d['options'])
+                    self.choices = [(d['options'][choice]['name'], d['options'][choice]['value'])
+                                    for choice in d['options']]
+                    self.choices.insert(0, ('', ''))
             if 'type' in d:
                 self.field_type = d['type']
             if 'len' in d:
@@ -70,7 +71,7 @@ class MapField(object):
                     self.max_length = int(d['len'])
                 except:
                     self.max_length = 200
-            # print('field %s' % self.attrs)
+                    # print('field %s' % self.attrs)
         elif controller == ConnectorEnum.MailChimp:
             if 'tag' in d:
                 self.name = d['tag']
