@@ -1,0 +1,17 @@
+<table class="table table-bordered">
+    {% for row in Values %}
+        <tr>
+            {% for column in row %}
+                {% if forloop.first %}
+                    <th>
+                        {{ column }}
+                    </th>
+                {% else %}
+                    <td>
+                        {{ column }}
+                    </td>
+                {% endif %}
+            {% endfor %}
+        </tr>
+    {% endfor %}
+</table>

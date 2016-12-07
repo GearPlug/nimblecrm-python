@@ -364,6 +364,7 @@ class MySQLController(BaseController):
             for item in data_list:
                 try:
                     insert = self._get_insert_statement(item)
+                    print(insert)
                     self._cursor.execute(insert)
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
