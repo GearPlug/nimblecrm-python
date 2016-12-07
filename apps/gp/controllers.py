@@ -345,9 +345,11 @@ class MySQLController(BaseController):
         return False
 
     def _get_insert_statement(self, item):
-        insert = """INSERT INTO %s.%s(%s) VALUES (%s)""" % (
-            self._database, self._table, """,""".join(item.keys()),
+        insert = """INSERT INTO `%s`(%s) VALUES (%s)""" % (self._table, """,""".join(item.keys()),
             """,""".join("""\"%s\"""" % i for i in item.values()))
+        print(self._database)
+        print(self._table)
+        print(insert)
         return insert
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
@@ -364,6 +366,7 @@ class MySQLController(BaseController):
             for item in data_list:
                 try:
                     insert = self._get_insert_statement(item)
+                    print(insert)
                     self._cursor.execute(insert)
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)

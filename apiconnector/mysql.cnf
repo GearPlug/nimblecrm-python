@@ -4,5 +4,5 @@ host = localhost
 port = 3306
 database = apiConnector-00
 user = root
-password =
+password = 1234567
 default-character-set = utf8

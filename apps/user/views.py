@@ -35,42 +35,43 @@ class LoginView(account.views.LoginView):
     form_class = account.forms.LoginEmailForm
 
 
-def email_test(request):
-    code = request.GET.get('code', None)
-    flow = client.OAuth2WebServerFlow(
-        client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
-        client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
-        scope='https://www.googleapis.com/auth/drive',
-        redirect_uri='http://localhost/account/test/')
-    credentials = flow.step2_exchange(code)
-    http_auth = credentials.authorize(httplib2.Http())
-
+def get_authorization():
     storage = Storage('credentials')
-    storage.put(credentials)
+    credentials = storage.get()
+    return credentials.authorize(httplib2.Http())
+
+
+def email_test(request):
+    # code = request.GET.get('code', None)
+    # flow = client.OAuth2WebServerFlow(
+    #     client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
+    #     client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
+    #     scope='https://www.googleapis.com/auth/drive',
+    #     redirect_uri='http://localhost/account/test/')
+    # credentials = flow.step2_exchange(code)
+    # storage = Storage('credentials')
+    # storage.put(credentials)
+
+    http_auth = get_authorization()
 
     drive_service = discovery.build('drive', 'v3', http_auth)
     files = drive_service.files().list().execute()
 
-    print(files)
-
     sheet_list = []
     for f in files['files']:
-        print(f)
         if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet':
             sheet_list.append((f['id'], f['name']))
-    print(sheet_list)
-    print(sheet_list[0])
+
     spreadsheet_id = sheet_list[0][0]
     sheets_service = discovery.build('sheets', 'v4', http_auth)
     res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range="1:1").execute()
 
     values = res.get('values', [])
-    print(values)
+
     try:
         fields_count = len(values[0])
     except IndexError:
         fields_count = 0
-    print(fields_count)
 
     for v in values:
         print(v)
@@ -84,9 +85,7 @@ def email_test(request):
 
 
 def async_spreadsheet_info(request, id):
-    storage = Storage('credentials')
-    credentials = storage.get()
-    http_auth = credentials.authorize(httplib2.Http())
+    http_auth = get_authorization()
 
     sheets_service = discovery.build('sheets', 'v4', http_auth)
 
@@ -106,9 +105,7 @@ def async_spreadsheet_info(request, id):
 
 
 def async_spreadsheet_values(request, id, sheet_id):
-    storage = Storage('credentials')
-    credentials = storage.get()
-    http_auth = credentials.authorize(httplib2.Http())
+    http_auth = get_authorization()
 
     sheets_service = discovery.build('sheets', 'v4', http_auth)
 
@@ -117,7 +114,35 @@ def async_spreadsheet_values(request, id, sheet_id):
     sheet_id = next((s[1] for s in sheets if s[0] == int(sheet_id)))
 
     res = sheets_service.spreadsheets().values().get(spreadsheetId=id, range='{0}!A1:Z100'.format(sheet_id)).execute()
-    print(res)
 
-    ctx = {'Success': True}
+    values = res['values']
+    column_count = len(values[0])
+    row_count = len(values)
+
+    template = loader.get_template('home/_spreadsheet_table.html')
+    context = {'Values': values}
+
+    data = {'ColumnCount': column_count, 'RowCount': row_count, 'Table': template.render(context)}
+    ctx = {'Success': True, 'Data': data}
     return HttpResponse(json.dumps(ctx), content_type='application/json')
+
+
+def google_sheets_write(request):
+    http_auth = get_authorization()
+
+    sheets_service = discovery.build('sheets', 'v4', http_auth)
+
+    values = [
+        ['alpha', 'gamma', 'beta'],
+    ]
+
+    body = {
+        'values': values
+    }
+
+    res = sheets_service.spreadsheets().values().update(spreadsheetId='1ujsgXnEQzYg9FcWlfyuYUvOxWy95k9yy10yqUlOx4gQ',
+                                                        range="'HOJA OP'!A1:C1", valueInputOption='RAW',
+                                                        body=body).execute()
+
+    print(res)
+    return render(request, 'home/google_sheets_write.html')
