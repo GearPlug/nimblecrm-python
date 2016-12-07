@@ -2,11 +2,12 @@ import json
 import account.views
 import account.forms
 import apps.user.forms
-from django.shortcuts import render, HttpResponse
+from django.core.urlresolvers import reverse
+from django.shortcuts import render, HttpResponse, redirect
 from django.template import loader, Context
+from django.views.generic import View
 import httplib2
 from oauth2client import client
-from oauth2client.file import Storage
 from apiclient import discovery
 from django.conf import settings
 
@@ -35,24 +36,39 @@ class LoginView(account.views.LoginView):
     form_class = account.forms.LoginEmailForm
 
 
-def get_authorization():
-    storage = Storage('credentials')
-    credentials = storage.get()
+def get_flow():
+    return client.OAuth2WebServerFlow(
+        client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
+        client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
+        scope='https://www.googleapis.com/auth/drive',
+        redirect_uri='http://localhost:8000/account/google_auth/')
+
+
+class ConnectionsView(View):
+    template_name = 'home/connections.html'
+
+    def get(self, request, *args, **kwargs):
+        ctx = {'AuthUri': get_flow().step1_get_authorize_url()}
+        return render(request, self.template_name, ctx)
+
+
+class GoogleAuthView(View):
+    def get(self, request, *args, **kwargs):
+        code = request.GET['code']
+        credentials = get_flow().step2_exchange(code)
+
+        # Guardar en credencial en Modelo en vez de sesion
+        request.session['google_credentials'] = credentials.to_json()
+        return redirect(reverse('connections'))
+
+
+def get_authorization(request):
+    credentials = client.OAuth2Credentials.from_json(request.session['google_credentials'])
     return credentials.authorize(httplib2.Http())
 
 
 def email_test(request):
-    # code = request.GET.get('code', None)
-    # flow = client.OAuth2WebServerFlow(
-    #     client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
-    #     client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
-    #     scope='https://www.googleapis.com/auth/drive',
-    #     redirect_uri='http://localhost/account/test/')
-    # credentials = flow.step2_exchange(code)
-    # storage = Storage('credentials')
-    # storage.put(credentials)
-
-    http_auth = get_authorization()
+    http_auth = get_authorization(request)
 
     drive_service = discovery.build('drive', 'v3', http_auth)
     files = drive_service.files().list().execute()
@@ -85,7 +101,7 @@ def email_test(request):
 
 
 def async_spreadsheet_info(request, id):
-    http_auth = get_authorization()
+    http_auth = get_authorization(request)
 
     sheets_service = discovery.build('sheets', 'v4', http_auth)
 
@@ -105,7 +121,7 @@ def async_spreadsheet_info(request, id):
 
 
 def async_spreadsheet_values(request, id, sheet_id):
-    http_auth = get_authorization()
+    http_auth = get_authorization(request)
 
     sheets_service = discovery.build('sheets', 'v4', http_auth)
 
@@ -128,7 +144,7 @@ def async_spreadsheet_values(request, id, sheet_id):
 
 
 def google_sheets_write(request):
-    http_auth = get_authorization()
+    http_auth = get_authorization(request)
 
     sheets_service = discovery.build('sheets', 'v4', http_auth)
 
