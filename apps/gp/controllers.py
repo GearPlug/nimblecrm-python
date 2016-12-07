@@ -345,7 +345,7 @@ class MySQLController(BaseController):
         return False
 
     def _get_insert_statement(self, item):
-        insert = """INSERT INTO %s.%s(%s) VALUES (%s)""" % (
+        insert = """INSERT INTO `%s.%s`(%s) VALUES (%s)""" % (
             self._database, self._table, """,""".join(item.keys()),
             """,""".join("""\"%s\"""" % i for i in item.values()))
         return insert
