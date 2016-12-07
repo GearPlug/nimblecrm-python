@@ -83,6 +83,83 @@ class GoogleSpreadSheetsController(BaseController):
             files = None
         return files is not None
 
+    def download_to_stored_data(self, connection_object, plug, *args, **kwargs):
+        if plug is None:
+            plug = self._plug
+
+        credentials_json = 0
+        sheet_id = 0
+        sheet_index = 0
+
+        sheets = self.get_sheets(credentials_json)
+        sheet_info = self.get_sheet_info(credentials_json, sheet_id)
+        sheet_values = self.get_sheet_values(connection_object.credentials_json, sheet_id, sheet_index)
+        new_data = []
+        for idx, item in enumerate(sheet_values):
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=idx)
+            if not q.exists():
+                for idx, cell in enumerate(item):
+                    new_data.append(StoredData(name=item[0][idx], value=cell, object_id=idx,
+                                               connection=connection_object.connection, plug=plug))
+        if new_data:
+            field_count = len(sheet_values)
+            entries = len(new_data) // field_count
+            extra = {'controller': 'google_spreadsheets'}
+            for i, item in enumerate(new_data):
+                try:
+                    item.save()
+                    if (i + 1) % field_count == 0:
+                        extra['status'] = 's'
+                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                except:
+                    extra['status'] = 'f'
+                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+            return True
+        return False
+
+    def get_sheets(self, credentials_json):
+        credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
+        http_auth = credential.authorize(httplib2.Http())
+
+        drive_service = discovery.build('drive', 'v3', http_auth)
+        files = drive_service.files().list().execute()
+
+        sheet_list = []
+        for f in files['files']:
+            if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet':
+                sheet_list.append((f['id'], f['name']))
+
+        return sheet_list
+
+    def get_sheet_info(self, credentials_json, sheet_id):
+        credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
+        http_auth = credential.authorize(httplib2.Http())
+
+        sheets_service = discovery.build('sheets', 'v4', http_auth)
+
+        result = sheets_service.spreadsheets().get(spreadsheetId=sheet_id).execute()
+
+        sheets = tuple(i['properties'] for i in result['sheets'])  # % sheets[0]['gridProperties']['rowCount']
+
+        return sheets
+
+    def get_sheet_values(self, credentials_json, sheet_id, sheet_index):
+        credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
+        http_auth = credential.authorize(httplib2.Http())
+
+        sheets_service = discovery.build('sheets', 'v4', http_auth)
+
+        res = sheets_service.spreadsheets().values().get(spreadsheetId=sheet_id,
+                                                         range='{0}!A1:Z100'.format(sheet_index)).execute()
+
+        values = res['values']
+        column_count = len(values[0])
+        row_count = len(values)
+
+        return values
+
 
 class MailChimpController(BaseController):
     """
