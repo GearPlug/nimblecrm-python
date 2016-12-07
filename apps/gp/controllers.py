@@ -10,7 +10,10 @@ import MySQLdb
 import copy
 import sugarcrm
 import time
+from apiclient import discovery
 from mailchimp3 import MailChimp
+from oauth2client import client as GoogleClient
+import httplib2
 
 logger = logging.getLogger('controller')
 
@@ -51,8 +54,34 @@ class BaseController(object):
 
 
 class GoogleSpreadSheetsController(BaseController):
+    _credential = None
+
     def __init__(self, *args, **kwargs):
         BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(GoogleSpreadSheetsController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    credentials_json = self._connection_object.credentials_json
+                except Exception as e:
+                    print("Error getting the GoogleSpreadSheets attributes")
+                    print(e)
+                    credentials_json = None
+        elif not args and kwargs:
+            if 'credentials_json' in kwargs:
+                credentials_json = kwargs.pop('credentials_json')
+        try:
+            self._credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
+            http_auth = self._credential.authorize(httplib2.Http())
+            drive_service = discovery.build('drive', 'v3', http_auth)
+            files = drive_service.files().list().execute()
+        except Exception as e:
+            print("Error getting the GoogleSpreadSheets attributes")
+            self._credential = None
+            files = None
+        return files is not None
 
 
 class MailChimpController(BaseController):
@@ -345,9 +374,8 @@ class MySQLController(BaseController):
         return False
 
     def _get_insert_statement(self, item):
-        insert = """INSERT INTO `%s.%s`(%s) VALUES (%s)""" % (
-            self._database, self._table, """,""".join(item.keys()),
-            """,""".join("""\"%s\"""" % i for i in item.values()))
+        insert = """INSERT INTO `%s`(%s) VALUES (%s)""" % (
+            self._table, """,""".join(item.keys()), """,""".join("""\"%s\"""" % i for i in item.values()))
         return insert
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
