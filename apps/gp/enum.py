@@ -8,6 +8,7 @@ class ConnectorEnum(Enum):
     MySQL = 2
     SugarCRM = 3
     MailChimp = 4
+    GoogleSpreadSheets = 5
 
     def get_connector_data(connector):
         connector = ConnectorEnum.get_connector(connector)

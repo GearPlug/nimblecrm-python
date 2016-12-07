@@ -4,7 +4,7 @@ from apps.gp.model_fields import JSONField
 from apps.user.models import User
 
 connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
-               'connection_google_sheets']
+               'connection_googlespreadsheets']
 
 
 class Connector(models.Model):
