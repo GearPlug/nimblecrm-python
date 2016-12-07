@@ -1,8 +1,10 @@
 from django.db import models
 from django.contrib import admin
+from apps.gp.model_fields import JSONField
 from apps.user.models import User
 
-connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp', 'connection_google_sheets']
+connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
+               'connection_google_sheets']
 
 
 class Connector(models.Model):
@@ -128,13 +130,10 @@ class MailChimpConnection(models.Model):
         return self.name
 
 
-# class GoogleSheetsConnection(models.Model):
-#     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_google_sheets')
-#     name = models.CharField('name', max_length=200)
-#     token = models.CharField('token', max_length=90)
-#
-#     def __str__(self):
-#         return self.name
+class GoogleSpreadSheetsConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_google_sheets')
+    name = models.CharField('name', max_length=200)
+    credentials_json = JSONField(blank=True, null=True)
 
 
 class Plug(models.Model):
