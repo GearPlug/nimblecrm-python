@@ -1,0 +1,22 @@
+{% extends 'connection/create.html' %}
+{% load bootstrap_tags %}
+
+{% block body_content %}
+    <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
+          method="post" autocomplete="off">
+    <a href="{{ google_auth_url }}" target="_blank">Google Auth</a>
+        {% csrf_token %}
+        {{ form|as_bootstrap }}
+        <button id="btnTestConnection">Test connection</button>
+        <div id="connectionTestResult"></div>
+        <button id="btnCreateConnection" disabled="disabled">Create connection</button>
+        {% if form.error %}
+            <div class="error">{{ form.error }}</div>
+        {% endif %}
+    </form>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ block.super }}
+{% endblock %}

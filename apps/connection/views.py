@@ -10,6 +10,7 @@ from apps.gp.controllers import FacebookController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connection, Connector, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
+from oauth2client import client
 
 
 class ListConnectionView(ListView):
@@ -41,7 +42,7 @@ class CreateConnectionView(CreateView):
             if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Facebook:
                 token = self.request.POST.get('token', '')
                 long_user_access_token = self.fbc.extend_token(token)
-                pages = fbc.get_pages(long_user_access_token)
+                pages = self.fbc.get_pages(long_user_access_token)
                 page_token = None
                 for page in pages:
                     if page['id'] == form.instance.id_page:
@@ -49,7 +50,8 @@ class CreateConnectionView(CreateView):
                         break
                 if page_token:
                     form.instance.token = page_token
-                    # fbc.download_leads_to_stored_data(form.instance)
+            elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets:
+                print("gss")
             return super(CreateConnectionView, self).form_valid(form, *args, **kwargs)
 
     def get(self, *args, **kwargs):
@@ -71,6 +73,13 @@ class CreateConnectionView(CreateView):
     def get_context_data(self, *args, **kwargs):
         context = super(CreateConnectionView, self).get_context_data(**kwargs)
         context['connection'] = ConnectorEnum.get_connector(self.kwargs['connector_id']).name
+        if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets:
+            flow = client.OAuth2WebServerFlow(
+                client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
+                client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
+                scope='https://www.googleapis.com/auth/drive',
+                redirect_uri='http://localhost/account/test/')
+            context['google_auth_url'] = flow.step1_get_authorize_url()
         return context
 
 
