@@ -1,11 +1,14 @@
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView, View
+from django.core.urlresolvers import reverse
+from django.shortcuts import redirect, HttpResponse
 from apps.api.views import mysql_get_insert_values, mysql_trigger_create_row
 from apps.connection.apps import APP_NAME as app_name
 from apps.connection.myviews.FacebookViews import *
 from apps.connection.myviews.MySQLViews import *
 from apps.connection.myviews.SugarCRMViews import *
 from apps.connection.myviews.MailChimpViews import *
+from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.controllers import FacebookController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connection, Connector, StoredData, GearMap, GearMapData
@@ -74,11 +77,7 @@ class CreateConnectionView(CreateView):
         context = super(CreateConnectionView, self).get_context_data(**kwargs)
         context['connection'] = ConnectorEnum.get_connector(self.kwargs['connector_id']).name
         if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets:
-            flow = client.OAuth2WebServerFlow(
-                client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
-                client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
-                scope='https://www.googleapis.com/auth/drive',
-                redirect_uri='http://localhost/account/test/')
+            flow = get_flow()
             context['google_auth_url'] = flow.step1_get_authorize_url()
         return context
 
@@ -134,3 +133,21 @@ class TestConnectionView(TemplateViewWithPost):
             mysql_trigger_create_row(connection.related_connection, columns, insert_values)
         context['fb_data'] = []
         return context
+
+
+def get_flow():
+    return client.OAuth2WebServerFlow(
+        client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
+        client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
+        scope='https://www.googleapis.com/auth/drive',
+        redirect_uri='http://localhost:8000/connection/google_auth/')
+
+
+class GoogleAuthView(View):
+    def get(self, request, *args, **kwargs):
+        code = request.GET['code']
+        credentials = get_flow().step2_exchange(code)
+
+        # Guardar en credencial en Modelo en vez de sesion
+        request.session['google_credentials'] = credentials.to_json()
+        return HttpResponse('Cerrar ventana')

@@ -1,7 +1,8 @@
 from django.conf.urls import url
 from apps.connection.views import CreateConnectionView, ListConnectionView, ListConnectorView, TestConnectionView, \
     AJAXFacebookGetAvailableConnectionsView, AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
-    AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection
+    AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
+    GoogleAuthView, AjaxGoogleSpreadSheetTestConnection
 
 urlpatterns = [
     url(r'create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create'),
@@ -10,6 +11,7 @@ urlpatterns = [
     url(r'list/$', ListConnectionView.as_view(), name='list'),
     url(r'list/connector/$', ListConnectorView.as_view(), name='list_connector'),
     url(r'test/$', TestConnectionView.as_view(), name='test_facebook'),
+    url(r"^google_auth/$", GoogleAuthView.as_view(), name="google_auth"),
 
     # AJAX
     url(r'ajax/facebook/get/connections/', AJAXFacebookGetAvailableConnectionsView.as_view(),
@@ -24,4 +26,6 @@ urlpatterns = [
         name='ajax_sugarcrm_test_connection'),
     url(r'ajax/mailchimp/test_connection/', AJAXMailChimpTestConnection.as_view(),
         name='ajax_mailchimp_test_connection'),
+    url(r'ajax/googlespreadsheet/test_connection/', AjaxGoogleSpreadSheetTestConnection.as_view(),
+        name='ajax_googlespreadsheet_test_connection'),
 ]

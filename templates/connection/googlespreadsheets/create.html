@@ -4,9 +4,10 @@
 {% block body_content %}
     <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
           method="post" autocomplete="off">
-    <a href="{{ google_auth_url }}" target="_blank">Google Auth</a>
+        <a href="javascript:auth('{{ google_auth_url }}');">Google Auth</a>
         {% csrf_token %}
-        {{ form|as_bootstrap }}
+        {{ form.name.label_tag }}
+        {{ form.name }}
         <button id="btnTestConnection">Test connection</button>
         <div id="connectionTestResult"></div>
         <button id="btnCreateConnection" disabled="disabled">Create connection</button>
@@ -19,4 +20,28 @@
 
 {% block scripts %}
     {{ block.super }}
+    <script type="application/javascript">
+        function auth(url) {
+            var win = window.open(url, 'GoogleAuth', 'width=972,height=660,modal=yes,alwaysRaised=yes');
+            var checkConnect = setInterval(function () {
+                if (!win || !win.closed) return;
+                clearInterval(checkConnect);
+                window.location.reload();
+            }, 100);
+        }
+
+        $('button#btnTestConnection').click(function () {
+            $.ajax({
+                method: "POST",
+                url: "{% url 'connection:ajax_googlespreadsheet_test_connection' %}",
+                data: $('form#formCreateConnection').serialize(),
+            }).done(function (response) {
+                if (response.data) {
+                    $('div#connectionTestResult').html('<p>Connection is valid.</p>');
+                    $('button#btnCreateConnection').prop("disabled", false);
+                }
+            });
+            return false;
+        })
+    </script>
 {% endblock %}
