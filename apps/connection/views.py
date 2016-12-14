@@ -80,10 +80,6 @@ class CreateConnectionView(CreateView):
         if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets:
             flow = get_flow()
             context['google_auth_url'] = flow.step1_get_authorize_url()
-
-            print(self.request.session)
-            print(self.request.session.items())
-            print(self.request.user)
         return context
 
 
@@ -153,21 +149,6 @@ class GoogleAuthView(View):
         code = request.GET['code']
         credentials = get_flow().step2_exchange(code)
 
-        print(request.session)
-        print(request.session.items())
-        print(request.user)
-
         # Guardar en credencial en Modelo en vez de sesion
-        # request.session['google_credentials'] = credentials.to_json()
-        # print(request.session)
-        # print(request.session['google_credentials'])
-
-        connection = request.user.connection
-        name = 'Connection {0}'.format(random.randint(0, 1000))
-        credentials_json = credentials.to_json()
-        google_connection = GoogleSpreadSheetsConnection.objects.create(connection=connection, name=name,
-                                                                        credentials_json=credentials_json)
-
-        print('x')
-        print(google_connection)
+        request.session['google_credentials'] = credentials.to_json()
         return redirect(reverse('connection:google_auth_success'))
