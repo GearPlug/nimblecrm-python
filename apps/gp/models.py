@@ -131,7 +131,7 @@ class MailChimpConnection(models.Model):
 
 
 class GoogleSpreadSheetsConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_google_sheets')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_googlespreadsheets')
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
 
