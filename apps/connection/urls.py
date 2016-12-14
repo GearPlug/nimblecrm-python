@@ -1,4 +1,5 @@
 from django.conf.urls import url
+from django.views.generic import TemplateView
 from apps.connection.views import CreateConnectionView, ListConnectionView, ListConnectorView, TestConnectionView, \
     AJAXFacebookGetAvailableConnectionsView, AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
     AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
@@ -12,6 +13,8 @@ urlpatterns = [
     url(r'list/connector/$', ListConnectorView.as_view(), name='list_connector'),
     url(r'test/$', TestConnectionView.as_view(), name='test_facebook'),
     url(r"^google_auth/$", GoogleAuthView.as_view(), name="google_auth"),
+    url(r"^google_auth/success/$", TemplateView.as_view(template_name='connection/googlespreadsheets/success.html'),
+        name="google_auth_success"),
 
     # AJAX
     url(r'ajax/facebook/get/connections/', AJAXFacebookGetAvailableConnectionsView.as_view(),
