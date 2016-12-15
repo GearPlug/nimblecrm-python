@@ -2,33 +2,35 @@
 {% load bootstrap_tags %}
 
 {% block body_content %}
-    <button id="btnLogin" onclick="">Facebook login</button>
-    <div>
-        <div id="connection_list">
-            <select>
-                <option>---------</option>
-            </select>
-        </div>
+
+<button id="btnLogin">Facebook login</button>
+<div>
+    <div id="connection_list">
+        <select>
+            <option>---------</option>
+        </select>
     </div>
-    <div>
-        <div id="form_list">
-            <select>
-                <option>---------</option>
-            </select>
-        </div>
+</div>
+<div>
+    <div id="form_list">
+        <select>
+            <option>---------</option>
+        </select>
     </div>
-    <button id="btnCheckLeads">test connection</button>
-    <button id="btnCreateConnection">Save connection</button>
-    <div>
-        <form id="formCreateConnection" style="display:none;" class="create-connection-form form-horizontal" action=""
-              method="post" autocomplete="off">
-            {% csrf_token %}
-            {{ form|as_bootstrap }}
-            {% if form.error %}
-                <div class="error">{{ form.error }}</div>
-            {% endif %}
-        </form>
-    </div>
+</div>
+<button id="btnCheckLeads">test connection</button>
+<button id="btnCreateConnection">Save connection</button>
+<div>
+    <form id="formCreateConnection" style="display:none;" class="create-connection-form form-horizontal"
+          action="{% url 'connection:update'  %}"
+          method="post" autocomplete="off">
+        {% csrf_token %}
+        {{ form|as_bootstrap }}
+        {% if form.error %}
+            <div class="error">{{ form.error }}</div>
+        {% endif %}
+    </form>
+</div>
 {% endblock %}
 
 {% block scripts %}
