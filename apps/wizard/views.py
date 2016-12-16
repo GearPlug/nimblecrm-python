@@ -181,17 +181,25 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                                                connection_password=self.object.plug.connection.related_connection.connection_password)
                 data_list = scrmc.download_to_stored_data(conn, self.object.plug, self.object.value)
         elif c == ConnectorEnum.GoogleSpreadSheets:
-            spreadsheet_id = 'aqui va el codigo'
-            worksheet_name = 'Hoja 1'
+            spreadsheet_id = None
+            worksheet_name = None
+            for specification in self.object_list:
+                if specification.action_specification.name == 'SpreadSheet':
+                    spreadsheet_id = specification.value
+                if specification.action_specification.name == 'Worksheet name':
+                    worksheet_name = specification.value
 
             http_auth = get_authorization(self.request)
 
             sheets_service = discovery.build('sheets', 'v4', http_auth)
 
-            res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range='{0}!1:1'.format(worksheet_name)).execute()
+            res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range='{0}!A1:Z100'.format(worksheet_name)).execute()
 
             values = res['values']
+            column_count = len(values[0])
+            row_count = len(values)
 
+            print(values)
 
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 

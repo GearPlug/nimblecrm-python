@@ -48,12 +48,13 @@
         {% endfor %}
 
         <select id="spreadsheet">
+            <option selected="true" disabled="disabled">--</option>
             {% for s in sheets %}
                 <option value="{{ s.0 }}">{{ s.1 }}</option>
             {% endfor %}
         </select>
         <div id="sheet-selector"></div>
-    <button type="submit">Submit</button>
+        <button type="submit">Submit</button>
     </form>
 {% endblock %}
 
@@ -86,7 +87,7 @@
             });
 
             $('#sheet-selector').on('change', 'select#sheet', function () {
-                $('#id_form-1-value').val($(this).find('option:selected').val())
+                $('#id_form-1-value').val($(this).find('option:selected').text())
             })
         });
 
