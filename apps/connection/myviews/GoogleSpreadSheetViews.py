@@ -16,6 +16,9 @@ class AjaxGoogleSpreadSheetTestConnection(TemplateViewWithPost):
     mcc = GoogleSpreadSheetsController()
 
     def post(self, request, *args, **kwargs):
-        credentials = request.session['google_credentials']
-        ping = self.mcc.create_connection(credentials_json=credentials)
+        try:
+            credentials = request.session['google_credentials']
+            ping = self.mcc.create_connection(credentials_json=credentials)
+        except:
+            ping = False
         return JsonResponse({'data': ping})
