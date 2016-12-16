@@ -145,19 +145,38 @@ class GoogleSpreadSheetsController(BaseController):
 
         return sheets
 
-    def get_sheet_values(self, credentials_json, sheet_id, sheet_index):
+    def get_worksheet(self, credentials_json, spreadsheet_id, worksheet_name, from_row=None, limit=None):
         credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
         http_auth = credential.authorize(httplib2.Http())
 
         sheets_service = discovery.build('sheets', 'v4', http_auth)
 
-        res = sheets_service.spreadsheets().values().get(spreadsheetId=sheet_id,
-                                                         range='{0}!A1:Z100'.format(sheet_index)).execute()
+        res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id,
+                                                         range='{0}!A1:Z100'.format(worksheet_name)).execute()
 
         values = res['values']
         column_count = len(values[0])
         row_count = len(values)
 
+        if from_row is None:
+            return values[1:]
+
+        if limit:
+            return values[from_row:limit]
+
+        return values[from_row:]
+
+    def get_worksheet_first_row(self, credentials_json, spreadsheet_id, worksheet_name):
+        credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
+        http_auth = credential.authorize(httplib2.Http())
+
+        sheets_service = discovery.build('sheets', 'v4', http_auth)
+
+        res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id,
+                                                         range='{0}!1:1'.format(worksheet_name)).execute()
+
+        values = res['values']
+        
         return values
 
 

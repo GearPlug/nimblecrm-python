@@ -120,6 +120,8 @@ def async_spreadsheet_info(request, id):
     return HttpResponse(json.dumps(ctx), content_type='application/json')
 
 
+# def get_sheet_values(self, credentials_json, spreadshee_tid, worksheet_name, from=None)
+
 def async_spreadsheet_values(request, id, sheet_id):
     http_auth = get_authorization(request)
 
