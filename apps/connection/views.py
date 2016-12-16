@@ -2,7 +2,7 @@ import random
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, View
 from django.core.urlresolvers import reverse
-from django.shortcuts import redirect, HttpResponse
+from django.shortcuts import redirect, HttpResponse, render
 from apps.api.views import mysql_get_insert_values, mysql_trigger_create_row
 from apps.connection.apps import APP_NAME as app_name
 from apps.connection.myviews.FacebookViews import *
