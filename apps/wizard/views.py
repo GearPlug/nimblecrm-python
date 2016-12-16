@@ -1,5 +1,9 @@
+import json
+import httplib2
 from django.http import JsonResponse
 from django.urls import reverse
+from django.shortcuts import render, HttpResponse, redirect
+from django.template import loader
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
@@ -7,7 +11,8 @@ from apps.gp.controllers import FacebookController, MySQLController, SugarCRMCon
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug
 from apps.plug.views import CreatePlugView, UpdatePlugAddActionView, CreatePlugSpecificationsView
-
+from oauth2client import client
+from apiclient import discovery
 from django.shortcuts import render
 
 fbc = FacebookController()
@@ -103,7 +108,7 @@ class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
                 fbc.download_to_stored_data(conn, self.object)
         if len(self.object.action.action_specification.all()) > 0:
             return reverse('wizard:plug_set_specifications',
-                           kwargs={'plug_id': self.object.id,})
+                           kwargs={'plug_id': self.object.id, })
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 
@@ -134,6 +139,18 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                                          api_key=plug.connection.related_connection.api_key)
             options = mcc.get_lists()
             context['available_options'] = [(o['name'], o['id']) for o in options]
+        elif c == ConnectorEnum.GoogleSpreadSheets:
+            http_auth = get_authorization(self.request)
+
+            drive_service = discovery.build('drive', 'v3', http_auth)
+            files = drive_service.files().list().execute()
+
+            sheet_list = []
+            for f in files['files']:
+                if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet':
+                    sheet_list.append((f['id'], f['name']))
+
+            context['sheets'] = sheet_list
         else:
             context['available_options'] = []
         return context
@@ -161,6 +178,9 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                                                connection_user=self.object.plug.connection.related_connection.connection_user,
                                                connection_password=self.object.plug.connection.related_connection.connection_password)
                 data_list = scrmc.download_to_stored_data(conn, self.object.plug, self.object.value)
+        elif c == ConnectorEnum.GoogleSpreadSheets:
+            print('asdasd')
+            print(self.request.POST)
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 
@@ -200,3 +220,51 @@ class CreateGearMapView(LoginRequiredMixin, CreateGearMapView):
 
     def get_success_url(self, *args, **kwargs):
         return super(CreateGearMapView, self).get_success_url(*args, **kwargs)
+
+
+def get_authorization(request):
+    credentials = client.OAuth2Credentials.from_json(request.session['google_credentials'])
+    return credentials.authorize(httplib2.Http())
+
+
+def async_spreadsheet_info(request, id):
+    http_auth = get_authorization(request)
+
+    sheets_service = discovery.build('sheets', 'v4', http_auth)
+
+    result = sheets_service.spreadsheets().get(spreadsheetId=id).execute()
+
+    sheets = tuple(i['properties'] for i in result['sheets'])  # % sheets[0]['gridProperties']['rowCount']
+
+    _sheets = [(i['index'], i['title']) for i in sheets]
+
+    request.session['google_sheets'] = _sheets
+
+    template = loader.get_template('home/_spreadsheet_sheets.html')
+    context = {'sheets': _sheets}
+
+    ctx = {'Success': True, 'sheets': template.render(context)}
+    return HttpResponse(json.dumps(ctx), content_type='application/json')
+
+
+def async_spreadsheet_values(request, id, sheet_id):
+    http_auth = get_authorization(request)
+
+    sheets_service = discovery.build('sheets', 'v4', http_auth)
+
+    sheets = request.session['google_sheets']
+
+    sheet_id = next((s[1] for s in sheets if s[0] == int(sheet_id)))
+
+    res = sheets_service.spreadsheets().values().get(spreadsheetId=id, range='{0}!A1:Z100'.format(sheet_id)).execute()
+
+    values = res['values']
+    column_count = len(values[0])
+    row_count = len(values)
+
+    template = loader.get_template('home/_spreadsheet_table.html')
+    context = {'Values': values}
+
+    data = {'ColumnCount': column_count, 'RowCount': row_count, 'Table': template.render(context)}
+    ctx = {'Success': True, 'Data': data}
+    return HttpResponse(json.dumps(ctx), content_type='application/json')

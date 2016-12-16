@@ -41,10 +41,19 @@
     {#    </div>#}
     <form id="formCreatePlugSpecification" class="create-plug-form form-horizontal" action="" method="post"
           autocomplete="off">
+        {% csrf_token %}
         {{ formset.management_form }}
         {% for form in formset %}
             <div>{{ form }}</div>
         {% endfor %}
+
+        <select id="spreadsheet">
+            {% for s in sheets %}
+                <option value="{{ s.0 }}">{{ s.1 }}</option>
+            {% endfor %}
+        </select>
+        <div id="sheet-selector"></div>
+    <button type="submit">Submit</button>
     </form>
 {% endblock %}
 
@@ -70,6 +79,46 @@
                 $('form#formCreatePlugSpecification').submit();
                 return false;
             })
+
+            $('select#spreadsheet').on('change', function () {
+                getSpreadsheetInfo($(this).val())
+            });
+
+{#            $('#sheet-selector').on('change', 'select#sheet', function () {#}
+{#                getSpreadsheetValues($('select#spreadsheet option:selected').val(), $(this).val())#}
+{#            })#}
         })
+
+        function getSpreadsheetInfo(_id) {
+            var url = '/wizard/async/spreadsheet/info/ID/'.replace('ID', _id);
+            var callback = function (response) {
+                if (response.Success == true) {
+                    $('#sheet-selector').html(response.sheets)
+                }
+            };
+            getData(url, callback);
+        }
+
+        function getSpreadsheetValues(_id, sheet_id) {
+            var url = '/wizard/async/spreadsheet/values/ID/SHEET/'.replace('ID', _id).replace('SHEET', sheet_id);
+            var callback = function (response) {
+                if (response.Success == true) {
+                    $('#column-count').text(response.Data.ColumnCount);
+                    $('#row-count').text(response.Data.RowCount);
+                    $('#table').html(response.Data.Table)
+                }
+            };
+            getData(url, callback);
+        }
+
+        function getData(url, callback) {
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function (response) {
+                    callback(response);
+                }
+            });
+        }
     </script>
 {% endblock %}
