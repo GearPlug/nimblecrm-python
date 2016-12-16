@@ -162,6 +162,7 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
             gear_id = None
         if gear_id is None:
             return reverse('wizard:create_gear')
+        self.object = self.object_list[0]
         c = ConnectorEnum.get_connector(self.object.plug.connection.connector.id)
         print(c)
         conn = self.object.plug.connection.related_connection
@@ -187,7 +188,7 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
 
             sheets_service = discovery.build('sheets', 'v4', http_auth)
 
-            res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, ange='{0}!1:1'.format(worksheet_name)).execute()
+            res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range='{0}!1:1'.format(worksheet_name)).execute()
 
             values = res['values']
 
