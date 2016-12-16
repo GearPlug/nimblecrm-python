@@ -87,13 +87,25 @@ class GoogleSpreadSheetsController(BaseController):
         if plug is None:
             plug = self._plug
 
-        credentials_json = 0
-        sheet_id = 0
-        sheet_index = 0
+        credentials_json = connection_object.related_connection.credentials_json
+        spreadsheet_id = None
+        worksheet_name = None
 
-        sheets = self.get_sheets(credentials_json)
-        sheet_info = self.get_sheet_info(credentials_json, sheet_id)
-        sheet_values = self.get_sheet_values(connection_object.credentials_json, sheet_id, sheet_index)
+        specifications = plug.plug_specification.all()
+
+        for specification in specifications:
+            if specification.action_specification.name == 'SpreadSheet':
+                spreadsheet_id = specification.value
+            if specification.action_specification.name == 'Worksheet name':
+                worksheet_name = specification.value
+
+        if not spreadsheet_id or not worksheet_name:
+            return False
+
+        # sheets = self.get_sheets(credentials_json)
+        # sheet_info = self.get_sheet_info(credentials_json, spreadsheet_id)
+
+        sheet_values = self.get_worksheet(credentials_json, spreadsheet_id, worksheet_name)
         new_data = []
         for idx, item in enumerate(sheet_values):
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=idx)
@@ -118,6 +130,59 @@ class GoogleSpreadSheetsController(BaseController):
                         item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
             return True
         return False
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[0]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            spreadsheet_id = None
+            worksheet_name = None
+
+            specifications = self.plug.plug_specification.all()
+
+            for specification in specifications:
+                if specification.action_specification.name == 'SpreadSheet':
+                    spreadsheet_id = specification.value
+                if specification.action_specification.name == 'Worksheet name':
+                    worksheet_name = specification.value
+
+            for obj in data_list:
+                l = [obj[key] for key in obj.keys()]
+                obj_list.append(l)
+
+            extra = {'controller': 'google_spreadsheets'}
+            for item in obj_list:
+                try:
+                    credential = GoogleClient.OAuth2Credentials.from_json(
+                        self._connection_object.related_connection.credentials_json)
+                    http_auth = credential.authorize(httplib2.Http())
+
+                    sheets_service = discovery.build('sheets', 'v4', http_auth)
+
+                    body = {
+                        'values': item
+                    }
+
+                    res = sheets_service.spreadsheets().values().update(
+                        spreadsheetId=spreadsheet_id,
+                        range="{0}!A1:C1".format(worksheet_name), valueInputOption='RAW',
+                        body=body).execute()
+
+                    # extra['status'] = "s"
+                    # self._log.info('Email: %s  successfully sent. Result: %s.' % (item['email_address'], res['id']),
+                    #                extra=extra)
+                except:
+                    res = "User already exists"
+                    # extra['status'] = 'f'
+                    # self._log.error('Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
+            return
+        raise ControllerError("Incomplete.")
 
     def get_sheets(self, credentials_json):
         credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
@@ -176,7 +241,7 @@ class GoogleSpreadSheetsController(BaseController):
                                                          range='{0}!1:1'.format(worksheet_name)).execute()
 
         values = res['values']
-        
+
         return values
 
 
