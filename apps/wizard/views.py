@@ -163,6 +163,7 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
         if gear_id is None:
             return reverse('wizard:create_gear')
         c = ConnectorEnum.get_connector(self.object.plug.connection.connector.id)
+        print(c)
         conn = self.object.plug.connection.related_connection
         if c == ConnectorEnum.Facebook:
             fbc.download_leads_to_stored_data(conn, self.object.plug)
@@ -179,8 +180,18 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                                                connection_password=self.object.plug.connection.related_connection.connection_password)
                 data_list = scrmc.download_to_stored_data(conn, self.object.plug, self.object.value)
         elif c == ConnectorEnum.GoogleSpreadSheets:
-            print('asdasd')
-            print(self.request.POST)
+            spreadsheet_id = 'aqui va el codigo'
+            worksheet_name = 'Hoja 1'
+
+            http_auth = get_authorization(self.request)
+
+            sheets_service = discovery.build('sheets', 'v4', http_auth)
+
+            res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, ange='{0}!1:1'.format(worksheet_name)).execute()
+
+            values = res['values']
+
+
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 

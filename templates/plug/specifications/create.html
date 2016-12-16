@@ -78,16 +78,17 @@
                 $('select#id_plug').change();
                 $('form#formCreatePlugSpecification').submit();
                 return false;
-            })
-
-            $('select#spreadsheet').on('change', function () {
-                getSpreadsheetInfo($(this).val())
             });
 
-{#            $('#sheet-selector').on('change', 'select#sheet', function () {#}
-{#                getSpreadsheetValues($('select#spreadsheet option:selected').val(), $(this).val())#}
-{#            })#}
-        })
+            $('select#spreadsheet').on('change', function () {
+                getSpreadsheetInfo($(this).val());
+                $('#id_form-0-value').val($(this).val());
+            });
+
+            $('#sheet-selector').on('change', 'select#sheet', function () {
+                $('#id_form-1-value').val($(this).find('option:selected').val())
+            })
+        });
 
         function getSpreadsheetInfo(_id) {
             var url = '/wizard/async/spreadsheet/info/ID/'.replace('ID', _id);
