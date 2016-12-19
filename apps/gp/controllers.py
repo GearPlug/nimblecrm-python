@@ -84,6 +84,7 @@ class GoogleSpreadSheetsController(BaseController):
         return files is not None
 
     def download_to_stored_data(self, connection_object, plug, *args, **kwargs):
+        print('download')
         if plug is None:
             plug = self._plug
 
@@ -100,12 +101,13 @@ class GoogleSpreadSheetsController(BaseController):
                 worksheet_name = specification.value
 
         if not spreadsheet_id or not worksheet_name:
+            print('Error 1')
             return False
 
         # sheets = self.get_sheets(credentials_json)
         # sheet_info = self.get_sheet_info(credentials_json, spreadsheet_id)
 
-        sheet_values = self.get_worksheet(credentials_json, spreadsheet_id, worksheet_name)
+        sheet_values = self.get_worksheet_values(credentials_json, spreadsheet_id, worksheet_name)
         new_data = []
         for idx, item in enumerate(sheet_values):
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=idx)
@@ -210,18 +212,16 @@ class GoogleSpreadSheetsController(BaseController):
 
         return sheets
 
-    def get_worksheet(self, credentials_json, spreadsheet_id, worksheet_name, from_row=None, limit=None):
+    def get_worksheet_values(self, credentials_json, spreadsheet_id, worksheet_name, from_row=None, limit=None):
         credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
         http_auth = credential.authorize(httplib2.Http())
 
         sheets_service = discovery.build('sheets', 'v4', http_auth)
 
         res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id,
-                                                         range='{0}!A1:Z100'.format(worksheet_name)).execute()
+                                                         range='{0}'.format(worksheet_name)).execute()
 
         values = res['values']
-        column_count = len(values[0])
-        row_count = len(values)
 
         if from_row is None:
             return values[1:]
@@ -232,17 +232,10 @@ class GoogleSpreadSheetsController(BaseController):
         return values[from_row:]
 
     def get_worksheet_first_row(self, credentials_json, spreadsheet_id, worksheet_name):
-        credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
-        http_auth = credential.authorize(httplib2.Http())
+        return self.get_worksheet_values(credentials_json, spreadsheet_id, worksheet_name, 1, 1)
 
-        sheets_service = discovery.build('sheets', 'v4', http_auth)
-
-        res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id,
-                                                         range='{0}!1:1'.format(worksheet_name)).execute()
-
-        values = res['values']
-
-        return values
+    def get_worksheet_second_row(self, credentials_json, spreadsheet_id, worksheet_name):
+        return self.get_worksheet_values(credentials_json, spreadsheet_id, worksheet_name, 2, 1)
 
 
 class MailChimpController(BaseController):

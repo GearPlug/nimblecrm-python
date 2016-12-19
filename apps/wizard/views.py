@@ -7,7 +7,7 @@ from django.template import loader
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
-from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController
+from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, GoogleSpreadSheetsController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug
 from apps.plug.views import CreatePlugView, UpdatePlugAddActionView, CreatePlugSpecificationsView
@@ -19,6 +19,7 @@ fbc = FacebookController()
 mysqlc = MySQLController()
 scrmc = SugarCRMController()
 mcc = MailChimpController()
+gsc = GoogleSpreadSheetsController()
 
 
 class CreateGearView(LoginRequiredMixin, CreateGearView):
@@ -181,25 +182,28 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                                                connection_password=self.object.plug.connection.related_connection.connection_password)
                 data_list = scrmc.download_to_stored_data(conn, self.object.plug, self.object.value)
         elif c == ConnectorEnum.GoogleSpreadSheets:
-            spreadsheet_id = None
-            worksheet_name = None
-            for specification in self.object_list:
-                if specification.action_specification.name == 'SpreadSheet':
-                    spreadsheet_id = specification.value
-                if specification.action_specification.name == 'Worksheet name':
-                    worksheet_name = specification.value
-
-            http_auth = get_authorization(self.request)
-
-            sheets_service = discovery.build('sheets', 'v4', http_auth)
-
-            res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range='{0}!A1:Z100'.format(worksheet_name)).execute()
-
-            values = res['values']
-            column_count = len(values[0])
-            row_count = len(values)
-
-            print(values)
+            ping = gsc.create_connection(conn)
+            if ping:
+                data_list = gsc.download_to_stored_data(conn, self.object.plug)
+            # spreadsheet_id = None
+            # worksheet_name = None
+            # for specification in self.object_list:
+            #     if specification.action_specification.name == 'SpreadSheet':
+            #         spreadsheet_id = specification.value
+            #     if specification.action_specification.name == 'Worksheet name':
+            #         worksheet_name = specification.value
+            #
+            # http_auth = get_authorization(self.request)
+            #
+            # sheets_service = discovery.build('sheets', 'v4', http_auth)
+            #
+            # res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range='{0}!A1:Z100'.format(worksheet_name)).execute()
+            #
+            # values = res['values']
+            # column_count = len(values[0])
+            # row_count = len(values)
+            #
+            # print(values)
 
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
