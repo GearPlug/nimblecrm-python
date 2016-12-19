@@ -149,6 +149,9 @@ def update_gear(gear_id):
             elif target_connector == ConnectorEnum.MailChimp:
                 controller = controller_class(gear.target.connection.related_connection, gear.target)
                 entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
+            elif target_connector == ConnectorEnum.GoogleSpreadSheets:
+                controller = controller_class(gear.target.connection.related_connection, gear.target)
+                controller.send_stored_data(source_data, target_fields, is_first=is_first)
             gear.gear_map.last_source_update = timezone.now()
             gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
             gear.gear_map.save()
