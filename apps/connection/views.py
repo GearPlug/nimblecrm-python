@@ -55,7 +55,7 @@ class CreateConnectionView(CreateView):
                 if page_token:
                     form.instance.token = page_token
             elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets:
-                print("gss")
+                form.instance.credentials_json = self.request.session['google_credentials']
             return super(CreateConnectionView, self).form_valid(form, *args, **kwargs)
 
     def get(self, *args, **kwargs):

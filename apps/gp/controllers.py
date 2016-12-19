@@ -63,24 +63,33 @@ class GoogleSpreadSheetsController(BaseController):
         if args:
             super(GoogleSpreadSheetsController, self).create_connection(*args)
             if self._connection_object is not None:
+                print(self._connection_object.credentials_json)
                 try:
                     credentials_json = self._connection_object.credentials_json
                 except Exception as e:
-                    print("Error getting the GoogleSpreadSheets attributes")
+                    print("Error getting the GoogleSpreadSheets attributes 1")
                     print(e)
                     credentials_json = None
         elif not args and kwargs:
             if 'credentials_json' in kwargs:
                 credentials_json = kwargs.pop('credentials_json')
-        try:
-            self._credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
-            http_auth = self._credential.authorize(httplib2.Http())
-            drive_service = discovery.build('drive', 'v3', http_auth)
-            files = drive_service.files().list().execute()
-        except Exception as e:
-            print("Error getting the GoogleSpreadSheets attributes")
-            self._credential = None
-            files = None
+        else:
+            credentials_json = None
+
+        files = None
+
+        if credentials_json is not None:
+            try:
+                _json = json.dumps(credentials_json)
+                self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
+                http_auth = self._credential.authorize(httplib2.Http())
+                drive_service = discovery.build('drive', 'v3', http_auth)
+                files = drive_service.files().list().execute()
+            except Exception as e:
+                raise
+                print("Error getting the GoogleSpreadSheets attributes 2")
+                self._credential = None
+                files = None
         return files is not None
 
     def download_to_stored_data(self, connection_object, plug, *args, **kwargs):
@@ -88,7 +97,7 @@ class GoogleSpreadSheetsController(BaseController):
         if plug is None:
             plug = self._plug
 
-        credentials_json = connection_object.related_connection.credentials_json
+        credentials_json = connection_object.credentials_json
         spreadsheet_id = None
         worksheet_name = None
 
@@ -108,12 +117,15 @@ class GoogleSpreadSheetsController(BaseController):
         # sheet_info = self.get_sheet_info(credentials_json, spreadsheet_id)
 
         sheet_values = self.get_worksheet_values(credentials_json, spreadsheet_id, worksheet_name)
+        print(sheet_values)
         new_data = []
-        for idx, item in enumerate(sheet_values):
+        for idx, item in enumerate(sheet_values[1:]):
+            print('x', idx, item)
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=idx)
             if not q.exists():
-                for idx, cell in enumerate(item):
-                    new_data.append(StoredData(name=item[0][idx], value=cell, object_id=idx,
+                for idx2, cell in enumerate(item):
+                    print('y', idx2, cell)
+                    new_data.append(StoredData(name=sheet_values[0][idx2], value=cell, object_id=idx,
                                                connection=connection_object.connection, plug=plug))
         if new_data:
             field_count = len(sheet_values)
@@ -161,8 +173,7 @@ class GoogleSpreadSheetsController(BaseController):
             extra = {'controller': 'google_spreadsheets'}
             for item in obj_list:
                 try:
-                    credential = GoogleClient.OAuth2Credentials.from_json(
-                        self._connection_object.related_connection.credentials_json)
+                    credential = self._credential
                     http_auth = credential.authorize(httplib2.Http())
 
                     sheets_service = discovery.build('sheets', 'v4', http_auth)
@@ -187,7 +198,7 @@ class GoogleSpreadSheetsController(BaseController):
         raise ControllerError("Incomplete.")
 
     def get_sheets(self, credentials_json):
-        credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
+        credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
 
         drive_service = discovery.build('drive', 'v3', http_auth)
@@ -201,7 +212,7 @@ class GoogleSpreadSheetsController(BaseController):
         return sheet_list
 
     def get_sheet_info(self, credentials_json, sheet_id):
-        credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
+        credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
 
         sheets_service = discovery.build('sheets', 'v4', http_auth)
@@ -213,7 +224,7 @@ class GoogleSpreadSheetsController(BaseController):
         return sheets
 
     def get_worksheet_values(self, credentials_json, spreadsheet_id, worksheet_name, from_row=None, limit=None):
-        credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
+        credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
 
         sheets_service = discovery.build('sheets', 'v4', http_auth)
@@ -224,7 +235,7 @@ class GoogleSpreadSheetsController(BaseController):
         values = res['values']
 
         if from_row is None:
-            return values[1:]
+            return values
 
         if limit:
             return values[from_row:limit]

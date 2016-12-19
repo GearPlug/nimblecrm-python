@@ -182,7 +182,9 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                                                connection_password=self.object.plug.connection.related_connection.connection_password)
                 data_list = scrmc.download_to_stored_data(conn, self.object.plug, self.object.value)
         elif c == ConnectorEnum.GoogleSpreadSheets:
+            print('entre wizard')
             ping = gsc.create_connection(conn)
+            print(ping)
             if ping:
                 data_list = gsc.download_to_stored_data(conn, self.object.plug)
             # spreadsheet_id = None
