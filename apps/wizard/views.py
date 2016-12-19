@@ -170,20 +170,17 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
         if c == ConnectorEnum.Facebook:
             fbc.download_leads_to_stored_data(conn, self.object.plug)
         elif c == ConnectorEnum.MySQL:
-            print("mysql")
             ping = mysqlc.create_connection(conn, self.object.plug)
             if ping:
                 res = mysqlc.download_to_stored_data(conn, self.object.plug)
         elif c == ConnectorEnum.SugarCRM:
-            print("sugarcrm")
             if self.object.action_specification.action.is_source:
                 ping = scrmc.create_connection(url=self.object.plug.connection.related_connection.url,
                                                connection_user=self.object.plug.connection.related_connection.connection_user,
                                                connection_password=self.object.plug.connection.related_connection.connection_password)
                 data_list = scrmc.download_to_stored_data(conn, self.object.plug, self.object.value)
         elif c == ConnectorEnum.GoogleSpreadSheets:
-            print('entre wizard')
-            ping = gsc.create_connection(conn)
+            ping = gsc.create_connection(conn, self.object.plug)
             print(ping)
             if ping:
                 data_list = gsc.download_to_stored_data(conn, self.object.plug)

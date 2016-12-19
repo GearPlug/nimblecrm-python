@@ -55,6 +55,8 @@ class BaseController(object):
 
 class GoogleSpreadSheetsController(BaseController):
     _credential = None
+    _spreadsheet_id = None
+    _worksheet_name = None
 
     def __init__(self, *args, **kwargs):
         BaseController.__init__(self, *args, **kwargs)
@@ -63,7 +65,6 @@ class GoogleSpreadSheetsController(BaseController):
         if args:
             super(GoogleSpreadSheetsController, self).create_connection(*args)
             if self._connection_object is not None:
-                print(self._connection_object.credentials_json)
                 try:
                     credentials_json = self._connection_object.credentials_json
                 except Exception as e:
@@ -75,10 +76,17 @@ class GoogleSpreadSheetsController(BaseController):
                 credentials_json = kwargs.pop('credentials_json')
         else:
             credentials_json = None
-
         files = None
-
         if credentials_json is not None:
+            try:
+                for s in self._plug.plug_specification.all():
+                    if s.action_specification.name == 'SpreadSheet':
+                        self._spreadsheet_id = s.value
+                    if s.action_specification.name == 'Worksheet name':
+                        self._worksheet_name = s.value
+            except:
+                raise
+                print("Error asignando los specifications")
             try:
                 _json = json.dumps(credentials_json)
                 self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
@@ -93,43 +101,20 @@ class GoogleSpreadSheetsController(BaseController):
         return files is not None
 
     def download_to_stored_data(self, connection_object, plug, *args, **kwargs):
-        print('download')
         if plug is None:
             plug = self._plug
-
-        credentials_json = connection_object.credentials_json
-        spreadsheet_id = None
-        worksheet_name = None
-
-        specifications = plug.plug_specification.all()
-
-        for specification in specifications:
-            if specification.action_specification.name == 'SpreadSheet':
-                spreadsheet_id = specification.value
-            if specification.action_specification.name == 'Worksheet name':
-                worksheet_name = specification.value
-
-        if not spreadsheet_id or not worksheet_name:
-            print('Error 1')
+        if not self._spreadsheet_id or not self._worksheet_name:
             return False
-
-        # sheets = self.get_sheets(credentials_json)
-        # sheet_info = self.get_sheet_info(credentials_json, spreadsheet_id)
-
-        sheet_values = self.get_worksheet_values(credentials_json, spreadsheet_id, worksheet_name)
-        print(sheet_values)
+        sheet_values = self.get_worksheet_values()
         new_data = []
         for idx, item in enumerate(sheet_values[1:]):
-            print('x', idx, item)
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=idx)
             if not q.exists():
                 for idx2, cell in enumerate(item):
-                    print('y', idx2, cell)
-                    new_data.append(StoredData(name=sheet_values[0][idx2], value=cell, object_id=idx,
+                    new_data.append(StoredData(name=sheet_values[0][idx2], value=cell, object_id=idx + 1,
                                                connection=connection_object.connection, plug=plug))
         if new_data:
             field_count = len(sheet_values)
-            entries = len(new_data) // field_count
             extra = {'controller': 'google_spreadsheets'}
             for i, item in enumerate(new_data):
                 try:
@@ -142,6 +127,7 @@ class GoogleSpreadSheetsController(BaseController):
                     extra['status'] = 'f'
                     self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
                         item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+            # raise IndexError("hola")
             return True
         return False
 
@@ -197,13 +183,11 @@ class GoogleSpreadSheetsController(BaseController):
             return
         raise ControllerError("Incomplete.")
 
-    def get_sheets(self, credentials_json):
+    def get_sheets(self):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
-
         drive_service = discovery.build('drive', 'v3', http_auth)
         files = drive_service.files().list().execute()
-
         sheet_list = []
         for f in files['files']:
             if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet':
@@ -211,42 +195,32 @@ class GoogleSpreadSheetsController(BaseController):
 
         return sheet_list
 
-    def get_sheet_info(self, credentials_json, sheet_id):
+    def get_sheet_info(self, sheet_id):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
-
         sheets_service = discovery.build('sheets', 'v4', http_auth)
-
         result = sheets_service.spreadsheets().get(spreadsheetId=sheet_id).execute()
-
         sheets = tuple(i['properties'] for i in result['sheets'])  # % sheets[0]['gridProperties']['rowCount']
-
         return sheets
 
-    def get_worksheet_values(self, credentials_json, spreadsheet_id, worksheet_name, from_row=None, limit=None):
+    def get_worksheet_values(self, from_row=None, limit=None):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
-
         sheets_service = discovery.build('sheets', 'v4', http_auth)
-
-        res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id,
-                                                         range='{0}'.format(worksheet_name)).execute()
-
+        res = sheets_service.spreadsheets().values().get(spreadsheetId=self._spreadsheet_id,
+                                                         range='{0}'.format(self._worksheet_name)).execute()
         values = res['values']
-
         if from_row is None:
             return values
-
         if limit:
             return values[from_row:limit]
-
         return values[from_row:]
 
-    def get_worksheet_first_row(self, credentials_json, spreadsheet_id, worksheet_name):
-        return self.get_worksheet_values(credentials_json, spreadsheet_id, worksheet_name, 1, 1)
+    def get_worksheet_first_row(self):
+        return self.get_worksheet_values(from_row=1, limit=1)
 
-    def get_worksheet_second_row(self, credentials_json, spreadsheet_id, worksheet_name):
-        return self.get_worksheet_values(credentials_json, spreadsheet_id, worksheet_name, 2, 1)
+    def get_worksheet_second_row(self):
+        return self.get_worksheet_values(from_row=2, limit=1)
 
 
 class MailChimpController(BaseController):
