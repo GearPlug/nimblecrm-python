@@ -158,28 +158,15 @@ class GoogleSpreadSheetsController(BaseController):
 
             extra = {'controller': 'google_spreadsheets'}
             for item in obj_list:
-                try:
-                    credential = self._credential
-                    http_auth = credential.authorize(httplib2.Http())
-
-                    sheets_service = discovery.build('sheets', 'v4', http_auth)
-
-                    body = {
-                        'values': item
-                    }
-
-                    res = sheets_service.spreadsheets().values().update(
-                        spreadsheetId=spreadsheet_id,
-                        range="{0}!A1:C1".format(worksheet_name), valueInputOption='RAW',
-                        body=body).execute()
-
-                    # extra['status'] = "s"
-                    # self._log.info('Email: %s  successfully sent. Result: %s.' % (item['email_address'], res['id']),
-                    #                extra=extra)
-                except:
-                    res = "User already exists"
-                    # extra['status'] = 'f'
-                    # self._log.error('Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
+                self.create_row(item)
+                # try:
+                # extra['status'] = "s"
+                # self._log.info('Email: %s  successfully sent. Result: %s.' % (item['email_address'], res['id']),
+                #                extra=extra)
+                # except:
+                #     res = "User already exists"
+                # extra['status'] = 'f'
+                # self._log.error('Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
             return
         raise ControllerError("Incomplete.")
 
@@ -214,8 +201,8 @@ class GoogleSpreadSheetsController(BaseController):
             return values
         else:
             limit = limit if limit is not None else 1
-            from_row = from_row-1 if from_row is not None else 0
-            return values[from_row:from_row+limit]
+            from_row = from_row - 1 if from_row is not None else 0
+            return values[from_row:from_row + limit]
         return values
 
     def get_worksheet_first_row(self):
@@ -223,6 +210,23 @@ class GoogleSpreadSheetsController(BaseController):
 
     def get_worksheet_second_row(self):
         return self.get_worksheet_values(from_row=2, limit=1)[0]
+
+    def create_row(self, row):
+        credential = self._credential
+        http_auth = credential.authorize(httplib2.Http())
+
+        sheets_service = discovery.build('sheets', 'v4', http_auth)
+
+        body = {
+            'values': row
+        }
+
+        res = sheets_service.spreadsheets().values().update(
+            spreadsheetId=self._spreadsheet_id,
+            range="{0}!A1:C1".format(self._worksheet_name), valueInputOption='RAW',
+            body=body).execute()
+
+        return res
 
 
 class MailChimpController(BaseController):
