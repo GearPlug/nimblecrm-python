@@ -1,3 +1,4 @@
+import httplib2
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.http.response import JsonResponse
@@ -9,6 +10,8 @@ from apps.gp.controllers import MySQLController, SugarCRMController, MailChimpCo
 from apps.gp.enum import ConnectorEnum, MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
+from oauth2client import client
+from apiclient import discovery
 
 import logging
 
@@ -156,6 +159,29 @@ class CreateGearMapView(FormView):
                 return mfl
             except:
                 return []
+        elif c == ConnectorEnum.GoogleSpreadSheets:
+            spreadsheet_id = None
+            worksheet_name = None
+            for specification in plug.plug_specification.all():
+                print(specification)
+                if specification.action_specification.name == 'SpreadSheet':
+                    spreadsheet_id = specification.value
+                if specification.action_specification.name == 'Worksheet name':
+                    worksheet_name = specification.value
+
+            print(spreadsheet_id, worksheet_name)
+            http_auth = get_authorization(self.request)
+
+            sheets_service = discovery.build('sheets', 'v4', http_auth)
+
+            res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id,
+                                                             range='{0}!A1:Z100'.format(worksheet_name)).execute()
+
+            values = res['values']
+            column_count = len(values[0])
+            row_count = len(values)
+
+            print(values)
         else:
             return []
 
@@ -189,3 +215,8 @@ def gear_toggle(request, gear_id):
             return JsonResponse({'data': 'There\'s no active gear map.'})
         return JsonResponse({'data': g.is_active})
     return JsonResponse({'data': 'request needs to be ajax'})
+
+
+def get_authorization(request):
+    credentials = client.OAuth2Credentials.from_json(request.session['google_credentials'])
+    return credentials.authorize(httplib2.Http())
