@@ -176,12 +176,12 @@ class CreateGearMapView(FormView):
 
             res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id,
                                                              range='{0}!A1:Z100'.format(worksheet_name)).execute()
-
-            values = res['values']
-            column_count = len(values[0])
-            row_count = len(values)
-
-            print(values)
+            try:
+                values = res['values'][0]
+            except:
+                print("Error in googlesheets")
+                return []
+            return values
         else:
             return []
 
