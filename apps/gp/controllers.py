@@ -210,17 +210,19 @@ class GoogleSpreadSheetsController(BaseController):
         res = sheets_service.spreadsheets().values().get(spreadsheetId=self._spreadsheet_id,
                                                          range='{0}'.format(self._worksheet_name)).execute()
         values = res['values']
-        if from_row is None:
+        if from_row is None and limit is None:
             return values
-        if limit:
-            return values[from_row:limit]
-        return values[from_row:]
+        else:
+            limit = limit if limit is not None else 1
+            from_row = from_row-1 if from_row is not None else 0
+            return values[from_row:from_row+limit]
+        return values
 
     def get_worksheet_first_row(self):
-        return self.get_worksheet_values(from_row=1, limit=1)
+        return self.get_worksheet_values(from_row=1, limit=1)[0]
 
     def get_worksheet_second_row(self):
-        return self.get_worksheet_values(from_row=2, limit=1)
+        return self.get_worksheet_values(from_row=2, limit=1)[0]
 
 
 class MailChimpController(BaseController):

@@ -164,22 +164,6 @@ class CreateGearMapView(FormView):
         elif c == ConnectorEnum.GoogleSpreadSheets:
             self.gsc.create_connection(related, plug)
             values = self.gsc.get_worksheet_first_row()
-            # spreadsheet_id = None
-            # worksheet_name = None
-            # for specification in plug.plug_specification.all():
-            #     if specification.action_specification.name == 'SpreadSheet':
-            #         spreadsheet_id = specification.value
-            #     if specification.action_specification.name == 'Worksheet name':
-            #         worksheet_name = specification.value
-            # http_auth = get_authorization(self.request)
-            # sheets_service = discovery.build('sheets', 'v4', http_auth)
-            # res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id,
-            #                                                  range='{0}!A1:Z100'.format(worksheet_name)).execute()
-            # try:
-            #     values = res['values'][0]
-            # except:
-            #     print("Error in googlesheets")
-            #     return []
             return values
         else:
             return []
