@@ -76,7 +76,6 @@ class GoogleSpreadSheetsController(BaseController):
                 credentials_json = kwargs.pop('credentials_json')
         else:
             credentials_json = None
-        print(credentials_json)
         files = None
         if credentials_json is not None:
             try:
@@ -132,7 +131,7 @@ class GoogleSpreadSheetsController(BaseController):
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
-        data_list = get_dict_with_source_data(source_data, target_fields)
+        data_list = get_dict_with_source_data(source_data, target_fields, include_id=True)
         if is_first:
             if data_list:
                 try:
@@ -678,7 +677,7 @@ class ControllerError(Exception):
     pass
 
 
-def get_dict_with_source_data(source_data, target_fields):
+def get_dict_with_source_data(source_data, target_fields, include_id=False):
     valid_map = {}
     result = []
     for field in target_fields:
@@ -695,5 +694,7 @@ def get_dict_with_source_data(source_data, target_fields):
                 else:
                     values.append(w)
             user_dict[field] = ' '.join(values)
+        if include_id is True:
+            user_dict['id'] = obj['id']
         result.append(user_dict)
     return result
