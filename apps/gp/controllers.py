@@ -126,7 +126,7 @@ class GoogleSpreadSheetsController(BaseController):
                 print("Error getting the GoogleSpreadSheets attributes 2")
                 credential = None
                 files = None
-        return files is not None
+        return True if files else False
 
     def download_to_stored_data(self, connection_object, plug, *args, **kwargs):
         if plug is None:

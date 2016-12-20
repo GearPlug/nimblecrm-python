@@ -65,6 +65,7 @@ class CreateConnectionView(CreateView):
             name = 'ajax_create' if self.request.is_ajax() else 'create'
             self.template_name = '%s/%s/%s.html' % (
                 app_name, ConnectorEnum.get_connector(self.kwargs['connector_id']).name.lower(), name)
+
             if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets:
                 credentials = self.request.session.pop('google_credentials', None)
                 if credentials is not None:
@@ -80,7 +81,6 @@ class CreateConnectionView(CreateView):
 
                     except:
                         ping = False
-
         return super(CreateConnectionView, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
@@ -166,7 +166,6 @@ class GoogleAuthView(View):
         code = request.GET['code']
         credentials = get_flow().step2_exchange(code)
 
-        # Guardar en credencial en Modelo en vez de sesion
         request.session['google_credentials'] = credentials.to_json()
         return redirect(reverse('connection:google_auth_test'))
 
@@ -183,3 +182,26 @@ class CreateGoogleConnection(TemplateView):
             gssc = GoogleSpreadSheetsConnection.objects.create(connection=c, name="GoogleSheets Connection # %s" % 1,
                                                                credentials_json=credentials)
         return super(CreateGoogleConnection, self).get(request, *args, **kwargs)
+
+
+class GoogleAuthSuccessConnection(View):
+    template_name = 'connection/googlespreadsheets/success.html'
+    mcc = GoogleSpreadSheetsController()
+
+    def get(self, request, *args, **kwargs):
+        credentials = self.request.session.pop('google_credentials', None)
+        print(credentials)
+        if credentials is not None:
+            try:
+                print('1')
+                ping = self.mcc.test_connection(credentials_json=credentials)
+                print(ping)
+                if ping:
+                    c = Connection.objects.create(user=self.request.user, connector_id=self.kwargs['connector_id'])
+                    print(c)
+                    values = {'connection': c, 'name': 'Connection No. N', 'credentials_json': credentials}
+                    gcm = GoogleSpreadSheetsConnection.objects.create(*values)
+                    print(gcm)
+            except:
+                pass
+        return render(request, self.template_name)
