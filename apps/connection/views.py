@@ -1,9 +1,7 @@
-import random
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, View
 from django.core.urlresolvers import reverse
-from django.shortcuts import redirect, HttpResponse, render
-from apps.api.views import mysql_get_insert_values, mysql_trigger_create_row
+from django.shortcuts import redirect
 from apps.connection.apps import APP_NAME as app_name
 from apps.connection.myviews.FacebookViews import *
 from apps.connection.myviews.MySQLViews import *
@@ -12,8 +10,7 @@ from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.controllers import FacebookController
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Connection, Connector, StoredData, GearMap, GearMapData, GoogleSpreadSheetsConnection
-from apps.gp.views import TemplateViewWithPost
+from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection
 from oauth2client import client
 
 
@@ -116,25 +113,28 @@ class ListConnectorView(ListView):
     template_name = '%s/list_connector.html' % app_name
 
 
-class TestConnectionView(TemplateViewWithPost):
-    template_name = 'test.html'
+class GoogleAuthView(View):
+    def get(self, request, *args, **kwargs):
+        code = request.GET['code']
+        credentials = get_flow().step2_exchange(code)
+        request.session['google_credentials'] = credentials.to_json()
+        return redirect(reverse('connection:google_auth_success_create_connection'))
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(TestConnectionView, self).get_context_data(**kwargs)
-        map_list = GearMap.objects.filter(is_active=True, gear__is_active=True) \
-            .select_related('gear__source', 'gear__target', )
-        for map in map_list:
-            stored = StoredData.objects.filter(connection=map.gear.source.connection)
-            target_data = {data.target_name: data.source_value for data in GearMapData.objects.filter(gear_map=map)}
-            source_data = [
-                {'id': item[0], 'data': {i.name: i.value for i in stored.filter(object_id=item[0])}}
-                for item in stored.values_list('object_id').distinct()]
-            connection = Connection.objects.get(plug=map.gear.target)
-            # Validar el conector del target para obtener el objeto o los objetos a enviar.
-            columns, insert_values = mysql_get_insert_values(source_data, target_data, connection.related_connection)
-            mysql_trigger_create_row(connection.related_connection, columns, insert_values)
-        context['fb_data'] = []
-        return context
+
+class GoogleAuthSuccessCreateConnection(TemplateView):
+    template_name = 'connection/googlespreadsheets/success.html'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if 'google_credentials' in request.session:
+                credentials = request.session.pop('google_credentials')
+                c = Connection.objects.create(
+                    user=request.user, connector_id=ConnectorEnum.GoogleSpreadSheets.value)
+                gssc = GoogleSpreadSheetsConnection.objects.create(
+                    connection=c, name="GoogleSheets Connection # %s" % 1, credentials_json=credentials)
+        except:
+            print("Error creating the GoogleSheets Connection.")
+        return super(GoogleAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
 
 def get_flow():
@@ -143,49 +143,3 @@ def get_flow():
         client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
         scope='https://www.googleapis.com/auth/drive',
         redirect_uri='http://localhost:8000/connection/google_auth/')
-
-
-class GoogleAuthView(View):
-    def get(self, request, *args, **kwargs):
-        code = request.GET['code']
-        credentials = get_flow().step2_exchange(code)
-
-        request.session['google_credentials'] = credentials.to_json()
-        return redirect(reverse('connection:google_auth_test'))
-
-
-class CreateGoogleConnection(TemplateView):
-    template_name = 'connection/googlespreadsheets/success.html'
-
-    def get(self, request, *args, **kwargs):
-        if 'google_credentials' in request.session:
-            credentials = request.session.pop('google_credentials')
-            c = Connection.objects.create(user=request.user,
-                                          connector_id=ConnectorEnum.GoogleSpreadSheets.value)
-
-            gssc = GoogleSpreadSheetsConnection.objects.create(connection=c, name="GoogleSheets Connection # %s" % 1,
-                                                               credentials_json=credentials)
-        return super(CreateGoogleConnection, self).get(request, *args, **kwargs)
-
-
-class GoogleAuthSuccessConnection(View):
-    template_name = 'connection/googlespreadsheets/success.html'
-    mcc = GoogleSpreadSheetsController()
-
-    def get(self, request, *args, **kwargs):
-        credentials = self.request.session.pop('google_credentials', None)
-        print(credentials)
-        if credentials is not None:
-            try:
-                print('1')
-                ping = self.mcc.test_connection(credentials_json=credentials)
-                print(ping)
-                if ping:
-                    c = Connection.objects.create(user=self.request.user, connector_id=self.kwargs['connector_id'])
-                    print(c)
-                    values = {'connection': c, 'name': 'Connection No. N', 'credentials_json': credentials}
-                    gcm = GoogleSpreadSheetsConnection.objects.create(*values)
-                    print(gcm)
-            except:
-                pass
-        return render(request, self.template_name)
