@@ -99,35 +99,6 @@ class GoogleSpreadSheetsController(BaseController):
                 files = None
         return files is not None
 
-    def test_connection(self, *args, **kwargs):
-        if args:
-            super(GoogleSpreadSheetsController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    credentials_json = self._connection_object.credentials_json
-                except Exception as e:
-                    print("Error getting the GoogleSpreadSheets attributes 1")
-                    print(e)
-                    credentials_json = None
-        elif not args and kwargs:
-            if 'credentials_json' in kwargs:
-                credentials_json = kwargs.pop('credentials_json')
-        else:
-            credentials_json = None
-        files = None
-        if credentials_json is not None:
-            try:
-                credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
-                http_auth = credential.authorize(httplib2.Http())
-                drive_service = discovery.build('drive', 'v3', http_auth)
-                files = drive_service.files().list().execute()
-            except Exception as e:
-                raise
-                print("Error getting the GoogleSpreadSheets attributes 2")
-                credential = None
-                files = None
-        return True if files else False
-
     def download_to_stored_data(self, connection_object, plug, *args, **kwargs):
         if plug is None:
             plug = self._plug
@@ -170,12 +141,12 @@ class GoogleSpreadSheetsController(BaseController):
                     data_list = []
         if self._plug is not None:
             for obj in data_list:
-                l = [obj[key] for key in obj.keys()]
+                l = [val for val in obj.values()]
                 obj_list.append(l)
 
             extra = {'controller': 'google_spreadsheets'}
-            for item in obj_list:
-                self.create_row(item)
+            for idx, item in enumerate(obj_list, 1):
+                res = self.create_row(item, idx)
                 # try:
                 # extra['status'] = "s"
                 # self._log.info('Email: %s  successfully sent. Result: %s.' % (item['email_address'], res['id']),
@@ -186,6 +157,16 @@ class GoogleSpreadSheetsController(BaseController):
                 # self._log.error('Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
             return
         raise ControllerError("Incomplete.")
+
+    def colnum_string(self, n):
+        div = n
+        string = ""
+        temp = 0
+        while div > 0:
+            module = (div - 1) % 26
+            string = chr(65 + module) + string
+            div = int((div - module) / 26)
+        return string
 
     def get_sheets(self):
         credential = self._credential
@@ -228,19 +209,20 @@ class GoogleSpreadSheetsController(BaseController):
     def get_worksheet_second_row(self):
         return self.get_worksheet_values(from_row=2, limit=1)[0]
 
-    def create_row(self, row):
+    def create_row(self, row, idx):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
 
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
 
         body = {
-            'values': row
+            'values': [row]
         }
 
+        _range = "{0}!A{1}:{2}{1}".format(self._worksheet_name, idx, self.colnum_string(len(row)))
         res = sheets_service.spreadsheets().values().update(
             spreadsheetId=self._spreadsheet_id,
-            range="{0}!A1:C1".format(self._worksheet_name), valueInputOption='RAW',
+            range=_range, valueInputOption='RAW',
             body=body).execute()
 
         return res
