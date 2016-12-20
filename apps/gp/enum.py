@@ -1,6 +1,7 @@
 from enum import Enum
 from django.apps import apps
-from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, GoogleSpreadSheetsController
+from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
+    GoogleSpreadSheetsController
 
 
 class ConnectorEnum(Enum):
