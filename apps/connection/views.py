@@ -71,16 +71,15 @@ class CreateConnectionView(CreateView):
                     try:
                         ping = self.mcc.test_connection(credentials_json=credentials)
                         c = self.model.objects.create(user=self.request.user, connector_id=self.kwargs['connector_id'])
-                    #     se supone que c deberia crearse
+                        #     se supone que c deberia crearse
 
                         values = {'connection': c, 'name': 'Connection No. N', 'credentials_json': credentials}
                         gcm = GoogleSpreadSheetsConnection.objects.create(*values)
 
-                    #     una vez creado se envia a la lista de conexiones google
+                    # una vez creado se envia a la lista de conexiones google
 
                     except:
                         ping = False
-
 
         return super(CreateConnectionView, self).get(*args, **kwargs)
 
@@ -169,10 +168,18 @@ class GoogleAuthView(View):
 
         # Guardar en credencial en Modelo en vez de sesion
         request.session['google_credentials'] = credentials.to_json()
-        return redirect(reverse('connection:google_auth_success'))
+        return redirect(reverse('connection:google_auth_test'))
 
 
-class CreateGoogleConnection(View):
+class CreateGoogleConnection(TemplateView):
+    template_name = 'connection/googlespreadsheets/success.html'
 
     def get(self, request, *args, **kwargs):
-        print('asd')
+        if 'google_credentials' in request.session:
+            credentials = request.session.pop('google_credentials')
+            c = Connection.objects.create(user=request.user,
+                                          connector_id=ConnectorEnum.GoogleSpreadSheets.value)
+
+            gssc = GoogleSpreadSheetsConnection.objects.create(connection=c, name="GoogleSheets Connection # %s" % 1,
+                                                               credentials_json=credentials)
+        return super(CreateGoogleConnection, self).get(request, *args, **kwargs)
