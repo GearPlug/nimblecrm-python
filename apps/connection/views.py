@@ -35,6 +35,7 @@ class CreateConnectionView(CreateView):
     template_name = '%s/create.html' % app_name
     success_url = reverse_lazy('%s:list' % app_name)
     fbc = FacebookController()
+    mcc = GoogleSpreadSheetsController()
 
     def form_invalid(self, form, *args, **kwargs):
         return super(CreateConnectionView, self).form_invalid(form, *args, **kwargs)
@@ -64,6 +65,23 @@ class CreateConnectionView(CreateView):
             name = 'ajax_create' if self.request.is_ajax() else 'create'
             self.template_name = '%s/%s/%s.html' % (
                 app_name, ConnectorEnum.get_connector(self.kwargs['connector_id']).name.lower(), name)
+            if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets:
+                credentials = self.request.session.pop('google_credentials', None)
+                if credentials is not None:
+                    try:
+                        ping = self.mcc.test_connection(credentials_json=credentials)
+                        c = self.model.objects.create(user=self.request.user, connector_id=self.kwargs['connector_id'])
+                    #     se supone que c deberia crearse
+
+                        values = {'connection': c, 'name': 'Connection No. N', 'credentials_json': credentials}
+                        gcm = GoogleSpreadSheetsConnection.objects.create(*values)
+
+                    #     una vez creado se envia a la lista de conexiones google
+
+                    except:
+                        ping = False
+
+
         return super(CreateConnectionView, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
@@ -152,3 +170,9 @@ class GoogleAuthView(View):
         # Guardar en credencial en Modelo en vez de sesion
         request.session['google_credentials'] = credentials.to_json()
         return redirect(reverse('connection:google_auth_success'))
+
+
+class CreateGoogleConnection(View):
+
+    def get(self, request, *args, **kwargs):
+        print('asd')

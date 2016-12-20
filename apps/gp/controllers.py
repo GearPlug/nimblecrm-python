@@ -76,6 +76,7 @@ class GoogleSpreadSheetsController(BaseController):
                 credentials_json = kwargs.pop('credentials_json')
         else:
             credentials_json = None
+        print(credentials_json)
         files = None
         if credentials_json is not None:
             try:
@@ -97,6 +98,35 @@ class GoogleSpreadSheetsController(BaseController):
                 raise
                 print("Error getting the GoogleSpreadSheets attributes 2")
                 self._credential = None
+                files = None
+        return files is not None
+
+    def test_connection(self, *args, **kwargs):
+        if args:
+            super(GoogleSpreadSheetsController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    credentials_json = self._connection_object.credentials_json
+                except Exception as e:
+                    print("Error getting the GoogleSpreadSheets attributes 1")
+                    print(e)
+                    credentials_json = None
+        elif not args and kwargs:
+            if 'credentials_json' in kwargs:
+                credentials_json = kwargs.pop('credentials_json')
+        else:
+            credentials_json = None
+        files = None
+        if credentials_json is not None:
+            try:
+                credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
+                http_auth = credential.authorize(httplib2.Http())
+                drive_service = discovery.build('drive', 'v3', http_auth)
+                files = drive_service.files().list().execute()
+            except Exception as e:
+                raise
+                print("Error getting the GoogleSpreadSheets attributes 2")
+                credential = None
                 files = None
         return files is not None
 
