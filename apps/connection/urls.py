@@ -3,7 +3,7 @@ from django.views.generic import TemplateView
 from apps.connection.views import CreateConnectionView, ListConnectionView, ListConnectorView, TestConnectionView, \
     AJAXFacebookGetAvailableConnectionsView, AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
     AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
-    GoogleAuthView, AjaxGoogleSpreadSheetTestConnection, CreateGoogleConnection
+    GoogleAuthView, AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessConnection
 
 urlpatterns = [
     url(r'create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create'),
@@ -13,9 +13,7 @@ urlpatterns = [
     url(r'list/connector/$', ListConnectorView.as_view(), name='list_connector'),
     url(r'test/$', TestConnectionView.as_view(), name='test_facebook'),
     url(r"^google_auth/$", GoogleAuthView.as_view(), name="google_auth"),
-    url(r"^google_auth/success/$", TemplateView.as_view(template_name='connection/googlespreadsheets/success.html'),
-        name="google_auth_success"),
-    url(r"^google_auth/test/$", CreateGoogleConnection.as_view(), name="google_auth_test"),
+    url(r"^google_auth/success/$", GoogleAuthSuccessConnection.as_view(), name="google_auth_success"),
 
     # AJAX
     url(r'ajax/facebook/get/connections/', AJAXFacebookGetAvailableConnectionsView.as_view(),
