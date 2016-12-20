@@ -86,16 +86,14 @@ class GoogleSpreadSheetsController(BaseController):
                     if s.action_specification.name == 'Worksheet name':
                         self._worksheet_name = s.value
             except:
-                raise
                 print("Error asignando los specifications")
             try:
                 _json = json.dumps(credentials_json)
                 self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
                 http_auth = self._credential.authorize(httplib2.Http())
-                drive_service = discovery.build('drive', 'v3', http_auth)
+                drive_service = discovery.build('drive', 'v3', http=http_auth)
                 files = drive_service.files().list().execute()
             except Exception as e:
-                raise
                 print("Error getting the GoogleSpreadSheets attributes 2")
                 self._credential = None
                 files = None
@@ -138,7 +136,7 @@ class GoogleSpreadSheetsController(BaseController):
         sheet_values = self.get_worksheet_values()
         new_data = []
         for idx, item in enumerate(sheet_values[1:]):
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=idx)
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=idx + 1)
             if not q.exists():
                 for idx2, cell in enumerate(item):
                     new_data.append(StoredData(name=sheet_values[0][idx2], value=cell, object_id=idx + 1,
@@ -171,17 +169,6 @@ class GoogleSpreadSheetsController(BaseController):
                 except:
                     data_list = []
         if self._plug is not None:
-            spreadsheet_id = None
-            worksheet_name = None
-
-            specifications = self.plug.plug_specification.all()
-
-            for specification in specifications:
-                if specification.action_specification.name == 'SpreadSheet':
-                    spreadsheet_id = specification.value
-                if specification.action_specification.name == 'Worksheet name':
-                    worksheet_name = specification.value
-
             for obj in data_list:
                 l = [obj[key] for key in obj.keys()]
                 obj_list.append(l)
@@ -203,7 +190,7 @@ class GoogleSpreadSheetsController(BaseController):
     def get_sheets(self):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
-        drive_service = discovery.build('drive', 'v3', http_auth)
+        drive_service = discovery.build('drive', 'v3', http=http_auth)
         files = drive_service.files().list().execute()
         sheet_list = []
         for f in files['files']:
@@ -215,7 +202,7 @@ class GoogleSpreadSheetsController(BaseController):
     def get_sheet_info(self, sheet_id):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
-        sheets_service = discovery.build('sheets', 'v4', http_auth)
+        sheets_service = discovery.build('sheets', 'v4', http=http_auth)
         result = sheets_service.spreadsheets().get(spreadsheetId=sheet_id).execute()
         sheets = tuple(i['properties'] for i in result['sheets'])  # % sheets[0]['gridProperties']['rowCount']
         return sheets
@@ -223,7 +210,7 @@ class GoogleSpreadSheetsController(BaseController):
     def get_worksheet_values(self, from_row=None, limit=None):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
-        sheets_service = discovery.build('sheets', 'v4', http_auth)
+        sheets_service = discovery.build('sheets', 'v4', http=http_auth)
         res = sheets_service.spreadsheets().values().get(spreadsheetId=self._spreadsheet_id,
                                                          range='{0}'.format(self._worksheet_name)).execute()
         values = res['values']
@@ -245,7 +232,7 @@ class GoogleSpreadSheetsController(BaseController):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
 
-        sheets_service = discovery.build('sheets', 'v4', http_auth)
+        sheets_service = discovery.build('sheets', 'v4', http=http_auth)
 
         body = {
             'values': row
