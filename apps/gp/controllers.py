@@ -107,7 +107,6 @@ class GoogleSpreadSheetsController(BaseController):
         new_data = []
         for idx, item in enumerate(sheet_values[1:]):
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=idx + 1)
-            print(q.query)
             if not q.exists():
                 for idx2, cell in enumerate(item):
                     new_data.append(StoredData(name=sheet_values[0][idx2], value=cell, object_id=idx + 1,
