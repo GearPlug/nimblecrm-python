@@ -4,6 +4,7 @@ from apps.gp.controllers import SugarCRMController
 from apiconnector.celery import app
 from django.core.cache import cache
 from django.utils import timezone
+from collections import OrderedDict
 
 LOCK_EXPIRE = 60 * 1
 
@@ -53,8 +54,12 @@ def update_gear(gear_id):
             stored_data = StoredData.objects.filter(**kwargs)
             if not stored_data:
                 return False
-            target_fields = {data.target_name: data.source_value for data in
-                             GearMapData.objects.filter(gear_map=gear.gear_map)}
+            target_fields = OrderedDict((data.target_name, data.source_value) for data in
+                                        GearMapData.objects.filter(gear_map=gear.gear_map))
+            # for data in GearMapData.objects.filter(gear_map=gear.gear_map):
+            #     print(data.target_name)
+            #     target_fields[data.target_name] = data.source_value
+            print(target_fields)
             source_data = [{'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}}
                            for item in stored_data.values_list('object_id').distinct()]
             if target_connector == ConnectorEnum.MySQL:

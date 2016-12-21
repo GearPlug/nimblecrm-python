@@ -14,6 +14,7 @@ from apiclient import discovery
 from mailchimp3 import MailChimp
 from oauth2client import client as GoogleClient
 import httplib2
+from collections import OrderedDict
 
 logger = logging.getLogger('controller')
 
@@ -131,7 +132,8 @@ class GoogleSpreadSheetsController(BaseController):
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
-        data_list = get_dict_with_source_data(source_data, target_fields, include_id=True)
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        print(data_list)
         if is_first:
             if data_list:
                 try:
@@ -142,18 +144,10 @@ class GoogleSpreadSheetsController(BaseController):
             for obj in data_list:
                 l = [val for val in obj.values()]
                 obj_list.append(l)
-
             extra = {'controller': 'google_spreadsheets'}
-            for idx, item in enumerate(obj_list, 1):
+            sheet_values = self.get_worksheet_values()
+            for idx, item in enumerate(obj_list, len(sheet_values) + 1):
                 res = self.create_row(item, idx)
-                # try:
-                # extra['status'] = "s"
-                # self._log.info('Email: %s  successfully sent. Result: %s.' % (item['email_address'], res['id']),
-                #                extra=extra)
-                # except:
-                #     res = "User already exists"
-                # extra['status'] = 'f'
-                # self._log.error('Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
             return
         raise ControllerError("Incomplete.")
 
@@ -197,7 +191,7 @@ class GoogleSpreadSheetsController(BaseController):
         if from_row is None and limit is None:
             return values
         else:
-            limit = limit if limit is not None else 1
+            limit = limit if limit is not None else len(values) - 1
             from_row = from_row - 1 if from_row is not None else 0
             return values[from_row:from_row + limit]
         return values
@@ -213,11 +207,9 @@ class GoogleSpreadSheetsController(BaseController):
         http_auth = credential.authorize(httplib2.Http())
 
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
-
         body = {
             'values': [row]
         }
-
         _range = "{0}!A{1}:{2}{1}".format(self._worksheet_name, idx, self.colnum_string(len(row)))
         res = sheets_service.spreadsheets().values().update(
             spreadsheetId=self._spreadsheet_id,
@@ -678,13 +670,13 @@ class ControllerError(Exception):
 
 
 def get_dict_with_source_data(source_data, target_fields, include_id=False):
-    valid_map = {}
+    valid_map = OrderedDict()
     result = []
     for field in target_fields:
         if target_fields[field] != '':
             valid_map[field] = target_fields[field]
     for obj in source_data:
-        user_dict = {}
+        user_dict = OrderedDict()
         for field in valid_map:
             kw = valid_map[field].split(' ')
             values = []
