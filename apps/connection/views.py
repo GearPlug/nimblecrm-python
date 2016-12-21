@@ -130,8 +130,9 @@ class GoogleAuthSuccessCreateConnection(TemplateView):
                 credentials = request.session.pop('google_credentials')
                 c = Connection.objects.create(
                     user=request.user, connector_id=ConnectorEnum.GoogleSpreadSheets.value)
+                n = int(GoogleSpreadSheetsConnection.objects.filter(connection__user=request.user).count()) + 1
                 gssc = GoogleSpreadSheetsConnection.objects.create(
-                    connection=c, name="GoogleSheets Connection # %s" % 1, credentials_json=credentials)
+                    connection=c, name="GoogleSheets Connection # %s" % n, credentials_json=credentials)
         except:
             print("Error creating the GoogleSheets Connection.")
         return super(GoogleAuthSuccessCreateConnection, self).get(request, *args, **kwargs)

@@ -1,6 +1,7 @@
 {% extends 'commons/site_base.html' %}
 {% load static %}
 {% load bootstrap_tags %}
+
 {% block body %}
     <div class="box-tool animated fadeInDown">
         <div class="box-title">
@@ -18,7 +19,7 @@
             {% for connector in object_list %}
                 <li>
                     <div class="gr_{{ connector.name|lower }} go2Conn">
-                        <a href="{% url 'connection:create' connector_id=connector.id %}">
+                        <a href="{% url 'wizard:connection_list' connector_id=connector.id %}">
                             {{ connector.name }}
                         </a>
                     </div>

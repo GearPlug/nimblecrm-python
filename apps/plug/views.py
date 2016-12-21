@@ -24,15 +24,6 @@ class CreatePlugView(CreateView):
         form.instance.user = self.request.user
         return super(CreatePlugView, self).form_valid(form)
 
-    def get(self, *args, **kwargs):
-        return super(CreatePlugView, self).get(*args, **kwargs)
-
-    def post(self, *args, **kwargs):
-        return super(CreatePlugView, self).post(*args, **kwargs)
-
-    def get_success_url(self):
-        return self.success_url
-
 
 class UpdatePlugView(UpdateView):
     model = Plug
