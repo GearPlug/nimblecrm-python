@@ -15,8 +15,8 @@ urlpatterns = [
     url(r'connection/create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create_connection'),
     url(r'gear/map/(?P<gear_id>\d+)/$', CreateGearMapView.as_view(), name='create_gear_map'),
 
-    url(r"^async/spreadsheet/info/(?P<id>.+)/$", async_spreadsheet_info, name="async_test2"),
-    url(r"^async/spreadsheet/values/(?P<id>.+)/(?P<sheet_id>.+)/$", async_spreadsheet_values, name="async_test2"),
+    url(r"^async/spreadsheet/info/(?P<plug_id>.+)/(?P<spreadsheet_id>.+)/$", async_spreadsheet_info, name="async_test2"),
+    url(r"^async/spreadsheet/values/(?P<spreadsheet_id>.+)/(?P<worksheet_id>.+)/$", async_spreadsheet_values, name="async_test2"),
 
     # Nuevos
     url(r'^gear/update/(?P<pk>\d+)/$', UpdateGearView.as_view(), name='gear_update'),

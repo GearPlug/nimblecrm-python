@@ -12,7 +12,7 @@ from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
     GoogleSpreadSheetsController
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Connector, Connection, Action, Gear, Plug
+from apps.gp.models import Connector, Connection, Action, Gear, Plug, GoogleSpreadSheetsConnection
 from apps.plug.views import CreatePlugView, UpdatePlugAddActionView, CreatePlugSpecificationsView
 from oauth2client import client
 from apiclient import discovery
@@ -145,7 +145,7 @@ class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
                 fbc.download_to_stored_data(conn, self.object)
         if len(self.object.action.action_specification.all()) > 0:
             return reverse('wizard:plug_set_specifications',
-                           kwargs={'plug_id': self.object.id,})
+                           kwargs={'plug_id': self.object.id, })
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 
@@ -177,7 +177,7 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
             options = mcc.get_lists()
             context['available_options'] = [(o['name'], o['id']) for o in options]
         elif c == ConnectorEnum.GoogleSpreadSheets:
-            http_auth = get_authorization(self.request)
+            http_auth = get_authorization(plug.pk)
 
             drive_service = discovery.build('drive', 'v3', http_auth)
             files = drive_service.files().list().execute()
@@ -281,17 +281,19 @@ class CreateGearMapView(LoginRequiredMixin, CreateGearMapView):
         return super(CreateGearMapView, self).get_success_url(*args, **kwargs)
 
 
-def get_authorization(request):
-    credentials = client.OAuth2Credentials.from_json(request.session['google_credentials'])
+def get_authorization(plug_id):
+    plug = Plug.objects.get(pk=plug_id)
+    _json = json.dumps(plug.connection.related_connection.credentials_json)
+    credentials = client.OAuth2Credentials.from_json(_json)
     return credentials.authorize(httplib2.Http())
 
 
-def async_spreadsheet_info(request, id):
-    http_auth = get_authorization(request)
+def async_spreadsheet_info(request, plug_id, spreadsheet_id):
+    http_auth = get_authorization(plug_id)
 
     sheets_service = discovery.build('sheets', 'v4', http_auth)
 
-    result = sheets_service.spreadsheets().get(spreadsheetId=id).execute()
+    result = sheets_service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
 
     sheets = tuple(i['properties'] for i in result['sheets'])  # % sheets[0]['gridProperties']['rowCount']
 
@@ -306,16 +308,17 @@ def async_spreadsheet_info(request, id):
     return HttpResponse(json.dumps(ctx), content_type='application/json')
 
 
-def async_spreadsheet_values(request, id, sheet_id):
-    http_auth = get_authorization(request)
+def async_spreadsheet_values(request, plug_id, spreadsheet_id, worksheet_id):
+    http_auth = get_authorization(plug_id)
 
     sheets_service = discovery.build('sheets', 'v4', http_auth)
 
     sheets = request.session['google_sheets']
 
-    sheet_id = next((s[1] for s in sheets if s[0] == int(sheet_id)))
+    worksheet_name = next((s[1] for s in sheets if s[0] == int(worksheet_id)))
 
-    res = sheets_service.spreadsheets().values().get(spreadsheetId=id, range='{0}!A1:Z100'.format(sheet_id)).execute()
+    res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id,
+                                                     range='{0}!A1:Z100'.format(worksheet_name)).execute()
 
     values = res['values']
     column_count = len(values[0])

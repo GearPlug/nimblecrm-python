@@ -46,7 +46,7 @@
         {% for form in formset %}
             <div>{{ form }}</div>
         {% endfor %}
-
+        <input type="hidden" id="plug_id" value="{{ plug_id }}">
         <select id="spreadsheet">
             <option selected="true" disabled="disabled">--</option>
             {% for s in sheets %}
@@ -68,6 +68,7 @@
     <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
     <script type="application/javascript">
         $(document).ready(function () {
+            var plug_id = $('input#plug_id').val();
             $('button#btnCreateSpecification').click(function () {
                 var plug_id = $('input#plug_id').val();
                 var specification_id = $('select#specification_id').val();
@@ -82,7 +83,7 @@
             });
 
             $('select#spreadsheet').on('change', function () {
-                getSpreadsheetInfo($(this).val());
+                getSpreadsheetInfo(plug_id, $(this).val());
                 $('#id_form-0-value').val($(this).val());
             });
 
@@ -91,8 +92,8 @@
             })
         });
 
-        function getSpreadsheetInfo(_id) {
-            var url = '/wizard/async/spreadsheet/info/ID/'.replace('ID', _id);
+        function getSpreadsheetInfo(plug_id, spreadsheet_id) {
+            var url = '/wizard/async/spreadsheet/info/PLUG_ID/ID/'.replace('PLUG_ID', plug_id).replace('ID', spreadsheet_id);
             var callback = function (response) {
                 if (response.Success == true) {
                     $('#sheet-selector').html(response.sheets)
@@ -101,8 +102,8 @@
             getData(url, callback);
         }
 
-        function getSpreadsheetValues(_id, sheet_id) {
-            var url = '/wizard/async/spreadsheet/values/ID/SHEET/'.replace('ID', _id).replace('SHEET', sheet_id);
+        function getSpreadsheetValues(plug_id, spreadsheet_id, worksheet_id) {
+            var url = '/wizard/async/spreadsheet/values/ID/SHEET/'.replace('ID', spreadsheet_id).replace('SHEET', worksheet_id);
             var callback = function (response) {
                 if (response.Success == true) {
                     $('#column-count').text(response.Data.ColumnCount);
