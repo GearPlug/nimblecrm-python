@@ -88,6 +88,11 @@ class ListConnectionView(ListView):
         return self.model.objects.filter(user=self.request.user,
                                          connector_id=self.kwargs['connector_id']).prefetch_related()
 
+    def get_context_data(self, **kwargs):
+        context = super(ListConnectionView, self).get_context_data(**kwargs)
+        context['connector_id'] = self.kwargs['connector_id']
+        return context
+
 
 class CreatePlugView(LoginRequiredMixin, CreatePlugView):
     login_url = '/account/login/'
@@ -145,7 +150,7 @@ class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
                 fbc.download_to_stored_data(conn, self.object)
         if len(self.object.action.action_specification.all()) > 0:
             return reverse('wizard:plug_set_specifications',
-                           kwargs={'plug_id': self.object.id, })
+                           kwargs={'plug_id': self.object.id,})
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 
