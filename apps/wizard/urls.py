@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from apps.wizard.views import CreateGearView, UpdateGearView, CreatePlugView, CreateConnectionView, \
     UpdatePlugSetActionView, CreateGearMapView, CreatePlugSpecificationView, async_spreadsheet_info, \
-    async_spreadsheet_values, ListConnectorView, ListConnectionView
+    async_spreadsheet_values, ListConnectorView, ListConnectionView, ActionListView, ActionSpecificationsView
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='create_gear'),
@@ -15,12 +15,16 @@ urlpatterns = [
     url(r'connection/create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create_connection'),
     url(r'gear/map/(?P<gear_id>\d+)/$', CreateGearMapView.as_view(), name='create_gear_map'),
 
-    url(r"^async/spreadsheet/info/(?P<plug_id>.+)/(?P<spreadsheet_id>.+)/$", async_spreadsheet_info, name="async_test2"),
-    url(r"^async/spreadsheet/values/(?P<spreadsheet_id>.+)/(?P<worksheet_id>.+)/$", async_spreadsheet_values, name="async_test2"),
+    url(r"^async/spreadsheet/info/(?P<plug_id>.+)/(?P<spreadsheet_id>.+)/$", async_spreadsheet_info,
+        name="async_test2"),
+    url(r"^async/spreadsheet/values/(?P<spreadsheet_id>.+)/(?P<worksheet_id>.+)/$", async_spreadsheet_values,
+        name="async_test2"),
 
     # Nuevos
     url(r'^gear/update/(?P<pk>\d+)/$', UpdateGearView.as_view(), name='gear_update'),
     url(r'^connector/list/(?P<type>(source|target)+)/$', ListConnectorView.as_view(), name='connector_list'),
     url(r'^connection/list/(?P<connector_id>\d+)/$', ListConnectionView.as_view(), name='connection_list'),
 
+    url(r'^action/list/$', ActionListView.as_view(), name='action_list'),
+    url(r'^action/(?P<pk>\d+)/specifications/$', ActionSpecificationsView.as_view(), name='action_specifications'),
 ]

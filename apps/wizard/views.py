@@ -1,6 +1,6 @@
 import json
 import httplib2
-from django.views.generic import CreateView, UpdateView, ListView
+from django.views.generic import CreateView, UpdateView, ListView, DetailView
 
 from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
@@ -150,7 +150,7 @@ class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
                 fbc.download_to_stored_data(conn, self.object)
         if len(self.object.action.action_specification.all()) > 0:
             return reverse('wizard:plug_set_specifications',
-                           kwargs={'plug_id': self.object.id,})
+                           kwargs={'plug_id': self.object.id, })
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 
@@ -335,3 +335,17 @@ def async_spreadsheet_values(request, plug_id, spreadsheet_id, worksheet_id):
     data = {'ColumnCount': column_count, 'RowCount': row_count, 'Table': template.render(context)}
     ctx = {'Success': True, 'Data': data}
     return HttpResponse(json.dumps(ctx), content_type='application/json')
+
+
+class ActionListView(ListView):
+    model = Action
+    template_name = 'wizard/action_list.html'
+
+
+class ActionSpecificationsView(DetailView):
+    model = Action
+    template_name = 'wizard/action_specifications.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ActionSpecificationsView, self).get_context_data(**kwargs)
+        return context
