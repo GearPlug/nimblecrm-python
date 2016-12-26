@@ -19,7 +19,7 @@
             {% for connector in object_list %}
                 <li>
                     <div class="gr_{{ connector.name|lower }} go2Conn">
-                        <a href="{% url 'wizard:connection_list' connector_id=connector.id %}">
+                        <a href="{% url 'wizard:connection_list' connector_id=connector.id type=type %}">
                             {{ connector.name }}
                         </a>
                     </div>

@@ -1,6 +1,7 @@
 import json
 import httplib2
 from django.views.generic import CreateView, UpdateView, ListView
+from django.views.generic.edit import FormMixin
 
 from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
@@ -38,8 +39,9 @@ class CreateGearView(LoginRequiredMixin, CreateView):
         return super(CreateGearView, self).get(request, *args, **kwargs)
 
     def get_success_url(self):
-        self.request.session['gear_id'] = self.object.id
-        return reverse('wizard:gear_update', kwargs={'pk': self.object.id})
+        self.request.session['current_gear_id'] = self.object.id
+        self.request.session['current_plug'] = 'source'
+        return reverse('wizard:connector_list', kwargs={'type': 'source'})
 
     def form_valid(self, form):
         form.instance.user = self.request.user
@@ -47,6 +49,46 @@ class CreateGearView(LoginRequiredMixin, CreateView):
 
     def get_queryset(self):
         return self.model.objects.filter(user=self.request.user).prefetch_related()
+
+
+class ListConnectorView(ListView):
+    model = Connector
+    template_name = 'wizard/connector_list.html'
+
+    def get_queryset(self):
+        if self.kwargs['type'] == 'source':
+            kw = {'is_source': True}
+        elif self.kwargs['type'] == 'target':
+            kw = {'is_target': True}
+        return self.model.objects.filter(**kw)
+
+    def get_context_data(self, **kwargs):
+        context = super(ListConnectorView, self).get_context_data(**kwargs)
+        context['type'] = self.kwargs['type']
+        return context
+
+
+class ListConnectionView(ListView):
+    model = Connection
+    template_name = 'wizard/connection_list.html'
+    form = None
+
+    def get_queryset(self):
+        return self.model.objects.filter(user=self.request.user,
+                                         connector_id=self.kwargs['connector_id']).prefetch_related()
+
+    def get_context_data(self, **kwargs):
+        context = super(ListConnectionView, self).get_context_data(**kwargs)
+        context['connector_id'] = self.kwargs['connector_id']
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object_list = []
+        context = self.get_context_data()
+        connection = request.POST.get('connection', None)
+        print(kwargs)
+        print(connection)
+        return super(ListConnectionView, self).render_to_response(context)
 
 
 class UpdateGearView(LoginRequiredMixin, UpdateView):
@@ -65,33 +107,6 @@ class UpdateGearView(LoginRequiredMixin, UpdateView):
         self.request.session['source_plug_id'] = None
         self.request.session['target_plug_id'] = None
         return super(UpdateGearView, self).form_valid(form, *args, **kwargs)
-
-
-class ListConnectorView(ListView):
-    model = Connector
-    template_name = 'wizard/connector_list.html'
-
-    def get_queryset(self):
-        print(self.kwargs)
-        if self.kwargs['type'] == 'source':
-            kw = {'is_source': True}
-        elif self.kwargs['type'] == 'target':
-            kw = {'is_target': True}
-        return self.model.objects.filter(**kw)
-
-
-class ListConnectionView(ListView):
-    model = Connection
-    template_name = 'wizard/connection_list.html'
-
-    def get_queryset(self):
-        return self.model.objects.filter(user=self.request.user,
-                                         connector_id=self.kwargs['connector_id']).prefetch_related()
-
-    def get_context_data(self, **kwargs):
-        context = super(ListConnectionView, self).get_context_data(**kwargs)
-        context['connector_id'] = self.kwargs['connector_id']
-        return context
 
 
 class CreatePlugView(LoginRequiredMixin, CreatePlugView):
@@ -206,7 +221,6 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
             return reverse('wizard:create_gear')
         self.object = self.object_list[0]
         c = ConnectorEnum.get_connector(self.object.plug.connection.connector.id)
-        print(c)
         conn = self.object.plug.connection.related_connection
         if c == ConnectorEnum.Facebook:
             fbc.download_leads_to_stored_data(conn, self.object.plug)
@@ -222,29 +236,8 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                 data_list = scrmc.download_to_stored_data(conn, self.object.plug, self.object.value)
         elif c == ConnectorEnum.GoogleSpreadSheets:
             ping = gsc.create_connection(conn, self.object.plug)
-            print(ping)
             if ping:
                 data_list = gsc.download_to_stored_data(conn, self.object.plug)
-                # spreadsheet_id = None
-                # worksheet_name = None
-                # for specification in self.object_list:
-                #     if specification.action_specification.name == 'SpreadSheet':
-                #         spreadsheet_id = specification.value
-                #     if specification.action_specification.name == 'Worksheet name':
-                #         worksheet_name = specification.value
-                #
-                # http_auth = get_authorization(self.request)
-                #
-                # sheets_service = discovery.build('sheets', 'v4', http_auth)
-                #
-                # res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range='{0}!A1:Z100'.format(worksheet_name)).execute()
-                #
-                # values = res['values']
-                # column_count = len(values[0])
-                # row_count = len(values)
-                #
-                # print(values)
-
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 

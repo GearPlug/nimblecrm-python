@@ -3,34 +3,34 @@
 
 {% block body_content %}
 
-<button id="btnLogin">Facebook login</button>
-<div>
-    <div id="connection_list">
-        <select>
-            <option>---------</option>
-        </select>
+    <button id="btnLogin">Facebook login</button>
+    <div>
+        <div id="connection_list">
+            <select>
+                <option>---------</option>
+            </select>
+        </div>
     </div>
-</div>
-<div>
-    <div id="form_list">
-        <select>
-            <option>---------</option>
-        </select>
+    <div>
+        <div id="form_list">
+            <select>
+                <option>---------</option>
+            </select>
+        </div>
     </div>
-</div>
-<button id="btnCheckLeads">test connection</button>
-<button id="btnCreateConnection">Save connection</button>
-<div>
-    <form id="formCreateConnection" style="display:none;" class="create-connection-form form-horizontal"
-          action="{% url 'connection:update'  %}"
-          method="post" autocomplete="off">
-        {% csrf_token %}
-        {{ form|as_bootstrap }}
-        {% if form.error %}
-            <div class="error">{{ form.error }}</div>
-        {% endif %}
-    </form>
-</div>
+    <button id="btnCheckLeads">test connection</button>
+    <button id="btnCreateConnection">Save connection</button>
+    <div>
+        <form id="formCreateConnection" style="display:none;" class="create-connection-form form-horizontal"
+              action="{% url 'wizard:create_connection' connector_id=1 %}"
+              method="post" autocomplete="off">
+            {% csrf_token %}
+            {{ form|as_bootstrap }}
+            {% if form.error %}
+                <div class="error">{{ form.error }}</div>
+            {% endif %}
+        </form>
+    </div>
 {% endblock %}
 
 {% block scripts %}
@@ -112,6 +112,7 @@
                     url: "{% url 'connection:ajax_update_facebook_get_leads' %}",
                     data: {'user_access_token': user_access_token, 'form_id': form_id},
                 }).done(function (response) {
+                    console.log(response.data);
                     if (response.data) {
                         $('div#form_list').append('<p>Connection is valid.</p>');
                     }
@@ -122,12 +123,27 @@
                 var form_id = $('div#form_list select').val();
                 var form_name = $('div#form_list select option:selected').html().trim();
                 var page_id = $('div#connection_list select').val();
-                $('input#id_name').val(form_name);
-                $('input#id_id_page').val(page_id);
-                $('input#id_id_form').val(form_id);
-                $('input#id_token').val(user_access_token);
+                $('form#formCreateConnection').find('input#id_name').val(form_name);
+                $('form#formCreateConnection').find('input#id_id_page').val(page_id);
+                $('form#formCreateConnection').find('input#id_id_form').val(form_id);
+                $('form#formCreateConnection').find('input#id_token').val(user_access_token);
                 $('form#formCreateConnection').submit();
             });
+            $('form#formCreateConnection').submit(function () {
+                var url = $(this).attr('action');
+                console.log('url:' + url);
+                $.ajax({
+                    method: "POST",
+                    url: url,
+                    data: $(this).serialize(),
+                }).done(function (response) {
+                    if (response.data) {
+                        console.log('reload')
+                        location.reload();
+                    }
+                });
+                return false;
+            })
         })
     </script>
 {% endblock %}

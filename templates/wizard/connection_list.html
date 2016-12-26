@@ -7,15 +7,21 @@
         <div class="box-title">
             <h2>connection list</h2>
         </div>
-        <ul class="list-connector">
-            {% for connection in object_list %}
-                <li style="display: block;">
-                    <span>
-                        {{ connection.name }} <button>TEST</button>
-                    </span>
-                </li>
-            {% endfor %}
-        </ul>
+        <form method="post" action="">
+        {% csrf_token %}
+            <ul class="list-connector">
+                {% for connection in object_list %}
+                    <li style="display: block;">
+                        <label>
+                            <input type="radio" name="connection" value="{{ connection.id }}"> {{ connection.name }}
+                        </label>
+                        <button>TEST</button>
+                        <br>
+                    </li>
+                {% endfor %}
+            </ul>
+            <button>Use this connection</button>
+        </form>
         <div>
             <a href="javascript:popUp('{% url 'connection:create' connector_id=connector_id %}')">New Connection</a>
         </div>
