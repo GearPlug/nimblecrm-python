@@ -1,7 +1,9 @@
 from django.conf.urls import url
-from apps.connection.views import CreateConnectionView, ListConnectionView, ListConnectorView, TestConnectionView, \
+from django.views.generic import TemplateView
+from apps.connection.views import CreateConnectionView, ListConnectionView, ListConnectorView, \
     AJAXFacebookGetAvailableConnectionsView, AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
-    AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection
+    AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
+    GoogleAuthView, AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection
 
 urlpatterns = [
     url(r'create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create'),
@@ -9,7 +11,9 @@ urlpatterns = [
     # url(r'delete/(?P<pk>\d+)/$', DeleteGearView.as_view(), name='delete'),
     url(r'list/$', ListConnectionView.as_view(), name='list'),
     url(r'list/connector/$', ListConnectorView.as_view(), name='list_connector'),
-    url(r'test/$', TestConnectionView.as_view(), name='test_facebook'),
+    url(r"^google_auth/$", GoogleAuthView.as_view(), name="google_auth"),
+    url(r"^google_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(),
+        name="google_auth_success_create_connection"),
 
     # AJAX
     url(r'ajax/facebook/get/connections/', AJAXFacebookGetAvailableConnectionsView.as_view(),

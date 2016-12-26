@@ -16,5 +16,5 @@ class AJAXMySQLTestConnection(TemplateViewWithPost):
         user = self.request.POST.get('connection_user', 'usuario')
         password = self.request.POST.get('connection_password', 'clave')
         ping = self.mysqlc.create_connection(name=name, host=host, port=int(port), connection_user=user,
-                                        connection_password=password, database=database)
+                                             connection_password=password, database=database)
         return JsonResponse({'data': ping})

@@ -5,40 +5,57 @@
 
 {% block body %}
     <div>new plug specification</div>
-    <div>
-        <select id="specification_id">
-            {% for action_specification in action_specification_list %}
-                <option value="{{ action_specification.id }}">{{ action_specification.name }}</option>
+    {#    <div>#}
+    {#        <select id="specification_id">#}
+    {#            {% for action_specification in action_specification_list %}#}
+    {#                <option value="{{ action_specification.id }}">{{ action_specification.name }}</option>#}
+    {#            {% endfor %}#}
+    {#        </select>#}
+    {##}
+    {#        {% if available_options %}#}
+    {#            <select id="especification_field">#}
+    {#                {% for o in available_options %}#}
+    {#                    {% if o|is_list or o|is_tuple and o.0 and o.1 %}#}
+    {#                        <option value="{{ o.1 }}">{{ o.0 }}</option>#}
+    {#                    {% else %}#}
+    {#                        <option value="{{ o }}">{{ o }}</option>#}
+    {#                    {% endif %}#}
+    {#                {% endfor %}#}
+    {#            </select>#}
+    {#        {% else %}#}
+    {#            <input type="text" id="especification_field">#}
+    {#        {% endif %}#}
+    {#        <input type="hidden" id="plug_id" value="{{ plug_id }}">#}
+    {#        <button id="btnCreateSpecification">Create Specification</button>#}
+    {#        <form id="formCreatePlugSpecification" style="display: none;" class="create-plug-form form-horizontal" action=""#}
+    {#              method="post"#}
+    {#              autocomplete="off">#}
+    {#            {% csrf_token %}#}
+    {#            {{ form }}#}
+    {#            {% if form.error %}#}
+    {#                <div class="error">{{ form.error }}</div>#}
+    {#            {% endif %}#}
+    {#        </form>#}
+    {##}
+    {#        <a href="{% url 'wizard:set_gear_plugs' pk=request.session.gear_id|default:0 %}">Skip</a>#}
+    {#    </div>#}
+    <form id="formCreatePlugSpecification" class="create-plug-form form-horizontal" action="" method="post"
+          autocomplete="off">
+        {% csrf_token %}
+        {{ formset.management_form }}
+        {% for form in formset %}
+            <div>{{ form }}</div>
+        {% endfor %}
+        <input type="hidden" id="plug_id" value="{{ plug_id }}">
+        <select id="spreadsheet">
+            <option selected="true" disabled="disabled">--</option>
+            {% for s in sheets %}
+                <option value="{{ s.0 }}">{{ s.1 }}</option>
             {% endfor %}
         </select>
-
-        {% if available_options %}
-            <select id="especification_field">
-                {% for o in available_options %}
-                    {% if o|is_list or o|is_tuple and o.0 and o.1 %}
-                        <option value="{{ o.1 }}">{{ o.0 }}</option>
-                    {% else %}
-                        <option value="{{ o }}">{{ o }}</option>
-                    {% endif %}
-                {% endfor %}
-            </select>
-        {% else %}
-            <input type="text" id="especification_field">
-        {% endif %}
-        <input type="hidden" id="plug_id" value="{{ plug_id }}">
-        <button id="btnCreateSpecification">Create Specification</button>
-        <form id="formCreatePlugSpecification" style="display: none;" class="create-plug-form form-horizontal" action=""
-              method="post"
-              autocomplete="off">
-            {% csrf_token %}
-            {{ form }}
-            {% if form.error %}
-                <div class="error">{{ form.error }}</div>
-            {% endif %}
-        </form>
-
-        <a href="{% url 'wizard:set_gear_plugs' pk=request.session.gear_id|default:0 %}">Skip</a>
-    </div>
+        <div id="sheet-selector"></div>
+        <button type="submit">Submit</button>
+    </form>
 {% endblock %}
 
 {% block styles %}
@@ -51,6 +68,7 @@
     <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
     <script type="application/javascript">
         $(document).ready(function () {
+            var plug_id = $('input#plug_id').val();
             $('button#btnCreateSpecification').click(function () {
                 var plug_id = $('input#plug_id').val();
                 var specification_id = $('select#specification_id').val();
@@ -62,7 +80,48 @@
                 $('select#id_plug').change();
                 $('form#formCreatePlugSpecification').submit();
                 return false;
+            });
+
+            $('select#spreadsheet').on('change', function () {
+                getSpreadsheetInfo(plug_id, $(this).val());
+                $('#id_form-0-value').val($(this).val());
+            });
+
+            $('#sheet-selector').on('change', 'select#sheet', function () {
+                $('#id_form-1-value').val($(this).find('option:selected').text())
             })
-        })
+        });
+
+        function getSpreadsheetInfo(plug_id, spreadsheet_id) {
+            var url = '/wizard/async/spreadsheet/info/PLUG_ID/ID/'.replace('PLUG_ID', plug_id).replace('ID', spreadsheet_id);
+            var callback = function (response) {
+                if (response.Success == true) {
+                    $('#sheet-selector').html(response.sheets)
+                }
+            };
+            getData(url, callback);
+        }
+
+        function getSpreadsheetValues(plug_id, spreadsheet_id, worksheet_id) {
+            var url = '/wizard/async/spreadsheet/values/ID/SHEET/'.replace('ID', spreadsheet_id).replace('SHEET', worksheet_id);
+            var callback = function (response) {
+                if (response.Success == true) {
+                    $('#column-count').text(response.Data.ColumnCount);
+                    $('#row-count').text(response.Data.RowCount);
+                    $('#table').html(response.Data.Table)
+                }
+            };
+            getData(url, callback);
+        }
+
+        function getData(url, callback) {
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function (response) {
+                    callback(response);
+                }
+            });
+        }
     </script>
 {% endblock %}

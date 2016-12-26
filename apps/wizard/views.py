@@ -1,56 +1,118 @@
+import json
+import httplib2
+from django.views.generic import CreateView, UpdateView, ListView
+from django.views.generic.edit import FormMixin
+
 from django.http import JsonResponse
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
+from django.shortcuts import HttpResponse
+from django.template import loader
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
-from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController
+from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
+    GoogleSpreadSheetsController
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Connector, Connection, Action, Gear, Plug
+from apps.gp.models import Connector, Connection, Action, Gear, Plug, GoogleSpreadSheetsConnection
 from apps.plug.views import CreatePlugView, UpdatePlugAddActionView, CreatePlugSpecificationsView
-
-from django.shortcuts import render
+from oauth2client import client
+from apiclient import discovery
 
 fbc = FacebookController()
 mysqlc = MySQLController()
 scrmc = SugarCRMController()
 mcc = MailChimpController()
+gsc = GoogleSpreadSheetsController()
 
 
-class CreateGearView(LoginRequiredMixin, CreateGearView):
+class CreateGearView(LoginRequiredMixin, CreateView):
+    model = Gear
+    template_name = 'wizard/gear_create.html'
+    fields = ['name', ]
     login_url = '/account/login/'
-    template_name = 'gear/create.html'
 
     def get(self, request, *args, **kwargs):
-        self.request.session['source_plug_id'] = None
-        self.request.session['target_plug_id'] = None
-        self.request.session['auto_select_connection_id'] = None
-        self.request.session['gear_id'] = None
+        request.session['source_plug_id'] = None
+        request.session['target_plug_id'] = None
+        request.session['auto_select_connection_id'] = None
+        request.session['gear_id'] = None
         return super(CreateGearView, self).get(request, *args, **kwargs)
 
     def get_success_url(self):
-        self.request.session['gear_id'] = self.object.id
-        return reverse('wizard:set_gear_plugs', kwargs={'pk': self.object.id})
+        self.request.session['current_gear_id'] = self.object.id
+        self.request.session['current_plug'] = 'source'
+        return reverse('wizard:connector_list', kwargs={'type': 'source'})
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super(CreateGearView, self).form_valid(form)
+
+    def get_queryset(self):
+        return self.model.objects.filter(user=self.request.user).prefetch_related()
 
 
-class SetGearPlugsView(LoginRequiredMixin, UpdateGearView):
+class ListConnectorView(ListView):
+    model = Connector
+    template_name = 'wizard/connector_list.html'
+
+    def get_queryset(self):
+        if self.kwargs['type'] == 'source':
+            kw = {'is_source': True}
+        elif self.kwargs['type'] == 'target':
+            kw = {'is_target': True}
+        return self.model.objects.filter(**kw)
+
+    def get_context_data(self, **kwargs):
+        context = super(ListConnectorView, self).get_context_data(**kwargs)
+        context['type'] = self.kwargs['type']
+        return context
+
+
+class ListConnectionView(ListView):
+    model = Connection
+    template_name = 'wizard/connection_list.html'
+    form = None
+
+    def get_queryset(self):
+        return self.model.objects.filter(user=self.request.user,
+                                         connector_id=self.kwargs['connector_id']).prefetch_related()
+
+    def get_context_data(self, **kwargs):
+        context = super(ListConnectionView, self).get_context_data(**kwargs)
+        context['connector_id'] = self.kwargs['connector_id']
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object_list = []
+        context = self.get_context_data()
+        connection = request.POST.get('connection', None)
+        print(kwargs)
+        print(connection)
+        return super(ListConnectionView, self).render_to_response(context)
+
+
+class UpdateGearView(LoginRequiredMixin, UpdateView):
+    model = Gear
+    fields = ['name', 'source', 'target']
+    template_name = 'wizard/gear_update.html'
     login_url = '/account/login/'
-    template_name = 'gear/update.html'
 
     def get_success_url(self):
         self.request.session['gear_id'] = self.object.id
         if hasattr(self.object, 'source') and hasattr(self.object, 'target'):
             return reverse('wizard:create_gear_map', kwargs={'gear_id': self.object.id})
-        return reverse('wizard:set_gear_plugs', kwargs={'pk': self.object.id})
+        return reverse('wizard:gear_update', kwargs={'pk': self.object.id})
 
     def form_valid(self, form, *args, **kwargs):
         self.request.session['source_plug_id'] = None
         self.request.session['target_plug_id'] = None
-        return super(SetGearPlugsView, self).form_valid(form, *args, **kwargs)
+        return super(UpdateGearView, self).form_valid(form, *args, **kwargs)
 
 
 class CreatePlugView(LoginRequiredMixin, CreatePlugView):
     login_url = '/account/login/'
     template_name = 'plug/wizard/create.html'
+    model = Plug
     fields = ['name', 'connection', ]
 
     def form_valid(self, form, *args, **kwargs):
@@ -122,7 +184,6 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                                             database=plug.connection.related_connection.database,
                                             table=plug.connection.related_connection.table)
             options = mysqlc.get_primary_keys()
-            print(options)
             context['available_options'] = options
         elif c == ConnectorEnum.SugarCRM:
             ping = scrmc.create_connection(url=plug.connection.related_connection.url,
@@ -135,6 +196,18 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                                          api_key=plug.connection.related_connection.api_key)
             options = mcc.get_lists()
             context['available_options'] = [(o['name'], o['id']) for o in options]
+        elif c == ConnectorEnum.GoogleSpreadSheets:
+            http_auth = get_authorization(plug.pk)
+
+            drive_service = discovery.build('drive', 'v3', http_auth)
+            files = drive_service.files().list().execute()
+
+            sheet_list = []
+            for f in files['files']:
+                if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet':
+                    sheet_list.append((f['id'], f['name']))
+
+            context['sheets'] = sheet_list
         else:
             context['available_options'] = []
         return context
@@ -146,22 +219,25 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
             gear_id = None
         if gear_id is None:
             return reverse('wizard:create_gear')
+        self.object = self.object_list[0]
         c = ConnectorEnum.get_connector(self.object.plug.connection.connector.id)
         conn = self.object.plug.connection.related_connection
         if c == ConnectorEnum.Facebook:
             fbc.download_leads_to_stored_data(conn, self.object.plug)
         elif c == ConnectorEnum.MySQL:
-            print("mysql")
             ping = mysqlc.create_connection(conn, self.object.plug)
             if ping:
                 res = mysqlc.download_to_stored_data(conn, self.object.plug)
         elif c == ConnectorEnum.SugarCRM:
-            print("sugarcrm")
             if self.object.action_specification.action.is_source:
                 ping = scrmc.create_connection(url=self.object.plug.connection.related_connection.url,
                                                connection_user=self.object.plug.connection.related_connection.connection_user,
                                                connection_password=self.object.plug.connection.related_connection.connection_password)
                 data_list = scrmc.download_to_stored_data(conn, self.object.plug, self.object.value)
+        elif c == ConnectorEnum.GoogleSpreadSheets:
+            ping = gsc.create_connection(conn, self.object.plug)
+            if ping:
+                data_list = gsc.download_to_stored_data(conn, self.object.plug)
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 
@@ -201,3 +277,54 @@ class CreateGearMapView(LoginRequiredMixin, CreateGearMapView):
 
     def get_success_url(self, *args, **kwargs):
         return super(CreateGearMapView, self).get_success_url(*args, **kwargs)
+
+
+def get_authorization(plug_id):
+    plug = Plug.objects.get(pk=plug_id)
+    _json = json.dumps(plug.connection.related_connection.credentials_json)
+    credentials = client.OAuth2Credentials.from_json(_json)
+    return credentials.authorize(httplib2.Http())
+
+
+def async_spreadsheet_info(request, plug_id, spreadsheet_id):
+    http_auth = get_authorization(plug_id)
+
+    sheets_service = discovery.build('sheets', 'v4', http_auth)
+
+    result = sheets_service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+
+    sheets = tuple(i['properties'] for i in result['sheets'])  # % sheets[0]['gridProperties']['rowCount']
+
+    _sheets = [(i['index'], i['title']) for i in sheets]
+
+    request.session['google_sheets'] = _sheets
+
+    template = loader.get_template('home/_spreadsheet_sheets.html')
+    context = {'sheets': _sheets}
+
+    ctx = {'Success': True, 'sheets': template.render(context)}
+    return HttpResponse(json.dumps(ctx), content_type='application/json')
+
+
+def async_spreadsheet_values(request, plug_id, spreadsheet_id, worksheet_id):
+    http_auth = get_authorization(plug_id)
+
+    sheets_service = discovery.build('sheets', 'v4', http_auth)
+
+    sheets = request.session['google_sheets']
+
+    worksheet_name = next((s[1] for s in sheets if s[0] == int(worksheet_id)))
+
+    res = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id,
+                                                     range='{0}!A1:Z100'.format(worksheet_name)).execute()
+
+    values = res['values']
+    column_count = len(values[0])
+    row_count = len(values)
+
+    template = loader.get_template('home/_spreadsheet_table.html')
+    context = {'Values': values}
+
+    data = {'ColumnCount': column_count, 'RowCount': row_count, 'Table': template.render(context)}
+    ctx = {'Success': True, 'Data': data}
+    return HttpResponse(json.dumps(ctx), content_type='application/json')
