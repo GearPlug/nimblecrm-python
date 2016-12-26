@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'debug_toolbar',
     'facebook',
+    'extra_views',
     #
     'apps.wizard',
     'apps.home',

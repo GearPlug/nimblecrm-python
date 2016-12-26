@@ -1,3 +1,4 @@
+import httplib2
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.http.response import JsonResponse
@@ -5,10 +6,12 @@ from django.shortcuts import render
 
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
-from apps.gp.controllers import MySQLController, SugarCRMController, MailChimpController
+from apps.gp.controllers import MySQLController, SugarCRMController, MailChimpController, GoogleSpreadSheetsController
 from apps.gp.enum import ConnectorEnum, MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
+from oauth2client import client
+from apiclient import discovery
 
 import logging
 
@@ -27,6 +30,7 @@ class ListGearView(ListView):
     def get_queryset(self):
         queryset = self.model._default_manager.all()
         return queryset.filter(user=self.request.user)
+
 
 class CreateGearView(CreateView):
     model = Gear
@@ -65,6 +69,7 @@ class CreateGearMapView(FormView):
     source_object_list = []
     success_url = reverse_lazy('%s:list' % app_name)
     scrmc = SugarCRMController()
+    gsc = GoogleSpreadSheetsController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -136,8 +141,8 @@ class CreateGearMapView(FormView):
             return [item['name'] for item in form_data if item['is_primary'] is not True]
         elif c == ConnectorEnum.SugarCRM:
             ping = self.scrmc.create_connection(url=connection_data['url'],
-                                           connection_user=connection_data['connection_user'],
-                                           connection_password=connection_data['connection_password'])
+                                                connection_user=connection_data['connection_user'],
+                                                connection_password=connection_data['connection_password'])
             try:
                 fields = self.scrmc.get_module_fields(plug.plug_specification.all()[0].value, get_structure=True)
                 return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields]
@@ -156,6 +161,10 @@ class CreateGearMapView(FormView):
                 return mfl
             except:
                 return []
+        elif c == ConnectorEnum.GoogleSpreadSheets:
+            self.gsc.create_connection(related, plug)
+            values = self.gsc.get_worksheet_first_row()
+            return values
         else:
             return []
 
@@ -189,3 +198,8 @@ def gear_toggle(request, gear_id):
             return JsonResponse({'data': 'There\'s no active gear map.'})
         return JsonResponse({'data': g.is_active})
     return JsonResponse({'data': 'request needs to be ajax'})
+
+
+def get_authorization(request):
+    credentials = client.OAuth2Credentials.from_json(request.session['google_credentials'])
+    return credentials.authorize(httplib2.Http())

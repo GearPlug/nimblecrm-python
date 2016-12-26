@@ -1,0 +1,45 @@
+{% extends 'commons/site_base.html' %}
+{% load static %}
+{% load bootstrap_tags %}
+
+{% block body %}
+    <div class="box-tool animated fadeInDown">
+        <div class="box-title">
+            <h2>connection list</h2>
+        </div>
+        <form method="post" action="">
+        {% csrf_token %}
+            <ul class="list-connector">
+                {% for connection in object_list %}
+                    <li style="display: block;">
+                        <label>
+                            <input type="radio" name="connection" value="{{ connection.id }}"> {{ connection.name }}
+                        </label>
+                        <button>TEST</button>
+                        <br>
+                    </li>
+                {% endfor %}
+            </ul>
+            <button>Use this connection</button>
+        </form>
+        <div>
+            <a href="javascript:popUp('{% url 'connection:create' connector_id=connector_id %}')">New Connection</a>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        function popUp(url) {
+            var thisIsAnObject = {foo: 'bar'};
+            var win = window.open(url, 'Name', 'width=972,height=660,modal=yes,alwaysRaised=yes');
+            win.myVariable = thisIsAnObject;
+            var checkConnect = setInterval(function () {
+                if (!win || !win.closed) return;
+                clearInterval(checkConnect);
+                window.location.reload();
+            }, 100);
+        }
+    </script>
+{% endblock %}
