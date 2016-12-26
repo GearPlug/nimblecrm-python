@@ -1,3 +1,4 @@
+import copy
 import random
 import sugarcrm
 from mailchimp3 import MailChimp
@@ -9,12 +10,12 @@ from oauth2client import tools
 from oauth2client import client
 import requests
 import MySQLdb
-
+import psycopg2
 
 
 def try_mysql():
     host = '192.168.0.186'
-    port  = 3306
+    port = 3306
     user = 'faker'
     password = '123456'
     db = 'fakedata'
@@ -152,5 +153,43 @@ def try_google():
 # d['a'] = 5
 # print(d)
 # print(e)
-try_google()
+# try_google()
 # try_mysql()
+
+def try_postgres():
+    host = 'localhost'
+    port = 5432
+    user = 'ingmferrer'
+    password = '1234'
+    db = 'test'
+    table = 'test'
+    conn = psycopg2.connect(host=host, port=int(port), user=user, password=password, database=db)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        'SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.columns WHERE table_name = %s', (table,))
+    res1 = [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
+            item in cursor]
+
+    print(res1)
+
+    cursor.execute(
+        'SELECT c.column_name FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name where tc.table_name = %s',
+        (table,))
+    res2 = [item[0] for item in cursor]
+
+    print(res2)
+
+    cursor.execute('SELECT * FROM %s' % table)
+    res3 = [item for item in cursor]
+
+    print(res3)
+
+    # c = [{column[0]: item[i] for i, column in enumerate(res1)} for item in res2]
+    #
+    # print(c)
+
+    print([{column['name']: item[i] for i, column in enumerate(res1)} for item in res3])
+
+
+try_postgres()
