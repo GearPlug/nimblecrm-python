@@ -8,7 +8,7 @@
             <h2>connection list</h2>
         </div>
         <form method="post" action="">
-        {% csrf_token %}
+            {% csrf_token %}
             <ul class="list-connector">
                 {% for connection in object_list %}
                     <li style="display: block;">

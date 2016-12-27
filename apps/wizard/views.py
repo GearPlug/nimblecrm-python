@@ -1,11 +1,9 @@
 import json
 import httplib2
 from django.views.generic import CreateView, UpdateView, ListView
-from django.views.generic.edit import FormMixin
-
 from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
-from django.shortcuts import HttpResponse
+from django.shortcuts import HttpResponse, redirect
 from django.template import loader
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
@@ -51,9 +49,10 @@ class CreateGearView(LoginRequiredMixin, CreateView):
         return self.model.objects.filter(user=self.request.user).prefetch_related()
 
 
-class ListConnectorView(ListView):
+class ListConnectorView(LoginRequiredMixin, ListView):
     model = Connector
     template_name = 'wizard/connector_list.html'
+    login_url = '/account/login/'
 
     def get_queryset(self):
         if self.kwargs['type'] == 'source':
@@ -68,10 +67,10 @@ class ListConnectorView(ListView):
         return context
 
 
-class ListConnectionView(ListView):
+class ListConnectionView(LoginRequiredMixin, ListView):
     model = Connection
     template_name = 'wizard/connection_list.html'
-    form = None
+    login_url = '/account/login/'
 
     def get_queryset(self):
         return self.model.objects.filter(user=self.request.user,
@@ -84,11 +83,12 @@ class ListConnectionView(ListView):
 
     def post(self, request, *args, **kwargs):
         self.object_list = []
-        context = self.get_context_data()
-        connection = request.POST.get('connection', None)
-        print(kwargs)
-        print(connection)
-        return super(ListConnectionView, self).render_to_response(context)
+        # context = self.get_context_data()
+        connection_id = request.POST.get('connection', None)
+        connector_type = kwargs['type']
+        request.session['%s_connection_id' % connector_type] = connection_id
+        # return super(ListConnectionView, self).render_to_response(context)
+        return redirect(reverse('wizard:create_plug', kwargs={'plug_type': connector_type}))
 
 
 class UpdateGearView(LoginRequiredMixin, UpdateView):
@@ -109,35 +109,47 @@ class UpdateGearView(LoginRequiredMixin, UpdateView):
         return super(UpdateGearView, self).form_valid(form, *args, **kwargs)
 
 
-class CreatePlugView(LoginRequiredMixin, CreatePlugView):
-    login_url = '/account/login/'
-    template_name = 'plug/wizard/create.html'
+class CreatePlugView(CreateView):
     model = Plug
-    fields = ['name', 'connection', ]
+    fields = ['name']
+    template_name = 'wizard/gear_update.html'
+    success_url = reverse_lazy('%s:list' % app_name)
+    login_url = '/account/login/'
 
     def form_valid(self, form, *args, **kwargs):
         form.instance.user = self.request.user
-        form.instance.plug_type = self.kwargs['plug_type']
         return super(CreatePlugView, self).form_valid(form)
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(CreatePlugView, self).get_context_data(*args, **kwargs)
-        querykw = {}
-        if self.kwargs['plug_type'] == 'target':
-            querykw['is_target'] = True
-        elif self.kwargs['plug_type'] == 'source':
-            querykw['is_source'] = True
-        context['connector_list'] = Connector.objects.filter(**querykw).values('id', 'name')
-        return context
 
-    def get_success_url(self, *args, **kwargs):
-        if self.request.session['gear_id'] is not None:
-            gear = Gear.objects.get(pk=self.request.session['gear_id'])
-            setattr(gear, self.kwargs['plug_type'], self.object)
-            gear.save()
-        self.request.session[
-            'source_plug_id' if self.kwargs['plug_type'] == 'source' else 'target_plug_id'] = self.object.id
-        return reverse('wizard:plug_set_action', kwargs={'pk': self.object.id, 'plug_type': self.kwargs['plug_type']})
+# class CreatePlugView(LoginRequiredMixin, CreatePlugView):
+#     login_url = '/account/login/'
+#     template_name = 'plug/wizard/create.html'
+#     model = Plug
+#     fields = ['name', 'connection', ]
+#
+#     def form_valid(self, form, *args, **kwargs):
+#         form.instance.user = self.request.user
+#         form.instance.plug_type = self.kwargs['plug_type']
+#         return super(CreatePlugView, self).form_valid(form)
+#
+#     def get_context_data(self, *args, **kwargs):
+#         context = super(CreatePlugView, self).get_context_data(*args, **kwargs)
+#         querykw = {}
+#         if self.kwargs['plug_type'] == 'target':
+#             querykw['is_target'] = True
+#         elif self.kwargs['plug_type'] == 'source':
+#             querykw['is_source'] = True
+#         context['connector_list'] = Connector.objects.filter(**querykw).values('id', 'name')
+#         return context
+#
+#     def get_success_url(self, *args, **kwargs):
+#         if self.request.session['gear_id'] is not None:
+#             gear = Gear.objects.get(pk=self.request.session['gear_id'])
+#             setattr(gear, self.kwargs['plug_type'], self.object)
+#             gear.save()
+#         self.request.session[
+#             'source_plug_id' if self.kwargs['plug_type'] == 'source' else 'target_plug_id'] = self.object.id
+#         return reverse('wizard:plug_set_action', kwargs={'pk': self.object.id, 'plug_type': self.kwargs['plug_type']})
 
 
 class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
