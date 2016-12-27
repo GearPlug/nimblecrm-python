@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from apps.wizard.views import CreateGearView, UpdateGearView, CreatePlugView, CreateConnectionView, \
     UpdatePlugSetActionView, CreateGearMapView, CreatePlugSpecificationView, async_spreadsheet_info, \
-    async_spreadsheet_values, ListConnectorView, ListConnectionView
+    async_spreadsheet_values, ListConnectorView, ListConnectionView, ActionListView, ActionSpecificationsView
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='create_gear'),
@@ -27,4 +27,6 @@ urlpatterns = [
         name='connection_list'),
     # url(r'^plug/create/(?P<type>(source|target)+)/$', '', name='plug_create'),
 
+    url(r'^action/list/$', ActionListView.as_view(), name='action_list'),
+    url(r'^action/(?P<pk>\d+)/specifications/$', ActionSpecificationsView.as_view(), name='action_specifications'),
 ]

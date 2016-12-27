@@ -1,6 +1,6 @@
 import json
 import httplib2
-from django.views.generic import CreateView, UpdateView, ListView
+from django.views.generic import CreateView, UpdateView, ListView, DetailView
 from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.shortcuts import HttpResponse, redirect
@@ -113,7 +113,7 @@ class CreatePlugView(CreateView):
     model = Plug
     fields = ['name']
     template_name = 'wizard/gear_update.html'
-    success_url = reverse_lazy('%s:list' % app_name)
+    success_url = reverse_lazy('%s:list' % 'wizard')
     login_url = '/account/login/'
 
     def form_valid(self, form, *args, **kwargs):
@@ -340,3 +340,17 @@ def async_spreadsheet_values(request, plug_id, spreadsheet_id, worksheet_id):
     data = {'ColumnCount': column_count, 'RowCount': row_count, 'Table': template.render(context)}
     ctx = {'Success': True, 'Data': data}
     return HttpResponse(json.dumps(ctx), content_type='application/json')
+
+
+class ActionListView(ListView):
+    model = Action
+    template_name = 'wizard/action_list.html'
+
+
+class ActionSpecificationsView(DetailView):
+    model = Action
+    template_name = 'wizard/action_specifications.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ActionSpecificationsView, self).get_context_data(**kwargs)
+        return context
