@@ -12,7 +12,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController
+    GoogleSpreadSheetsController, PostgreSQLController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, GoogleSpreadSheetsConnection
 from apps.plug.views import CreatePlugView, UpdatePlugAddActionView, CreatePlugSpecificationsView
@@ -24,6 +24,7 @@ mysqlc = MySQLController()
 scrmc = SugarCRMController()
 mcc = MailChimpController()
 gsc = GoogleSpreadSheetsController()
+postgresqlc = PostgreSQLController()
 
 
 class CreateGearView(LoginRequiredMixin, CreateView):
@@ -186,6 +187,15 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                                             table=plug.connection.related_connection.table)
             options = mysqlc.get_primary_keys()
             context['available_options'] = options
+        elif c == ConnectorEnum.PostgreSQL:
+            ping = postgresqlc.create_connection(host=plug.connection.related_connection.host,
+                                                 port=plug.connection.related_connection.port,
+                                                 connection_user=plug.connection.related_connection.connection_user,
+                                                 connection_password=plug.connection.related_connection.connection_password,
+                                                 database=plug.connection.related_connection.database,
+                                                 table=plug.connection.related_connection.table)
+            options = postgresqlc.get_primary_keys()
+            context['available_options'] = options
         elif c == ConnectorEnum.SugarCRM:
             ping = scrmc.create_connection(url=plug.connection.related_connection.url,
                                            connection_user=plug.connection.related_connection.connection_user,
@@ -215,6 +225,7 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
 
     def get_success_url(self):
         try:
+            self.request.session['gear_id'] = 16
             gear_id = self.request.session['gear_id']
         except:
             gear_id = None
@@ -229,6 +240,10 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
             ping = mysqlc.create_connection(conn, self.object.plug)
             if ping:
                 res = mysqlc.download_to_stored_data(conn, self.object.plug)
+        elif c == ConnectorEnum.PostgreSQL:
+            ping = postgresqlc.create_connection(conn, self.object.plug)
+            if ping:
+                res = postgresqlc.download_to_stored_data(conn, self.object.plug)
         elif c == ConnectorEnum.SugarCRM:
             if self.object.action_specification.action.is_source:
                 ping = scrmc.create_connection(url=self.object.plug.connection.related_connection.url,

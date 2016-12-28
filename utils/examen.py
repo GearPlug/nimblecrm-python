@@ -187,7 +187,7 @@ def try_postgres():
 
     select_all_dict = [{column['name']: item[i] for i, column in enumerate(describe)} for item in select_all]
 
-    # print([item for item in select_all_dict])
+    print(select_all_dict)
 
     parsed_data = [{'id': tuple(item[key] for key in primary_key),
                     'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in primary_key]}
