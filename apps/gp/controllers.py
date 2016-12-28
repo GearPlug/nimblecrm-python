@@ -494,7 +494,7 @@ class MySQLController(BaseController):
                                                connection=connection_object.connection, plug=plug))
         if new_data:
             field_count = len(parsed_data[0]['data'])
-            extra = {'controller': 'mysql'}
+            extra = {'controller': 'postgresql'}
             for i, item in enumerate(new_data):
                 try:
                     item.save()
@@ -524,7 +524,7 @@ class MySQLController(BaseController):
                     data_list = []
         if self._plug is not None:
             obj_list = []
-            extra = {'controller': 'mysql'}
+            extra = {'controller': 'postgresql'}
             for item in data_list:
                 try:
                     insert = self._get_insert_statement(item)
