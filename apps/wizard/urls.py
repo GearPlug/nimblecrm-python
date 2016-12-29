@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from apps.wizard.views import CreateGearView, UpdateGearView, CreatePlugView, CreateConnectionView, \
+from apps.wizard.views import CreateGearView, UpdateGearView, CreatePlugView, CreateConnectionView, TestPlugView, \
     UpdatePlugSetActionView, CreateGearMapView, CreatePlugSpecificationView, async_spreadsheet_info, \
     async_spreadsheet_values, ListConnectorView, ListConnectionView, ActionListView, ActionSpecificationsView
 
@@ -26,7 +26,9 @@ urlpatterns = [
     url(r'^connection/list/(?P<connector_id>\d+)/(?P<type>(source|target)+)/$', ListConnectionView.as_view(),
         name='connection_list'),
     # url(r'^plug/create/(?P<type>(source|target)+)/$', '', name='plug_create'),
+    url('^plug/test/(?P<type>(source|target)+)/$', TestPlugView.as_view(), name='plug_test'),
 
-    url(r'^action/list/$', ActionListView.as_view(), name='action_list'),
-    url(r'^action/(?P<pk>\d+)/specifications/$', ActionSpecificationsView.as_view(), name='action_specifications'),
+
+    url(r'^plug/action/list/$', ActionListView.as_view(), name='action_list'),
+    url(r'^/plug/action/(?P<pk>\d+)/specifications/$', ActionSpecificationsView.as_view(), name='action_specifications'),
 ]

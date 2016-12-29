@@ -1,9 +1,9 @@
 import json
 import httplib2
-from django.views.generic import CreateView, UpdateView, ListView, DetailView
+from django.views.generic import CreateView, UpdateView, ListView, DetailView, TemplateView
 from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
-from django.shortcuts import HttpResponse, redirect
+from django.shortcuts import HttpResponse, redirect, HttpResponseRedirect
 from django.template import loader
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
@@ -11,7 +11,7 @@ from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
     GoogleSpreadSheetsController
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Connector, Connection, Action, Gear, Plug, GoogleSpreadSheetsConnection
+from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification
 from apps.plug.views import CreatePlugView, UpdatePlugAddActionView, CreatePlugSpecificationsView
 from oauth2client import client
 from apiclient import discovery
@@ -87,7 +87,6 @@ class ListConnectionView(LoginRequiredMixin, ListView):
         connection_id = request.POST.get('connection', None)
         connector_type = kwargs['type']
         request.session['%s_connection_id' % connector_type] = connection_id
-        # return super(ListConnectionView, self).render_to_response(context)
         return redirect(reverse('wizard:create_plug', kwargs={'plug_type': connector_type}))
 
 
@@ -109,47 +108,64 @@ class UpdateGearView(LoginRequiredMixin, UpdateView):
         return super(UpdateGearView, self).form_valid(form, *args, **kwargs)
 
 
-class CreatePlugView(CreateView):
+class CreatePlugView(LoginRequiredMixin, CreateView):
     model = Plug
-    fields = ['name']
-    template_name = 'wizard/gear_update.html'
-    success_url = reverse_lazy('%s:list' % 'wizard')
+    fields = ['connection', ]
+    template_name = 'wizard/plug_create.html'
+    success_url = reverse_lazy('wizard:plug_test', kwargs={'type': 'source'})
     login_url = '/account/login/'
+
+    def get_context_data(self, **kwargs):
+        context = super(CreatePlugView, self).get_context_data(**kwargs)
+        context['plug_type'] = self.kwargs['plug_type']
+        return context
 
     def form_valid(self, form, *args, **kwargs):
         form.instance.user = self.request.user
-        return super(CreatePlugView, self).form_valid(form)
+        self.object = form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse_lazy('wizard:plug_test', kwargs={'type': self.kwargs['plug_type']})
 
 
-# class CreatePlugView(LoginRequiredMixin, CreatePlugView):
-#     login_url = '/account/login/'
-#     template_name = 'plug/wizard/create.html'
-#     model = Plug
-#     fields = ['name', 'connection', ]
-#
-#     def form_valid(self, form, *args, **kwargs):
-#         form.instance.user = self.request.user
-#         form.instance.plug_type = self.kwargs['plug_type']
-#         return super(CreatePlugView, self).form_valid(form)
-#
-#     def get_context_data(self, *args, **kwargs):
-#         context = super(CreatePlugView, self).get_context_data(*args, **kwargs)
-#         querykw = {}
-#         if self.kwargs['plug_type'] == 'target':
-#             querykw['is_target'] = True
-#         elif self.kwargs['plug_type'] == 'source':
-#             querykw['is_source'] = True
-#         context['connector_list'] = Connector.objects.filter(**querykw).values('id', 'name')
-#         return context
-#
-#     def get_success_url(self, *args, **kwargs):
-#         if self.request.session['gear_id'] is not None:
-#             gear = Gear.objects.get(pk=self.request.session['gear_id'])
-#             setattr(gear, self.kwargs['plug_type'], self.object)
-#             gear.save()
-#         self.request.session[
-#             'source_plug_id' if self.kwargs['plug_type'] == 'source' else 'target_plug_id'] = self.object.id
-#         return reverse('wizard:plug_set_action', kwargs={'pk': self.object.id, 'plug_type': self.kwargs['plug_type']})
+class ActionListView(ListView):
+    model = Action
+    template_name = 'wizard/action_list.html'
+
+    def post(self, request, *args, **kwargs):
+        if not request.is_ajax():
+            return super(ActionListView, self).get(request, *args, **kwargs)
+        plug_type = request.POST.get('type', None)
+        kw = {'action_type': plug_type}
+        if plug_type == 'source':
+            if 'source_connection_id' in request.session:
+                kw['connector_id'] = Connection.objects.get(pk=request.session['source_connection_id']).connector_id
+        if plug_type == 'target':
+            if 'target_connection_id' in request.session:
+                kw['connector_id'] = Connection.objects.get(pk=request.session['target_connection_id']).connector_id
+        self.object_list = self.model.objects.filter(**kw)
+        a = [{'name': a.name, 'id': a.id} for a in self.object_list]
+        return JsonResponse(a, safe=False)
+
+
+class ActionSpecificationsView(ListView):
+    model = ActionSpecification
+    template_name = 'wizard/action_specifications.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ActionSpecificationsView, self).get_context_data(**kwargs)
+        return context
+
+    def post(self, request, *args, **kwargs):
+        if not request.is_ajax():
+            return super(ActionSpecificationsView, self).get(request, *args, **kwargs)
+        kw = {'action_id': self.kwargs['pk']}
+        print(kw)
+        self.object_list = self.model.objects.filter(**kw)
+        print(self.object_list)
+        a = [{'name': a.name, 'id': a.id} for a in self.object_list]
+        return JsonResponse(a, safe=False)
 
 
 class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
@@ -342,15 +358,5 @@ def async_spreadsheet_values(request, plug_id, spreadsheet_id, worksheet_id):
     return HttpResponse(json.dumps(ctx), content_type='application/json')
 
 
-class ActionListView(ListView):
-    model = Action
-    template_name = 'wizard/action_list.html'
-
-
-class ActionSpecificationsView(DetailView):
-    model = Action
-    template_name = 'wizard/action_specifications.html'
-
-    def get_context_data(self, **kwargs):
-        context = super(ActionSpecificationsView, self).get_context_data(**kwargs)
-        return context
+class TestPlugView(TemplateView):
+    template_name = ''
