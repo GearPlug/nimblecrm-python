@@ -3,7 +3,7 @@ from django.views.generic import TemplateView
 from apps.connection.views import CreateConnectionView, ListConnectionView, ListConnectorView, \
     AJAXFacebookGetAvailableConnectionsView, AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
     AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
-    GoogleAuthView, AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection
+    GoogleAuthView, AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, AJAXPostgreSQLTestConnection
 
 urlpatterns = [
     url(r'create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create'),
@@ -28,4 +28,6 @@ urlpatterns = [
         name='ajax_sugarcrm_test_connection'),
     url(r'ajax/mailchimp/test_connection/', AJAXMailChimpTestConnection.as_view(),
         name='ajax_mailchimp_test_connection'),
+    url(r'ajax/postgresql/test_connection/', AJAXPostgreSQLTestConnection.as_view(),
+        name='ajax_update_postgresql_test_connection'),
 ]

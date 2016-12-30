@@ -1,3 +1,4 @@
+import copy
 import random
 import sugarcrm
 from mailchimp3 import MailChimp
@@ -9,12 +10,12 @@ from oauth2client import tools
 from oauth2client import client
 import requests
 import MySQLdb
-
+import psycopg2
 
 
 def try_mysql():
     host = '192.168.0.186'
-    port  = 3306
+    port = 3306
     user = 'faker'
     password = '123456'
     db = 'fakedata'
@@ -152,5 +153,47 @@ def try_google():
 # d['a'] = 5
 # print(d)
 # print(e)
-try_google()
+# try_google()
 # try_mysql()
+
+def try_postgres():
+    host = 'localhost'
+    port = 5432
+    user = 'ingmferrer'
+    password = '1234'
+    db = 'test'
+    table = 'test'
+    conn = psycopg2.connect(host=host, port=int(port), user=user, password=password, database=db)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        'SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.columns WHERE table_name = %s', (table,))
+    describe = [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
+            item in cursor]
+
+    print(describe)
+
+    cursor.execute(
+        'SELECT c.column_name FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name where tc.table_name = %s',
+        (table,))
+    primary_key = [item[0] for item in cursor]
+
+    print(primary_key)
+
+    cursor.execute('SELECT * FROM %s' % table)
+    select_all = [item for item in cursor]
+
+    print(select_all)
+
+    select_all_dict = [{column['name']: item[i] for i, column in enumerate(describe)} for item in select_all]
+
+    print(select_all_dict)
+
+    parsed_data = [{'id': tuple(item[key] for key in primary_key),
+                    'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in primary_key]}
+                   for item in select_all_dict]
+
+    print(parsed_data)
+
+
+try_postgres()

@@ -1,6 +1,7 @@
 import json
 import httplib2
-from django.views.generic import CreateView, UpdateView, ListView
+
+from django.views.generic import CreateView, UpdateView, ListView, DetailView
 from django.views.generic.edit import FormMixin
 
 from django.http import JsonResponse
@@ -11,7 +12,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController
+    GoogleSpreadSheetsController, PostgreSQLController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, GoogleSpreadSheetsConnection
 from apps.plug.views import CreatePlugView, UpdatePlugAddActionView, CreatePlugSpecificationsView
@@ -23,6 +24,7 @@ mysqlc = MySQLController()
 scrmc = SugarCRMController()
 mcc = MailChimpController()
 gsc = GoogleSpreadSheetsController()
+postgresqlc = PostgreSQLController()
 
 
 class CreateGearView(LoginRequiredMixin, CreateView):
@@ -165,7 +167,7 @@ class UpdatePlugSetActionView(LoginRequiredMixin, UpdatePlugAddActionView):
                 fbc.download_to_stored_data(conn, self.object)
         if len(self.object.action.action_specification.all()) > 0:
             return reverse('wizard:plug_set_specifications',
-                           kwargs={'plug_id': self.object.id,})
+                           kwargs={'plug_id': self.object.id, })
         return reverse('wizard:set_gear_plugs', kwargs={'pk': gear_id})
 
 
@@ -184,6 +186,15 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
                                             database=plug.connection.related_connection.database,
                                             table=plug.connection.related_connection.table)
             options = mysqlc.get_primary_keys()
+            context['available_options'] = options
+        elif c == ConnectorEnum.PostgreSQL:
+            ping = postgresqlc.create_connection(host=plug.connection.related_connection.host,
+                                                 port=plug.connection.related_connection.port,
+                                                 connection_user=plug.connection.related_connection.connection_user,
+                                                 connection_password=plug.connection.related_connection.connection_password,
+                                                 database=plug.connection.related_connection.database,
+                                                 table=plug.connection.related_connection.table)
+            options = postgresqlc.get_primary_keys()
             context['available_options'] = options
         elif c == ConnectorEnum.SugarCRM:
             ping = scrmc.create_connection(url=plug.connection.related_connection.url,
@@ -214,6 +225,7 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
 
     def get_success_url(self):
         try:
+            self.request.session['gear_id'] = 16
             gear_id = self.request.session['gear_id']
         except:
             gear_id = None
@@ -228,6 +240,10 @@ class CreatePlugSpecificationView(LoginRequiredMixin, CreatePlugSpecificationsVi
             ping = mysqlc.create_connection(conn, self.object.plug)
             if ping:
                 res = mysqlc.download_to_stored_data(conn, self.object.plug)
+        elif c == ConnectorEnum.PostgreSQL:
+            ping = postgresqlc.create_connection(conn, self.object.plug)
+            if ping:
+                res = postgresqlc.download_to_stored_data(conn, self.object.plug)
         elif c == ConnectorEnum.SugarCRM:
             if self.object.action_specification.action.is_source:
                 ping = scrmc.create_connection(url=self.object.plug.connection.related_connection.url,
@@ -328,3 +344,17 @@ def async_spreadsheet_values(request, plug_id, spreadsheet_id, worksheet_id):
     data = {'ColumnCount': column_count, 'RowCount': row_count, 'Table': template.render(context)}
     ctx = {'Success': True, 'Data': data}
     return HttpResponse(json.dumps(ctx), content_type='application/json')
+
+
+class ActionListView(ListView):
+    model = Action
+    template_name = 'wizard/action_list.html'
+
+
+class ActionSpecificationsView(DetailView):
+    model = Action
+    template_name = 'wizard/action_specifications.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ActionSpecificationsView, self).get_context_data(**kwargs)
+        return context

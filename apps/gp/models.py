@@ -4,7 +4,7 @@ from apps.gp.model_fields import JSONField
 from apps.user.models import User
 
 connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
-               'connection_googlespreadsheets']
+               'connection_googlespreadsheets', 'connection_postgresql']
 
 
 class Connector(models.Model):
@@ -38,7 +38,7 @@ class Action(models.Model):
         return self.action_type == 'target'
 
     def __str__(self):
-        return self.name
+        return self.name + ' on ' + self.connector.name
 
 
 class ActionSpecification(models.Model):
@@ -46,7 +46,7 @@ class ActionSpecification(models.Model):
     name = models.CharField('name', max_length=30)
 
     def __str__(self):
-        return self.action.name + ': ' + self.name
+        return self.action.name + ': ' + self.name +  ' on ' + self.action.connector.name
 
 
 class Connection(models.Model):
@@ -97,6 +97,20 @@ class FacebookConnection(models.Model):
 
 class MySQLConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mysql')
+    name = models.CharField('name', max_length=200)
+    host = models.CharField('host', max_length=200)
+    database = models.CharField('database', max_length=200)
+    table = models.CharField('table', max_length=200)
+    port = models.CharField('port', max_length=7)
+    connection_user = models.CharField('user', max_length=60)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
+
+
+class PostgreSQLConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_postgresql')
     name = models.CharField('name', max_length=200)
     host = models.CharField('host', max_length=200)
     database = models.CharField('database', max_length=200)
