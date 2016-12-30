@@ -3,8 +3,8 @@ import httplib2
 from django.views.generic import CreateView, UpdateView, ListView, DetailView, TemplateView
 from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
-from django.shortcuts import HttpResponse, redirect, HttpResponseRedirect
-from django.template import loader
+from django.shortcuts import HttpResponse, redirect, HttpResponseRedirect, render
+from django.template import loader, Template, Context
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
