@@ -7,9 +7,10 @@
         <div class="box-title">
             <h2>new plug</h2>
         </div>
-        <div class="panel">
-            <div class="container">
-                <form class="create-gear-form form-horizontal" action="" method="post" autocomplete="off">
+
+        <form class="create-gear-form form-horizontal" action="" method="post" autocomplete="off" id="create-plug">
+            <div class="panel">
+                <div class="container">
                     {% csrf_token %}
                     {{ form|as_bootstrap }}
                     <button id="singlebutton" name="singlebutton">Create gear</button>
@@ -17,12 +18,12 @@
                         <div class="error">{{ form.error }}</div>
                     {% endif %}
                     Connection id: {{ request.session.source_connection_id }}
-                </form>
+                </div>
             </div>
-        </div>
-        <div id="action_list">Action:</div>
-    <br>
-        <div id="specification_list"></div>
+            <div id="action_list">Action:</div>
+            <br>
+            <div id="specification_list"></div>
+        </form>
     </div>
 {% endblock %}
 
@@ -36,32 +37,22 @@
                         var actions = response;
                         var selectList = document.createElement("select");
                         selectList.id = "action_list_selector";
+                        selectList.name = "action-id";
                         $('#action_list').append(selectList);
                         var options_str = '<option value="">--------------</option>';
                         actions.forEach(function (a) {
                             options_str += '<option value="' + a.id + '">' + a.name + '</option>';
                         })
-                        console.log(options_str);
                         $('#action_list_selector').html(options_str);
                     });
 
             $(document).on('change', '#action_list_selector', function () {
                 var value = $(this).val();
                 var url_specifications = "{% url 'wizard:action_specifications' pk=123 %}".replace(/123/, value.toString());
-                console.log(value)
-                console.log(url_specifications)
                 if (value != '') {
                     $.ajax({method: "POST", url: url_specifications, data: {pk: value}})
                             .done(function (response) {
-                                response.forEach(function (o) {
-                                    console.log(o)
-                                    var new_element = document.createElement("div");
-                                    new_element.id = "specification_" + o.id;
-                                    var specification = o.name + ': <input name="' + o.name + '"type="text">';
-                                    $(new_element).html(specification)
-                                    $('#specification_list').append(new_element);
-                                })
-
+                                $('#specification_list').html(response);
                             })
                 }
             })

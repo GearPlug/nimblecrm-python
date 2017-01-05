@@ -134,7 +134,6 @@ class GoogleSpreadSheetsController(BaseController):
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
         data_list = get_dict_with_source_data(source_data, target_fields)
-        print(data_list)
         if is_first:
             if data_list:
                 try:
@@ -162,25 +161,22 @@ class GoogleSpreadSheetsController(BaseController):
             div = int((div - module) / 26)
         return string
 
-    def get_sheets(self):
+    def get_sheet_list(self):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
         drive_service = discovery.build('drive', 'v3', http=http_auth)
         files = drive_service.files().list().execute()
-        sheet_list = []
-        for f in files['files']:
-            if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet':
-                sheet_list.append((f['id'], f['name']))
-
+        sheet_list = tuple(
+            f for f in files['files'] if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet')
         return sheet_list
 
-    def get_sheet_info(self, sheet_id):
+    def get_worksheet_list(self, sheet_id):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
         result = sheets_service.spreadsheets().get(spreadsheetId=sheet_id).execute()
-        sheets = tuple(i['properties'] for i in result['sheets'])  # % sheets[0]['gridProperties']['rowCount']
-        return sheets
+        worksheet_list = tuple(i['properties'] for i in result['sheets'])
+        return worksheet_list
 
     def get_worksheet_values(self, from_row=None, limit=None):
         credential = self._credential
@@ -582,7 +578,8 @@ class PostgreSQLController(BaseController):
                 # raise
                 print("Error getting the PostgreSQL attributes")
         try:
-            self._connection = psycopg2.connect(host=host, port=int(port), user=user, password=password, database=self._database)
+            self._connection = psycopg2.connect(host=host, port=int(port), user=user, password=password,
+                                                database=self._database)
             self._cursor = self._connection.cursor()
         except:
             self._connection = None
@@ -591,7 +588,9 @@ class PostgreSQLController(BaseController):
     def describe_table(self):
         if self._table is not None and self._database is not None:
             try:
-                self._cursor.execute('SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.columns WHERE table_name = %s', (self._table,))
+                self._cursor.execute(
+                    'SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.columns WHERE table_name = %s',
+                    (self._table,))
                 return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
                         item in self._cursor]
             except:
@@ -601,7 +600,9 @@ class PostgreSQLController(BaseController):
     def get_primary_keys(self):
         if self._table is not None and self._database is not None:
             try:
-                self._cursor.execute('SELECT c.column_name FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name where tc.table_name = %s', (self._table,))
+                self._cursor.execute(
+                    'SELECT c.column_name FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name where tc.table_name = %s',
+                    (self._table,))
                 return [item[0] for item in self._cursor]
             except:
                 print('Error ')
@@ -623,7 +624,8 @@ class PostgreSQLController(BaseController):
                 cursor_select_all = copy.copy(self._cursor)
                 self.describe_table()
                 cursor_describe = self._cursor
-                return [{column['name']: item[i] for i, column in enumerate(cursor_describe)} for item in cursor_select_all]
+                return [{column['name']: item[i] for i, column in enumerate(cursor_describe)} for item in
+                        cursor_select_all]
             except Exception as e:
                 print(e)
         return []
