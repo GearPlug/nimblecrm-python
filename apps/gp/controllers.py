@@ -300,9 +300,32 @@ class FacebookController(BaseController):
     _app_id = FACEBOOK_APP_ID
     _app_secret = FACEBOOK_APP_SECRET
     _base_graph_url = 'https://graph.facebook.com'
+    _token = None
 
     def __init__(self, *args):
         super(FacebookController, self).__init__(*args)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(FacebookController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._token = self._connection_object.token
+                except Exception as e:
+                    print("Error getting the Facebook token")
+                    # raise
+        elif kwargs:
+            try:
+                self._token = kwargs.pop('token')
+            except Exception as e:
+                print("Error getting the Facebook token")
+        try:
+            object_list = self._send_request('%s/leads' % self._connection_object.id_form, self._token)
+            if object_list:
+                return True
+        except Exception as e:
+            return False
+        return False
 
     def _get_app_secret_proof(self, access_token):
         h = hmac.new(

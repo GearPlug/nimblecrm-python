@@ -21,7 +21,7 @@ urlpatterns = [
     url(r'^connection/list/(?P<connector_id>\d+)/(?P<type>(source|target)+)/$', ListConnectionView.as_view(),
         name='connection_list'),
     # url(r'^plug/create/(?P<type>(source|target)+)/$', '', name='plug_create'),
-    url('^plug/test/(?P<type>(source|target)+)/$', TestPlugView.as_view(), name='plug_test'),
+    url('^plug/test/(?P<pk>\d+)/$', TestPlugView.as_view(), name='plug_test'),
 
     url(r'^plug/action/list/$', ActionListView.as_view(), name='action_list'),
     url(r'^plug/action/(?P<pk>\d+)/specifications/$', ActionSpecificationsView.as_view(), name='action_specifications'),

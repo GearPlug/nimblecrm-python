@@ -6,4 +6,20 @@
 
     <h1>It's time to test your Plug!</h1>
 
+    {% for o in object_list %}
+        <div>
+            {{ o.name }}: {{ o.value }}
+        </div>
+
+    {% empty %}
+        There's no items. the Test Failed.
+        <br>
+        Please verify your source has at the very least 1 entry.
+        <form method="post" action="">
+            {% csrf_token %}
+            <button>Test again</button>
+        </form>
+    {% endfor %}
+
+
 {% endblock %}
