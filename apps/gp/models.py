@@ -39,7 +39,7 @@ class Action(models.Model):
         return self.action_type == 'target'
 
     def __str__(self):
-        return self.name
+        return self.name + ' on ' + self.connector.name
 
 
 class ActionSpecification(models.Model):
@@ -47,7 +47,7 @@ class ActionSpecification(models.Model):
     name = models.CharField('name', max_length=30)
 
     def __str__(self):
-        return self.action.name + ': ' + self.name
+        return self.action.name + ': ' + self.name +  ' on ' + self.action.connector.name
 
 
 class Connection(models.Model):

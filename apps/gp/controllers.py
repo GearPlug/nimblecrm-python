@@ -513,7 +513,7 @@ class MySQLController(BaseController):
                                                connection=connection_object.connection, plug=plug))
         if new_data:
             field_count = len(parsed_data[0]['data'])
-            extra = {'controller': 'mysql'}
+            extra = {'controller': 'postgresql'}
             for i, item in enumerate(new_data):
                 try:
                     item.save()
@@ -543,7 +543,7 @@ class MySQLController(BaseController):
                     data_list = []
         if self._plug is not None:
             obj_list = []
-            extra = {'controller': 'mysql'}
+            extra = {'controller': 'postgresql'}
             for item in data_list:
                 try:
                     insert = self._get_insert_statement(item)
@@ -637,16 +637,15 @@ class PostgreSQLController(BaseController):
                 order_by = self._plug.plug_specification.all()[0].value
             except:
                 order_by = None
-            select = 'SELECT * FROM %s' % self._table
+            select = 'SELECT * FROM %s ' % self._table
             if order_by is not None:
                 select += 'ORDER BY %s DESC ' % order_by
             if limit is not None and isinstance(limit, int):
                 select += 'LIMIT %s' % limit
             try:
                 self._cursor.execute(select)
-                cursor_select_all = copy.copy(self._cursor)
-                self.describe_table()
-                cursor_describe = self._cursor
+                cursor_select_all = [item for item in self._cursor]
+                cursor_describe = self.describe_table()
                 return [{column['name']: item[i] for i, column in enumerate(cursor_describe)} for item in
                         cursor_select_all]
             except Exception as e:
@@ -690,8 +689,8 @@ class PostgreSQLController(BaseController):
         return False
 
     def _get_insert_statement(self, item):
-        insert = """INSERT INTO `%s`(%s) VALUES (%s)""" % (
-            self._table, """,""".join(item.keys()), """,""".join("""\"%s\"""" % i for i in item.values()))
+        insert = """INSERT INTO %s (%s) VALUES (%s)""" % (
+            self._table, """,""".join(item.keys()), """,""".join("""\'%s\'""" % i for i in item.values()))
         return insert
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
