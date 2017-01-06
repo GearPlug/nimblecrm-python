@@ -168,28 +168,32 @@ def try_postgres():
 
     cursor.execute(
         'SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.columns WHERE table_name = %s', (table,))
-    res1 = [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
+    describe = [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
             item in cursor]
 
-    print(res1)
+    print(describe)
 
     cursor.execute(
         'SELECT c.column_name FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name where tc.table_name = %s',
         (table,))
-    res2 = [item[0] for item in cursor]
+    primary_key = [item[0] for item in cursor]
 
-    print(res2)
+    print(primary_key)
 
     cursor.execute('SELECT * FROM %s' % table)
-    res3 = [item for item in cursor]
+    select_all = [item for item in cursor]
 
-    print(res3)
+    print(select_all)
 
-    # c = [{column[0]: item[i] for i, column in enumerate(res1)} for item in res2]
-    #
-    # print(c)
+    select_all_dict = [{column['name']: item[i] for i, column in enumerate(describe)} for item in select_all]
 
-    print([{column['name']: item[i] for i, column in enumerate(res1)} for item in res3])
+    print(select_all_dict)
+
+    parsed_data = [{'id': tuple(item[key] for key in primary_key),
+                    'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in primary_key]}
+                   for item in select_all_dict]
+
+    print(parsed_data)
 
 
 try_postgres()
