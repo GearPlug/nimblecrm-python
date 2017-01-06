@@ -12,7 +12,12 @@
                 {% for gear in object_list %}
                     <li>
                         <div class="name col-md-7 col-sm-4 col-xs-12">
-                            <p>{{ gear.name }}</p>
+                            <p>
+                                <img src="{{ gear.source.connection.connector.icon.url }}" height="20" width="20">
+                                <span> > </span>
+                                <img src="{{ gear.target.connection.connector.icon.url }}" height="20" width="20">
+                                {{ gear.name }}
+                            </p>
                             <div class="tools-re"><a href="javascript:;"><i class="fa fa-wrench" aria-hidden="true"></i></a>
                             </div>
                         </div>

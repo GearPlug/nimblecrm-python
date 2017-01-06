@@ -10,9 +10,10 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
 class Connector(models.Model):
     name = models.CharField('name', max_length=120)
     is_active = models.BooleanField('is active', default=False)
-    css_class = models.CharField('css class', max_length=40)
+    css_class = models.CharField('css class', max_length=40, blank=True)
     is_source = models.BooleanField('is source', default=False)
     is_target = models.BooleanField('is target', default=False)
+    icon = models.ImageField('icon', upload_to='connector/icon', null=True, default=None)
 
     class Meta:
         verbose_name = 'connector'

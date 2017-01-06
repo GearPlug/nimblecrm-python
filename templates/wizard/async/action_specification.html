@@ -1,0 +1,16 @@
+{% block body %}
+    {% for o in object_list %}
+        {{ o.name }}:
+        <select data-name="{{ o.name|slugify|lower }}" id="specification-{{ o.id }}" name="specification-{{ o.id }}">
+            <option>---------</option>
+        </select>
+        <br>
+    {% endfor %}
+{% endblock %}
+
+
+{% block scripts %}
+    <script type="application/javascript">
+    console.log("si")
+    </script>
+{% endblock %}

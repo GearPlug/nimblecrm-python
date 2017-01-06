@@ -134,7 +134,6 @@ class GoogleSpreadSheetsController(BaseController):
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
         data_list = get_dict_with_source_data(source_data, target_fields)
-        print(data_list)
         if is_first:
             if data_list:
                 try:
@@ -162,25 +161,22 @@ class GoogleSpreadSheetsController(BaseController):
             div = int((div - module) / 26)
         return string
 
-    def get_sheets(self):
+    def get_sheet_list(self):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
         drive_service = discovery.build('drive', 'v3', http=http_auth)
         files = drive_service.files().list().execute()
-        sheet_list = []
-        for f in files['files']:
-            if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet':
-                sheet_list.append((f['id'], f['name']))
-
+        sheet_list = tuple(
+            f for f in files['files'] if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet')
         return sheet_list
 
-    def get_sheet_info(self, sheet_id):
+    def get_worksheet_list(self, sheet_id):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
         result = sheets_service.spreadsheets().get(spreadsheetId=sheet_id).execute()
-        sheets = tuple(i['properties'] for i in result['sheets'])  # % sheets[0]['gridProperties']['rowCount']
-        return sheets
+        worksheet_list = tuple(i['properties'] for i in result['sheets'])
+        return worksheet_list
 
     def get_worksheet_values(self, from_row=None, limit=None):
         credential = self._credential
@@ -304,9 +300,32 @@ class FacebookController(BaseController):
     _app_id = FACEBOOK_APP_ID
     _app_secret = FACEBOOK_APP_SECRET
     _base_graph_url = 'https://graph.facebook.com'
+    _token = None
 
     def __init__(self, *args):
         super(FacebookController, self).__init__(*args)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(FacebookController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._token = self._connection_object.token
+                except Exception as e:
+                    print("Error getting the Facebook token")
+                    # raise
+        elif kwargs:
+            try:
+                self._token = kwargs.pop('token')
+            except Exception as e:
+                print("Error getting the Facebook token")
+        try:
+            object_list = self._send_request('%s/leads' % self._connection_object.id_form, self._token)
+            if object_list:
+                return True
+        except Exception as e:
+            return False
+        return False
 
     def _get_app_secret_proof(self, access_token):
         h = hmac.new(
