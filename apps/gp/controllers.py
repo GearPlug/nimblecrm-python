@@ -839,6 +839,7 @@ class MSSQLController(BaseController):
                         'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}
                        for item in data]
         new_data = []
+        print(1)
         for item in parsed_data:
             try:
                 id_item = item['id'][0]
@@ -849,6 +850,7 @@ class MSSQLController(BaseController):
                 for column in item['data']:
                     new_data.append(StoredData(name=column['name'], value=column['value'], object_id=id_item,
                                                connection=connection_object.connection, plug=plug))
+        print(2, new_data)
         if new_data:
             field_count = len(parsed_data[0]['data'])
             extra = {'controller': 'mssql'}
