@@ -178,7 +178,6 @@ def try_postgres():
     parsed_data = [{'id': tuple(item[key] for key in primary_key),
                     'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in primary_key]}
                    for item in select_all_dict]
-
     print(parsed_data)
 
 

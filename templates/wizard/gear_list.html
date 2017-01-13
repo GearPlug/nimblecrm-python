@@ -1,0 +1,83 @@
+{% extends 'commons/site_base.html' %}
+{% load static %}
+{% load bootstrap_tags %}
+{% block body %}
+    <div class="box-tool animated fadeInDown list-panel-control">
+        <div class="box-title">
+            <h2>gear list</h2>
+        </div>
+        <div class="panel clearfix">
+            <h3>Control Panel</h3>
+            <ul>
+                {% for gear in object_list %}
+                    <li>
+                        <div class="name col-md-7 col-sm-4 col-xs-12">
+                            <p>
+                                <img src="{{ gear.source.connection.connector.icon.url }}" height="20" width="20">
+                                <span> > </span>
+                                <img src="{{ gear.target.connection.connector.icon.url }}" height="20" width="20">
+                                {{ gear.name }}
+                            </p>
+                            <div class="tools-re"><a href="javascript:;"><i class="fa fa-wrench" aria-hidden="true"></i></a>
+                            </div>
+                        </div>
+                        <div class="panel-control col-md-5 col-sm-8 col-xs-12">
+                            <p><a href="{% url 'wizard:gear_update' pk=gear.id %}" class="edit-btn">
+                                <i class="fa fa-pencil" aria-hidden="true"></i> Editar</a></p>
+                            <p><a href="{% url 'gear:delete' pk=gear.id %}" class="delete-btn">
+                                <i class="fa fa-trash" aria-hidden="true"></i>Eliminar</a></p>
+                            <p><i class="fa fa-link" aria-hidden="true"></i>
+                                <a href="{% url 'gear:toggle' gear_id=gear.id %}" class="toggle-gear-btn">
+                                    {{ gear.is_running }}</a></p>
+                        </div>
+                    </li>
+                {% empty %}
+                    <li class="empty-list">
+                        <div class="List-empty">
+                            <img src="/static/img/warning.png">
+                            <h1>You don't have any gears created</h1>
+                            <p>If you want to create your firts gear. Just click right <a href="/gear/create/">here</a>
+                            </p>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript"
+            href="{% static 'vendor/bootstrap-switch/js/bootstrap-switch.js' %}"></script>
+    <script type="application/javascript"
+            href="{% static 'vendor/bootstrap/js/bootstrap-switch.js' %}"></script>
+    <script type="application/javascript">
+        $(document).ready(function () {
+            var is_blocked = false;
+            console.log("Sii");
+            $("a.toggle-gear-btn").click(function () {
+                var a = $(this);
+                var url = a.attr('href');
+
+                if (is_blocked == false) {
+                    is_blocked = true;
+                    $.ajax({
+                        method: "POST", url: url
+                    }).done(function (response) {
+                        console.log(response.data)
+                        a.html("" + response.data)
+                        is_blocked = false;
+                    });
+                }
+                return false;
+            });
+        })
+        ;
+    </script>
+{% endblock %}
+
+{% block styles %}
+    {{ block.super }}
+    <link href="{% static 'vendor/bootstrap-switch/css/bootstrap3/bootstrap-switch.css' %}" rel="stylesheet">
+{% endblock %}

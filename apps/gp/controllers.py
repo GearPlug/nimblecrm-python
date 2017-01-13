@@ -55,6 +55,9 @@ class BaseController(object):
         else:
             raise ControllerError("There's no active connection or plug.")
 
+    def get_target_fields(self, **kwargs):
+        raise ControllerError("Not implemented yet.")
+
 
 class GoogleSpreadSheetsController(BaseController):
     _credential = None
@@ -83,9 +86,9 @@ class GoogleSpreadSheetsController(BaseController):
         if credentials_json is not None:
             try:
                 for s in self._plug.plug_specification.all():
-                    if s.action_specification.name == 'SpreadSheet':
+                    if s.action_specification.name.lower() == 'spreadsheet':
                         self._spreadsheet_id = s.value
-                    if s.action_specification.name == 'Worksheet name':
+                    if s.action_specification.name.lower() == 'worksheet':
                         self._worksheet_name = s.value
             except:
                 print("Error asignando los specifications")
@@ -216,6 +219,9 @@ class GoogleSpreadSheetsController(BaseController):
 
         return res
 
+    def get_target_fields(self, **kwargs):
+        return self.get_worksheet_first_row(**kwargs)
+
 
 class MailChimpController(BaseController):
     """
@@ -295,6 +301,9 @@ class MailChimpController(BaseController):
                     self._log.error('Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
             return
         raise ControllerError("Incomplete.")
+
+    def get_target_fields(self, **kwargs):
+        return self.get_list_merge_fields(**kwargs)
 
 
 class FacebookController(BaseController):
@@ -502,6 +511,7 @@ class MySQLController(BaseController):
                         'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}
                        for item in data]
         new_data = []
+        print(parsed_data)
         for item in parsed_data:
             try:
                 id_item = item['id'][0]
@@ -512,6 +522,7 @@ class MySQLController(BaseController):
                 for column in item['data']:
                     new_data.append(StoredData(name=column['name'], value=column['value'], object_id=id_item,
                                                connection=connection_object.connection, plug=plug))
+        print(new_data)
         if new_data:
             field_count = len(parsed_data[0]['data'])
             extra = {'controller': 'postgresql'}
@@ -563,6 +574,9 @@ class MySQLController(BaseController):
                 self._connection.rollback()
             return obj_list
         raise ControllerError("There's no plug")
+
+    def get_target_fields(self, **kwargs):
+        return self.describe_table(**kwargs)
 
 
 class PostgreSQLController(BaseController):
@@ -723,6 +737,9 @@ class PostgreSQLController(BaseController):
                 self._connection.rollback()
             return obj_list
         raise ControllerError("There's no plug")
+
+    def get_target_fields(self, **kwargs):
+        return self.describe_table(**kwargs)
 
 
 class MSSQLController(BaseController):
@@ -1004,6 +1021,9 @@ class SugarCRMController(BaseController):
                     self._log.info('Item: %s failed to send.' % (res.id), extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
+
+    def get_target_fields(self, **kwargs):
+        return self.get_module_fields(**kwargs)
 
 
 class ControllerError(Exception):
