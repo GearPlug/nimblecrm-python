@@ -142,21 +142,6 @@ def try_google():
     print(auth_uri)
 
 
-# ej1()
-# ej2()
-# ej3()
-# try_sugar('http://208.113.131.86/uat/uat/service/v4_1/rest.php', 'emarketing', 'zakaramk*')
-# try_sub_dict('Hola soy german!', {'german': 'daniel'})
-# try_mailchimp('MaxConceptLife63', '619813e972f8698c8029978a8dfc250d-us12')
-
-# d = {'a':1, 'b':2, 'c':3}
-# e = d
-# d['a'] = 5
-# print(d)
-# print(e)
-# try_google()
-# try_mysql()
-
 def try_postgres():
     host = 'localhost'
     port = 5432
@@ -197,9 +182,55 @@ def try_postgres():
 
 
 def try_mssql():
-    conn = pymssql.connect(host="192.168.0.28", user='test', password='12345678', database='testbd', port='1489')
+    host = '181.143.188.178'
+    database = 'testbd'
+    table = 'client'
+    port = '1489'
+    user = 'test'
+    password = '12345678'
+    conn = pymssql.connect(host=host, user=user, password=password, database=database, port=port)
     cursor = conn.cursor()
     print(cursor)
 
+    cursor.execute('select COLUMN_NAME, DATA_TYPE, IS_NULLABLE from information_schema.columns where table_name = %s', (table,))
+    describe = [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
+                item in cursor]
+    print(describe)
 
+    cursor.execute("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + CONSTRAINT_NAME), 'IsPrimaryKey') = 1 AND TABLE_NAME = %s", (table,))
+
+    primary_key = [item[0] for item in cursor]
+
+    print(primary_key)
+
+    cursor.execute('SELECT * FROM %s' % table)
+    select_all = [item for item in cursor]
+
+    print(select_all)
+
+    select_all_dict = [{column['name']: item[i] for i, column in enumerate(describe)} for item in select_all]
+
+    print(select_all_dict)
+
+    parsed_data = [{'id': tuple(item[key] for key in primary_key),
+                    'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in primary_key]}
+                   for item in select_all_dict]
+
+    print(parsed_data)
+
+# ej1()
+# ej2()
+# ej3()
+# try_sugar('http://208.113.131.86/uat/uat/service/v4_1/rest.php', 'emarketing', 'zakaramk*')
+# try_sub_dict('Hola soy german!', {'german': 'daniel'})
+# try_mailchimp('MaxConceptLife63', '619813e972f8698c8029978a8dfc250d-us12')
+
+# d = {'a':1, 'b':2, 'c':3}
+# e = d
+# d['a'] = 5
+# print(d)
+# print(e)
+# try_google()
+# try_mysql()
+#try_postgres()
 try_mssql()
