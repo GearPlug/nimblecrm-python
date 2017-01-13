@@ -4,7 +4,7 @@ from apps.gp.model_fields import JSONField
 from apps.user.models import User
 
 connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
-               'connection_googlespreadsheets', 'connection_postgresql']
+               'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql']
 
 
 class Connector(models.Model):
@@ -112,6 +112,20 @@ class MySQLConnection(models.Model):
 
 class PostgreSQLConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_postgresql')
+    name = models.CharField('name', max_length=200)
+    host = models.CharField('host', max_length=200)
+    database = models.CharField('database', max_length=200)
+    table = models.CharField('table', max_length=200)
+    port = models.CharField('port', max_length=7)
+    connection_user = models.CharField('user', max_length=60)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
+
+
+class MSSQLConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mssql')
     name = models.CharField('name', max_length=200)
     host = models.CharField('host', max_length=200)
     database = models.CharField('database', max_length=200)
