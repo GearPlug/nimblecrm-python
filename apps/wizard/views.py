@@ -66,7 +66,7 @@ class UpdateGearView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('wizard:connector_list', kwargs={'type': 'source'})
 
     def get(self, request, *args, **kwargs):
-        request.session['gear_id'] = self.kwargs.get('id', None)
+        request.session['gear_id'] = self.kwargs.get('pk', None)
         return super(UpdateGearView, self).get(request, *args, **kwargs)
 
 
