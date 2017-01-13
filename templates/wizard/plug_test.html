@@ -5,21 +5,38 @@
 {% block body %}
 
     <h1>It's time to test your Plug!</h1>
+    {% if plug_type == 'source' %}
+        {% for o in object_list %}
+            <div>
+                {{ o.name }}: {{ o.value }}
+            </div>
+        {% empty %}
+            There's no items. the Test Failed.
+            <br>
+            Please verify your source has at the very least 1 entry.
+            <form method="post" action="">
+                {% csrf_token %}
+                <button>Test again</button>
+            </form>
+        {% endfor %}
 
-    {% for o in object_list %}
-        <div>
-            {{ o.name }}: {{ o.value }}
-        </div>
-
-    {% empty %}
-        There's no items. the Test Failed.
-        <br>
-        Please verify your source has at the very least 1 entry.
-        <form method="post" action="">
-            {% csrf_token %}
-            <button>Test again</button>
-        </form>
-    {% endfor %}
-
-
+        <a href="{% url 'wizard:connector_list' type='target' %}">Continue (after test)</a>
+    {% elif plug_type == 'target' %}
+        <p>Field List:</p>
+        {% for o in object_list %}
+            <p>{{ o }}</p>
+        {% empty %}
+            There's no fields to work with. the Test Failed.
+            <br>
+            Please verify your target has a working connection.
+            <form method="post" action="">
+                {% csrf_token %}
+                <button>Test again</button>
+            </form>
+        {% endfor %}
+        {% if request.session.gear_id != None %}
+            <a href="{% url 'wizard:create_gear_map' gear_id=request.session.gear_id %}">Continue (after
+                test)</a>
+        {% endif %}
+    {% endif %}
 {% endblock %}

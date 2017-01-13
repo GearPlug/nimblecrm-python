@@ -11,6 +11,7 @@ from oauth2client import client
 import requests
 import MySQLdb
 import psycopg2
+import pymssql
 
 
 def try_mysql():
@@ -169,7 +170,7 @@ def try_postgres():
     cursor.execute(
         'SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.columns WHERE table_name = %s', (table,))
     describe = [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
-            item in cursor]
+                item in cursor]
 
     print(describe)
 
@@ -192,8 +193,13 @@ def try_postgres():
     parsed_data = [{'id': tuple(item[key] for key in primary_key),
                     'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in primary_key]}
                    for item in select_all_dict]
-
     print(parsed_data)
 
 
-try_postgres()
+def try_mssql():
+    conn = pymssql.connect(host="192.168.0.28", user='test', password='12345678', database='testbd', port='1489')
+    cursor = conn.cursor()
+    print(cursor)
+
+
+try_mssql()

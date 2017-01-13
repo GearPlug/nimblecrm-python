@@ -21,8 +21,8 @@
                 }
             });
 
-            $(document).on('change', 'select[name=spreadsheet]', function () {
-                var select = $('select#worksheet-name');
+            $(document).on('change', 'select[data-name=spreadsheet]', function () {
+                var select = $('select[data-name=worksheet]');
                 console.log(select)
                 var url = "{% url 'wizard:async_google_sheet_worksheets' %}";
                 var spreadsheet_id = $(this).val();

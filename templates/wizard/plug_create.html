@@ -31,6 +31,9 @@
     {{ block.super }}
     <script type="text/javascript">
         $(document).ready(function () {
+            {% if request.session.source_connection_id != None %}
+                $('select#id_connection').val({{ request.session.source_connection_id }});
+            {% endif %}
             var url_actions = "{% url 'wizard:action_list' %}";
             $.ajax({method: "POST", url: url_actions, data: {type: '{{ plug_type }}'}})
                     .done(function (response) {
