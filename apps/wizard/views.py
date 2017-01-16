@@ -46,8 +46,7 @@ class CreateGearView(LoginRequiredMixin, CreateView):
         return super(CreateGearView, self).get(request, *args, **kwargs)
 
     def get_success_url(self):
-        self.request.session['current_gear_id'] = self.object.id
-        self.request.session['current_plug'] = 'source'
+        self.request.session['gear_id'] = self.object.id
         return reverse('wizard:connector_list', kwargs={'type': 'source'})
 
     def form_valid(self, form):
@@ -66,7 +65,7 @@ class UpdateGearView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('wizard:connector_list', kwargs={'type': 'source'})
 
     def get(self, request, *args, **kwargs):
-        request.session['gear_id'] = self.kwargs.get('id', None)
+        request.session['gear_id'] = self.kwargs.get('pk', None)
         return super(UpdateGearView, self).get(request, *args, **kwargs)
 
 
