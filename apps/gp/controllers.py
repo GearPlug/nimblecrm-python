@@ -386,6 +386,10 @@ class FacebookController(BaseController):
         url = '%s/leads' % form_id
         return self._send_request(url=url, token=access_token, from_date=from_date)
 
+    def get_forms(self, access_token, page_id):
+        url = '%s/leadgen_forms' % page_id
+        return self._send_request(url=url, token=access_token)
+
     def download_to_stored_data(self, connection_object, plug, from_date=None):
         if plug is None:
             plug = self._plug
