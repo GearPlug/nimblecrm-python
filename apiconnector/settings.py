@@ -27,7 +27,6 @@ INSTALLED_APPS = [
     #
     'apps.wizard',
     'apps.home',
-    'apps.api',
     'apps.user',
     'apps.gear',
     'apps.plug',
