@@ -17,7 +17,12 @@
                     {% if form.error %}
                         <div class="error">{{ form.error }}</div>
                     {% endif %}
-                    Connection id: {{ request.session.source_connection_id }}
+                    Connection id:
+                    {% if request.session.source_connection_id %}
+                        {{ request.session.source_connection_id }}
+                    {% elif request.session.target_connection_id %}
+                        {{ request.session.target_connection_id }}
+                    {% endif %}
                 </div>
             </div>
             <div id="action_list">Action:</div>
@@ -33,30 +38,32 @@
         $(document).ready(function () {
             {% if request.session.source_connection_id != None %}
                 $('select#id_connection').val({{ request.session.source_connection_id }});
+            {% elif request.session.target_connection_id %}
+                $('select#id_connection').val({{ request.session.target_connection_id }});
             {% endif %}
             var url_actions = "{% url 'wizard:action_list' %}";
             $.ajax({method: "POST", url: url_actions, data: {type: '{{ plug_type }}'}})
-                    .done(function (response) {
-                        var actions = response;
-                        var selectList = document.createElement("select");
-                        selectList.id = "action_list_selector";
-                        selectList.name = "action-id";
-                        $('#action_list').append(selectList);
-                        var options_str = '<option value="">--------------</option>';
-                        actions.forEach(function (a) {
-                            options_str += '<option value="' + a.id + '">' + a.name + '</option>';
-                        })
-                        $('#action_list_selector').html(options_str);
-                    });
+                .done(function (response) {
+                    var actions = response;
+                    var selectList = document.createElement("select");
+                    selectList.id = "action_list_selector";
+                    selectList.name = "action-id";
+                    $('#action_list').append(selectList);
+                    var options_str = '<option value="">--------------</option>';
+                    actions.forEach(function (a) {
+                        options_str += '<option value="' + a.id + '">' + a.name + '</option>';
+                    })
+                    $('#action_list_selector').html(options_str);
+                });
 
             $(document).on('change', '#action_list_selector', function () {
                 var value = $(this).val();
                 var url_specifications = "{% url 'wizard:action_specifications' pk=123 %}".replace(/123/, value.toString());
                 if (value != '') {
                     $.ajax({method: "POST", url: url_specifications, data: {pk: value}})
-                            .done(function (response) {
-                                $('#specification_list').html(response);
-                            })
+                        .done(function (response) {
+                            $('#specification_list').html(response);
+                        })
                 }
             })
         })

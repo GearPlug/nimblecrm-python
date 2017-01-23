@@ -105,7 +105,9 @@ class ListConnectionView(LoginRequiredMixin, ListView):
         self.object_list = []
         # context = self.get_context_data()
         connection_id = request.POST.get('connection', None)
+        print(connection_id)
         connector_type = kwargs['type']
+        print(connector_type)
         request.session['%s_connection_id' % connector_type] = connection_id
         return redirect(reverse('wizard:plug_create', kwargs={'plug_type': connector_type}))
 
@@ -219,18 +221,8 @@ class ActionSpecificationsView(LoginRequiredMixin, ListView):
         kw = {'action_id': action.id}
         self.object_list = self.model.objects.filter(**kw)
         context = self.get_context_data()
-        if action.connector.id == ConnectorEnum.MySQL.value:
-            self.template_name = 'wizard/async/action_specification/mysql.html'
-        elif action.connector.id == ConnectorEnum.PostgreSQL.value:
-            self.template_name = 'wizard/async/action_specification/postgresql.html'
-        elif action.connector.id == ConnectorEnum.MSSQL.value:
-            self.template_name = 'wizard/async/action_specification/mssql.html'
-        elif action.connector.id == ConnectorEnum.SugarCRM.value:
-            self.template_name = 'wizard/async/action_specification/sugarcrm.html'
-        elif action.connector.id == ConnectorEnum.GoogleSpreadSheets.value:
-            self.template_name = 'wizard/async/action_specification/google_sheets.html'
-        elif action.connector.id == ConnectorEnum.Facebook.value:
-            self.template_name = 'wizard/async/action_specification/facebook.html'
+        c = ConnectorEnum.get_connector(action.connector.id)
+        self.template_name = 'wizard/async/action_specification/' + c.name.lower() + '.html'
         return super(ActionSpecificationsView, self).render_to_response(context)
 
 
@@ -240,9 +232,13 @@ class GoogleDriveSheetList(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
-        c = Connection.objects.get(pk=connection_id)
-        gsc = GoogleSpreadSheetsController(c.related_connection)
-        sheet_list = gsc.get_sheet_list()
+        connection = Connection.objects.get(pk=connection_id)
+        controller = GoogleSpreadSheetsController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            sheet_list = controller.get_sheet_list()
+        else:
+            sheet_list = list()
         context['object_list'] = sheet_list
         return super(GoogleDriveSheetList, self).render_to_response(context)
 
@@ -254,11 +250,16 @@ class GoogleSheetsWorksheetList(LoginRequiredMixin, TemplateView):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
         spreadsheet_id = request.POST.get('spreadsheet_id', None)
-        c = Connection.objects.get(pk=connection_id)
-        gsc = GoogleSpreadSheetsController(c.related_connection)
-        worksheet_list = gsc.get_worksheet_list(spreadsheet_id)
-        # El id es el mismo nombre del worksheet
-        context['object_list'] = tuple({'id': ws['title'], 'name': ws['title']} for ws in worksheet_list)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = GoogleSpreadSheetsController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            # El id es el mismo nombre del worksheet
+            worksheet_list = tuple(
+                {'id': ws['title'], 'name': ws['title']} for ws in controller.get_worksheet_list(spreadsheet_id))
+        else:
+            worksheet_list = list()
+        context['object_list'] = worksheet_list
         return super(GoogleSheetsWorksheetList, self).render_to_response(context)
 
 
@@ -268,13 +269,15 @@ class MySQLFieldList(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
-        c = Connection.objects.get(pk=connection_id)
-        mc = MySQLController()
-        ping = mc.create_connection(c.related_connection)
-        field_list = mc.describe_table()
-        print(field_list)
-        # El id es el mismo nombre del module
-        context['object_list'] = tuple({'id': f['name'], 'name': f['name']} for f in field_list)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = MySQLController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            # El id es el mismo nombre del module
+            field_list = tuple({'id': f['name'], 'name': f['name']} for f in controller.describe_table())
+        else:
+            field_list = list()
+        context['object_list'] = field_list
         return super(MySQLFieldList, self).render_to_response(context)
 
 
@@ -284,12 +287,15 @@ class PostgreSQLFieldList(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
-        c = Connection.objects.get(pk=connection_id)
-        mc = PostgreSQLController(c.related_connection)
-        field_list = mc.describe_table()
-        print(field_list)
-        # El id es el mismo nombre del module
-        context['object_list'] = tuple({'id': f['name'], 'name': f['name']} for f in field_list)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = PostgreSQLController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            # El id es el mismo nombre del module
+            field_list = tuple({'id': f['name'], 'name': f['name']} for f in controller.describe_table())
+        else:
+            field_list = []
+        context['object_list'] = field_list
         return super(PostgreSQLFieldList, self).render_to_response(context)
 
 
@@ -299,12 +305,15 @@ class MSSQLFieldList(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
-        c = Connection.objects.get(pk=connection_id)
-        mc = MSSQLController(c.related_connection)
-        field_list = mc.describe_table()
-        print(field_list)
-        # El id es el mismo nombre del module
-        context['object_list'] = tuple({'id': f['name'], 'name': f['name']} for f in field_list)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = MSSQLController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            # El id es el mismo nombre del module
+            field_list = tuple({'id': f['name'], 'name': f['name']} for f in controller.describe_table())
+        else:
+            field_list = []
+        context['object_list'] = field_list
         return super(MSSQLFieldList, self).render_to_response(context)
 
 
@@ -314,16 +323,34 @@ class SugarCRMModuleList(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
-        c = Connection.objects.get(pk=connection_id)
-        scrmc = SugarCRMController(c.related_connection)
-        module_list = scrmc.get_available_modules()
-        # El id es el mismo nombre del module
-        context['object_list'] = tuple({'id': m.module_key, 'name': m.module_key} for m in module_list)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = SugarCRMController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            # El id es el mismo nombre del module
+            module_list = tuple({'id': m.module_key, 'name': m.module_key} for m in controller.get_available_modules())
+        else:
+            module_list = []
+        context['object_list'] = module_list
         return super(SugarCRMModuleList, self).render_to_response(context)
 
 
 class MailChimpListsList(LoginRequiredMixin, TemplateView):
-    pass
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = MailChimpController(connection.related_connection)
+        ping = controller.create_connection()
+        if ping:
+            # El id es el mismo nombre del module
+            lists_list = controller.get_lists()
+        else:
+            lists_list = []
+        context['object_list'] = lists_list
+        return super(MailChimpListsList, self).render_to_response(context)
 
 
 class FacebookPageList(LoginRequiredMixin, TemplateView):
@@ -332,11 +359,16 @@ class FacebookPageList(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
-        c = Connection.objects.get(pk=connection_id)
-        fbc = FacebookController(c.related_connection)
-        token = c.related_connection.token
-        pages = fbc.get_pages(token)
-        context['object_list'] = tuple({'id': p['id'], 'name': p['name']} for p in pages)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = FacebookController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            token = connection.related_connection.token
+            pages = controller.get_pages(token)
+            page_list = tuple({'id': p['id'], 'name': p['name']} for p in pages)
+        else:
+            page_list = []
+        context['object_list'] = page_list
         return super(FacebookPageList, self).render_to_response(context)
 
 
@@ -347,11 +379,16 @@ class FacebookFormList(LoginRequiredMixin, TemplateView):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
         page_id = request.POST.get('page_id', None)
-        c = Connection.objects.get(pk=connection_id)
-        fbc = FacebookController(c.related_connection)
-        token = c.related_connection.token
-        forms = fbc.get_forms(token, page_id)
-        context['object_list'] = tuple({'id': p['id'], 'name': p['name']} for p in forms)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = FacebookController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            token = connection.related_connection.token
+            forms = controller.get_forms(token, page_id)
+            form_list = tuple({'id': p['id'], 'name': p['name']} for p in forms)
+        else:
+            form_list = []
+        context['object_list'] = form_list
         return super(FacebookFormList, self).render_to_response(context)
 
 
@@ -375,7 +412,6 @@ class TestPlugView(TemplateView):
             ckwargs = {}
             cargs = []
             ping = controller.create_connection(p.connection.related_connection, p, *cargs, **ckwargs)
-            print(ping)
             if ping:
                 target_fields = controller.get_target_fields()
                 context['object_list'] = target_fields

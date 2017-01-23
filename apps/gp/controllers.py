@@ -237,10 +237,10 @@ class MailChimpController(BaseController):
             super(MailChimpController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
+                    print(self._connection_object.connection_user, self._connection_object.api_key)
                     self._client = MailChimp(self._connection_object.connection_user, self._connection_object.api_key)
                 except Exception as e:
                     print("Error getting the MailChimp attributes")
-                    print(e)
                     self._client = None
         elif not args and kwargs:
             if 'user' in kwargs:
@@ -249,21 +249,23 @@ class MailChimpController(BaseController):
                 api_key = kwargs.pop('api_key')
             try:
                 self._client = MailChimp(user, api_key)
+                print("%s %s", (user, api_key))
+                print(self._client)
             except Exception as e:
+                print(e)
                 print("Error getting the MailChimp attributes")
                 self._client = None
-        try:
-            t = self._client.list.all()
-        except Exception as e:
-            t = None
+        t = self.get_lists()
         return t is not None
 
     def get_lists(self):
-        result = self._client.list.all()
-        try:
-            return [{'name': l['name'], 'id': l['id']} for l in result['lists']]
-        except:
-            return []
+        if self._client:
+            result = self._client.lists.all()
+            try:
+                return [{'name': l['name'], 'id': l['id']} for l in result['lists']]
+            except:
+                return []
+        return []
 
     def get_list_merge_fields(self, list_id):
         result = self._client.list._mc_client._get(url='lists/%s/merge-fields' % list_id)
