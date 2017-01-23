@@ -311,6 +311,8 @@ class FacebookController(BaseController):
     _app_secret = FACEBOOK_APP_SECRET
     _base_graph_url = 'https://graph.facebook.com'
     _token = None
+    _page = None
+    _form = None
 
     def __init__(self, *args):
         super(FacebookController, self).__init__(*args)
@@ -329,9 +331,19 @@ class FacebookController(BaseController):
                 self._token = kwargs.pop('token')
             except Exception as e:
                 print("Error getting the Facebook token")
+
         try:
-            object_list = self._send_request('%s/leads' % self._connection_object.id_form, self._token)
-            if object_list:
+            for s in self._plug.plug_specification.all():
+                if s.action_specification.name.lower() == 'page':
+                    self._page = s.value
+                if s.action_specification.name.lower() == 'form':
+                    self._form = s.value
+        except:
+            print("Error asignando los specifications")
+
+        try:
+            object_list = self.get_account(self._token).json()
+            if 'id' in object_list:
                 return True
         except Exception as e:
             return False
@@ -378,6 +390,10 @@ class FacebookController(BaseController):
             print(e)
             return ''
 
+    def get_account(self, access_token):
+        url = 'me'
+        return self._send_request(url=url, token=access_token)
+
     def get_pages(self, access_token):
         url = 'me/accounts'
         return self._send_request(url=url, token=access_token)
@@ -386,13 +402,18 @@ class FacebookController(BaseController):
         url = '%s/leads' % form_id
         return self._send_request(url=url, token=access_token, from_date=from_date)
 
+    def get_forms(self, access_token, page_id):
+        url = '%s/leadgen_forms' % page_id
+        return self._send_request(url=url, token=access_token)
+
     def download_to_stored_data(self, connection_object, plug, from_date=None):
         if plug is None:
             plug = self._plug
         if from_date is not None:
             from_date = int(time.mktime(from_date.timetuple()) * 1000)
             # print('from_date: %s' % from_date)
-        leads = self.get_leads(connection_object.token, connection_object.id_form, from_date=from_date)
+
+        leads = self.get_leads(connection_object.token, self._form, from_date=from_date)
         new_data = []
         for item in leads:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
@@ -450,7 +471,7 @@ class MySQLController(BaseController):
                 user = kwargs.pop('connection_user')
                 password = kwargs.pop('connection_password')
                 self._database = kwargs.pop('database')
-                self._table = kwargs.pop('table')
+                self._table = kwargs.pop('table', None)
             except Exception as e:
                 pass
                 # raise
@@ -511,7 +532,6 @@ class MySQLController(BaseController):
                         'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}
                        for item in data]
         new_data = []
-        print(parsed_data)
         for item in parsed_data:
             try:
                 id_item = item['id'][0]
@@ -522,7 +542,6 @@ class MySQLController(BaseController):
                 for column in item['data']:
                     new_data.append(StoredData(name=column['name'], value=column['value'], object_id=id_item,
                                                connection=connection_object.connection, plug=plug))
-        print(new_data)
         if new_data:
             field_count = len(parsed_data[0]['data'])
             extra = {'controller': 'postgresql'}
@@ -559,7 +578,6 @@ class MySQLController(BaseController):
             for item in data_list:
                 try:
                     insert = self._get_insert_statement(item)
-                    print(insert)
                     self._cursor.execute(insert)
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
@@ -610,7 +628,7 @@ class PostgreSQLController(BaseController):
                 user = kwargs.pop('connection_user')
                 password = kwargs.pop('connection_password')
                 self._database = kwargs.pop('database')
-                self._table = kwargs.pop('table')
+                self._table = kwargs.pop('table', None)
             except Exception as e:
                 pass
                 # raise
@@ -722,7 +740,6 @@ class PostgreSQLController(BaseController):
             for item in data_list:
                 try:
                     insert = self._get_insert_statement(item)
-                    print(insert)
                     self._cursor.execute(insert)
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
@@ -773,7 +790,7 @@ class MSSQLController(BaseController):
                 user = kwargs.pop('connection_user')
                 password = kwargs.pop('connection_password')
                 self._database = kwargs.pop('database')
-                self._table = kwargs.pop('table')
+                self._table = kwargs.pop('table', None)
             except Exception as e:
                 pass
                 # raise
@@ -819,13 +836,13 @@ class MSSQLController(BaseController):
             if order_by is not None:
                 select += 'ORDER BY %s DESC ' % order_by
             if limit is not None and isinstance(limit, int):
-                select += 'LIMIT %s' % limit
+                select += 'OFFSET 0 ROWS FETCH NEXT %s ROWS ONLY' % limit
             try:
                 self._cursor.execute(select)
                 cursor_select_all = [item for item in self._cursor]
                 cursor_describe = self.describe_table()
-                return [{column['name']: item[i] for i, column in enumerate(cursor_select_all)} for item in
-                        cursor_describe]
+                return [{column['name']: item[i] for i, column in enumerate(cursor_describe)} for item in
+                        cursor_select_all]
             except Exception as e:
                 print(e)
         return []
@@ -885,7 +902,6 @@ class MSSQLController(BaseController):
             for item in data_list:
                 try:
                     insert = self._get_insert_statement(item)
-                    print(insert)
                     self._cursor.execute(insert)
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
@@ -900,6 +916,9 @@ class MSSQLController(BaseController):
                 self._connection.rollback()
             return obj_list
         raise ControllerError("There's no plug")
+
+    def get_target_fields(self, **kwargs):
+        return self.describe_table(**kwargs)
 
 
 class CustomSugarObject(sugarcrm.SugarObject):

@@ -7,7 +7,7 @@ from django.shortcuts import render
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from apps.gp.controllers import MySQLController, PostgreSQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController
+    GoogleSpreadSheetsController, MSSQLController
 from apps.gp.enum import ConnectorEnum, MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
@@ -19,6 +19,7 @@ import logging
 mysqlc = MySQLController()
 postgresqlc = PostgreSQLController()
 mcc = MailChimpController()
+mssqlc = MySQLController()
 
 
 class ListGearView(ListView):
@@ -81,7 +82,6 @@ class CreateGearMapView(FormView):
         target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
             pk=gear.target.id)
         self.source_object_list = self.get_available_source_fields(source_plug)
-        print(self.get_target_field_list(target_plug))
         self.form_field_list = self.get_target_field_list(target_plug)
         # print(self.source_object_list)
         # print(self.form_field_list)
@@ -144,11 +144,19 @@ class CreateGearMapView(FormView):
             return [item['name'] for item in form_data if item['is_primary'] is not True]
         elif c == ConnectorEnum.PostgreSQL:
             postgresqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
-                                                   connection_user=connection_data['connection_user'],
-                                                   connection_password=connection_data['connection_password'],
-                                                   database=connection_data['database'], table=connection_data['table'])
+                                          connection_user=connection_data['connection_user'],
+                                          connection_password=connection_data['connection_password'],
+                                          database=connection_data['database'], table=connection_data['table'])
             form_data = postgresqlc.describe_table()
             primary_keys = postgresqlc.get_primary_keys()
+            return [item['name'] for item in form_data if item['name'] not in primary_keys]
+        elif c == ConnectorEnum.MSSQL:
+            mssqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
+                                     connection_user=connection_data['connection_user'],
+                                     connection_password=connection_data['connection_password'],
+                                     database=connection_data['database'], table=connection_data['table'])
+            form_data = mssqlc.describe_table()
+            primary_keys = mssqlc.get_primary_keys()
             return [item['name'] for item in form_data if item['name'] not in primary_keys]
         elif c == ConnectorEnum.SugarCRM:
             ping = self.scrmc.create_connection(url=connection_data['url'],
@@ -162,7 +170,6 @@ class CreateGearMapView(FormView):
         elif c == ConnectorEnum.MailChimp:
             list_id = plug.plug_specification.all()[0].value
             try:
-                print("hess")
                 ping = mcc.create_connection(user=connection_data['connection_user'],
                                              api_key=connection_data['api_key'])
                 fields = mcc.get_list_merge_fields(list_id)

@@ -65,7 +65,10 @@ def update_gear(gear_id):
             if target_connector == ConnectorEnum.MySQL:
                 controller = controller_class(gear.target.connection.related_connection, gear.target)
                 controller.send_stored_data(source_data, target_fields)
-            if target_connector == ConnectorEnum.PostgreSQL:
+            elif target_connector == ConnectorEnum.PostgreSQL:
+                controller = controller_class(gear.target.connection.related_connection, gear.target)
+                controller.send_stored_data(source_data, target_fields)
+            elif target_connector == ConnectorEnum.MSSQL:
                 controller = controller_class(gear.target.connection.related_connection, gear.target)
                 controller.send_stored_data(source_data, target_fields)
             elif target_connector == ConnectorEnum.SugarCRM:

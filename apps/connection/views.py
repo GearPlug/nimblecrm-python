@@ -7,6 +7,7 @@ from apps.connection.myviews.FacebookViews import *
 from apps.connection.myviews.MySQLViews import *
 from apps.connection.myviews.SugarCRMViews import *
 from apps.connection.myviews.PostgreSQLViews import *
+from apps.connection.myviews.MSSQLViews import *
 from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.controllers import FacebookController
@@ -45,14 +46,7 @@ class CreateConnectionView(CreateView):
             if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Facebook:
                 token = self.request.POST.get('token', '')
                 long_user_access_token = self.fbc.extend_token(token)
-                pages = self.fbc.get_pages(long_user_access_token)
-                page_token = None
-                for page in pages:
-                    if page['id'] == form.instance.id_page:
-                        page_token = page['access_token']
-                        break
-                if page_token:
-                    form.instance.token = page_token
+                form.instance.token = long_user_access_token
             elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets:
                 form.instance.credentials_json = self.request.session['google_credentials']
             return super(CreateConnectionView, self).form_valid(form, *args, **kwargs)

@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, PostgreSQLController
+    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, StoredData
 from apps.plug.views import CreatePlugView
@@ -46,8 +46,7 @@ class CreateGearView(LoginRequiredMixin, CreateView):
         return super(CreateGearView, self).get(request, *args, **kwargs)
 
     def get_success_url(self):
-        self.request.session['current_gear_id'] = self.object.id
-        self.request.session['current_plug'] = 'source'
+        self.request.session['gear_id'] = self.object.id
         return reverse('wizard:connector_list', kwargs={'type': 'source'})
 
     def form_valid(self, form):
@@ -124,14 +123,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateConnectionView):
                     fbc = FacebookController()
                     token = self.request.POST.get('token', '')
                     long_user_access_token = fbc.extend_token(token)
-                    pages = fbc.get_pages(long_user_access_token)
-                    page_token = None
-                    for page in pages:
-                        if page['id'] == form.instance.id_page:
-                            page_token = page['access_token']
-                            break
-                    if page_token:
-                        form.instance.token = page_token
+                    form.instance.token = long_user_access_token
             self.object = form.save()
             self.request.session['auto_select_connection_id'] = c.id
             return JsonResponse({'data': self.object.id is not None})
@@ -229,10 +221,16 @@ class ActionSpecificationsView(LoginRequiredMixin, ListView):
         context = self.get_context_data()
         if action.connector.id == ConnectorEnum.MySQL.value:
             self.template_name = 'wizard/async/action_specification/mysql.html'
+        elif action.connector.id == ConnectorEnum.PostgreSQL.value:
+            self.template_name = 'wizard/async/action_specification/postgresql.html'
+        elif action.connector.id == ConnectorEnum.MSSQL.value:
+            self.template_name = 'wizard/async/action_specification/mssql.html'
         elif action.connector.id == ConnectorEnum.SugarCRM.value:
             self.template_name = 'wizard/async/action_specification/sugarcrm.html'
         elif action.connector.id == ConnectorEnum.GoogleSpreadSheets.value:
             self.template_name = 'wizard/async/action_specification/google_sheets.html'
+        elif action.connector.id == ConnectorEnum.Facebook.value:
+            self.template_name = 'wizard/async/action_specification/facebook.html'
         return super(ActionSpecificationsView, self).render_to_response(context)
 
 
@@ -271,12 +269,43 @@ class MySQLFieldList(LoginRequiredMixin, TemplateView):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
         c = Connection.objects.get(pk=connection_id)
-        mc = MySQLController(c.related_connection)
+        mc = MySQLController()
+        ping = mc.create_connection(c.related_connection)
         field_list = mc.describe_table()
         print(field_list)
         # El id es el mismo nombre del module
         context['object_list'] = tuple({'id': f['name'], 'name': f['name']} for f in field_list)
         return super(MySQLFieldList, self).render_to_response(context)
+
+
+class PostgreSQLFieldList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        c = Connection.objects.get(pk=connection_id)
+        mc = PostgreSQLController(c.related_connection)
+        field_list = mc.describe_table()
+        print(field_list)
+        # El id es el mismo nombre del module
+        context['object_list'] = tuple({'id': f['name'], 'name': f['name']} for f in field_list)
+        return super(PostgreSQLFieldList, self).render_to_response(context)
+
+
+class MSSQLFieldList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        c = Connection.objects.get(pk=connection_id)
+        mc = MSSQLController(c.related_connection)
+        field_list = mc.describe_table()
+        print(field_list)
+        # El id es el mismo nombre del module
+        context['object_list'] = tuple({'id': f['name'], 'name': f['name']} for f in field_list)
+        return super(MSSQLFieldList, self).render_to_response(context)
 
 
 class SugarCRMModuleList(LoginRequiredMixin, TemplateView):
@@ -295,6 +324,35 @@ class SugarCRMModuleList(LoginRequiredMixin, TemplateView):
 
 class MailChimpListsList(LoginRequiredMixin, TemplateView):
     pass
+
+
+class FacebookPageList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        c = Connection.objects.get(pk=connection_id)
+        fbc = FacebookController(c.related_connection)
+        token = c.related_connection.token
+        pages = fbc.get_pages(token)
+        context['object_list'] = tuple({'id': p['id'], 'name': p['name']} for p in pages)
+        return super(FacebookPageList, self).render_to_response(context)
+
+
+class FacebookFormList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        page_id = request.POST.get('page_id', None)
+        c = Connection.objects.get(pk=connection_id)
+        fbc = FacebookController(c.related_connection)
+        token = c.related_connection.token
+        forms = fbc.get_forms(token, page_id)
+        context['object_list'] = tuple({'id': p['id'], 'name': p['name']} for p in forms)
+        return super(FacebookFormList, self).render_to_response(context)
 
 
 class TestPlugView(TemplateView):

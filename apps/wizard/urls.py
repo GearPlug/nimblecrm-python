@@ -1,7 +1,8 @@
 from django.conf.urls import url
 from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionView, TestPlugView, ListGearView, \
     CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, ActionSpecificationsView, UpdateGearView, \
-    GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList
+    GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, MSSQLFieldList, \
+    PostgreSQLFieldList, FacebookPageList, FacebookFormList
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
@@ -24,5 +25,8 @@ urlpatterns = [
     url(r"async/sugarcrm/module/list/", SugarCRMModuleList.as_view(), name='async_sugarcrm_modules'),
     # MySQL
     url(r"async/mysql/field/list/", MySQLFieldList.as_view(), name='async_mysql_fields'),
-
+    url(r"async/mssql/field/list/", MSSQLFieldList.as_view(), name='async_mssql_fields'),
+    url(r"async/postgresql/field/list/", PostgreSQLFieldList.as_view(), name='async_postgresql_fields'),
+    url(r"async/facebook/page/list/", FacebookPageList.as_view(), name='async_facebook_pages'),
+    url(r"async/facebook/form/list/", FacebookFormList.as_view(), name='async_facebook_forms'),
 ]

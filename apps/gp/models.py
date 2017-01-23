@@ -88,8 +88,6 @@ class Connection(models.Model):
 class FacebookConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_facebook')
     name = models.CharField('name', max_length=200)
-    id_page = models.CharField('id page', max_length=300)
-    id_form = models.CharField('id form', max_length=300)
     token = models.CharField('token', max_length=300)
 
     def __str__(self):
