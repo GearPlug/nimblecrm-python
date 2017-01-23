@@ -311,6 +311,8 @@ class FacebookController(BaseController):
     _app_secret = FACEBOOK_APP_SECRET
     _base_graph_url = 'https://graph.facebook.com'
     _token = None
+    _page = None
+    _form = None
 
     def __init__(self, *args):
         super(FacebookController, self).__init__(*args)
@@ -329,9 +331,19 @@ class FacebookController(BaseController):
                 self._token = kwargs.pop('token')
             except Exception as e:
                 print("Error getting the Facebook token")
+
         try:
-            object_list = self._send_request('%s/leads' % self._connection_object.id_form, self._token)
-            if object_list:
+            for s in self._plug.plug_specification.all():
+                if s.action_specification.name.lower() == 'page':
+                    self._page = s.value
+                if s.action_specification.name.lower() == 'form':
+                    self._form = s.value
+        except:
+            print("Error asignando los specifications")
+
+        try:
+            object_list = self.get_account(self._token).json()
+            if 'id' in object_list:
                 return True
         except Exception as e:
             return False
@@ -378,6 +390,10 @@ class FacebookController(BaseController):
             print(e)
             return ''
 
+    def get_account(self, access_token):
+        url = 'me'
+        return self._send_request(url=url, token=access_token)
+
     def get_pages(self, access_token):
         url = 'me/accounts'
         return self._send_request(url=url, token=access_token)
@@ -396,7 +412,8 @@ class FacebookController(BaseController):
         if from_date is not None:
             from_date = int(time.mktime(from_date.timetuple()) * 1000)
             # print('from_date: %s' % from_date)
-        leads = self.get_leads(connection_object.token, connection_object.id_form, from_date=from_date)
+
+        leads = self.get_leads(connection_object.token, self._form, from_date=from_date)
         new_data = []
         for item in leads:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
