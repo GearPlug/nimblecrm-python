@@ -105,9 +105,7 @@ class ListConnectionView(LoginRequiredMixin, ListView):
         self.object_list = []
         # context = self.get_context_data()
         connection_id = request.POST.get('connection', None)
-        print(connection_id)
         connector_type = kwargs['type']
-        print(connector_type)
         request.session['%s_connection_id' % connector_type] = connection_id
         return redirect(reverse('wizard:plug_create', kwargs={'plug_type': connector_type}))
 
@@ -180,6 +178,8 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         if ping:
             data_list = controller.download_to_stored_data(self.object.connection.related_connection, self.object)
             print(data_list)
+        self.request.session['source_connection_id'] = None
+        self.request.session['target_connection_id'] = None
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
