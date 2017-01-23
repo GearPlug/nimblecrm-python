@@ -269,7 +269,8 @@ class MySQLFieldList(LoginRequiredMixin, TemplateView):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
         c = Connection.objects.get(pk=connection_id)
-        mc = MySQLController(c.related_connection)
+        mc = MySQLController()
+        ping = mc.create_connection(c.related_connection)
         field_list = mc.describe_table()
         print(field_list)
         # El id es el mismo nombre del module
