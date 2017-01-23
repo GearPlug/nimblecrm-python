@@ -4,20 +4,20 @@
 {% block body_content %}
 
     <button id="btnLogin">Facebook login</button>
-    <div>
-        <div id="connection_list">
-            <select>
-                <option>---------</option>
-            </select>
-        </div>
-    </div>
-    <div>
-        <div id="form_list">
-            <select>
-                <option>---------</option>
-            </select>
-        </div>
-    </div>
+{#    <div>#}
+{#        <div id="connection_list">#}
+{#            <select>#}
+{#                <option>---------</option>#}
+{#            </select>#}
+{#        </div>#}
+{#    </div>#}
+{#    <div>#}
+{#        <div id="form_list">#}
+{#            <select>#}
+{#                <option>---------</option>#}
+{#            </select>#}
+{#        </div>#}
+{#    </div>#}
     <button id="btnCheckLeads">test connection</button>
     <button id="btnCreateConnection">Save connection</button>
     <div>
@@ -120,12 +120,12 @@
             });
 
             $('button#btnCreateConnection').click(function () {
-                var form_id = $('div#form_list select').val();
-                var form_name = $('div#form_list select option:selected').html().trim();
-                var page_id = $('div#connection_list select').val();
-                $('form#formCreateConnection').find('input#id_name').val(form_name);
-                $('form#formCreateConnection').find('input#id_id_page').val(page_id);
-                $('form#formCreateConnection').find('input#id_id_form').val(form_id);
+{#                var form_id = $('div#form_list select').val();#}
+{#                var form_name = $('div#form_list select option:selected').html().trim();#}
+{#                var page_id = $('div#connection_list select').val();#}
+                $('form#formCreateConnection').find('input#id_name').val('test');
+{#                $('form#formCreateConnection').find('input#id_id_page').val(page_id);#}
+{#                $('form#formCreateConnection').find('input#id_id_form').val(form_id);#}
                 $('form#formCreateConnection').find('input#id_token').val(user_access_token);
                 $('form#formCreateConnection').submit();
             });

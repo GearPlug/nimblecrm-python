@@ -1,0 +1,13 @@
+{% extends 'commons/site_base.html' %}
+{% load static %}
+{% load bootstrap_tags %}
+
+{% block body %}
+    <ul>
+        {% for specification in object.action_specification.all %}
+            <li>
+                {{ specification.name }}
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
