@@ -1,8 +1,8 @@
 from django.conf.urls import url
-from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionView, TestPlugView, ListGearView, \
-    CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, ActionSpecificationsView, UpdateGearView, \
-    GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, MSSQLFieldList, \
-    PostgreSQLFieldList, FacebookPageList, FacebookFormList
+from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionView, TestPlugView, \
+    ActionSpecificationsView, CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, MSSQLFieldList, \
+    ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
+    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
@@ -26,7 +26,11 @@ urlpatterns = [
     # MySQL
     url(r"async/mysql/field/list/", MySQLFieldList.as_view(), name='async_mysql_fields'),
     url(r"async/mssql/field/list/", MSSQLFieldList.as_view(), name='async_mssql_fields'),
+    # PostgreSQL
     url(r"async/postgresql/field/list/", PostgreSQLFieldList.as_view(), name='async_postgresql_fields'),
+    # Facebook
     url(r"async/facebook/page/list/", FacebookPageList.as_view(), name='async_facebook_pages'),
     url(r"async/facebook/form/list/", FacebookFormList.as_view(), name='async_facebook_forms'),
+    # MailChimp
+    url(r'async/mailchimp/lists/list/', MailChimpListsList.as_view(), name='async_mailchimp_lists')
 ]
