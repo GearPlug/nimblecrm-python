@@ -17,6 +17,7 @@ urlpatterns = [
     url('^plug/test/(?P<pk>\d+)/$', TestPlugView.as_view(), name='plug_test'),
     url(r'^plug/action/list/$', ActionListView.as_view(), name='action_list'),
     url(r'^plug/action/(?P<pk>\d+)/specifications/$', ActionSpecificationsView.as_view(), name='action_specifications'),
+
     # PLUG CREATION ASYNC
     # GoogleSheets
     url(r"async/google/drive/sheets/list/", GoogleDriveSheetList.as_view(), name='async_google_drive_sheets'),
@@ -25,12 +26,13 @@ urlpatterns = [
     url(r"async/sugarcrm/module/list/", SugarCRMModuleList.as_view(), name='async_sugarcrm_modules'),
     # MySQL
     url(r"async/mysql/field/list/", MySQLFieldList.as_view(), name='async_mysql_fields'),
-    url(r"async/mssql/field/list/", MSSQLFieldList.as_view(), name='async_mssql_fields'),
+    # MSSQLServer
+    url(r'async/mssqlserver/field/list/', MSSQLFieldList.as_view(), name='async_mssqlserver_fields'),
     # PostgreSQL
     url(r"async/postgresql/field/list/", PostgreSQLFieldList.as_view(), name='async_postgresql_fields'),
     # Facebook
     url(r"async/facebook/page/list/", FacebookPageList.as_view(), name='async_facebook_pages'),
     url(r"async/facebook/form/list/", FacebookFormList.as_view(), name='async_facebook_forms'),
     # MailChimp
-    url(r'async/mailchimp/lists/list/', MailChimpListsList.as_view(), name='async_mailchimp_lists')
+    url(r'async/mailchimp/lists/list/', MailChimpListsList.as_view(), name='async_mailchimp_lists'),
 ]
