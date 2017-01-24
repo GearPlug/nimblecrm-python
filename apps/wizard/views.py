@@ -176,7 +176,10 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         ping = controller.create_connection(self.object.connection.related_connection, self.object, *cargs, **ckwargs)
         print("PING: %s" % ping)
         if ping:
-            data_list = controller.download_to_stored_data(self.object.connection.related_connection, self.object)
+            if self.object.is_source:
+                data_list = controller.download_to_stored_data(self.object.connection.related_connection, self.object)
+            elif self.object.is_target:
+                print("hola")
             print(data_list)
         self.request.session['source_connection_id'] = None
         self.request.session['target_connection_id'] = None
