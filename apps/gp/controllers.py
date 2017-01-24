@@ -268,7 +268,7 @@ class MailChimpController(BaseController):
         return []
 
     def get_list_merge_fields(self, list_id):
-        result = self._client.list._mc_client._get(url='lists/%s/merge-fields' % list_id)
+        result = self._client.lists._mc_client._get(url='lists/%s/merge-fields' % list_id)
         try:
             return result['merge_fields']
         except:
@@ -284,16 +284,31 @@ class MailChimpController(BaseController):
                 except:
                     data_list = []
         if self._plug is not None:
+            status = None
+            _list = None
+            for specification in self._plug.plug_specification.all():
+                if specification.action_specification.action.name == 'subscribe':
+                    status = 'subscribed'
+                elif specification.action_specification.action.name == 'unsubscribe':
+                    status = 'unsubscribed'
+                    _list = self.get_all_members(self._plug.plug_specification.all()[0].value)
+
             list_id = self._plug.plug_specification.all()[0].value
             for obj in data_list:
-                d = {'email_address': obj.pop('email_address'), 'status': 'subscribed',
+                d = {'email_address': obj.pop('email_address'), 'status': status,
                      'merge_fields': {key: obj[key] for key in obj.keys()}}
                 obj_list.append(d)
+
+            if status == 'unsubscribed':
+                obj_list = self.set_members_hash_id(obj_list, _list)
 
             extra = {'controller': 'mailchimp'}
             for item in obj_list:
                 try:
-                    res = self._client.member.create(list_id, item)
+                    if status == 'suscribed':
+                        res = self._client.lists.members.create(list_id, item)
+                    elif status == 'unsuscribed':
+                        res = self._client.lists.members.update(list_id, item['hash_id'], {'status': 'unsuscribed'})
                     extra['status'] = "s"
                     self._log.info('Email: %s  successfully sent. Result: %s.' % (item['email_address'], res['id']),
                                    extra=extra)
@@ -306,6 +321,12 @@ class MailChimpController(BaseController):
 
     def get_target_fields(self, **kwargs):
         return self.get_list_merge_fields(**kwargs)
+
+    def get_all_members(self, list_id):
+        return self._client.lists.members.all(list_id, get_all=True, fields="members.id,members.email_address")
+
+    def set_members_hash_id(self, members, _list):
+        return [dict(m, hash_id=l['id']) for m in members for l in _list['members'] if m['email_address'] == l['email_address']]
 
 
 class FacebookController(BaseController):
