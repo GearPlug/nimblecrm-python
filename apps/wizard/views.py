@@ -177,10 +177,10 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         print("PING: %s" % ping)
         if ping:
             if self.object.is_source:
-                data_list = controller.download_to_stored_data(self.object.connection.related_connection, self.object)
+                controller.download_to_stored_data(self.object.connection.related_connection, self.object)
             elif self.object.is_target:
-                print("hola")
-            print(data_list)
+                if c == ConnectorEnum.MailChimp:
+                    controller.get_target_fields(list_id=specification_list[0]['value'])
         self.request.session['source_connection_id'] = None
         self.request.session['target_connection_id'] = None
         return HttpResponseRedirect(self.get_success_url())
@@ -416,7 +416,10 @@ class TestPlugView(TemplateView):
             cargs = []
             ping = controller.create_connection(p.connection.related_connection, p, *cargs, **ckwargs)
             if ping:
-                target_fields = controller.get_target_fields()
+                if c == ConnectorEnum.MailChimp:
+                    target_fields = controller.get_target_fields(list_id=p.plug_specification.all()[0].value)
+                else:
+                    target_fields = controller.get_target_fields()
                 context['object_list'] = target_fields
         context['plug_type'] = p.plug_type
         return context
