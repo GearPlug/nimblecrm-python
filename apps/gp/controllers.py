@@ -290,6 +290,7 @@ class MailChimpController(BaseController):
                 if specification.action_specification.action.name == 'subscribe':
                     status = 'subscribed'
                 elif specification.action_specification.action.name == 'unsubscribe':
+                    print("unsubscribed")
                     status = 'unsubscribed'
                     _list = self.get_all_members(self._plug.plug_specification.all()[0].value)
 
@@ -305,17 +306,18 @@ class MailChimpController(BaseController):
             extra = {'controller': 'mailchimp'}
             for item in obj_list:
                 try:
-                    if status == 'suscribed':
+                    if status == 'subscribed':
                         res = self._client.lists.members.create(list_id, item)
-                    elif status == 'unsuscribed':
-                        res = self._client.lists.members.update(list_id, item['hash_id'], {'status': 'unsuscribed'})
+                    elif status == 'unsubscribed':
+                        res = self._client.lists.members.update(list_id, item['hash_id'], {'status': 'unsubscribed'})
                     extra['status'] = "s"
                     self._log.info('Email: %s  successfully sent. Result: %s.' % (item['email_address'], res['id']),
                                    extra=extra)
-                except:
+                except Exception as e:
+                    print(e)
                     res = "User already exists"
                     extra['status'] = 'f'
-                    self._log.error('Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
+                    self._log.error('1. Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
             return
         raise ControllerError("Incomplete.")
 
