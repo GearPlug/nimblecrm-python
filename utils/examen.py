@@ -94,18 +94,20 @@ def try_mailchimp(user, password):
     # print(lists)
     # email = 'lucas.doe@gmail.com'
     # m.update(email.encode())
-    idp = '540db784d6'
-    a = [{'email_address': 'jama.b@hotmail.com', 'merge_fields': {'LNAME': 'Bolivar Diaz', 'FNAME': 'Jacqueline Maria'},
-          'status': 'subscribed'}]
-    jhon = {
-        'email_address': 'lucas.doe@gmail.com',
-        'status': 'subscribed',
-        'merge_fields': {
-            'FNAME': 'John',
-            'LNAME': 'Doe',
-        },
-    }
-    result = client.member.create(idp, jhon)
+    idp = 'xxxxxxx'
+    # a = [{'email_address': 'jama.b@hotmail.com', 'merge_fields': {'LNAME': 'Bolivar Diaz', 'FNAME': 'Jacqueline Maria'},
+    #       'status': 'subscribed'}]
+    # jhon = {
+    #     'email_address': 'lucas.doe@gmail.com',
+    #     'status': 'subscribed',
+    #     'merge_fields': {
+    #         'FNAME': 'John',
+    #         'LNAME': 'Doe',
+    #     },
+    # }
+    # result = client.lists.members.create(idp, jhon)
+
+    result = client.lists.members.update(idp, 'yyyyyyyyy', {'status': 'unsuscribed'})
     print(result)
 
 
@@ -145,12 +147,14 @@ def try_google():
 # ej3()
 # try_sugar('http://208.113.131.86/uat/uat/service/v4_1/rest.php', 'emarketing', 'zakaramk*')
 # try_sub_dict('Hola soy german!', {'german': 'daniel'})
-# try_mailchimp('MaxConceptLife63', '619813e972f8698c8029978a8dfc250d-us12')
+try_mailchimp('ingferrermiguel@gmail.com', 'zzzzzzzzzz')
 
 # d = {'a':1, 'b':2, 'c':3}
 # e = d
 # d['a'] = 5
 # print(d)
 # print(e)
-try_google()
+# try_google()
 # try_mysql()
+# try_postgres()
+# try_mssql()

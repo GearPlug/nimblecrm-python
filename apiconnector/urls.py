@@ -12,7 +12,6 @@ urlpatterns = [
                   url(r'^account/', include('apps.user.urls')),
                   url(r'^account/', include('account.urls')),
                   url(r'^', include('apps.home.urls', namespace='home')),
-                  url(r'^api/', include('apps.api.urls', namespace='api')),
                   url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
                   url(r'^o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
               ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

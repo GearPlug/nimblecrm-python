@@ -7,6 +7,8 @@ import hmac
 import hashlib
 import logging
 import MySQLdb
+import psycopg2
+import pymssql
 import copy
 import sugarcrm
 import time
@@ -53,6 +55,9 @@ class BaseController(object):
         else:
             raise ControllerError("There's no active connection or plug.")
 
+    def get_target_fields(self, **kwargs):
+        raise ControllerError("Not implemented yet.")
+
 
 class GoogleSpreadSheetsController(BaseController):
     _credential = None
@@ -81,9 +86,9 @@ class GoogleSpreadSheetsController(BaseController):
         if credentials_json is not None:
             try:
                 for s in self._plug.plug_specification.all():
-                    if s.action_specification.name == 'SpreadSheet':
+                    if s.action_specification.name.lower() == 'spreadsheet':
                         self._spreadsheet_id = s.value
-                    if s.action_specification.name == 'Worksheet name':
+                    if s.action_specification.name.lower() == 'worksheet':
                         self._worksheet_name = s.value
             except:
                 print("Error asignando los specifications")
@@ -133,11 +138,10 @@ class GoogleSpreadSheetsController(BaseController):
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
         data_list = get_dict_with_source_data(source_data, target_fields)
-        print(data_list)
         if is_first:
             if data_list:
                 try:
-                    data_list = [data_list[0]]
+                    data_list = [data_list[-1]]
                 except:
                     data_list = []
         if self._plug is not None:
@@ -161,25 +165,22 @@ class GoogleSpreadSheetsController(BaseController):
             div = int((div - module) / 26)
         return string
 
-    def get_sheets(self):
+    def get_sheet_list(self):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
         drive_service = discovery.build('drive', 'v3', http=http_auth)
         files = drive_service.files().list().execute()
-        sheet_list = []
-        for f in files['files']:
-            if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet':
-                sheet_list.append((f['id'], f['name']))
-
+        sheet_list = tuple(
+            f for f in files['files'] if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet')
         return sheet_list
 
-    def get_sheet_info(self, sheet_id):
+    def get_worksheet_list(self, sheet_id):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
         result = sheets_service.spreadsheets().get(spreadsheetId=sheet_id).execute()
-        sheets = tuple(i['properties'] for i in result['sheets'])  # % sheets[0]['gridProperties']['rowCount']
-        return sheets
+        worksheet_list = tuple(i['properties'] for i in result['sheets'])
+        return worksheet_list
 
     def get_worksheet_values(self, from_row=None, limit=None):
         credential = self._credential
@@ -218,6 +219,9 @@ class GoogleSpreadSheetsController(BaseController):
 
         return res
 
+    def get_target_fields(self, **kwargs):
+        return self.get_worksheet_first_row(**kwargs)
+
 
 class MailChimpController(BaseController):
     """
@@ -233,10 +237,10 @@ class MailChimpController(BaseController):
             super(MailChimpController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
+                    print(self._connection_object.connection_user, self._connection_object.api_key)
                     self._client = MailChimp(self._connection_object.connection_user, self._connection_object.api_key)
                 except Exception as e:
                     print("Error getting the MailChimp attributes")
-                    print(e)
                     self._client = None
         elif not args and kwargs:
             if 'user' in kwargs:
@@ -245,24 +249,26 @@ class MailChimpController(BaseController):
                 api_key = kwargs.pop('api_key')
             try:
                 self._client = MailChimp(user, api_key)
+                print("%s %s", (user, api_key))
+                print(self._client)
             except Exception as e:
+                print(e)
                 print("Error getting the MailChimp attributes")
                 self._client = None
-        try:
-            t = self._client.list.all()
-        except Exception as e:
-            t = None
+        t = self.get_lists()
         return t is not None
 
     def get_lists(self):
-        result = self._client.list.all()
-        try:
-            return [{'name': l['name'], 'id': l['id']} for l in result['lists']]
-        except:
-            return []
+        if self._client:
+            result = self._client.lists.all()
+            try:
+                return [{'name': l['name'], 'id': l['id']} for l in result['lists']]
+            except:
+                return []
+        return []
 
     def get_list_merge_fields(self, list_id):
-        result = self._client.list._mc_client._get(url='lists/%s/merge-fields' % list_id)
+        result = self._client.lists._mc_client._get(url='lists/%s/merge-fields' % list_id)
         try:
             return result['merge_fields']
         except:
@@ -278,34 +284,95 @@ class MailChimpController(BaseController):
                 except:
                     data_list = []
         if self._plug is not None:
+            status = None
+            _list = None
+            for specification in self._plug.plug_specification.all():
+                if specification.action_specification.action.name == 'subscribe':
+                    status = 'subscribed'
+                elif specification.action_specification.action.name == 'unsubscribe':
+                    print("unsubscribed")
+                    status = 'unsubscribed'
+                    _list = self.get_all_members(self._plug.plug_specification.all()[0].value)
+
             list_id = self._plug.plug_specification.all()[0].value
             for obj in data_list:
-                d = {'email_address': obj.pop('email_address'), 'status': 'subscribed',
+                d = {'email_address': obj.pop('email_address'), 'status': status,
                      'merge_fields': {key: obj[key] for key in obj.keys()}}
                 obj_list.append(d)
+
+            if status == 'unsubscribed':
+                obj_list = self.set_members_hash_id(obj_list, _list)
 
             extra = {'controller': 'mailchimp'}
             for item in obj_list:
                 try:
-                    res = self._client.member.create(list_id, item)
+                    if status == 'subscribed':
+                        res = self._client.lists.members.create(list_id, item)
+                    elif status == 'unsubscribed':
+                        res = self._client.lists.members.update(list_id, item['hash_id'], {'status': 'unsubscribed'})
                     extra['status'] = "s"
                     self._log.info('Email: %s  successfully sent. Result: %s.' % (item['email_address'], res['id']),
                                    extra=extra)
-                except:
+                except Exception as e:
+                    print(e)
                     res = "User already exists"
                     extra['status'] = 'f'
-                    self._log.error('Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
+                    self._log.error('1. Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
             return
         raise ControllerError("Incomplete.")
+
+    def get_target_fields(self, **kwargs):
+        return self.get_list_merge_fields(**kwargs)
+
+    def get_all_members(self, list_id):
+        return self._client.lists.members.all(list_id, get_all=True, fields="members.id,members.email_address")
+
+    def set_members_hash_id(self, members, _list):
+        return [dict(m, hash_id=l['id']) for m in members for l in _list['members'] if m['email_address'] == l['email_address']]
 
 
 class FacebookController(BaseController):
     _app_id = FACEBOOK_APP_ID
     _app_secret = FACEBOOK_APP_SECRET
     _base_graph_url = 'https://graph.facebook.com'
+    _token = None
+    _page = None
+    _form = None
 
     def __init__(self, *args):
         super(FacebookController, self).__init__(*args)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(FacebookController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._token = self._connection_object.token
+                except Exception as e:
+                    print("Error getting the Facebook token")
+                    # raise
+        elif kwargs:
+            try:
+                self._token = kwargs.pop('token')
+            except Exception as e:
+                print("Error getting the Facebook token")
+
+        try:
+            for s in self._plug.plug_specification.all():
+                if s.action_specification.name.lower() == 'page':
+                    self._page = s.value
+                if s.action_specification.name.lower() == 'form':
+                    self._form = s.value
+        except:
+            print("Error asignando los specifications")
+
+        try:
+            object_list = self.get_account(self._token).json()
+            if 'id' in object_list:
+                return True
+        except Exception as e:
+            return False
+        return False
 
     def _get_app_secret_proof(self, access_token):
         h = hmac.new(
@@ -348,6 +415,10 @@ class FacebookController(BaseController):
             print(e)
             return ''
 
+    def get_account(self, access_token):
+        url = 'me'
+        return self._send_request(url=url, token=access_token)
+
     def get_pages(self, access_token):
         url = 'me/accounts'
         return self._send_request(url=url, token=access_token)
@@ -356,13 +427,18 @@ class FacebookController(BaseController):
         url = '%s/leads' % form_id
         return self._send_request(url=url, token=access_token, from_date=from_date)
 
+    def get_forms(self, access_token, page_id):
+        url = '%s/leadgen_forms' % page_id
+        return self._send_request(url=url, token=access_token)
+
     def download_to_stored_data(self, connection_object, plug, from_date=None):
         if plug is None:
             plug = self._plug
         if from_date is not None:
             from_date = int(time.mktime(from_date.timetuple()) * 1000)
             # print('from_date: %s' % from_date)
-        leads = self.get_leads(connection_object.token, connection_object.id_form, from_date=from_date)
+
+        leads = self.get_leads(connection_object.token, self._form, from_date=from_date)
         new_data = []
         for item in leads:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
@@ -420,7 +496,7 @@ class MySQLController(BaseController):
                 user = kwargs.pop('connection_user')
                 password = kwargs.pop('connection_password')
                 self._database = kwargs.pop('database')
-                self._table = kwargs.pop('table')
+                self._table = kwargs.pop('table', None)
             except Exception as e:
                 pass
                 # raise
@@ -493,7 +569,7 @@ class MySQLController(BaseController):
                                                connection=connection_object.connection, plug=plug))
         if new_data:
             field_count = len(parsed_data[0]['data'])
-            extra = {'controller': 'mysql'}
+            extra = {'controller': 'postgresql'}
             for i, item in enumerate(new_data):
                 try:
                     item.save()
@@ -523,11 +599,10 @@ class MySQLController(BaseController):
                     data_list = []
         if self._plug is not None:
             obj_list = []
-            extra = {'controller': 'mysql'}
+            extra = {'controller': 'postgresql'}
             for item in data_list:
                 try:
                     insert = self._get_insert_statement(item)
-                    print(insert)
                     self._cursor.execute(insert)
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
@@ -542,6 +617,333 @@ class MySQLController(BaseController):
                 self._connection.rollback()
             return obj_list
         raise ControllerError("There's no plug")
+
+    def get_target_fields(self, **kwargs):
+        return self.describe_table(**kwargs)
+
+
+class PostgreSQLController(BaseController):
+    _connection = None
+    _database = None
+    _table = None
+    _cursor = None
+
+    def __init__(self, *args, **kwargs):
+        super(PostgreSQLController, self).__init__(*args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(PostgreSQLController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    host = self._connection_object.host
+                    port = self._connection_object.port
+                    user = self._connection_object.connection_user
+                    password = self._connection_object.connection_password
+                    self._database = self._connection_object.database
+                    self._table = self._connection_object.table
+                except Exception as e:
+                    pass
+                    # raise
+                    print("Error getting the PostgreSQL attributes")
+        elif not args and kwargs:
+            try:
+                host = kwargs.pop('host')
+                port = kwargs.pop('port')
+                user = kwargs.pop('connection_user')
+                password = kwargs.pop('connection_password')
+                self._database = kwargs.pop('database')
+                self._table = kwargs.pop('table', None)
+            except Exception as e:
+                pass
+                # raise
+                print("Error getting the PostgreSQL attributes")
+        try:
+            self._connection = psycopg2.connect(host=host, port=int(port), user=user, password=password,
+                                                database=self._database)
+            self._cursor = self._connection.cursor()
+        except:
+            self._connection = None
+        return self._connection is not None
+
+    def describe_table(self):
+        if self._table is not None and self._database is not None:
+            try:
+                self._cursor.execute(
+                    'SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.columns WHERE table_name = %s',
+                    (self._table,))
+                return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
+                        item in self._cursor]
+            except:
+                print('Error describing table: %s')
+        return []
+
+    def get_primary_keys(self):
+        if self._table is not None and self._database is not None:
+            try:
+                self._cursor.execute(
+                    'SELECT c.column_name FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name where tc.table_name = %s',
+                    (self._table,))
+                return [item[0] for item in self._cursor]
+            except:
+                print('Error ')
+        return None
+
+    def select_all(self, limit=300):
+        if self._table is not None and self._database is not None and self._plug is not None:
+            try:
+                order_by = self._plug.plug_specification.all()[0].value
+            except:
+                order_by = None
+            select = 'SELECT * FROM %s ' % self._table
+            if order_by is not None:
+                select += 'ORDER BY %s DESC ' % order_by
+            if limit is not None and isinstance(limit, int):
+                select += 'LIMIT %s' % limit
+            try:
+                self._cursor.execute(select)
+                cursor_select_all = [item for item in self._cursor]
+                cursor_describe = self.describe_table()
+                return [{column['name']: item[i] for i, column in enumerate(cursor_describe)} for item in
+                        cursor_select_all]
+            except Exception as e:
+                print(e)
+        return []
+
+    def download_to_stored_data(self, connection_object, plug, **kwargs):
+        if plug is None:
+            plug = self._plug
+        data = self.select_all()
+        id_list = self.get_primary_keys()
+        parsed_data = [{'id': tuple(item[key] for key in id_list),
+                        'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}
+                       for item in data]
+        new_data = []
+        for item in parsed_data:
+            try:
+                id_item = item['id'][0]
+            except IndexError:
+                id_item = None
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id_item)
+            if not q.exists():
+                for column in item['data']:
+                    new_data.append(StoredData(name=column['name'], value=column['value'], object_id=id_item,
+                                               connection=connection_object.connection, plug=plug))
+        if new_data:
+            field_count = len(parsed_data[0]['data'])
+            extra = {'controller': 'postgresql'}
+            for i, item in enumerate(new_data):
+                try:
+                    item.save()
+                    if (i + 1) % field_count == 0:
+                        extra['status'] = 's'
+                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                except:
+                    extra['status'] = 'f'
+                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+            return True
+        return False
+
+    def _get_insert_statement(self, item):
+        insert = """INSERT INTO %s (%s) VALUES (%s)""" % (
+            self._table, """,""".join(item.keys()), """,""".join("""\'%s\'""" % i for i in item.values()))
+        return insert
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[0]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            obj_list = []
+            extra = {'controller': 'postgresql'}
+            for item in data_list:
+                try:
+                    insert = self._get_insert_statement(item)
+                    self._cursor.execute(insert)
+                    extra['status'] = 's'
+                    self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
+                    obj_list.append(self._cursor.lastrowid)
+                except Exception as e:
+                    print(e)
+                    extra['status'] = 'f'
+                    self._log.info('Item: %s failed to send.' % (self._cursor.lastrowid), extra=extra)
+            try:
+                self._connection.commit()
+            except:
+                self._connection.rollback()
+            return obj_list
+        raise ControllerError("There's no plug")
+
+    def get_target_fields(self, **kwargs):
+        return self.describe_table(**kwargs)
+
+
+class MSSQLController(BaseController):
+    _connection = None
+    _database = None
+    _table = None
+    _cursor = None
+
+    def __init__(self, *args, **kwargs):
+        super(MSSQLController, self).__init__(*args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(MSSQLController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    host = self._connection_object.host
+                    port = self._connection_object.port
+                    user = self._connection_object.connection_user
+                    password = self._connection_object.connection_password
+                    self._database = self._connection_object.database
+                    self._table = self._connection_object.table
+                except Exception as e:
+                    pass
+                    # raise
+                    print("Error getting the MSSQL attributes")
+        elif not args and kwargs:
+            try:
+                host = kwargs.pop('host')
+                port = kwargs.pop('port')
+                user = kwargs.pop('connection_user')
+                password = kwargs.pop('connection_password')
+                self._database = kwargs.pop('database')
+                self._table = kwargs.pop('table', None)
+            except Exception as e:
+                pass
+                # raise
+                print("Error getting the MSSQL attributes")
+        try:
+            self._connection = pymssql.connect(host=host, port=int(port), user=user, password=password,
+                                               database=self._database)
+            self._cursor = self._connection.cursor()
+        except:
+            self._connection = None
+        return self._connection is not None
+
+    def describe_table(self):
+        if self._table is not None and self._database is not None:
+            try:
+                self._cursor.execute(
+                    'select COLUMN_NAME, DATA_TYPE, IS_NULLABLE from information_schema.columns where table_name = %s',
+                    (self._table,))
+                return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
+                        item in self._cursor]
+            except:
+                print('Error describing table: %s')
+        return []
+
+    def get_primary_keys(self):
+        if self._table is not None and self._database is not None:
+            try:
+                self._cursor.execute(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + CONSTRAINT_NAME), 'IsPrimaryKey') = 1 AND TABLE_NAME = %s",
+                    (self._table,))
+                return [item[0] for item in self._cursor]
+            except:
+                print('Error ')
+        return None
+
+    def select_all(self, limit=300):
+        if self._table is not None and self._database is not None and self._plug is not None:
+            try:
+                order_by = self._plug.plug_specification.all()[0].value
+            except:
+                order_by = None
+            select = 'SELECT * FROM %s ' % self._table
+            if order_by is not None:
+                select += 'ORDER BY %s DESC ' % order_by
+            if limit is not None and isinstance(limit, int):
+                select += 'OFFSET 0 ROWS FETCH NEXT %s ROWS ONLY' % limit
+            try:
+                self._cursor.execute(select)
+                cursor_select_all = [item for item in self._cursor]
+                cursor_describe = self.describe_table()
+                return [{column['name']: item[i] for i, column in enumerate(cursor_describe)} for item in
+                        cursor_select_all]
+            except Exception as e:
+                print(e)
+        return []
+
+    def download_to_stored_data(self, connection_object, plug, **kwargs):
+        if plug is None:
+            plug = self._plug
+        data = self.select_all()
+        id_list = self.get_primary_keys()
+        parsed_data = [{'id': tuple(item[key] for key in id_list),
+                        'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}
+                       for item in data]
+        new_data = []
+        for item in parsed_data:
+            try:
+                id_item = item['id'][0]
+            except IndexError:
+                id_item = None
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id_item)
+            if not q.exists():
+                for column in item['data']:
+                    new_data.append(StoredData(name=column['name'], value=column['value'], object_id=id_item,
+                                               connection=connection_object.connection, plug=plug))
+        if new_data:
+            field_count = len(parsed_data[0]['data'])
+            extra = {'controller': 'mssql'}
+            for i, item in enumerate(new_data):
+                try:
+                    item.save()
+                    if (i + 1) % field_count == 0:
+                        extra['status'] = 's'
+                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                except:
+                    extra['status'] = 'f'
+                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+            return True
+        return False
+
+    def _get_insert_statement(self, item):
+        insert = """INSERT INTO %s (%s) VALUES (%s)""" % (
+            self._table, """,""".join(item.keys()), """,""".join("""\'%s\'""" % i for i in item.values()))
+        return insert
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[0]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            obj_list = []
+            extra = {'controller': 'mssql'}
+            for item in data_list:
+                try:
+                    insert = self._get_insert_statement(item)
+                    self._cursor.execute(insert)
+                    extra['status'] = 's'
+                    self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
+                    obj_list.append(self._cursor.lastrowid)
+                except Exception as e:
+                    print(e)
+                    extra['status'] = 'f'
+                    self._log.info('Item: %s failed to send.' % (self._cursor.lastrowid), extra=extra)
+            try:
+                self._connection.commit()
+            except:
+                self._connection.rollback()
+            return obj_list
+        raise ControllerError("There's no plug")
+
+    def get_target_fields(self, **kwargs):
+        return self.describe_table(**kwargs)
 
 
 class CustomSugarObject(sugarcrm.SugarObject):
@@ -663,6 +1065,9 @@ class SugarCRMController(BaseController):
                     self._log.info('Item: %s failed to send.' % (res.id), extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
+
+    def get_target_fields(self, **kwargs):
+        return self.get_module_fields(**kwargs)
 
 
 class ControllerError(Exception):
