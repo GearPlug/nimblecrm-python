@@ -8,4 +8,5 @@ ADD gearplug /home/www/gearplug
 RUN cd /home/www/gearplug; mkdir log/; mkdir log/controller; mkdir log/django;
 RUN pip3 install -r /home/www/gearplug/requirements.txt
 RUN cp -r /home/www/gearplug/extra/supervisor/* /etc/supervisor/conf.d/
+CMD ["/bin/sh /usr/sbin/rabbitmq-server &"]
 CMD ["supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
