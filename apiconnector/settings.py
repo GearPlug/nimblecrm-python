@@ -4,6 +4,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'nd65g3a23c!y%+a_%+v)!trnjh%c=gh(zg5!gsn*qo&b6*nsbb'
 DEBUG = True
 ALLOWED_HOSTS = ['*',]
+CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
 
 INSTALLED_APPS = [
@@ -157,15 +158,11 @@ USE_L10N = True
 USE_TZ = True
 
 # Static files
-
 STATIC_URL = '/static/'
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'staticfiles'),
 ]
-
 AUTHENTICATION_BACKENDS = ['account.auth_backends.EmailAuthenticationBackend', ]
 
 # account app
@@ -175,29 +172,16 @@ ACCOUNT_USER_DISPLAY = lambda user: user.email
 ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/'
 ACCOUNT_SIGNUP_REDIRECT_URL = '/dashboard/'
 
-#
-CORS_ORIGIN_ALLOW_ALL = True
-
 # SETTINGS CENTRALIZADOS
 # Facebook
 FACEBOOK_APP_ID = '1731160853833926'
 FACEBOOK_APP_SECRET = '0e6b58b4982c602374c13fb47c418805'
 FACEBOOK_GRAPH_VERSION = '2.6'
 
-# CELERY STUFF
-BROKER_URL = 'redis://localhost:6379'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379'
-CELERY_ACCEPT_CONTENT = ['application/json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'America/Bogota'
-
-
 # Email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'gsaavedra@grplug.com'
+EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
-# EMAIL_HOST_PASSWORD = 'zmdfnwqmlrsoxdqn'
 EMAIL_PORT = 587
