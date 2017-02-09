@@ -1,14 +1,9 @@
 from django.conf.urls import url
-<<<<<<< HEAD
 from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionView, TestPlugView, \
     ActionSpecificationsView, CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, MSSQLFieldList, \
     ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
     PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList
-=======
-from apps.wizard.views import CreateGearView, UpdateGearView, CreatePlugView, CreateConnectionView, \
-    UpdatePlugSetActionView, CreateGearMapView, CreatePlugSpecificationView, async_spreadsheet_info, \
-    async_spreadsheet_values, ListConnectorView, ListConnectionView
->>>>>>> master
+
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='create_gear'),
@@ -32,7 +27,7 @@ urlpatterns = [
     url(r'^connector/list/(?P<type>(source|target)+)/$', ListConnectorView.as_view(), name='connector_list'),
     url(r'^connection/list/(?P<connector_id>\d+)/(?P<type>(source|target)+)/$', ListConnectionView.as_view(),
         name='connection_list'),
-<<<<<<< HEAD
+
     url(r'^plug/create/(?P<plug_type>(source|target)+)/$', CreatePlugView.as_view(), name='plug_create'),
     url('^plug/test/(?P<pk>\d+)/$', TestPlugView.as_view(), name='plug_test'),
     url(r'^plug/action/list/$', ActionListView.as_view(), name='action_list'),
@@ -53,8 +48,7 @@ urlpatterns = [
     url(r"async/facebook/form/list/", FacebookFormList.as_view(), name='async_facebook_forms'),
     # MailChimp
     url(r'async/mailchimp/lists/list/', MailChimpListsList.as_view(), name='async_mailchimp_lists')
-=======
+
     # url(r'^plug/create/(?P<type>(source|target)+)/$', '', name='plug_create'),
 
->>>>>>> master
 ]
