@@ -290,7 +290,6 @@ class MailChimpController(BaseController):
                 if specification.action_specification.action.name == 'subscribe':
                     status = 'subscribed'
                 elif specification.action_specification.action.name == 'unsubscribe':
-                    print("unsubscribed")
                     status = 'unsubscribed'
                     _list = self.get_all_members(self._plug.plug_specification.all()[0].value)
 
@@ -317,7 +316,7 @@ class MailChimpController(BaseController):
                     print(e)
                     res = "User already exists"
                     extra['status'] = 'f'
-                    self._log.error('1. Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
+                    self._log.error('Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
             return
         raise ControllerError("Incomplete.")
 
