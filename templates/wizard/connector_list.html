@@ -18,11 +18,12 @@
         <ul class="list-connector">
             {% for connector in object_list %}
                 <li>
-                    <div class="gr_{{ connector.name|lower }} go2Conn">
-                        <a href="{% url 'wizard:connection_list' connector_id=connector.id type=type %}">
-                            {{ connector.name }}
-                        </a>
-                    </div>
+                    <a href="{% url 'wizard:connection_list' connector_id=connector.id type=type %}">
+                        <div class="gr_ go2Conn">
+                            <img src="{{ connector.icon.url }}" height="60" width="60">
+                            <p>{{ connector.name }}</p>
+                        </div>
+                    </a>
                 </li>
             {% endfor %}
         </ul>
