@@ -526,7 +526,7 @@ class MySQLController(BaseController):
                 print('Error ')
         return None
 
-    def select_all(self, limit=300):
+    def select_all(self, limit=50):
         if self._table is not None and self._database is not None and self._plug is not None:
             try:
                 order_by = self._plug.plug_specification.all()[0].value
@@ -688,7 +688,7 @@ class PostgreSQLController(BaseController):
                 print('Error ')
         return None
 
-    def select_all(self, limit=300):
+    def select_all(self, limit=50):
         if self._table is not None and self._database is not None and self._plug is not None:
             try:
                 order_by = self._plug.plug_specification.all()[0].value
@@ -850,7 +850,7 @@ class MSSQLController(BaseController):
                 print('Error ')
         return None
 
-    def select_all(self, limit=300):
+    def select_all(self, limit=50):
         if self._table is not None and self._database is not None and self._plug is not None:
             try:
                 order_by = self._plug.plug_specification.all()[0].value
