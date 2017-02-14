@@ -48,7 +48,7 @@ def update_gear(gear_id):
             # TARGET
             target_connector = ConnectorEnum.get_connector(gear.target.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(target_connector)
-            kwargs = {'connection': gear.source.connection, 'plug': gear.source,}
+            kwargs = {'connection': gear.source.connection, 'plug': gear.source, }
             if gear.gear_map.last_sent_stored_data_id is not None:
                 kwargs['id__gt'] = gear.gear_map.last_sent_stored_data_id
             stored_data = StoredData.objects.filter(**kwargs)
@@ -56,24 +56,10 @@ def update_gear(gear_id):
                 return False
             target_fields = OrderedDict((data.target_name, data.source_value) for data in
                                         GearMapData.objects.filter(gear_map=gear.gear_map))
-            # for data in GearMapData.objects.filter(gear_map=gear.gear_map):
-            #     print(data.target_name)
-            #     target_fields[data.target_name] = data.source_value
-            print(target_fields)
             source_data = [{'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}}
                            for item in stored_data.values_list('object_id').distinct()]
-            if target_connector == ConnectorEnum.MySQL:
-                controller = controller_class(gear.target.connection.related_connection, gear.target)
-                controller.send_stored_data(source_data, target_fields)
-            elif target_connector == ConnectorEnum.SugarCRM:
-                controller = controller_class(gear.target.connection.related_connection, gear.target)
-                entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
-            elif target_connector == ConnectorEnum.MailChimp:
-                controller = controller_class(gear.target.connection.related_connection, gear.target)
-                entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
-            elif target_connector == ConnectorEnum.GoogleSpreadSheets:
-                controller = controller_class(gear.target.connection.related_connection, gear.target)
-                controller.send_stored_data(source_data, target_fields, is_first=is_first)
+            controller = controller_class(gear.target.connection.related_connection, gear.target)
+            entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
             gear.gear_map.last_source_update = timezone.now()
             gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
             gear.gear_map.save()
