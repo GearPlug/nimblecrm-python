@@ -13,7 +13,7 @@
                     $.ajax({
                         method: "POST",
                         url: url,
-                        data: {connection_id: {{ request.session.source_connection_id }}}
+                        data: {connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %}}
                     }).done(function (response) {
                         $(select).html(response);
                         load_spreadsheet = false;
@@ -30,7 +30,7 @@
                     method: "POST",
                     url: url,
                     data: {
-                        connection_id: {{ request.session.source_connection_id }},
+                        connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %},
                         spreadsheet_id: spreadsheet_id,
                     }
                 }).done(function (response) {
