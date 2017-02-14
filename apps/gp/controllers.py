@@ -327,7 +327,8 @@ class MailChimpController(BaseController):
         return self._client.lists.members.all(list_id, get_all=True, fields="members.id,members.email_address")
 
     def set_members_hash_id(self, members, _list):
-        return [dict(m, hash_id=l['id']) for m in members for l in _list['members'] if m['email_address'] == l['email_address']]
+        return [dict(m, hash_id=l['id']) for m in members for l in _list['members'] if
+                m['email_address'] == l['email_address']]
 
 
 class FacebookController(BaseController):
@@ -681,10 +682,10 @@ class PostgreSQLController(BaseController):
         if self._table is not None and self._database is not None:
             try:
                 self._cursor.execute(
-                    'SELECT c.column_name FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name where tc.table_name = %s',
-                    (self._table,))
+                    "SELECT c.column_name FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name where c.table_schema = %s and tc.table_name = %s",
+                    self._table.split('.'))
                 return [item[0] for item in self._cursor]
-            except:
+            except Exception as e:
                 print('Error ')
         return None
 
