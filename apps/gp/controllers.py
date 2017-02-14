@@ -669,8 +669,8 @@ class PostgreSQLController(BaseController):
         if self._table is not None and self._database is not None:
             try:
                 self._cursor.execute(
-                    'SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.columns WHERE table_name = %s',
-                    (self._table,))
+                    "SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.columns WHERE table_schema= %s AND table_name = %s",
+                    self._table.split('.'))
                 return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
                         item in self._cursor]
             except:
