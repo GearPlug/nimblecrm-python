@@ -64,7 +64,7 @@ def update_gear(gear_id):
             gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
             gear.gear_map.save()
         except Exception as e:
-            raise
+            # raise
             print("Exception in task %s" % gear_id)
             pass
         finally:

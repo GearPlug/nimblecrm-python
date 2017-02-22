@@ -4,7 +4,7 @@ from apps.connection.views import CreateConnectionView, ListConnectionView, List
     AJAXFacebookGetAvailableConnectionsView, AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
     AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
     GoogleAuthView, AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, \
-    AJAXPostgreSQLTestConnection, AJAXMSSQLTestConnection
+    AJAXPostgreSQLTestConnection, AJAXMSSQLTestConnection, SlackAuthView, AuthSuccess
 
 urlpatterns = [
     url(r'create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create'),
@@ -15,6 +15,10 @@ urlpatterns = [
     url(r"^google_auth/$", GoogleAuthView.as_view(), name="google_auth"),
     url(r"^google_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(),
         name="google_auth_success_create_connection"),
+    url(r'^auth/slack/', SlackAuthView.as_view(), name="slack_auth"),
+
+    # AuthSuccess
+    url(r'^auth/success/$', AuthSuccess.as_view(), name="auth_sucess"),
 
     # AJAX
     url(r'ajax/facebook/get/connections/', AJAXFacebookGetAvailableConnectionsView.as_view(),

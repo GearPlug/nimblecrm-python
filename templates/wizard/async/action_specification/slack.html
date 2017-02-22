@@ -1,0 +1,25 @@
+{% extends 'wizard/async/action_specification.html' %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            var load_channels = true;
+
+            $(document).on('click', 'select[data-name=channel]', function () {
+                if (load_channels == true) {
+                    var select = $(this);
+                    load_channels = false;
+                    $.ajax({
+                        method: "POST",
+                        url: "{% url 'wizard:async_slack_chanels' %}",
+                        data: {connection_id:{% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %}},
+                    }).done(function (response) {
+                        $(select).html(response);
+                        load_channels = true;
+                    })
+                }
+            });
+        })
+    </script>
+{% endblock %}

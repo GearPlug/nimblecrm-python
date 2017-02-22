@@ -4,7 +4,7 @@ from apps.gp.model_fields import JSONField
 from apps.user.models import User
 
 connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
-               'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql']
+               'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack']
 
 
 class Connector(models.Model):
@@ -47,7 +47,7 @@ class ActionSpecification(models.Model):
     name = models.CharField('name', max_length=30)
 
     def __str__(self):
-        return self.action.name + ': ' + self.name +  ' on ' + self.action.connector.name
+        return self.action.name + ': ' + self.name + ' on ' + self.action.connector.name
 
 
 class Connection(models.Model):
@@ -162,6 +162,16 @@ class GoogleSpreadSheetsConnection(models.Model):
                                       related_name='connection_googlespreadsheets')
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class SlackConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
+                                      related_name='connection_slack')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=100)
 
     def __str__(self):
         return self.name

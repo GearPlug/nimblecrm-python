@@ -1,0 +1,20 @@
+{% extends 'connection/create.html' %}
+{% load bootstrap_tags %}
+
+{% block body_content %}
+    <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
+          method="post" autocomplete="off">
+        <a href="javascript:auth('{{ slack_auth_url }}')">Create Slack Connection</a>
+        {% csrf_token %}
+    </form>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        function auth(url) {
+            window.location = url;
+        }
+    </script>
+{% endblock %}

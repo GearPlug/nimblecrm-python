@@ -3,7 +3,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'nd65g3a23c!y%+a_%+v)!trnjh%c=gh(zg5!gsn*qo&b6*nsbb'
 DEBUG = True
-ALLOWED_HOSTS = ['*',]
+ALLOWED_HOSTS = ['*', ]
 CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
 
@@ -84,10 +84,10 @@ DATABASES = {
 }
 
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
 LOGGING = {
     'version': 1,
@@ -189,3 +189,8 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 EMAIL_PORT = 587
+
+# Slack
+SLACK_CLIENT_ID = '129041278545.145241406374'
+SLACK_CLIENT_SECRET = 'f47642ba090d236c5f9e247cddf76809'
+SLACK_PERMISSIONS_URL = 'https://slack.com/oauth/authorize?client_id={0}&scope=read'.format(SLACK_CLIENT_ID)

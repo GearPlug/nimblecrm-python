@@ -11,10 +11,12 @@ from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
     GoogleSpreadSheetsController, PostgreSQLController, MSSQLController
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, StoredData
+from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, \
+    StoredData, SlackConnection
 from apps.plug.views import CreatePlugView
 from oauth2client import client
 from apiclient import discovery
+from slacker import Slacker
 import re
 
 mcc = MailChimpController()
@@ -393,6 +395,28 @@ class FacebookFormList(LoginRequiredMixin, TemplateView):
             form_list = []
         context['object_list'] = form_list
         return super(FacebookFormList, self).render_to_response(context)
+
+
+class SlackChannelList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        print("entre al post")
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        sc = SlackConnection.objects.filter(connection_id=connection_id)
+        token = sc[0].token
+        print(token)
+        slack = Slacker(token)
+        response = slack.channels.list()
+        if 'successful' in response.__dict__ and response.__dict__['successful'] == True:
+            # print(type(response.__dict__['raw']))
+            data = json.loads(response.__dict__['raw'])
+            channel_list = tuple({'id': c['id'], 'name': c['name']} for c in data['channels'])
+            context['object_list'] = channel_list
+        else:
+            context['object_list'] = []
+        return super(SlackChannelList, self).render_to_response(context)
 
 
 class TestPlugView(TemplateView):

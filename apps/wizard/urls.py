@@ -2,7 +2,7 @@ from django.conf.urls import url
 from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionView, TestPlugView, \
     ActionSpecificationsView, CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, MSSQLFieldList, \
     ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
-    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList
+    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
@@ -18,6 +18,7 @@ urlpatterns = [
     url(r'^plug/action/list/$', ActionListView.as_view(), name='action_list'),
     url(r'^plug/action/(?P<pk>\d+)/specifications/$', ActionSpecificationsView.as_view(), name='action_specifications'),
     # PLUG CREATION ASYNC
+
     # GoogleSheets
     url(r"async/google/drive/sheets/list/", GoogleDriveSheetList.as_view(), name='async_google_drive_sheets'),
     url(r"async/google/sheet/worksheets/", GoogleSheetsWorksheetList.as_view(), name='async_google_sheet_worksheets'),
@@ -32,5 +33,8 @@ urlpatterns = [
     url(r"async/facebook/page/list/", FacebookPageList.as_view(), name='async_facebook_pages'),
     url(r"async/facebook/form/list/", FacebookFormList.as_view(), name='async_facebook_forms'),
     # MailChimp
-    url(r'async/mailchimp/lists/list/', MailChimpListsList.as_view(), name='async_mailchimp_lists')
+    url(r'async/mailchimp/lists/list/', MailChimpListsList.as_view(), name='async_mailchimp_lists'),
+    # Slack
+    url(r'async/slack/channel/list/', SlackChannelList.as_view(), name='async_slack_chanels'),
+
 ]

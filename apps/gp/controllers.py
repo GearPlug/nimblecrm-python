@@ -59,6 +59,17 @@ class BaseController(object):
         raise ControllerError("Not implemented yet.")
 
 
+class SlackController(BaseController):
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(SlackController, self).create_connection(*args)
+        elif kwargs:
+            print(kwargs)
+
+
 class GoogleSpreadSheetsController(BaseController):
     _credential = None
     _spreadsheet_id = None
@@ -569,7 +580,7 @@ class MySQLController(BaseController):
                                                connection=connection_object.connection, plug=plug))
         if new_data:
             field_count = len(parsed_data[0]['data'])
-            extra = {'controller': 'postgresql'}
+            extra = {'controller': 'mysql'}
             for i, item in enumerate(new_data):
                 try:
                     item.save()
@@ -599,7 +610,7 @@ class MySQLController(BaseController):
                     data_list = []
         if self._plug is not None:
             obj_list = []
-            extra = {'controller': 'postgresql'}
+            extra = {'controller': 'mysql'}
             for item in data_list:
                 try:
                     insert = self._get_insert_statement(item)
