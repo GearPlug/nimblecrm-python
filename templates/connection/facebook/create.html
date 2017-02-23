@@ -2,22 +2,8 @@
 {% load bootstrap_tags %}
 
 {% block body_content %}
-
+    <h3 id="status"></h3>
     <button id="btnLogin">Facebook login</button>
-{#    <div>#}
-{#        <div id="connection_list">#}
-{#            <select>#}
-{#                <option>---------</option>#}
-{#            </select>#}
-{#        </div>#}
-{#    </div>#}
-{#    <div>#}
-{#        <div id="form_list">#}
-{#            <select>#}
-{#                <option>---------</option>#}
-{#            </select>#}
-{#        </div>#}
-{#    </div>#}
     <button id="btnCheckLeads">test connection</button>
     <button id="btnCreateConnection">Save connection</button>
     <div>
@@ -47,23 +33,12 @@
         function statusChangeCallback(response) {
             if (response.status === 'connected') {
                 user_access_token = response.authResponse.accessToken;
-                loadFacebookConnections();
+                $('h3#status').html('Token obtenido, proceda a guardar la conexion.');
             } else if (response.status === 'not_authorized') {
                 $('#btnLogin').show();
             } else {
                 $('#btnLogin').show();
             }
-        }
-
-        function loadFacebookConnections() {
-            $.ajax({
-                method: "POST",
-                url: "{% url 'connection:ajax_update_facebook_get_connections' %}",
-                data: {'user_access_token': user_access_token},
-            }).done(function (response) {
-                $('div#connection_list').html(response);
-                $('div#connection_list select').prepend("<option value='0' selected='selected'></option>");
-            });
         }
 
         $(document).ready(function () {
@@ -93,42 +68,14 @@
                 fbLogin();
             });
 
-            $(document).on('change', 'div#connection_list select', function () {
-                var connection_id = $('div#connection_list select').val();
-                $.ajax({
-                    method: "POST",
-                    url: "{% url 'connection:ajax_update_facebook_get_forms' %}",
-                    data: {'user_access_token': user_access_token, 'connection_id': connection_id},
-                }).done(function (response) {
-                    $('div#form_list').html(response);
-                });
-                return false;
-            });
 
-            $('button#btnCheckLeads').click(function () {
-                var form_id = $('div#form_list select').val();
-                $.ajax({
-                    method: "POST",
-                    url: "{% url 'connection:ajax_update_facebook_get_leads' %}",
-                    data: {'user_access_token': user_access_token, 'form_id': form_id},
-                }).done(function (response) {
-                    console.log(response.data);
-                    if (response.data) {
-                        $('div#form_list').append('<p>Connection is valid.</p>');
-                    }
-                });
-            });
 
             $('button#btnCreateConnection').click(function () {
-{#                var form_id = $('div#form_list select').val();#}
-{#                var form_name = $('div#form_list select option:selected').html().trim();#}
-{#                var page_id = $('div#connection_list select').val();#}
-                $('form#formCreateConnection').find('input#id_name').val('test');
-{#                $('form#formCreateConnection').find('input#id_id_page').val(page_id);#}
-{#                $('form#formCreateConnection').find('input#id_id_form').val(form_id);#}
+                $('form#formCreateConnection').find('input#id_name').val('Facebook Connection');
                 $('form#formCreateConnection').find('input#id_token').val(user_access_token);
                 $('form#formCreateConnection').submit();
             });
+
             $('form#formCreateConnection').submit(function () {
                 var url = $(this).attr('action');
                 console.log('url:' + url);
