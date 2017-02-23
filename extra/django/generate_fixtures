@@ -1,0 +1,2 @@
+python manage.py dumpdata gp.Connector gp.Action gp.ActionSpecification > gp_base.json
+python manage.py dumpdata auth.User account > gp_admin.json

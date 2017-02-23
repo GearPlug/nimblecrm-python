@@ -1,0 +1,3 @@
+Error asignando los specifications
+Error asignando los specifications
+[{"model": "auth.user", "pk": 1, "fields": {"password": "pbkdf2_sha256$30000$xLKK4Y3NPC5Q$ZVhAgcroDnubaOgfECjHU/W1FlO/b2UJ82qoFYFA4tA=", "last_login": "2017-02-20T22:06:33.074Z", "is_superuser": true, "username": "", "first_name": "", "last_name": "", "email": "admin@grplug.com", "is_staff": true, "is_active": true, "date_joined": "2017-01-10T21:09:44.669Z", "groups": [], "user_permissions": []}}, {"model": "account.account", "pk": 1, "fields": {"user": 1, "timezone": "", "language": "en-us"}}, {"model": "account.emailaddress", "pk": 1, "fields": {"user": 1, "email": "admin@grplug.com", "verified": false, "primary": true}}]
