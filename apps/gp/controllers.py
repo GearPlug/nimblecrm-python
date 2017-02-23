@@ -1066,8 +1066,8 @@ class SugarCRMController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def get_target_fields(self, **kwargs):
-        return self.get_module_fields(**kwargs)
+    def get_target_fields(self, module, **kwargs):
+        return self.get_module_fields(module, **kwargs)
 
 
 class ControllerError(Exception):
