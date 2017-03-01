@@ -393,10 +393,6 @@ class FacebookController(BaseController):
         graph.access_token = graph.get_app_access_token(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
         r = requests.get('%s/v%s/%s' % (base_url, FACEBOOK_GRAPH_VERSION, url),
                          params=params)
-        print(base_url)
-        print(url)
-        print(r.url)
-        print(r.text)
         try:
             return json.loads(r.text)['data']
         except KeyError:
