@@ -17,6 +17,7 @@ from mailchimp3 import MailChimp
 from oauth2client import client as GoogleClient
 import httplib2
 from collections import OrderedDict
+import re
 
 logger = logging.getLogger('controller')
 
@@ -1074,6 +1075,7 @@ class ControllerError(Exception):
 
 
 def get_dict_with_source_data(source_data, target_fields, include_id=False):
+    pattern = re.compile("^(\%\%\S+\%\%)$")
     valid_map = OrderedDict()
     result = []
     for field in target_fields:
@@ -1087,6 +1089,8 @@ def get_dict_with_source_data(source_data, target_fields, include_id=False):
             for i, w in enumerate(kw):
                 if w in ['%%%%%s%%%%' % k for k in obj['data'].keys()]:
                     values.append(obj['data'][w.replace('%', '')])
+                elif pattern.match(w):
+                    values.append('')
                 else:
                     values.append(w)
             user_dict[field] = ' '.join(values)

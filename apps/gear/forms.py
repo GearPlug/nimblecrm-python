@@ -70,7 +70,7 @@ class MapForm(forms.Form):
                         if 'choices' in params:
                             del (params['choices'])
                         custom_field = forms.BooleanField
-                    elif field_type == 'enum':
+                    elif field_type == 'enum' or field_type == 'radioenum':
                         if 'max_length' in params:
                             del (params['max_length'])
                         custom_field = forms.ChoiceField
