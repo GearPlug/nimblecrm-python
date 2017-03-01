@@ -386,14 +386,17 @@ class FacebookController(BaseController):
         if not base_url:
             base_url = self._base_graph_url
         if not params:
-            params = {'access_token': token,
-                      'appsecret_proof': self._get_app_secret_proof(token)}
+            params = {'access_token': token, 'appsecret_proof': self._get_app_secret_proof(token)}
         if from_date is not None:
             params['from_date'] = from_date
         graph = facebook.GraphAPI(version=FACEBOOK_GRAPH_VERSION)
         graph.access_token = graph.get_app_access_token(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
         r = requests.get('%s/v%s/%s' % (base_url, FACEBOOK_GRAPH_VERSION, url),
                          params=params)
+        print(base_url)
+        print(url)
+        print(r.url)
+        print(r.text)
         try:
             return json.loads(r.text)['data']
         except KeyError:

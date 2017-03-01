@@ -33,7 +33,7 @@
         function statusChangeCallback(response) {
             if (response.status === 'connected') {
                 user_access_token = response.authResponse.accessToken;
-                $('h3#status').html('Token obtenido, proceda a guardar la conexion.');
+                $('h3#status').html('Token obtenido, proceda a guardar la conexion.' + user_access_token);
             } else if (response.status === 'not_authorized') {
                 $('#btnLogin').show();
             } else {
@@ -53,7 +53,7 @@
 
             window.fbAsyncInit = function () {
                 FB.init({
-                    appId: '1731160853833926',
+                    appId: '1860382657578411',
                     cookie: true,  // enable cookies to allow the server to access
                     // the session
                     xfbml: true,  // parse social plugins on this page
@@ -67,7 +67,6 @@
             $('button#btnLogin').click(function () {
                 fbLogin();
             });
-
 
 
             $('button#btnCreateConnection').click(function () {
