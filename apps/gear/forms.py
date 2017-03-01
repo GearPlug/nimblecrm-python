@@ -79,13 +79,13 @@ class MapForm(forms.Form):
                             del (params['max_length'])
                         if 'choices' in params:
                             del (params['choices'])
-                        custom_field = forms.DateField
+                        custom_field = forms.CharField  # DateFieldDateField
                     elif field_type == 'datetime':
                         if 'max_length' in params:
                             del (params['max_length'])
                         if 'choices' in params:
                             del (params['choices'])
-                        custom_field = forms.DateTimeField
+                        custom_field = forms.CharField  # DateTimeField
                     elif field_type == 'float':
                         length = int(params.pop('max_length'))
                         params['max_digits'] = length
