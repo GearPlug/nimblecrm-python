@@ -62,7 +62,7 @@ class MapForm(forms.Form):
                     field_type = getattr(field, 'field_type')
                     # print(field_type)
                     if field_type in ['text', 'varchar', 'phone', 'url', 'name', 'id', 'relate', 'assigned_user_name',
-                                      'email', 'image', 'fullname']:
+                                      'email', 'image', 'fullname', 'relate']:
                         custom_field = forms.CharField
                     elif field_type == 'bool':
                         if 'max_length' in params:
