@@ -9,7 +9,7 @@
             $(document).on('click', 'select[data-name=order-by]', function () {
                 var select = $(this);
                 if (load_options == true) {
-                    var url = "{% url 'wizard:async_mssqlserver_fields' %}";
+                    var url = "{% url 'wizard:async_mysql_fields' %}";
                     $.ajax({
                         method: "POST",
                         url: url,

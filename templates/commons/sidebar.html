@@ -22,34 +22,13 @@
          <div class="menu_section">
             <ul class="nav side-menu">
                <li class="active">
-                  <a><i class="big-icon fa fa-flash"></i><span class="level-one">Wizard</span><span class="fa fa-chevron-down"></span></a>
+                  <a><i class="big-icon fa fa-gear"></i><span class="level-one">Wizard</span><span class="fa fa-chevron-down"></span></a>
                   <ul class="nav child_menu">
-                     <li><a href="{% url 'wizard:create_gear' %}">New gear</a></li>
-                     <li><a href="{% url 'wizard:create_gear' %}">Set plugs</a></li>
+                     <li><a href="{% url 'wizard:gear_create' %}">New gear</a></li>
+                     <li><a href="{% url 'wizard:gear_list' %}">My gears</a></li>
                   </ul>
                </li>
-               <li class="active">
-                  <a><i class="big-icon fa fa-gear"></i><span class="level-one">Gears</span><span class="fa fa-chevron-down"></span></a>
-                  <ul class="nav child_menu">
-                     <li><a href="{% url 'gear:create' %}">New gear</a></li>
-                     <li><a href="{% url 'gear:list' %}">My gears</a></li>
-                  </ul>
-               </li>
-               <li>
-                  <a><i class="big-icon fa fa-plug"></i><span class="level-one">Plugs</span><span class="fa fa-chevron-down"></span></a>
-                  <ul class="nav child_menu">
-                     <li><a href="{% url 'plug:create' %}">New plug</a></li>
-                     <li><a href="{% url 'plug:list' %}">My plugs</a></li>
-                  </ul>
-               </li>
-               <li>
-                  <a><i class="big-icon fa fa-wifi"></i><span class="level-one">Connections</span><span class="fa fa-chevron-down"></span></a>
-                  <ul class="nav child_menu">
-                     <li><a href="{% url 'connection:list_connector' %}">New connection</a></li>
-                     <li><a href="{% url 'connection:list' %}">My connections</a></li>
-                  </ul>
-               </li>
-               <li>
+                   <li>
                   <a><i class="fa fa-desktop"></i><span class="level-one">Help!</span><span class="fa fa-chevron-down"></span></a>
                   <ul class="nav child_menu">
                      <li><a href="general_elements.html">How to start?</a></li>

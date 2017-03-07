@@ -14,8 +14,7 @@ urlpatterns = [
                   url(r'^', include('apps.home.urls', namespace='home')),
                   url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
                   url(r'^o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
-              ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-
+              ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)
 if settings.DEBUG:
     import debug_toolbar
 

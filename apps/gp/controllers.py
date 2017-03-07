@@ -17,6 +17,7 @@ from mailchimp3 import MailChimp
 from oauth2client import client as GoogleClient
 import httplib2
 from collections import OrderedDict
+import re
 
 logger = logging.getLogger('controller')
 
@@ -290,7 +291,6 @@ class MailChimpController(BaseController):
                 if specification.action_specification.action.name == 'subscribe':
                     status = 'subscribed'
                 elif specification.action_specification.action.name == 'unsubscribe':
-                    print("unsubscribed")
                     status = 'unsubscribed'
                     _list = self.get_all_members(self._plug.plug_specification.all()[0].value)
 
@@ -317,7 +317,7 @@ class MailChimpController(BaseController):
                     print(e)
                     res = "User already exists"
                     extra['status'] = 'f'
-                    self._log.error('1. Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
+                    self._log.error('Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
             return
         raise ControllerError("Incomplete.")
 
@@ -328,7 +328,8 @@ class MailChimpController(BaseController):
         return self._client.lists.members.all(list_id, get_all=True, fields="members.id,members.email_address")
 
     def set_members_hash_id(self, members, _list):
-        return [dict(m, hash_id=l['id']) for m in members for l in _list['members'] if m['email_address'] == l['email_address']]
+        return [dict(m, hash_id=l['id']) for m in members for l in _list['members'] if
+                m['email_address'] == l['email_address']]
 
 
 class FacebookController(BaseController):
@@ -386,8 +387,7 @@ class FacebookController(BaseController):
         if not base_url:
             base_url = self._base_graph_url
         if not params:
-            params = {'access_token': token,
-                      'appsecret_proof': self._get_app_secret_proof(token)}
+            params = {'access_token': token, 'appsecret_proof': self._get_app_secret_proof(token)}
         if from_date is not None:
             params['from_date'] = from_date
         graph = facebook.GraphAPI(version=FACEBOOK_GRAPH_VERSION)
@@ -527,7 +527,7 @@ class MySQLController(BaseController):
                 print('Error ')
         return None
 
-    def select_all(self, limit=300):
+    def select_all(self, limit=50):
         if self._table is not None and self._database is not None and self._plug is not None:
             try:
                 order_by = self._plug.plug_specification.all()[0].value
@@ -670,8 +670,8 @@ class PostgreSQLController(BaseController):
         if self._table is not None and self._database is not None:
             try:
                 self._cursor.execute(
-                    'SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.columns WHERE table_name = %s',
-                    (self._table,))
+                    "SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.columns WHERE table_schema= %s AND table_name = %s",
+                    self._table.split('.'))
                 return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
                         item in self._cursor]
             except:
@@ -682,14 +682,14 @@ class PostgreSQLController(BaseController):
         if self._table is not None and self._database is not None:
             try:
                 self._cursor.execute(
-                    'SELECT c.column_name FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name where tc.table_name = %s',
-                    (self._table,))
+                    "SELECT c.column_name FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name where c.table_schema = %s and tc.table_name = %s",
+                    self._table.split('.'))
                 return [item[0] for item in self._cursor]
-            except:
+            except Exception as e:
                 print('Error ')
         return None
 
-    def select_all(self, limit=300):
+    def select_all(self, limit=50):
         if self._table is not None and self._database is not None and self._plug is not None:
             try:
                 order_by = self._plug.plug_specification.all()[0].value
@@ -851,7 +851,7 @@ class MSSQLController(BaseController):
                 print('Error ')
         return None
 
-    def select_all(self, limit=300):
+    def select_all(self, limit=50):
         if self._table is not None and self._database is not None and self._plug is not None:
             try:
                 order_by = self._plug.plug_specification.all()[0].value
@@ -1066,8 +1066,8 @@ class SugarCRMController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def get_target_fields(self, **kwargs):
-        return self.get_module_fields(**kwargs)
+    def get_target_fields(self, module, **kwargs):
+        return self.get_module_fields(module, **kwargs)
 
 
 class ControllerError(Exception):
@@ -1075,6 +1075,7 @@ class ControllerError(Exception):
 
 
 def get_dict_with_source_data(source_data, target_fields, include_id=False):
+    pattern = re.compile("^(\%\%\S+\%\%)$")
     valid_map = OrderedDict()
     result = []
     for field in target_fields:
@@ -1088,6 +1089,8 @@ def get_dict_with_source_data(source_data, target_fields, include_id=False):
             for i, w in enumerate(kw):
                 if w in ['%%%%%s%%%%' % k for k in obj['data'].keys()]:
                     values.append(obj['data'][w.replace('%', '')])
+                elif pattern.match(w):
+                    values.append('')
                 else:
                     values.append(w)
             user_dict[field] = ' '.join(values)
