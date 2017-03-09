@@ -34,6 +34,7 @@ urlpatterns = [
     url(r"async/facebook/form/list/", FacebookFormList.as_view(), name='async_facebook_forms'),
     # MailChimp
     url(r'async/mailchimp/lists/list/', MailChimpListsList.as_view(), name='async_mailchimp_lists'),
+
     # Slack
     url(r'async/slack/channel/list/', SlackChannelList.as_view(), name='async_slack_chanels'),
 

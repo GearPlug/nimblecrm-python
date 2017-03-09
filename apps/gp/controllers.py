@@ -17,6 +17,7 @@ from mailchimp3 import MailChimp
 from oauth2client import client as GoogleClient
 import httplib2
 from collections import OrderedDict
+import re
 
 logger = logging.getLogger('controller')
 
@@ -397,8 +398,7 @@ class FacebookController(BaseController):
         if not base_url:
             base_url = self._base_graph_url
         if not params:
-            params = {'access_token': token,
-                      'appsecret_proof': self._get_app_secret_proof(token)}
+            params = {'access_token': token, 'appsecret_proof': self._get_app_secret_proof(token)}
         if from_date is not None:
             params['from_date'] = from_date
         graph = facebook.GraphAPI(version=FACEBOOK_GRAPH_VERSION)
@@ -1077,8 +1077,8 @@ class SugarCRMController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def get_target_fields(self, **kwargs):
-        return self.get_module_fields(**kwargs)
+    def get_target_fields(self, module, **kwargs):
+        return self.get_module_fields(module, **kwargs)
 
 
 class ControllerError(Exception):
@@ -1086,6 +1086,7 @@ class ControllerError(Exception):
 
 
 def get_dict_with_source_data(source_data, target_fields, include_id=False):
+    pattern = re.compile("^(\%\%\S+\%\%)$")
     valid_map = OrderedDict()
     result = []
     for field in target_fields:
@@ -1099,6 +1100,8 @@ def get_dict_with_source_data(source_data, target_fields, include_id=False):
             for i, w in enumerate(kw):
                 if w in ['%%%%%s%%%%' % k for k in obj['data'].keys()]:
                     values.append(obj['data'][w.replace('%', '')])
+                elif pattern.match(w):
+                    values.append('')
                 else:
                     values.append(w)
             user_dict[field] = ' '.join(values)

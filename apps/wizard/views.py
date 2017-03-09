@@ -442,6 +442,8 @@ class TestPlugView(TemplateView):
             if ping:
                 if c == ConnectorEnum.MailChimp:
                     target_fields = controller.get_target_fields(list_id=p.plug_specification.all()[0].value)
+                elif c== ConnectorEnum.SugarCRM:
+                    target_fields = controller.get_target_fields(p.plug_specification.all()[0].value)
                 else:
                     target_fields = controller.get_target_fields()
                 context['object_list'] = target_fields
