@@ -15,6 +15,7 @@ urlpatterns = [
     url(r"^google_auth/$", GoogleAuthView.as_view(), name="google_auth"),
     url(r"^google_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(),
         name="google_auth_success_create_connection"),
+    # Slack
     url(r'^auth/slack/', SlackAuthView.as_view(), name="slack_auth"),
 
     # AuthSuccess

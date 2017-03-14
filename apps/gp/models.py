@@ -168,8 +168,7 @@ class GoogleSpreadSheetsConnection(models.Model):
 
 
 class SlackConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_slack')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,  related_name='connection_slack')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=100)
 

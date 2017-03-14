@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController
+    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, \
     StoredData, SlackConnection
@@ -399,23 +399,14 @@ class FacebookFormList(LoginRequiredMixin, TemplateView):
 
 class SlackChannelList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
+    slack_controller = SlackController()
 
     def post(self, request, *args, **kwargs):
-        print("entre al post")
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
-        sc = SlackConnection.objects.filter(connection_id=connection_id)
-        token = sc[0].token
-        print(token)
-        slack = Slacker(token)
-        response = slack.channels.list()
-        if 'successful' in response.__dict__ and response.__dict__['successful'] == True:
-            # print(type(response.__dict__['raw']))
-            data = json.loads(response.__dict__['raw'])
-            channel_list = tuple({'id': c['id'], 'name': c['name']} for c in data['channels'])
-            context['object_list'] = channel_list
-        else:
-            context['object_list'] = []
+        sc = SlackConnection.objects.get(connection_id=connection_id)
+        self.slack_controller.create_connection(sc)
+        context['object_list'] = self.slack_controller.get_channel_list()
         return super(SlackChannelList, self).render_to_response(context)
 
 

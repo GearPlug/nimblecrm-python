@@ -17,6 +17,7 @@ from mailchimp3 import MailChimp
 from oauth2client import client as GoogleClient
 import httplib2
 from collections import OrderedDict
+from slacker import Slacker
 import re
 
 logger = logging.getLogger('controller')
@@ -61,14 +62,82 @@ class BaseController(object):
 
 
 class SlackController(BaseController):
+    _token = None
+    _slacker = None
+
     def __init__(self, *args, **kwargs):
         BaseController.__init__(self, *args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
         if args:
             super(SlackController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._token = self._connection_object.token
+                    self._slacker = Slacker(self._token)
+                except Exception as e:
+                    print("Error getting the Slack Token")
+                    print(e)
         elif kwargs:
             print(kwargs)
+
+    def get_channel_list(self):
+        response = self._slacker.channels.list()
+        if 'successful' in response.__dict__ and response.__dict__['successful'] == True:
+            data = json.loads(response.__dict__['raw'])
+            channel_list = tuple({'id': c['id'], 'name': c['name']} for c in data['channels'])
+            print(channel_list)
+            return channel_list
+
+        else:
+            return []
+            # raise ("Not implemented yet.")
+
+    def post_message_to_target(self, message='', target=''):
+        try:
+            self.slacker.chat.post_message(target, message)
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+    def post_message_to_channel(self, message=None, channel=None):
+        if message is not None and channel is not None:
+            self.post_message_to_target(message=message, target=channel)
+        else:
+            print("Error: debes enviar message y channel.")
+            return False
+
+    def post_message_to_user(self, message=None, user=None):
+        if message is not None and user is not None:
+            self.post_message_to_target(message=message, target=user)
+        else:
+            print("Error: debes enviar message y user.")
+            return False
+
+    def get_target_fields(self, **kwargs):
+        return ['message']
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        print(data_list)
+        if self._plug is not None:
+            for obj in data_list:
+                l = [val for val in obj.values()]
+                obj_list.append(l)
+            extra = {'controller': 'google_spreadsheets'}
+            sheet_values = self.get_worksheet_values()
+            for idx, item in enumerate(obj_list, len(sheet_values) + 1):
+                res = self.create_row(item, idx)
+            return
+        raise ControllerError("Incomplete.")
 
 
 class GoogleSpreadSheetsController(BaseController):
