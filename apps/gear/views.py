@@ -7,7 +7,7 @@ from django.shortcuts import render
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from apps.gp.controllers import MySQLController, PostgreSQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, MSSQLController
+    GoogleSpreadSheetsController, MSSQLController, JiraController
 from apps.gp.enum import ConnectorEnum, MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
@@ -19,7 +19,7 @@ import logging
 mysqlc = MySQLController()
 postgresqlc = PostgreSQLController()
 mcc = MailChimpController()
-mssqlc = MySQLController()
+mssqlc = MSSQLController()
 
 
 class ListGearView(ListView):
@@ -73,6 +73,7 @@ class CreateGearMapView(FormView):
     success_url = reverse_lazy('%s:list' % app_name)
     scrmc = SugarCRMController()
     gsc = GoogleSpreadSheetsController()
+    jirac = JiraController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -158,6 +159,13 @@ class CreateGearMapView(FormView):
             form_data = mssqlc.describe_table()
             primary_keys = mssqlc.get_primary_keys()
             return [item['name'] for item in form_data if item['name'] not in primary_keys]
+        elif c == ConnectorEnum.JIRA:
+            self.jirac.create_connection(related, plug)
+            try:
+                fields = self.jirac.get_meta()
+                return [MapField(f, controller=ConnectorEnum.JIRA) for f in fields]
+            except:
+                return []
         elif c == ConnectorEnum.SugarCRM:
             ping = self.scrmc.create_connection(url=connection_data['url'],
                                                 connection_user=connection_data['connection_user'],

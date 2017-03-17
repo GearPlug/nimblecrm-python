@@ -18,6 +18,8 @@ from oauth2client import client as GoogleClient
 import httplib2
 from collections import OrderedDict
 import re
+from jira import JIRA
+from base64 import b64encode
 
 logger = logging.getLogger('controller')
 
@@ -58,6 +60,111 @@ class BaseController(object):
 
     def get_target_fields(self, **kwargs):
         raise ControllerError("Not implemented yet.")
+
+
+class JiraController(BaseController):
+    _connection = None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(JiraController, self).create_connection(*args)
+            if self._connection_object is not None:
+                host = self._connection_object.host
+                user = self._connection_object.connection_user
+                password = self._connection_object.connection_password
+        elif kwargs:
+            host = kwargs.pop('host', None)
+            user = kwargs.pop('connection_user', None)
+            password = kwargs.pop('connection_password', None)
+        try:
+            self._connection = JIRA(host, basic_auth=(user, password))
+        except Exception as e:
+            print("Error getting the Jira attributes")
+            print(e)
+            self._connection = None
+        return self._connection is not None
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            for obj in data_list:
+                res = self.create_issue(self._plug.plug_specification.all()[0].value, obj)
+            extra = {'controller': 'jira'}
+            return
+        raise ControllerError("Incomplete.")
+
+    def get_projects(self):
+        return self._connection.projects()
+
+    def create_issue(self, project_id, fields):
+        if 'reporter' in fields:
+            reporter_name = fields['reporter']
+            fields['reporter'] = {'name': reporter_name}
+        if 'assignee' in fields:
+            assignee_name = fields['assignee']
+            fields['assignee'] = {'name': assignee_name}
+        if 'issuetype' in fields:
+            issue_type = fields['issuetype']
+            fields['issuetype'] = {'id': issue_type}
+        if 'priority' in fields:
+            priority = fields['priority']
+            fields['priority'] = {'id': priority}
+        fields['project'] = project_id
+        return self._connection.create_issue(fields=fields)
+
+    def get_key(self, project_id):
+        for project in self.get_projects():
+            if project.id == project_id:
+                return project.key
+        return None
+
+    def get_users(self):
+        authorization = '{}:{}'.format(self._connection_object.connection_user,
+                                       self._connection_object.connection_password)
+        header = {'Accept': 'application/json',
+                  'Authorization': 'Basic {0}'.format(b64encode(authorization.encode('UTF-8')).decode('UTF-8'))}
+        payload = {
+            'project': self.get_key(self._plug.plug_specification.all()[0].value)
+        }
+
+        url = 'http://jira.grplug.com:8080/rest/api/2/user/assignable/search'
+        r = requests.get(url, headers=header, params=payload)
+        if r.status_code == requests.codes.ok:
+            return [{'id': u['name'], 'name': u['displayName']} for u in r.json()]
+        return []
+
+    def get_meta(self):
+        meta = self._connection.createmeta(projectIds=self._plug.plug_specification.all()[0].value,
+                                           issuetypeNames='Task', expand='projects.issuetypes.fields')
+        exclude = ['attachment', 'project']
+
+        users = self.get_users()
+
+        def f(d, v):
+            d.update({'id': v})
+            return d
+
+        _dict = [f(v, k) for k, v in meta['projects'][0]['issuetypes'][0]['fields'].items() if
+                 k not in exclude]
+
+        for d in _dict:
+            if d['id'] == 'reporter' or d['id'] == 'assignee':
+                d['allowedValues'] = users
+
+        return sorted(_dict, key=lambda i: i['name'])
+
+    def get_target_fields(self, **kwargs):
+        return self.get_meta(**kwargs)
 
 
 class GoogleSpreadSheetsController(BaseController):
@@ -942,8 +1049,8 @@ class MSSQLController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def get_target_fields(self, **kwargs):
-        return self.describe_table(**kwargs)
+    def get_target_fields(self):
+        return self.describe_table()
 
 
 class CustomSugarObject(sugarcrm.SugarObject):

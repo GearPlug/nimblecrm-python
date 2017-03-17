@@ -1,7 +1,7 @@
 from enum import Enum
 from django.apps import apps
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController
+    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, JiraController
 
 
 class ConnectorEnum(Enum):
@@ -12,6 +12,7 @@ class ConnectorEnum(Enum):
     GoogleSpreadSheets = 5
     PostgreSQL = 6
     MSSQL = 7
+    JIRA = 9
 
     def get_connector_data(connector):
         connector = ConnectorEnum.get_connector(connector)
@@ -49,6 +50,8 @@ class ConnectorEnum(Enum):
             return PostgreSQLController
         elif connector == ConnectorEnum.MSSQL:
             return MSSQLController
+        elif connector == ConnectorEnum.JIRA:
+            return JiraController
         return None
 
 
@@ -99,8 +102,36 @@ class MapField(object):
                         self.max_length = int(d['options']['size'])
                     except:
                         pass
+        elif controller == ConnectorEnum.JIRA:
+            # print(d)
+            if 'id' in d:
+                self.name = d['id']
+            if 'name' in d:
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'schema' in d and 'type' in d['schema']:
+                # Jira devuelve como Type nombres de objetos: ej. User, Issue
+                # self.field_type = d['schema']['type']
+                self.field_type = 'text'
+            if 'allowedValues' in d and d['allowedValues']:
+                self.choices = [(choice['id'], '{} ({})'.format(choice['name'], choice['id'])) for choice in
+                                d['allowedValues']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
         else:
-            pass
+            if 'name' in d:
+                self.name = d['name']
+            if 'label' in d:
+                self.label = d['label']
+            if 'default' in d or 'default_value' in d:
+                self.default = d['default'] if 'default' in d else d['default_value']
+            if 'options' in d:
+                if isinstance(d['options'], dict):
+                    self.choices = [(d['options'][choice]['name'], d['options'][choice]['value'])
+                                    for choice in d['options']]
+                    self.choices.insert(0, ('', ''))
+            self.required = False
 
     @property
     def attrs(self):

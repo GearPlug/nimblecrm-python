@@ -48,3 +48,4 @@ sugarcrm==0.1.2
 uritemplate==3.0.0
 uWSGI==2.0.14
 vine==1.1.3
+jira==1.0.10

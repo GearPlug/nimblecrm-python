@@ -2,7 +2,7 @@ from django.conf.urls import url
 from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionView, TestPlugView, \
     ActionSpecificationsView, CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, MSSQLFieldList, \
     ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
-    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList
+    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, JiraProjectList
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
@@ -33,4 +33,6 @@ urlpatterns = [
     url(r"async/facebook/form/list/", FacebookFormList.as_view(), name='async_facebook_forms'),
     # MailChimp
     url(r'async/mailchimp/lists/list/', MailChimpListsList.as_view(), name='async_mailchimp_lists'),
+    # Jira
+    url(r"async/jira/field/list/", JiraProjectList.as_view(), name='async_jira_projects'),
 ]
