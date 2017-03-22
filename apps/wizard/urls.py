@@ -2,7 +2,7 @@ from django.conf.urls import url
 from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionView, TestPlugView, \
     ActionSpecificationsView, CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, MSSQLFieldList, \
     ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
-    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList
+    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
@@ -37,5 +37,7 @@ urlpatterns = [
 
     # Slack
     url(r'async/slack/channel/list/', SlackChannelList.as_view(), name='async_slack_chanels'),
+    url(r'slack/webhook/event/', SlackWebhookEvent.as_view(), name='slack_webhook_event'),
+
 
 ]

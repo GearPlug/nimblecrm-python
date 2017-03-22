@@ -7,7 +7,7 @@ from django.shortcuts import render
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from apps.gp.controllers import MySQLController, PostgreSQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, MSSQLController
+    GoogleSpreadSheetsController, MSSQLController, SlackController
 from apps.gp.enum import ConnectorEnum, MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
@@ -73,6 +73,7 @@ class CreateGearMapView(FormView):
     success_url = reverse_lazy('%s:list' % app_name)
     scrmc = SugarCRMController()
     gsc = GoogleSpreadSheetsController()
+    slack_controller = SlackController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -93,6 +94,7 @@ class CreateGearMapView(FormView):
         target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
             pk=gear.target.id)
         self.form_field_list = self.get_target_field_list(target_plug)
+        print(self.form_field_list)
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
 
     def form_valid(self, form, *args, **kwargs):
@@ -183,6 +185,12 @@ class CreateGearMapView(FormView):
             self.gsc.create_connection(related, plug)
             values = self.gsc.get_worksheet_first_row()
             return values
+        elif c == ConnectorEnum.Slack:
+            print("c slack")
+            self.slack_controller.create_connection(related)
+            fields = self.slack_controller.get_target_fields()
+            print(fields)
+            return fields
         else:
             return []
 

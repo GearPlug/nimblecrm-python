@@ -103,7 +103,18 @@ class MapField(object):
                     except:
                         pass
         else:
-            pass
+            if 'name' in d:
+                self.name = d['name']
+            if 'label' in d:
+                self.label = d['label']
+            if 'default' in d or 'default_value' in d:
+                self.default = d['default'] if 'default' in d else d['default_value']
+            if 'options' in d:
+                if isinstance(d['options'], dict):
+                    self.choices = [(d['options'][choice]['name'], d['options'][choice]['value'])
+                                    for choice in d['options']]
+                    self.choices.insert(0, ('', ''))
+            self.required = False
 
     @property
     def attrs(self):

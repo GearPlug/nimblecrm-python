@@ -1,11 +1,13 @@
 import json
 import httplib2
-from django.views.generic import CreateView, UpdateView, ListView, TemplateView
+from django.views.generic import CreateView, UpdateView, ListView, TemplateView, RedirectView
+from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.shortcuts import HttpResponse, redirect, HttpResponseRedirect
 from django.template import loader
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
@@ -410,6 +412,50 @@ class SlackChannelList(LoginRequiredMixin, TemplateView):
         return super(SlackChannelList, self).render_to_response(context)
 
 
+class SlackUserList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _slack_controller = SlackController()
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        sc = SlackConnection.objects.get(connection_id=connection_id)
+        self._slack_controller.create_connection(sc)
+        context['object_list'] = self._slack_controller.get_channel_list()
+        return super(SlackChannelList, self).render_to_response(context)
+
+
+class SlackWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _slack_controller = SlackController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(SlackWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super(SlackWebhookEvent, self).get(request)
+
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body.decode('utf-8'))
+        if 'challenge' in data.keys():
+            return JsonResponse({'challenge': data['challenge']})
+        elif 'type' in data.keys() and data['type'] == 'event_callback':
+            event = data['event']
+            slack_channel_list = PlugSpecification.objects.filter(
+                action_specification__action__action_type='source',
+                action_specification__action__connector__name__iexact="slack",
+                plug__source_gear__is_active=True)
+            if event['type'] == "message" and event['channel'] in [c.value for c in slack_channel_list]:
+                for plug_specification in slack_channel_list:
+                    self._slack_controller.create_connection(plug_specification.plug.connection.related_connection,
+                                                             plug_specification.plug)
+                    self._slack_controller.download_source_data(event=data)
+        else:
+            print("No callback event")
+        return JsonResponse({'hola': True})
+
+
 class TestPlugView(TemplateView):
     template_name = 'wizard/plug_test.html'
 
@@ -429,11 +475,12 @@ class TestPlugView(TemplateView):
             controller = controller_class()
             ckwargs = {}
             cargs = []
+            print(controller)
             ping = controller.create_connection(p.connection.related_connection, p, *cargs, **ckwargs)
             if ping:
                 if c == ConnectorEnum.MailChimp:
                     target_fields = controller.get_target_fields(list_id=p.plug_specification.all()[0].value)
-                elif c== ConnectorEnum.SugarCRM:
+                elif c == ConnectorEnum.SugarCRM:
                     target_fields = controller.get_target_fields(p.plug_specification.all()[0].value)
                 else:
                     target_fields = controller.get_target_fields()
