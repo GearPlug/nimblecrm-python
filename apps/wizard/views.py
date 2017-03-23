@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController
+    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, BitbucketController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, StoredData
 from apps.plug.views import CreatePlugView
@@ -393,6 +393,24 @@ class FacebookFormList(LoginRequiredMixin, TemplateView):
             form_list = []
         context['object_list'] = form_list
         return super(FacebookFormList, self).render_to_response(context)
+
+
+class BitbucketProjectList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = BitbucketController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            # El id es el mismo nombre del module
+            project_list = tuple({'id': p['name'], 'name': p['name']} for p in controller.get_projects())
+        else:
+            project_list = []
+        context['object_list'] = project_list
+        return super(BitbucketProjectList, self).render_to_response(context)
 
 
 class TestPlugView(TemplateView):

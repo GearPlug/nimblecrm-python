@@ -18,6 +18,9 @@ from oauth2client import client as GoogleClient
 import httplib2
 from collections import OrderedDict
 import re
+from bitbucket.bitbucket import Bitbucket
+import simplejson as json
+from base64 import b64encode
 
 logger = logging.getLogger('controller')
 
@@ -222,6 +225,155 @@ class GoogleSpreadSheetsController(BaseController):
 
     def get_target_fields(self, **kwargs):
         return self.get_worksheet_first_row(**kwargs)
+
+
+class BitbucketController(BaseController):
+    _connection = None
+    API_BASE_URL = 'https://api.bitbucket.org'
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(BitbucketController, self).create_connection(*args)
+            if self._connection_object is not None:
+                user = self._connection_object.connection_user
+                password = self._connection_object.connection_password
+        elif kwargs:
+            user = kwargs.pop('connection_user', None)
+            password = kwargs.pop('connection_password', None)
+        try:
+            self._connection = Bitbucket(user, password)
+            privileges = self._connection.get_privileges()[0]
+        except Exception as e:
+            print("Error getting the Bitbucket attributes")
+            print(e)
+            self._connection = None
+            privileges = False
+
+        return privileges
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            for obj in data_list:
+                success, result = self.create_issue(obj)
+                print(success, result)
+            extra = {'controller': 'bitbucket'}
+            return
+        raise ControllerError("Incomplete.")
+
+    def _get_header(self):
+        authorization = '{}:{}'.format(self._connection_object.connection_user,
+                                       self._connection_object.connection_password)
+        header = {'Accept': 'application/json',
+                  'Authorization': 'Basic {0}'.format(b64encode(authorization.encode('UTF-8')).decode('UTF-8'))}
+        return header
+
+    def get_projects(self):
+        url = '/2.0/users/{}/repositories'.format(self._connection_object.connection_user)
+        r = self._request(url)
+        return r['values'] if r else []
+
+    def get_components(self):
+        url = '/2.0/repositories/{}/{}/components'.format(self._connection_object.connection_user,
+                                                          self._plug.plug_specification.all()[0].value)
+        r = self._request(url)
+        return r['values'] if r else []
+
+    def get_milestones(self):
+        url = '/2.0/repositories/{}/{}/milestones'.format(self._connection_object.connection_user,
+                                                          self._plug.plug_specification.all()[0].value)
+        r = self._request(url)
+        return r['values'] if r else []
+
+    def get_versions(self):
+        url = '/2.0/repositories/{}/{}/versions'.format(self._connection_object.connection_user,
+                                                        self._plug.plug_specification.all()[0].value)
+        r = self._request(url)
+        return r['values'] if r else []
+
+    def _request(self, url):
+        r = requests.get(self.API_BASE_URL + url, headers=self._get_header())
+        if r.status_code == requests.codes.ok:
+            return r.json()
+        return None
+
+    def create_issue(self, fields):
+        self._connection.repo_slug = self._plug.plug_specification.all()[0].value
+        return self._connection.issue.create(**fields)
+
+    def get_meta(self):
+        return [{
+            'name': 'title',
+            'required': True,
+            'type': 'text',
+
+        }, {
+            'name': 'content',
+            'required': False,
+            'type': 'text',
+        }, {
+            'name': 'kind',
+            'required': True,
+            'type': 'choices',
+            'values': [
+                'bug',
+                'enhancement',
+                'proposal',
+                'task'
+            ]
+        }, {
+            'name': 'priority',
+            'required': True,
+            'type': 'choices',
+            'values': [
+                'trivial',
+                'minor',
+                'major',
+                'critical',
+                'blocker'
+            ]
+        }, {
+            'name': 'status',
+            'required': False,
+            'type': 'choices',
+            'values': [
+                'new',
+                'open',
+                'resolved',
+                'on hold',
+                'invalid',
+                'duplicate',
+                'wontfix'
+            ]
+        }, {
+            'name': 'component',
+            'required': False,
+            'type': 'choices',
+            'values': [c['name'] for c in self.get_components()]
+        }, {
+            'name': 'milestone',
+            'required': False,
+            'type': 'choices',
+            'values': [m['name'] for m in self.get_milestones()]
+        }, {
+            'name': 'version',
+            'required': False,
+            'type': 'choices',
+            'values': [v['name'] for v in self.get_versions()]
+        }]
+
+    def get_target_fields(self):
+        return self.get_meta()
 
 
 class MailChimpController(BaseController):

@@ -7,7 +7,7 @@ from django.shortcuts import render
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from apps.gp.controllers import MySQLController, PostgreSQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, MSSQLController
+    GoogleSpreadSheetsController, MSSQLController, BitbucketController
 from apps.gp.enum import ConnectorEnum, MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
@@ -73,6 +73,7 @@ class CreateGearMapView(FormView):
     success_url = reverse_lazy('%s:list' % app_name)
     scrmc = SugarCRMController()
     gsc = GoogleSpreadSheetsController()
+    bitbucketc = BitbucketController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -183,6 +184,13 @@ class CreateGearMapView(FormView):
             self.gsc.create_connection(related, plug)
             values = self.gsc.get_worksheet_first_row()
             return values
+        elif c == ConnectorEnum.Bitbucket:
+            self.bitbucketc.create_connection(related, plug)
+            try:
+                fields = self.bitbucketc.get_meta()
+                return [MapField(f, controller=ConnectorEnum.Bitbucket) for f in fields]
+            except:
+                return []
         else:
             return []
 
