@@ -1,11 +1,13 @@
 import json
 import httplib2
 from django.views.generic import CreateView, UpdateView, ListView, TemplateView
+from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.shortcuts import HttpResponse, redirect, HttpResponseRedirect
 from django.template import loader
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
@@ -406,7 +408,7 @@ class BitbucketProjectList(LoginRequiredMixin, TemplateView):
         ping = controller.create_connection(connection.related_connection)
         if ping:
             # El id es el mismo nombre del module
-            project_list = tuple({'id': p['name'], 'name': p['name']} for p in controller.get_projects())
+            project_list = tuple({'id': p['uuid'], 'name': p['name']} for p in controller.get_projects())
         else:
             project_list = []
         context['object_list'] = project_list
@@ -436,7 +438,7 @@ class TestPlugView(TemplateView):
             if ping:
                 if c == ConnectorEnum.MailChimp:
                     target_fields = controller.get_target_fields(list_id=p.plug_specification.all()[0].value)
-                elif c== ConnectorEnum.SugarCRM:
+                elif c == ConnectorEnum.SugarCRM:
                     target_fields = controller.get_target_fields(p.plug_specification.all()[0].value)
                 else:
                     target_fields = controller.get_target_fields()
@@ -468,6 +470,31 @@ class CreateGearMapView(LoginRequiredMixin, CreateGearMapView):
 
     def get_success_url(self, *args, **kwargs):
         return super(CreateGearMapView, self).get_success_url(*args, **kwargs)
+
+
+class BitbucketWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _bitbucket_controller = BitbucketController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(BitbucketWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super(BitbucketWebhookEvent, self).get(request)
+
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body.decode('utf-8'))
+        issue = data['issue']
+        qs = PlugSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="bitbucket",
+            plug__source_gear__is_active=True)
+        for plug_specification in qs:
+            self._bitbucket_controller.create_connection(plug_specification.plug.connection.related_connection,
+                                                         plug_specification.plug)
+            self._bitbucket_controller.download_source_data(issue=issue)
+        return JsonResponse({'hola': True})
 
 
 def get_authorization(plug_id):

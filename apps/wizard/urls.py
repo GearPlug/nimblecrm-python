@@ -2,7 +2,8 @@ from django.conf.urls import url
 from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionView, TestPlugView, \
     ActionSpecificationsView, CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, MSSQLFieldList, \
     ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
-    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, BitbucketProjectList
+    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, BitbucketProjectList, \
+    BitbucketWebhookEvent
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
@@ -33,5 +34,5 @@ urlpatterns = [
     url(r"async/facebook/form/list/", FacebookFormList.as_view(), name='async_facebook_forms'),
     # Jira
     url(r"async/bitbucket/field/list/", BitbucketProjectList.as_view(), name='async_bitbucket_projects'),
-
+    url(r'bitbucket/webhook/event/', BitbucketWebhookEvent.as_view(), name='bitbucket_webhook_event'),
 ]

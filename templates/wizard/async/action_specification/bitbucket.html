@@ -5,8 +5,9 @@
     <script type="application/javascript">
         $(document).ready(function () {
             var load_options = true;
+            $('select[data-name=repository_name]').hide();
 
-            $(document).on('click', 'select[data-name=project]', function () {
+            $(document).on('click', 'select[data-name=repository_id]', function () {
                 var select = $(this);
                 if (load_options == true) {
                     var url = "{% url 'wizard:async_bitbucket_projects' %}";
@@ -15,11 +16,15 @@
                         url: url,
                         data: {connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %}}
                     }).done(function (response) {
-                        $(select).html(response);
+                        $(select).html(response).trigger('change');
                         load_options = false;
                     });
                 }
             });
+
+            $(document).on('change', 'select[data-name=repository_id]', function () {
+                $('select[data-name=repository_name]').append(new Option($(this).find('option:selected').text(), $(this).find('option:selected').text(), true, true));
+            })
         })
     </script>
 {% endblock %}
