@@ -408,7 +408,7 @@ class BitbucketProjectList(LoginRequiredMixin, TemplateView):
         ping = controller.create_connection(connection.related_connection)
         if ping:
             # El id es el mismo nombre del module
-            project_list = tuple({'id': p['uuid'], 'name': p['name']} for p in controller.get_projects())
+            project_list = tuple({'id': p['uuid'], 'name': p['name']} for p in controller.get_repositories())
         else:
             project_list = []
         context['object_list'] = project_list

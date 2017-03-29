@@ -298,10 +298,10 @@ class BitbucketController(BaseController):
                   'Authorization': 'Basic {0}'.format(b64encode(authorization.encode('UTF-8')).decode('UTF-8'))}
         return header
 
-    def get_projects(self):
-        url = '/2.0/users/{}/repositories'.format(self._connection_object.connection_user)
+    def get_repositories(self):
+        url = '/2.0/repositories/{}'.format(self._connection_object.connection_user)
         r = self._request(url)
-        return r['values'] if r else []
+        return sorted(r['values'], key=lambda i: i['name']) if r else []
 
     def get_components(self):
         url = '/2.0/repositories/{}/{}/components'.format(self._connection_object.connection_user,
@@ -333,7 +333,10 @@ class BitbucketController(BaseController):
         return self._get_repository(False)
 
     def _request(self, url):
-        r = requests.get(self.API_BASE_URL + url, headers=self._get_header())
+        payload = {
+            'pagelen': '100'
+        }
+        r = requests.get(self.API_BASE_URL + url, headers=self._get_header(), params=payload)
         if r.status_code == requests.codes.ok:
             return r.json()
         return None
