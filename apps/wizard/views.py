@@ -1,6 +1,6 @@
 import json
 import httplib2
-from django.views.generic import CreateView, UpdateView, ListView, TemplateView, RedirectView
+from django.views.generic import CreateView, UpdateView, ListView, TemplateView
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
@@ -11,14 +11,13 @@ from django.utils.decorators import method_decorator
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController
+    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, \
     StoredData, SlackConnection
 from apps.plug.views import CreatePlugView
 from oauth2client import client
 from apiclient import discovery
-from slacker import Slacker
 import re
 
 mcc = MailChimpController()
@@ -398,7 +397,6 @@ class FacebookFormList(LoginRequiredMixin, TemplateView):
         context['object_list'] = form_list
         return super(FacebookFormList, self).render_to_response(context)
 
-
 class SlackChannelList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
     slack_controller = SlackController()
@@ -410,7 +408,6 @@ class SlackChannelList(LoginRequiredMixin, TemplateView):
         self.slack_controller.create_connection(sc)
         context['object_list'] = self.slack_controller.get_channel_list()
         return super(SlackChannelList, self).render_to_response(context)
-
 
 class SlackUserList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
@@ -454,6 +451,24 @@ class SlackWebhookEvent(TemplateView):
         else:
             print("No callback event")
         return JsonResponse({'hola': True})
+
+
+class BitbucketProjectList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = BitbucketController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            # El id es el mismo nombre del module
+            project_list = tuple({'id': p['uuid'], 'name': p['name']} for p in controller.get_repositories())
+        else:
+            project_list = []
+        context['object_list'] = project_list
+        return super(BitbucketProjectList, self).render_to_response(context)
 
 
 class TestPlugView(TemplateView):
@@ -512,6 +527,31 @@ class CreateGearMapView(LoginRequiredMixin, CreateGearMapView):
 
     def get_success_url(self, *args, **kwargs):
         return super(CreateGearMapView, self).get_success_url(*args, **kwargs)
+
+
+class BitbucketWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _bitbucket_controller = BitbucketController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(BitbucketWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super(BitbucketWebhookEvent, self).get(request)
+
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body.decode('utf-8'))
+        issue = data['issue']
+        qs = PlugSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="bitbucket",
+            plug__source_gear__is_active=True)
+        for plug_specification in qs:
+            self._bitbucket_controller.create_connection(plug_specification.plug.connection.related_connection,
+                                                         plug_specification.plug)
+            self._bitbucket_controller.download_source_data(issue=issue)
+        return JsonResponse({'hola': True})
 
 
 def get_authorization(plug_id):

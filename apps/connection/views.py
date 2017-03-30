@@ -8,6 +8,7 @@ from apps.connection.myviews.MySQLViews import *
 from apps.connection.myviews.SugarCRMViews import *
 from apps.connection.myviews.PostgreSQLViews import *
 from apps.connection.myviews.MSSQLViews import *
+from apps.connection.myviews.BitbucketViews import *
 from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.controllers import FacebookController

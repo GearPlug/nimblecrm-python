@@ -1,7 +1,7 @@
 from enum import Enum
 from django.apps import apps
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController
+    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController
 
 
 class ConnectorEnum(Enum):
@@ -13,6 +13,7 @@ class ConnectorEnum(Enum):
     PostgreSQL = 6
     MSSQL = 7
     Slack = 8
+    Bitbucket = 10
 
     def get_connector_data(connector):
         connector = ConnectorEnum.get_connector(connector)
@@ -52,6 +53,8 @@ class ConnectorEnum(Enum):
             return MSSQLController
         elif connector == ConnectorEnum.Slack:
             return SlackController
+        elif connector == ConnectorEnum.Bitbucket:
+            return BitbucketController
         return None
 
 
@@ -102,6 +105,17 @@ class MapField(object):
                         self.max_length = int(d['options']['size'])
                     except:
                         pass
+        elif controller == ConnectorEnum.Bitbucket:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'values' in d:
+                self.choices = [(choice, choice) for choice in d['values']]
+                self.choices.insert(0, ('', ''))
         else:
             if 'name' in d:
                 self.name = d['name']

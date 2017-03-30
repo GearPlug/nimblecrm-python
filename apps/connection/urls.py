@@ -4,7 +4,7 @@ from apps.connection.views import CreateConnectionView, ListConnectionView, List
     AJAXFacebookGetAvailableConnectionsView, AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
     AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
     GoogleAuthView, AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, \
-    AJAXPostgreSQLTestConnection, AJAXMSSQLTestConnection, SlackAuthView, AuthSuccess
+    AJAXPostgreSQLTestConnection, AJAXMSSQLTestConnection, SlackAuthView, AuthSuccess, AJAXBitbucketTestConnection
 
 urlpatterns = [
     url(r'create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create'),
@@ -38,4 +38,6 @@ urlpatterns = [
         name='ajax_update_postgresql_test_connection'),
     url(r'ajax/mssql/test_connection/', AJAXMSSQLTestConnection.as_view(),
         name='ajax_update_mssql_test_connection'),
+    url(r'ajax/bitbucket/test_connection/', AJAXBitbucketTestConnection.as_view(),
+        name='ajax_update_bitbucket_test_connection'),
 ]
