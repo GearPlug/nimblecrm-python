@@ -171,6 +171,14 @@ class SlackController(BaseController):
         return False
 
 
+class GoogleContactsController(BaseController):
+    _credential = None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+
+
 class GoogleSpreadSheetsController(BaseController):
     _credential = None
     _spreadsheet_id = None
