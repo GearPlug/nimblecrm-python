@@ -180,6 +180,8 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         if ping:
             if self.object.is_source:
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
+                if c == ConnectorEnum.Bitbucket:
+                    controller.create_webhook()
             elif self.object.is_target:
                 if c == ConnectorEnum.MailChimp:
                     controller.get_target_fields(list_id=specification_list[0]['value'])
