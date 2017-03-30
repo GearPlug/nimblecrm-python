@@ -1,4 +1,4 @@
-from apps.gp.models import StoredData
+from apps.gp.models import StoredData, PlugSpecification
 from apiconnector.settings import FACEBOOK_APP_SECRET, FACEBOOK_APP_ID, FACEBOOK_GRAPH_VERSION
 import facebook
 import json
@@ -17,6 +17,7 @@ from mailchimp3 import MailChimp
 from oauth2client import client as GoogleClient
 import httplib2
 from collections import OrderedDict
+from slacker import Slacker
 import re
 from bitbucket.bitbucket import Bitbucket
 import simplejson as json
@@ -61,6 +62,113 @@ class BaseController(object):
 
     def get_target_fields(self, **kwargs):
         raise ControllerError("Not implemented yet.")
+
+    def get_mapping_fields(self, **kwargs):
+        raise ControllerError("Not implemented yet.")
+
+
+class SlackController(BaseController):
+    _token = None
+    _slacker = None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(SlackController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._token = self._connection_object.token
+                    self._slacker = Slacker(self._token)
+                except Exception as e:
+                    print("Error getting the Slack Token")
+                    print(e)
+        elif kwargs:
+            print(kwargs)
+        return self._token is not None and self._slacker is not None
+
+    def get_channel_list(self):
+        response = self._slacker.channels.list()
+        if 'successful' in response.__dict__ and response.__dict__['successful'] == True:
+            data = json.loads(response.__dict__['raw'])
+            channel_list = tuple({'id': c['id'], 'name': c['name']} for c in data['channels'])
+            print(channel_list)
+            return channel_list
+
+        else:
+            return []
+            # raise ("Not implemented yet.")
+
+    def post_message_to_target(self, message='', target=''):
+        try:
+            self._slacker.chat.post_message(target, message)
+            return True
+        except Exception as e:
+            raise
+            return False
+
+    def post_message_to_channel(self, message=None, channel=None):
+        if message is not None and channel is not None:
+            self.post_message_to_target(message=message, target=channel)
+        else:
+            print("Error: debes enviar message y channel.")
+            return False
+
+    def post_message_to_user(self, message=None, user=None):
+        if message is not None and user is not None:
+            self.post_message_to_target(message=message, target=user)
+        else:
+            print("Error: debes enviar message y user.")
+            return False
+
+    def get_target_fields(self, **kwargs):
+        return ['message']
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            extra = {'controller': 'slack'}
+            for specification in self._plug.plug_specification.all():
+                try:
+                    target = PlugSpecification.objects.get(plug=self._plug,
+                                                           action_specification=specification.action_specification)
+                except Exception as e:
+                    raise
+            for obj in data_list:
+                l = [val for val in obj.values()]
+                obj_list.append(l)
+            for o in obj_list:
+                res = self.post_message_to_target(o, target.value)
+            return
+        raise ControllerError("Incomplete.")
+
+    def download_to_stored_data(self, connection_object=None, plug=None, event=None, **kwargs):
+        if event is not None:
+            new_message = None
+            if 'type' in event and event['event']['type'] == 'message':
+                print(event['event_id'], event['event_time'], event['event']['text'])
+                q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                              object_id=event['event_id'])
+                if not q.exists():
+                    new_message = StoredData(connection=connection_object.connection, plug=plug,
+                                             object_id=event['event_id'], name=event['event']['type'],
+                                             value=event['event']['text'])
+                extra = {}
+                if new_message is not None:
+                    extra['status'] = 's'
+                    extra = {'controller': 'google_spreadsheets'}
+                    self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                        new_message.object_id, new_message.plug.id, new_message.connection.id), extra=extra)
+                    new_message.save()
+        return False
 
 
 class GoogleSpreadSheetsController(BaseController):
@@ -772,7 +880,7 @@ class MySQLController(BaseController):
                                                connection=connection_object.connection, plug=plug))
         if new_data:
             field_count = len(parsed_data[0]['data'])
-            extra = {'controller': 'postgresql'}
+            extra = {'controller': 'mysql'}
             for i, item in enumerate(new_data):
                 try:
                     item.save()
@@ -802,7 +910,7 @@ class MySQLController(BaseController):
                     data_list = []
         if self._plug is not None:
             obj_list = []
-            extra = {'controller': 'postgresql'}
+            extra = {'controller': 'mysql'}
             for item in data_list:
                 try:
                     insert = self._get_insert_statement(item)

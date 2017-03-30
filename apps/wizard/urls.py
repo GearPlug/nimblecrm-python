@@ -2,8 +2,8 @@ from django.conf.urls import url
 from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionView, TestPlugView, \
     ActionSpecificationsView, CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, MSSQLFieldList, \
     ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
-    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, BitbucketProjectList, \
-    BitbucketWebhookEvent
+    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent, \
+    BitbucketProjectList, BitbucketWebhookEvent
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
@@ -19,6 +19,7 @@ urlpatterns = [
     url(r'^plug/action/list/$', ActionListView.as_view(), name='action_list'),
     url(r'^plug/action/(?P<pk>\d+)/specifications/$', ActionSpecificationsView.as_view(), name='action_specifications'),
     # PLUG CREATION ASYNC
+
     # GoogleSheets
     url(r"async/google/drive/sheets/list/", GoogleDriveSheetList.as_view(), name='async_google_drive_sheets'),
     url(r"async/google/sheet/worksheets/", GoogleSheetsWorksheetList.as_view(), name='async_google_sheet_worksheets'),
@@ -32,7 +33,12 @@ urlpatterns = [
     # Facebook
     url(r"async/facebook/page/list/", FacebookPageList.as_view(), name='async_facebook_pages'),
     url(r"async/facebook/form/list/", FacebookFormList.as_view(), name='async_facebook_forms'),
-    # Jira
-    url(r"async/bitbucket/field/list/", BitbucketProjectList.as_view(), name='async_bitbucket_projects'),
+    # MailChimp
+    url(r'async/mailchimp/lists/list/', MailChimpListsList.as_view(), name='async_mailchimp_lists'),
+    # Slack
+    url(r'async/slack/channel/list/', SlackChannelList.as_view(), name='async_slack_chanels'),
+    url(r'slack/webhook/event/', SlackWebhookEvent.as_view(), name='slack_webhook_event'),
+    # Bitbucket
+    url(r'async/bitbucket/field/list/', BitbucketProjectList.as_view(), name='async_bitbucket_projects'),
     url(r'bitbucket/webhook/event/', BitbucketWebhookEvent.as_view(), name='bitbucket_webhook_event'),
 ]
