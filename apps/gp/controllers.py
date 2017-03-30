@@ -406,13 +406,12 @@ class BitbucketController(BaseController):
                   'Authorization': 'Basic {0}'.format(b64encode(authorization.encode('UTF-8')).decode('UTF-8'))}
         return header
 
-    def create_webhook(self):
+    def create_webhook(self, url='https://grplug.com/wizard/bitbucket/webhook/event/'):
         url = 'https://api.bitbucket.org/2.0/repositories/{}/{}/hooks'.format(self._connection_object.connection_user,
                                                                               self.get_repository_name())
-
         body = {
             'description': 'Gearplug Webhook',
-            'url': 'https://grplug.com/wizard/bitbucket/webhook/event/',
+            'url': url,
             'active': True,
             'events': [
                 'issue:created'
