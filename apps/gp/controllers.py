@@ -79,12 +79,15 @@ class JiraController(BaseController):
             host = kwargs.pop('host', None)
             user = kwargs.pop('connection_user', None)
             password = kwargs.pop('connection_password', None)
-        try:
-            self._connection = JIRA(host, basic_auth=(user, password))
-        except Exception as e:
-            print("Error getting the Jira attributes")
-            print(e)
-            self._connection = None
+        else:
+            host, user, password = None, None, None
+        if host and user and password:
+            try:
+                self._connection = JIRA(host, basic_auth=(user, password))
+            except Exception as e:
+                print("Error getting the Jira attributes")
+                print(e)
+                self._connection = None
         return self._connection is not None
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
@@ -102,6 +105,26 @@ class JiraController(BaseController):
             extra = {'controller': 'jira'}
             return
         raise ControllerError("Incomplete.")
+
+    def download_to_stored_data(self, connection_object=None, plug=None, issue=None, **kwargs):
+        if issue is not None:
+            issue_key = issue['key']
+            _items = []
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                          object_id=issue_key)
+            if not q.exists():
+                for k, v in issue['fields'].items():
+                    obj = StoredData(connection=connection_object.connection, plug=plug,
+                                     object_id=issue_key, name=k, value=v or '')
+                    _items.append(obj)
+            extra = {}
+            for item in _items:
+                extra['status'] = 's'
+                extra = {'controller': 'jira'}
+                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                    item.object_id, item.plug.id, item.connection.id), extra=extra)
+                item.save()
+        return False
 
     def get_projects(self):
         return self._connection.projects()
@@ -122,23 +145,42 @@ class JiraController(BaseController):
         fields['project'] = project_id
         return self._connection.create_issue(fields=fields)
 
+    def create_webhook(self):
+        url = '{}/rest/webhooks/1.0/webhook'.format(self._connection_object.host)
+        key = self.get_key(self._plug.plug_specification.all()[0].value)
+        body = {
+            "name": "Gearplug Webhook",
+            "url": "http://grplug.com/wizard/jira/webhook/event/",
+            "events": [
+                "jira:issue_created",
+            ],
+            "jqlFilter": "Project={}".format(key),
+            "excludeIssueDetails": False
+        }
+        r = requests.post(url, headers=self._get_header(), json=body)
+        if r.status_code == 201:
+            return True
+        return False
+
     def get_key(self, project_id):
         for project in self.get_projects():
             if project.id == project_id:
                 return project.key
         return None
 
-    def get_users(self):
+    def _get_header(self):
         authorization = '{}:{}'.format(self._connection_object.connection_user,
                                        self._connection_object.connection_password)
-        header = {'Accept': 'application/json',
-                  'Authorization': 'Basic {0}'.format(b64encode(authorization.encode('UTF-8')).decode('UTF-8'))}
+        return {'Accept': 'application/json',
+                'Authorization': 'Basic {0}'.format(b64encode(authorization.encode('UTF-8')).decode('UTF-8'))}
+
+    def get_users(self):
         payload = {
             'project': self.get_key(self._plug.plug_specification.all()[0].value)
         }
 
         url = 'http://jira.grplug.com:8080/rest/api/2/user/assignable/search'
-        r = requests.get(url, headers=header, params=payload)
+        r = requests.get(url, headers=self._get_header(), params=payload)
         if r.status_code == requests.codes.ok:
             return [{'id': u['name'], 'name': u['displayName']} for u in r.json()]
         return []

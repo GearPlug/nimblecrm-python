@@ -6,7 +6,7 @@
         $(document).ready(function () {
             var load_options = true;
 
-            $(document).on('click', 'select[data-name=project]', function () {
+            $(document).on('click', 'select[data-name=project_id]', function () {
                 var select = $(this);
                 if (load_options == true) {
                     var url = "{% url 'wizard:async_jira_projects' %}";

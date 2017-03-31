@@ -1,11 +1,13 @@
 import json
 import httplib2
 from django.views.generic import CreateView, UpdateView, ListView, TemplateView
+from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.shortcuts import HttpResponse, redirect, HttpResponseRedirect
 from django.template import loader
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
@@ -178,6 +180,8 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         if ping:
             if self.object.is_source:
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
+                if c == ConnectorEnum.JIRA:
+                    controller.create_webhook()
             elif self.object.is_target:
                 if c == ConnectorEnum.MailChimp:
                     controller.get_target_fields(list_id=specification_list[0]['value'])
@@ -470,6 +474,32 @@ class CreateGearMapView(LoginRequiredMixin, CreateGearMapView):
 
     def get_success_url(self, *args, **kwargs):
         return super(CreateGearMapView, self).get_success_url(*args, **kwargs)
+
+
+class JiraWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _jira_controller = JiraController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(JiraWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super(JiraWebhookEvent, self).get(request)
+
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body.decode('utf-8'))
+        issue = data['issue']
+        qs = PlugSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="jira",
+            value=issue['fields']['project']['id'],
+            plug__source_gear__is_active=True)
+        for plug_specification in qs:
+            self._jira_controller.create_connection(plug_specification.plug.connection.related_connection,
+                                                    plug_specification.plug)
+            self._jira_controller.download_source_data(issue=issue)
+        return JsonResponse({'hola': True})
 
 
 def get_authorization(plug_id):
