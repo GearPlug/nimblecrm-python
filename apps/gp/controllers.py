@@ -1,5 +1,6 @@
 from apps.gp.models import StoredData, PlugSpecification
-from apiconnector.settings import FACEBOOK_APP_SECRET, FACEBOOK_APP_ID, FACEBOOK_GRAPH_VERSION
+from apiconnector.settings import FACEBOOK_APP_SECRET, FACEBOOK_APP_ID, FACEBOOK_GRAPH_VERSION, GOOGLE_CLIEN_ID, \
+    GOOGLE_CLIENT_SECRET
 import facebook
 import json
 import requests
@@ -22,6 +23,7 @@ import re
 from bitbucket.bitbucket import Bitbucket
 import simplejson as json
 from base64 import b64encode
+import xml.etree.ElementTree as ET
 
 logger = logging.getLogger('controller')
 
@@ -173,10 +175,87 @@ class SlackController(BaseController):
 
 class GoogleContactsController(BaseController):
     _credential = None
+    _token = None
 
     def __init__(self, *args, **kwargs):
         BaseController.__init__(self, *args, **kwargs)
 
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(GoogleContactsController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    credentials_json = self._connection_object.credentials_json
+                except Exception as e:
+                    print("Error getting the GoogleContacts attributes 1")
+                    print(e)
+                    credentials_json = None
+        elif not args and kwargs:
+            if 'credentials_json' in kwargs:
+                credentials_json = kwargs.pop('credentials_json')
+        else:
+            credentials_json = None
+        if credentials_json is not None:
+            try:
+                _json = json.dumps(credentials_json)
+                self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
+                if self._credential.access_token_expired:
+                    self._credential.refresh(httplib2.Http())
+                http_auth = self._credential.authorize(httplib2.Http())
+                self._token = self._credential.get_access_token()
+                #self._connection_obkect.credentials_json =
+            except Exception as e:
+                print("Error getting the GoogleSpreadSheets attributes 2")
+                self._credential = None
+                self._token = None
+        return self._token is not None
+
+    def refresh_token(self, token=''):
+        if self._credential.access_token_expired:
+            self._credential.refresh(httplib2.Http())
+
+    def get_contact_fields(self, **kwargs):
+        return ('name', 'surname', 'notes', 'email', 'display_name', 'email_home', 'phone_work', 'phone_home', 'city',
+                'address', 'region', 'postal_code', 'country')
+
+    def get_contact_list(self, url="https://www.google.com/m8/feeds/contacts/default/full/"):
+        regex = re.compile('{(\S+)}(\S+)')
+        r = requests.get(url, {'oauth_token':self._token.access_token})
+        if r.status_code == '200':
+            contact_list_xml = ET.fromstring(r.text)
+            entry_list = []
+            for entry in contact_list_xml.iter('{http://www.w3.org/2005/Atom}entry'):
+                entry_list.append({tag.tag:tag.attrib for tag in entry})
+                print(entry_list)
+                # id = entry.find('{http://www.w3.org/2005/Atom}id')
+                # title = entry.find('{http://www.w3.org/2005/Atom}title')
+                # updated = entry.find('{http://www.w3.org/2005/Atom}updated')
+                # phone = entry.find('{http://schemas.google.com/g/2005}phoneNumber')
+                # email = entry.find('{http://schemas.google.com/g/2005}email')
+                # name = entry.find('{http://schemas.google.com/g/2005}name')
+                # display_name = entry.find('{http://schemas.google.com/g/2005}displayName')
+                # full_name = entry.find('{http://schemas.google.com/g/2005}fullName')
+                # given_name = entry.find('{http://schemas.google.com/g/2005}givenName')
+                # links = [l for l in entry.iter('{http://www.w3.org/2005/Atom}link')]
+
+
+        return []
+
+    def get_target_fields(self, **kwargs):
+        return self.get_contact_fields(**kwargs)
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        print(data_list)
+        if self._plug is not None:
+            for obj in data_list:
+                l = [val for val in obj.values()]
+                obj_list.append(l)
+        print(obj_list)
+
+    def create_contact(self, data):
+        pass
 
 
 class GoogleSpreadSheetsController(BaseController):
@@ -215,6 +294,8 @@ class GoogleSpreadSheetsController(BaseController):
             try:
                 _json = json.dumps(credentials_json)
                 self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
+                if self._credential.access_token_expired:
+                    self._credential.refresh(httplib2.Http())
                 http_auth = self._credential.authorize(httplib2.Http())
                 drive_service = discovery.build('drive', 'v3', http=http_auth)
                 files = drive_service.files().list().execute()

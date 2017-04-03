@@ -7,7 +7,7 @@ from django.shortcuts import render
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from apps.gp.controllers import MySQLController, PostgreSQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, MSSQLController, SlackController, BitbucketController
+    GoogleSpreadSheetsController, MSSQLController, SlackController, BitbucketController, GoogleContactsController
 from apps.gp.enum import ConnectorEnum, MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
@@ -75,6 +75,7 @@ class CreateGearMapView(FormView):
     gsc = GoogleSpreadSheetsController()
     slack_controller = SlackController()
     bitbucketc = BitbucketController()
+    google_contacts_controller = GoogleContactsController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -129,6 +130,7 @@ class CreateGearMapView(FormView):
         for field in fields:
             connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
         return ['%%%%%s%%%%' % item['name'] for item in self.get_source_data_list(plug, plug.connection)]
+
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
@@ -197,6 +199,10 @@ class CreateGearMapView(FormView):
                 return [MapField(f, controller=ConnectorEnum.Bitbucket) for f in fields]
             except:
                 return []
+        elif c == ConnectorEnum.GoogleContacts:
+            self.google_contacts_controller.create_connection(related, plug)
+            values = self.google_contacts_controller.get_target_fields()
+            return values
         else:
             return []
 

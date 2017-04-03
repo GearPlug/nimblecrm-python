@@ -492,7 +492,6 @@ class TestPlugView(TemplateView):
             controller = controller_class()
             ckwargs = {}
             cargs = []
-            print(controller)
             ping = controller.create_connection(p.connection.related_connection, p, *cargs, **ckwargs)
             if ping:
                 if c == ConnectorEnum.MailChimp:
