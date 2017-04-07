@@ -199,33 +199,37 @@ class GoogleContactsController(BaseController):
             try:
                 _json = json.dumps(credentials_json)
                 self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
-                if self._credential.access_token_expired:
-                    self._credential.refresh(httplib2.Http())
+                self.refresh_token()
                 http_auth = self._credential.authorize(httplib2.Http())
                 self._token = self._credential.get_access_token()
-                #self._connection_obkect.credentials_json =
+                # self._connection_obkect.credentials_json =
             except Exception as e:
                 print("Error getting the GoogleSpreadSheets attributes 2")
                 self._credential = None
                 self._token = None
         return self._token is not None
 
+    def _upate_connection_object_credentials(self):
+        self._connection_object.credentials_json = self._credential.to_json()
+        self._connection_object.save()
+
     def refresh_token(self, token=''):
         if self._credential.access_token_expired:
             self._credential.refresh(httplib2.Http())
+            self._upate_connection_object_credentials()
 
     def get_contact_fields(self, **kwargs):
         return ('name', 'surname', 'notes', 'email', 'display_name', 'email_home', 'phone_work', 'phone_home', 'city',
                 'address', 'region', 'postal_code', 'country')
 
     def get_contact_list(self, url="https://www.google.com/m8/feeds/contacts/default/full/"):
-        regex = re.compile('{(\S+)}(\S+)')
-        r = requests.get(url, {'oauth_token':self._token.access_token})
+        regex = re.compile('^{(\S+)}(\S+)')
+        r = requests.get(url, {'oauth_token': self._token.access_token})
         if r.status_code == '200':
             contact_list_xml = ET.fromstring(r.text)
             entry_list = []
             for entry in contact_list_xml.iter('{http://www.w3.org/2005/Atom}entry'):
-                entry_list.append({tag.tag:tag.attrib for tag in entry})
+                entry_list.append({tag.tag: tag.attrib for tag in entry})
                 print(entry_list)
                 # id = entry.find('{http://www.w3.org/2005/Atom}id')
                 # title = entry.find('{http://www.w3.org/2005/Atom}title')
@@ -237,7 +241,6 @@ class GoogleContactsController(BaseController):
                 # full_name = entry.find('{http://schemas.google.com/g/2005}fullName')
                 # given_name = entry.find('{http://schemas.google.com/g/2005}givenName')
                 # links = [l for l in entry.iter('{http://www.w3.org/2005/Atom}link')]
-
 
         return []
 
@@ -294,8 +297,7 @@ class GoogleSpreadSheetsController(BaseController):
             try:
                 _json = json.dumps(credentials_json)
                 self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
-                if self._credential.access_token_expired:
-                    self._credential.refresh(httplib2.Http())
+                self._refresh_token()
                 http_auth = self._credential.authorize(httplib2.Http())
                 drive_service = discovery.build('drive', 'v3', http=http_auth)
                 files = drive_service.files().list().execute()
@@ -304,6 +306,15 @@ class GoogleSpreadSheetsController(BaseController):
                 self._credential = None
                 files = None
         return files is not None
+
+    def _upate_connection_object_credentials(self):
+        self._connection_object.credentials_json = self._credential.to_json()
+        self._connection_object.save()
+
+    def _refresh_token(self, token=''):
+        if self._credential.access_token_expired:
+            self._credential.refresh(httplib2.Http())
+            self._upate_connection_object_credentials()
 
     def download_to_stored_data(self, connection_object, plug, *args, **kwargs):
         if plug is None:
