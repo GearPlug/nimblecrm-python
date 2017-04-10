@@ -11,7 +11,8 @@ from django.utils.decorators import method_decorator
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController
+    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
+    GoogleFormsController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, \
     StoredData, SlackConnection
@@ -22,6 +23,7 @@ import re
 
 mcc = MailChimpController()
 gsc = GoogleSpreadSheetsController()
+gfc = GoogleFormsController()
 
 
 class ListGearView(LoginRequiredMixin, ListView):
@@ -399,6 +401,7 @@ class FacebookFormList(LoginRequiredMixin, TemplateView):
         context['object_list'] = form_list
         return super(FacebookFormList, self).render_to_response(context)
 
+
 class SlackChannelList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
     slack_controller = SlackController()
@@ -410,6 +413,7 @@ class SlackChannelList(LoginRequiredMixin, TemplateView):
         self.slack_controller.create_connection(sc)
         context['object_list'] = self.slack_controller.get_channel_list()
         return super(SlackChannelList, self).render_to_response(context)
+
 
 class SlackUserList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'

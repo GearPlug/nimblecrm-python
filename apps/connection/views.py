@@ -13,7 +13,7 @@ from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.controllers import FacebookController
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection
+from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
 from slacker import Slacker
@@ -55,6 +55,8 @@ class CreateConnectionView(CreateView):
                 form.instance.token = long_user_access_token
             elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets:
                 form.instance.credentials_json = self.request.session['google_credentials']
+            elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleForms:
+                form.instance.credentials_json = self.request.session['google_credentials']
             return super(CreateConnectionView, self).form_valid(form, *args, **kwargs)
 
     def get(self, *args, **kwargs):
@@ -77,8 +79,12 @@ class CreateConnectionView(CreateView):
         context = super(CreateConnectionView, self).get_context_data(**kwargs)
         context['connection'] = ConnectorEnum.get_connector(self.kwargs['connector_id']).name
         if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets:
-            flow = get_flow()
+            flow = get_flow(GOOGLE_AUTH_URL)
             context['google_auth_url'] = flow.step1_get_authorize_url()
+        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleForms:
+            flow = get_flow(GOOGLE_FORMS_AUTH_URL)
+            context['google_auth_url'] = flow.step1_get_authorize_url()
+
         elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Slack:
             context['slack_auth_url'] = SLACK_PERMISSIONS_URL
         return context
@@ -115,13 +121,23 @@ class ListConnectorView(ListView):
     model = Connector
     template_name = '%s/list_connector.html' % app_name
 
+GOOGLE_AUTH_URL = 'http://localhost:8000/connection/google_auth/'
+GOOGLE_AUTH_REDIRECT_URL = 'connection:google_auth_success_create_connection'
+GOOGLE_FORMS_AUTH_URL = 'http://localhost:8000/connection/google_forms_auth/'
+GOOGLE_FORMS_AUTH_REDIRECT_URL = 'connection:google_forms_auth_success_create_connection'
+
 
 class GoogleAuthView(View):
     def get(self, request, *args, **kwargs):
         code = request.GET['code']
-        credentials = get_flow().step2_exchange(code)
+        if kwargs['forms']:
+            credentials = get_flow(GOOGLE_FORMS_AUTH_URL).step2_exchange(code)
+        else:
+            credentials = get_flow(GOOGLE_AUTH_URL).step2_exchange(code)
         request.session['google_credentials'] = credentials.to_json()
-        return redirect(reverse('connection:google_auth_success_create_connection'))
+        if kwargs['forms']:
+            return redirect(reverse(GOOGLE_FORMS_AUTH_REDIRECT_URL))
+        return redirect(reverse(GOOGLE_AUTH_REDIRECT_URL))
 
 
 class GoogleAuthSuccessCreateConnection(TemplateView):
@@ -131,11 +147,18 @@ class GoogleAuthSuccessCreateConnection(TemplateView):
         try:
             if 'google_credentials' in request.session:
                 credentials = request.session.pop('google_credentials')
-                c = Connection.objects.create(
-                    user=request.user, connector_id=ConnectorEnum.GoogleSpreadSheets.value)
-                n = int(GoogleSpreadSheetsConnection.objects.filter(connection__user=request.user).count()) + 1
-                gssc = GoogleSpreadSheetsConnection.objects.create(
-                    connection=c, name="GoogleSheets Connection # %s" % n, credentials_json=credentials)
+                if kwargs['forms']:
+                    c = Connection.objects.create(
+                        user=request.user, connector_id=ConnectorEnum.GoogleForms.value)
+                    n = int(GoogleFormsConnection.objects.filter(connection__user=request.user).count()) + 1
+                    gssc = GoogleFormsConnection.objects.create(
+                        connection=c, name="GoogleForms Connection # %s" % n, credentials_json=credentials)
+                else:
+                    c = Connection.objects.create(
+                        user=request.user, connector_id=ConnectorEnum.GoogleSpreadSheets.value)
+                    n = int(GoogleSpreadSheetsConnection.objects.filter(connection__user=request.user).count()) + 1
+                    gssc = GoogleSpreadSheetsConnection.objects.create(
+                        connection=c, name="GoogleSheets Connection # %s" % n, credentials_json=credentials)
         except Exception as e:
             print("Error creating the GoogleSheets Connection.")
         return super(GoogleAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
@@ -167,9 +190,9 @@ class AuthSuccess(TemplateView):
     template_name = 'connection/auth_success.html'
 
 
-def get_flow():
+def get_flow(redirect_to):
     return client.OAuth2WebServerFlow(
         client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
         client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
         scope='https://www.googleapis.com/auth/drive',
-        redirect_uri='http://localhost:8000/connection/google_auth/')
+        redirect_uri=redirect_to)

@@ -335,6 +335,122 @@ class GoogleSpreadSheetsController(BaseController):
         return self.get_worksheet_first_row(**kwargs)
 
 
+class GoogleFormsController(BaseController):
+    _credential = None
+    _spreadsheet_id = None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(GoogleFormsController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    credentials_json = self._connection_object.credentials_json
+                except Exception as e:
+                    print("Error getting the GoogleForms attributes 1")
+                    print(e)
+                    credentials_json = None
+        elif not args and kwargs:
+            if 'credentials_json' in kwargs:
+                credentials_json = kwargs.pop('credentials_json')
+        else:
+            credentials_json = None
+        files = None
+        if credentials_json is not None:
+            try:
+                for s in self._plug.plug_specification.all():
+                    if s.action_specification.name.lower() == 'form':
+                        self._spreadsheet_id = s.value
+            except:
+                print("Error asignando los specifications")
+            try:
+                _json = json.dumps(credentials_json)
+                self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
+                http_auth = self._credential.authorize(httplib2.Http())
+                drive_service = discovery.build('drive', 'v3', http=http_auth)
+                files = drive_service.files().list().execute()
+            except Exception as e:
+                print("Error getting the GoogleForms attributes 2")
+                self._credential = None
+                files = None
+        return files is not None
+
+    def download_to_stored_data(self, connection_object, plug, *args, **kwargs):
+        if plug is None:
+            plug = self._plug
+        if not self._spreadsheet_id:
+            return False
+        sheet_values = self.get_worksheet_values()
+        new_data = []
+        for idx, item in enumerate(sheet_values[1:]):
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=idx + 1)
+            if not q.exists():
+                for idx2, cell in enumerate(item):
+                    new_data.append(StoredData(name=sheet_values[0][idx2], value=cell, object_id=idx + 1,
+                                               connection=connection_object.connection, plug=plug))
+        if new_data:
+            field_count = len(sheet_values)
+            extra = {'controller': 'google_forms'}
+            for i, item in enumerate(new_data):
+                try:
+                    item.save()
+                    if (i + 1) % field_count == 0:
+                        extra['status'] = 's'
+                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                except:
+                    extra['status'] = 'f'
+                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+            # raise IndexError("hola")
+            return True
+        return False
+
+    def get_sheet_list(self):
+        credential = self._credential
+        http_auth = credential.authorize(httplib2.Http())
+        drive_service = discovery.build('drive', 'v3', http=http_auth)
+        files = drive_service.files().list().execute()
+        sheet_list = tuple(
+            f for f in files['files'] if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet')
+        return sheet_list
+
+    def get_worksheet_list(self, sheet_id):
+        credential = self._credential
+        http_auth = credential.authorize(httplib2.Http())
+        sheets_service = discovery.build('sheets', 'v4', http=http_auth)
+        result = sheets_service.spreadsheets().get(spreadsheetId=sheet_id).execute()
+        worksheet_list = tuple(i['properties'] for i in result['sheets'])
+        return worksheet_list
+
+    def get_worksheet_values(self, from_row=None, limit=None):
+        credential = self._credential
+        http_auth = credential.authorize(httplib2.Http())
+        sheets_service = discovery.build('sheets', 'v4', http=http_auth)
+        range = self.get_worksheet_list(self._spreadsheet_id)
+        res = sheets_service.spreadsheets().values().get(spreadsheetId=self._spreadsheet_id,
+                                                         range=range[0]['title']).execute()
+        values = res['values']
+        if from_row is None and limit is None:
+            return values
+        else:
+            limit = limit if limit is not None else len(values) - 1
+            from_row = from_row - 1 if from_row is not None else 0
+            return values[from_row:from_row + limit]
+        return values
+
+    def get_worksheet_first_row(self):
+        return self.get_worksheet_values(from_row=1, limit=1)[0]
+
+    def get_worksheet_second_row(self):
+        return self.get_worksheet_values(from_row=2, limit=1)[0]
+
+    def get_target_fields(self, **kwargs):
+        return self.get_worksheet_first_row(**kwargs)
+
+
 class BitbucketController(BaseController):
     _connection = None
     API_BASE_URL = 'https://api.bitbucket.org'

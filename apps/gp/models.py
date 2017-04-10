@@ -5,7 +5,7 @@ from apps.user.models import User
 
 connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
                'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack',
-               'connection_bitbucket']
+               'connection_bitbucket', 'connection_googleforms']
 
 
 class Connector(models.Model):
@@ -161,6 +161,16 @@ class MailChimpConnection(models.Model):
 class GoogleSpreadSheetsConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
                                       related_name='connection_googlespreadsheets')
+    name = models.CharField('name', max_length=200)
+    credentials_json = JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class GoogleFormsConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
+                                      related_name='connection_googleforms')
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
 
