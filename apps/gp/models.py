@@ -4,12 +4,8 @@ from apps.gp.model_fields import JSONField
 from apps.user.models import User
 
 connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
-<<<<<<< HEAD
                'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack',
-               'connection_bitbucket']
-=======
-               'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_jira']
->>>>>>> jira
+               'connection_bitbucket', 'connection_jira']
 
 
 class Connector(models.Model):
