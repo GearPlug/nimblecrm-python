@@ -1,7 +1,7 @@
 from enum import Enum
 from django.apps import apps
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController
+    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, JiraController
 
 
 class ConnectorEnum(Enum):
@@ -13,6 +13,7 @@ class ConnectorEnum(Enum):
     PostgreSQL = 6
     MSSQL = 7
     Slack = 8
+    JIRA = 9
     Bitbucket = 10
 
     def get_connector_data(connector):
@@ -51,6 +52,8 @@ class ConnectorEnum(Enum):
             return PostgreSQLController
         elif connector == ConnectorEnum.MSSQL:
             return MSSQLController
+        elif connector == ConnectorEnum.JIRA:
+            return JiraController
         elif connector == ConnectorEnum.Slack:
             return SlackController
         elif connector == ConnectorEnum.Bitbucket:
@@ -116,6 +119,23 @@ class MapField(object):
             if 'values' in d:
                 self.choices = [(choice, choice) for choice in d['values']]
                 self.choices.insert(0, ('', ''))
+        elif controller == ConnectorEnum.JIRA:
+            # print(d)
+            if 'id' in d:
+                self.name = d['id']
+            if 'name' in d:
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'schema' in d and 'type' in d['schema']:
+                # Jira devuelve como Type nombres de objetos: ej. User, Issue
+                # self.field_type = d['schema']['type']
+                self.field_type = 'text'
+            if 'allowedValues' in d and d['allowedValues']:
+                self.choices = [(choice['id'], '{} ({})'.format(choice['name'], choice['id'])) for choice in
+                                d['allowedValues']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
         else:
             if 'name' in d:
                 self.name = d['name']
