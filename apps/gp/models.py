@@ -5,7 +5,7 @@ from apps.user.models import User
 
 connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
                'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack',
-               'connection_bitbucket', 'connection_googleforms']
+               'connection_bitbucket', 'connection_jira', 'connection_googleforms']
 
 
 class Connector(models.Model):
@@ -84,6 +84,17 @@ class Connection(models.Model):
 
     def __str__(self):
         return '%s' % self.name
+
+
+class JiraConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_jira')
+    name = models.CharField('name', max_length=200)
+    host = models.CharField('host', max_length=200)
+    connection_user = models.CharField('user', max_length=60)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
 
 
 class FacebookConnection(models.Model):

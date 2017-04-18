@@ -12,7 +12,7 @@ from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
     GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
-    GoogleFormsController
+    GoogleFormsController, JiraController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, \
     StoredData, SlackConnection
@@ -183,8 +183,8 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         if ping:
             if self.object.is_source:
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
-                if c == ConnectorEnum.Bitbucket:
-                    controller.create_webhook()
+            if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA:
+                controller.create_webhook()
             elif self.object.is_target:
                 if c == ConnectorEnum.MailChimp:
                     controller.get_target_fields(list_id=specification_list[0]['value'])
@@ -477,6 +477,24 @@ class BitbucketProjectList(LoginRequiredMixin, TemplateView):
         return super(BitbucketProjectList, self).render_to_response(context)
 
 
+class JiraProjectList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = JiraController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            # El id es el mismo nombre del module
+            project_list = tuple({'id': p.id, 'name': p.name} for p in controller.get_projects())
+        else:
+            project_list = []
+        context['object_list'] = project_list
+        return super(JiraProjectList, self).render_to_response(context)
+
+
 class TestPlugView(TemplateView):
     template_name = 'wizard/plug_test.html'
 
@@ -503,6 +521,8 @@ class TestPlugView(TemplateView):
                     target_fields = controller.get_target_fields(list_id=p.plug_specification.all()[0].value)
                 elif c == ConnectorEnum.SugarCRM:
                     target_fields = controller.get_target_fields(p.plug_specification.all()[0].value)
+                elif c == ConnectorEnum.JIRA:
+                    target_fields = controller.get_target_fields()
                 else:
                     target_fields = controller.get_target_fields()
                 context['object_list'] = target_fields
@@ -557,6 +577,32 @@ class BitbucketWebhookEvent(TemplateView):
             self._bitbucket_controller.create_connection(plug_specification.plug.connection.related_connection,
                                                          plug_specification.plug)
             self._bitbucket_controller.download_source_data(issue=issue)
+        return JsonResponse({'hola': True})
+
+
+class JiraWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _jira_controller = JiraController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(JiraWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super(JiraWebhookEvent, self).get(request)
+
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body.decode('utf-8'))
+        issue = data['issue']
+        qs = PlugSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="jira",
+            value=issue['fields']['project']['id'],
+            plug__source_gear__is_active=True)
+        for plug_specification in qs:
+            self._jira_controller.create_connection(plug_specification.plug.connection.related_connection,
+                                                    plug_specification.plug)
+            self._jira_controller.download_source_data(issue=issue)
         return JsonResponse({'hola': True})
 
 
