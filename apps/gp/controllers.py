@@ -351,7 +351,7 @@ class GoogleSpreadSheetsController(BaseController):
                     if s.action_specification.name.lower() == 'worksheet':
                         self._worksheet_name = s.value
             except:
-                print("Error asignando los specifications")
+                print("Error asignando los specifications 1")
             try:
                 _json = json.dumps(credentials_json)
                 self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
@@ -512,7 +512,7 @@ class GoogleFormsController(BaseController):
                     if s.action_specification.name.lower() == 'form':
                         self._spreadsheet_id = s.value
             except:
-                print("Error asignando los specifications")
+                print("Error asignando los specifications 2")
             try:
                 _json = json.dumps(credentials_json)
                 self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
@@ -615,15 +615,15 @@ class BitbucketController(BaseController):
         elif kwargs:
             user = kwargs.pop('connection_user', None)
             password = kwargs.pop('connection_password', None)
+        else:
+            user = password = None
         try:
             self._connection = Bitbucket(user, password)
             privileges = self._connection.get_privileges()[0]
         except Exception as e:
             print("Error getting the Bitbucket attributes")
-            print(e)
             self._connection = None
             privileges = False
-
         return privileges
 
     def download_to_stored_data(self, connection_object=None, plug=None, issue=None, **kwargs):
@@ -931,13 +931,15 @@ class FacebookController(BaseController):
                 self._token = kwargs.pop('token')
             except Exception as e:
                 print("Error getting the Facebook token")
-
         try:
-            for s in self._plug.plug_specification.all():
-                if s.action_specification.name.lower() == 'page':
-                    self._page = s.value
-                if s.action_specification.name.lower() == 'form':
-                    self._form = s.value
+            if self._plug is not None:
+                for s in self._plug.plug_specification.all():
+                    if s.action_specification.name.lower() == 'page':
+                        self._page = s.value
+                    if s.action_specification.name.lower() == 'form':
+                        self._form = s.value
+            # else:
+            #     print("There is no Plug asigned to the FacebookController")
         except:
             print("Error asignando los specifications")
 
