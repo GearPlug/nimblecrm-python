@@ -3,7 +3,7 @@ from django.apps import apps
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
     GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
     GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
-    JiraController, GoogleFormsController
+    JiraController, GoogleFormsController, TwitterController
 
 
 class ConnectorEnum(Enum):
@@ -18,6 +18,7 @@ class ConnectorEnum(Enum):
     JIRA = 9
     Bitbucket = 10
     GoogleForms = 11
+    Twitter = 12
 
     def get_connector_data(connector):
         connector = ConnectorEnum.get_connector(connector)
@@ -63,6 +64,8 @@ class ConnectorEnum(Enum):
             return BitbucketController
         elif connector == ConnectorEnum.GoogleForms:
             return GoogleFormsController
+        elif connector == ConnectorEnum.Twitter:
+            return TwitterController
         return None
 
 

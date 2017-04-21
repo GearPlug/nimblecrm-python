@@ -7,7 +7,7 @@ from django.shortcuts import render
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from apps.gp.controllers import MySQLController, PostgreSQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, MSSQLController, SlackController, BitbucketController, JiraController
+    GoogleSpreadSheetsController, MSSQLController, SlackController, BitbucketController, JiraController, TwitterController
 from apps.gp.enum import ConnectorEnum, MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
@@ -76,6 +76,7 @@ class CreateGearMapView(FormView):
     slack_controller = SlackController()
     jirac = JiraController()
     bitbucketc = BitbucketController()
+    twitterc = TwitterController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -205,6 +206,10 @@ class CreateGearMapView(FormView):
                 return [MapField(f, controller=ConnectorEnum.Bitbucket) for f in fields]
             except:
                 return []
+        elif c == ConnectorEnum.Twitter:
+            self.twitterc.create_connection(related, plug)
+            fields = self.twitterc.get_target_fields()
+            return fields
         else:
             return []
 

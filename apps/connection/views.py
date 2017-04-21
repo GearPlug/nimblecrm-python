@@ -1,7 +1,9 @@
+import tweepy
+from django.conf import settings
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, View
 from django.core.urlresolvers import reverse
-from django.shortcuts import redirect
+from django.shortcuts import redirect, HttpResponse
 from apps.connection.apps import APP_NAME as app_name
 from apps.connection.myviews.FacebookViews import *
 from apps.connection.myviews.MySQLViews import *
@@ -14,7 +16,8 @@ from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.controllers import FacebookController
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection
+from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
+    TwitterConnection
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
 from slacker import Slacker
@@ -85,7 +88,10 @@ class CreateConnectionView(CreateView):
         elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleForms:
             flow = get_flow(GOOGLE_FORMS_AUTH_URL)
             context['google_auth_url'] = flow.step1_get_authorize_url()
-
+        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Twitter:
+            flow = get_twitter_auth()
+            context['twitter_auth_url'] = flow.get_authorization_url()
+            self.request.session['twitter_request_token'] = flow.request_token
         elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Slack:
             context['slack_auth_url'] = SLACK_PERMISSIONS_URL
         return context
@@ -121,6 +127,7 @@ class DeleteConnectionView(DeleteView):
 class ListConnectorView(ListView):
     model = Connector
     template_name = '%s/list_connector.html' % app_name
+
 
 GOOGLE_AUTH_URL = 'http://localhost:8000/connection/google_auth/'
 GOOGLE_AUTH_REDIRECT_URL = 'connection:google_auth_success_create_connection'
@@ -165,6 +172,41 @@ class GoogleAuthSuccessCreateConnection(TemplateView):
         return super(GoogleAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
 
+class TwitterAuthView(View):
+    def get(self, request, *args, **kwargs):
+        flow = get_twitter_auth()
+        flow.request_token = request.session.pop('twitter_request_token')
+        flow.get_access_token(request.GET['oauth_verifier'])
+        request.session['twitter_access_token'] = flow.access_token
+        request.session['twitter_access_token_secret'] = flow.access_token_secret
+        return redirect(reverse('connection:twitter_auth_success_create_connection'))
+
+
+class TwitterAuthSuccessCreateConnection(TemplateView):
+    template_name = 'connection/googlespreadsheets/success.html'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if 'twitter_access_token' in request.session and 'twitter_access_token_secret' in request.session:
+                access_token = request.session.pop('twitter_access_token')
+                access_token_secret = request.session.pop('twitter_access_token_secret')
+                c = Connection.objects.create(
+                    user=request.user, connector_id=ConnectorEnum.Twitter.value)
+                n = int(TwitterConnection.objects.filter(connection__user=request.user).count()) + 1
+                tc = TwitterConnection.objects.create(
+                    connection=c, name="Twitter Connection # %s" % n, token=access_token,
+                    token_secret=access_token_secret)
+        except Exception as e:
+            print("Error creating the Twitter Connection.")
+        return super(TwitterAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
+
+
+def get_twitter_auth():
+    consumer_key = settings.TWITTER_CLIENT_ID
+    consumer_secret = settings.TWITTER_CLIENT_SECRET
+    return tweepy.OAuthHandler(consumer_key, consumer_secret)
+
+
 class SlackAuthView(View):
     def get(self, request):
         code = request.GET.get('code', None)
@@ -193,7 +235,7 @@ class AuthSuccess(TemplateView):
 
 def get_flow(redirect_to):
     return client.OAuth2WebServerFlow(
-        client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
-        client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
+        client_id=settings.GOOGLE_CLIENT_ID,
+        client_secret=settings.GOOGLE_CLIENT_SECRET,
         scope='https://www.googleapis.com/auth/drive',
         redirect_uri=redirect_to)
