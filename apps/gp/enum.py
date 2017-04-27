@@ -3,7 +3,7 @@ from django.apps import apps
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
     GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
     GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
-    JiraController, GoogleFormsController
+    JiraController, GoogleFormsController, GetResponseController
 
 
 class ConnectorEnum(Enum):
@@ -18,6 +18,7 @@ class ConnectorEnum(Enum):
     JIRA = 9
     Bitbucket = 10
     GoogleForms = 11
+    GetResponse = 13
 
     def get_connector_data(connector):
         connector = ConnectorEnum.get_connector(connector)
@@ -63,6 +64,8 @@ class ConnectorEnum(Enum):
             return BitbucketController
         elif connector == ConnectorEnum.GoogleForms:
             return GoogleFormsController
+        elif connector == ConnectorEnum.GetResponse:
+            return GetResponseController
         return None
 
 
@@ -139,6 +142,21 @@ class MapField(object):
             if 'allowedValues' in d and d['allowedValues']:
                 self.choices = [(choice['id'], '{} ({})'.format(choice['name'], choice['id'])) for choice in
                                 d['allowedValues']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
+        elif controller == ConnectorEnum.GetResponse:
+            if 'id' in d:
+                self.name = d['id']
+            else:
+                self.name = d['name']
+            if 'name' in d:
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'values' in d and d['values']:
+                self.choices = [(choice, choice) for choice in d['values']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
         else:

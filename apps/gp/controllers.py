@@ -15,6 +15,7 @@ import time
 from apiclient import discovery
 from mailchimp3 import MailChimp
 from oauth2client import client as GoogleClient
+from getresponse.client import GetResponse
 import httplib2
 from collections import OrderedDict
 from slacker import Slacker
@@ -483,6 +484,124 @@ class GoogleSpreadSheetsController(BaseController):
         return self.get_worksheet_first_row(**kwargs)
 
 
+class GetResponseController(BaseController):
+    _client = None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(GetResponseController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._client = GetResponse(self._connection_object.api_key)
+                except Exception as e:
+                    print("Error getting the GetResponse attributes")
+                    self._client = None
+        elif not args and kwargs:
+            if 'api_key' in kwargs:
+                api_key = kwargs.pop('api_key')
+            try:
+                self._client = GetResponse(api_key)
+                print("%s %s", (api_key))
+                print(self._client)
+            except Exception as e:
+                print(e)
+                print("Error getting the GetResponse attributes")
+                self._client = None
+        t = self.get_campaigns()
+        return t is not None
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            status = None
+            for specification in self._plug.plug_specification.all():
+                if specification.action_specification.action.name == 'subscribe':
+                    status = 'subscribed'
+                elif specification.action_specification.action.name == 'unsubscribe':
+                    status = 'unsubscribed'
+            extra = {'controller': 'getresponse'}
+            for obj in data_list:
+                if status == 'subscribed':
+                    res = self.subscribe_contact(self._plug.plug_specification.all()[0].value, obj)
+                else:
+                    res = self.unsubscribe_contact(obj)
+            return
+        raise ControllerError("Incomplete.")
+
+    def subscribe_contact(self, campaign_id, obj):
+        _dict = {
+            "email": obj.pop('email'),
+            "campaign": {"campaignId": campaign_id}
+        }
+        if 'name' in obj:
+            _dict['name'] = obj.pop('name')
+        if 'dayOfCycle' in obj:
+            _dict['dayOfCycle'] = obj.pop('dayOfCycle')
+        if 'ipAddress' in obj:
+            _dict['ipAddress'] = obj.pop('ipAddress')
+        if obj:
+            _dict["customFieldValues"] = [{"customFieldId": k, "value": [v]} for k, v in obj.items()]
+        self._client.create_contact(_dict)
+
+    def unsubscribe_contact(self, obj):
+        self._client.delete_contact(obj.pop('id'))
+
+    def get_campaigns(self):
+        if self._client:
+            result = self._client.get_campaigns({'sort': {'name', 'desc'}})
+            try:
+                return [{'name': l.name, 'id': l.id} for l in result]
+            except:
+                return []
+        return []
+
+    def get_meta(self):
+        _list = [{
+            'name': 'name',
+            'required': False,
+            'type': 'text',
+
+        }, {
+            'name': 'email',
+            'required': True,
+            'type': 'text',
+
+        }, {
+            'name': 'dayOfCycle',
+            'required': False,
+            'type': 'text',
+
+        }, {
+            'name': 'ipAddress',
+            'required': False,
+            'type': 'text',
+
+        }]
+        fields = self._client.get_custom_fields({'sort': {'name', 'desc'}})
+        for field in fields:
+            _list.append({
+                'id': field.id,
+                'name': field.name,
+                'required': False,
+                'type': field.field_type,
+                'values': field.values,
+            })
+        return _list
+
+    def get_target_fields(self):
+        return self.get_meta()
+
+
 class GoogleFormsController(BaseController):
     _credential = None
     _spreadsheet_id = None
@@ -938,8 +1057,8 @@ class FacebookController(BaseController):
                         self._page = s.value
                     if s.action_specification.name.lower() == 'form':
                         self._form = s.value
-            # else:
-            #     print("There is no Plug asigned to the FacebookController")
+                        # else:
+                        #     print("There is no Plug asigned to the FacebookController")
         except:
             print("Error asignando los specifications")
 
