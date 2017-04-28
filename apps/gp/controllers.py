@@ -223,25 +223,9 @@ class GoogleContactsController(BaseController):
                 'address', 'region', 'postal_code', 'country')
 
     def get_contact_list(self, url="https://www.google.com/m8/feeds/contacts/default/full/"):
-        regex = re.compile('^{(\S+)}(\S+)')
-        r = requests.get(url, {'oauth_token': self._token.access_token})
-        if r.status_code == '200':
-            contact_list_xml = ET.fromstring(r.text)
-            entry_list = []
-            for entry in contact_list_xml.iter('{http://www.w3.org/2005/Atom}entry'):
-                entry_list.append({tag.tag: tag.attrib for tag in entry})
-                print(entry_list)
-                # id = entry.find('{http://www.w3.org/2005/Atom}id')
-                # title = entry.find('{http://www.w3.org/2005/Atom}title')
-                # updated = entry.find('{http://www.w3.org/2005/Atom}updated')
-                # phone = entry.find('{http://schemas.google.com/g/2005}phoneNumber')
-                # email = entry.find('{http://schemas.google.com/g/2005}email')
-                # name = entry.find('{http://schemas.google.com/g/2005}name')
-                # display_name = entry.find('{http://schemas.google.com/g/2005}displayName')
-                # full_name = entry.find('{http://schemas.google.com/g/2005}fullName')
-                # given_name = entry.find('{http://schemas.google.com/g/2005}givenName')
-                # links = [l for l in entry.iter('{http://www.w3.org/2005/Atom}link')]
-
+        r = requests.get(url, {'oauth_token': self._token.access_token, 'max-results': 100000})
+        if r.status_code == 200:
+            return xml_to_dict(r.text, iterator_string='{http://www.w3.org/2005/Atom}entry')
         return []
 
     def get_target_fields(self, **kwargs):
@@ -257,8 +241,145 @@ class GoogleContactsController(BaseController):
                 obj_list.append(l)
         print(obj_list)
 
+    def _create_contact_xml(dictionary):
+        if 'email' not in dictionary and 'phone_work' not in dictionary and 'phone_home' not in dictionary:
+            raise Exception("Error: es necesario el telefono o el email para crear un contacto.")
+
+        root = ET.Element("atom:entry")
+        root.attrib.update(
+            {'xmlns:atom': 'http://www.w3.org/2005/Atom', 'xmlns:gd': 'http://schemas.google.com/g/2005'})
+        category = ET.SubElement(root, "atom:category")
+        category.attrib.update(
+            {'scheme': 'http://schemas.google.com/g/2005#kind',
+             'term': 'http://schemas.google.com/contact/2008#contact'})
+        name = ET.SubElement(root, "gd:name")
+        if 'name' in dictionary and dictionary['name']:
+            xml_field_name = dictionary['name']
+            given_name = ET.SubElement(name, "gd:givenName")
+            given_name.text = dictionary['name']
+        else:
+            xml_field_name = ''
+        if 'surname' in dictionary and dictionary['surname']:
+            xml_field_surname = dictionary['surname']
+            given_family_name = ET.SubElement(name, "gd:familyName")
+            given_family_name.text = dictionary['surname']
+        else:
+            xml_field_surname = ''
+
+        if xml_field_name or xml_field_surname:
+            full_name = xml_field_name + " " + xml_field_surname
+            given_full_name = ET.SubElement(name, "gd:fullName")
+            given_full_name.text = full_name.strip()
+
+        if 'email' in dictionary and dictionary['email']:
+            email = ET.SubElement(root, "gd:email")
+            email.attrib.update(
+                {'rel': 'http://schemas.google.com/g/2005#work', 'primary': 'true', 'address': dictionary['email'],
+                 'displayName': dictionary['display_name'], })
+            im = ET.SubElement(root, "gd:im")
+            im.attrib.update(
+                {'address': dictionary['email'], 'protocol': 'http://schemas.google.com/g/2005#GOOGLE_TALK',
+                 'primary': 'true', 'rel': 'http://schemas.google.com/g/2005#home'})
+        if 'email_home' in dictionary and dictionary['email_home']:
+            email2 = ET.SubElement(root, "gd:email")
+            email2.attrib.update({'rel': 'http://schemas.google.com/g/2005#home', 'address': dictionary['email_home']})
+        if 'phone_work' in dictionary and dictionary['phone_work']:
+            phonenumber = ET.SubElement(root, "gd:phoneNumber")
+            phonenumber.attrib.update({'rel': 'http://schemas.google.com/g/2005#work', 'primary': 'true', })
+            phonenumber.text = dictionary['phone_work']
+        if 'phone_home' in dictionary and dictionary['phone_home']:
+            phonehome = ET.SubElement(root, "gd:phoneNumber")
+            phonehome.attrib.update({'rel': 'http://schemas.google.com/g/2005#home'})
+            phonehome.text = dictionary['phone_home']
+
+        structure = ET.SubElement(root, "gd:structuredPostalAddress")
+        structure.attrib.update({'rel': 'http://schemas.google.com/g/2005#work', 'primary': 'true'})
+        if 'city' in dictionary and dictionary['city']:
+            city = ET.SubElement(structure, "gd:city")
+            city.text = dictionary['city']
+        if 'street' in dictionary and dictionary['street']:
+            street = ET.SubElement(structure, "gd:street")
+            street.text = dictionary['street']
+        if 'region' in dictionary and dictionary['region']:
+            region = ET.SubElement(structure, "gd:region")
+            region.text = dictionary['region']
+        if 'postal_code' in dictionary and dictionary['postal_code']:
+            postal_code = ET.SubElement(structure, "gd:postcode")
+            postal_code.text = dictionary['postal_code']
+        if 'country' in dictionary and dictionary['country']:
+            country = ET.SubElement(structure, "gd:country")
+            country.text = dictionary['country']
+        if 'formatted_address' in dictionary and dictionary['formatted_address']:
+            formattedAddress = ET.SubElement(structure, "gd:formattedAddress")
+            formattedAddress.text = dictionary['formatted_address']
+        return ET.tostring(root).decode('utf-8')
+
     def create_contact(self, data):
-        pass
+        xml_string = self._create_contact_xml(data)
+        url = "https://www.google.com/m8/feeds/contacts/default/full/?oauth_token={0}".format(self._token)
+        r = requests.post(url, data=xml_string, headers={'Content-Type': 'application/atom+xml'})
+        print(r.text)
+
+    def download_to_stored_data(self, connection_object=None, plug=None, **kwargs):
+        if connection_object is None:
+            connection_object = self._connection_object
+        if plug is None:
+            plug = self._plug
+        contact_list = self.get_contact_list()
+        new_data = []
+        for item in contact_list:
+            id = None
+            for tag in item['content']:
+                if tag['tag'] == 'id':
+                    id = tag['text']
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id)
+            if not q.exists():
+                for column in item['content']:
+                    if column['tag'] not in ['link', 'id', 'category', 'updated']:
+                        sd_item = None
+                        StoredData()
+                        if column['tag'] in ['email', 'im']:
+                            sd_item = StoredData(name=column['tag'], value=column['attrib']['address'], object_id=id,
+                                                 connection=connection_object.connection, plug=plug)
+                        elif column['tag'] in ['organization']:
+                            for column2 in column['content']:
+                                if column2['tag'] == 'orgName':
+                                    sd_item = StoredData(name=column['tag'], value=column2['text'],object_id=id,
+                                                         connection=connection_object.connection, plug=plug)
+                                    # print('organization', )
+                        elif column['tag'] in ['extendedProperty']:
+                            sd_item = StoredData(name=column['tag'], value=column['attrib']['name'], object_id=id,
+                                                 connection=connection_object.connection, plug=plug)
+                        elif column['tag'] in ['groupMembershipInfo']:
+                            sd_item = StoredData(name=column['tag'], value=column['attrib']['href'], object_id=id,
+                                                 connection=connection_object.connection, plug=plug)
+                        else:
+                            sd_item = StoredData(name=column['tag'], value=column['text'], object_id=id,
+                                                 connection=connection_object.connection, plug=plug)
+                        if sd_item is not None:
+                            new_data.append(sd_item)
+        if new_data:
+            for xxxxx in new_data:
+                try:
+                    xxxxx.save()
+                except Exception as e:
+                    print("Saving: {0}".format(xxxxx.name))
+                    print(xxxxx.value)
+                    print(e)
+            # field_count = len(parsed_data[0]['data'])
+            # extra = {'controller': 'googlecontacts'}
+            # for i, item in enumerate(new_data):
+            #     try:
+            #         item.save()
+            #         extra['status'] = 's'
+            #         self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+            #             item.object_id, item.plug.id, item.connection.id), extra=extra)
+            #     except:
+            #         extra['status'] = 'f'
+            #         self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+            #             item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+            return True
+        return False
 
 
 class GoogleSpreadSheetsController(BaseController):
@@ -1508,3 +1629,25 @@ def get_dict_with_source_data(source_data, target_fields, include_id=False):
             user_dict['id'] = obj['id']
         result.append(user_dict)
     return result
+
+
+def xml_to_dict(xml, iterator_string=None):
+    new_xml = ET.fromstring(xml)
+    if iterator_string is not None:
+        lista = new_xml.iter(iterator_string)
+    else:
+        lista = new_xml.iterall()
+    # print("lista: ",lista)
+    return _recursive_xml_to_dict(lista)
+
+
+def _recursive_xml_to_dict(lista):
+    lista_dict = []
+    # regex = re.compile('{(https?|ftp|http?)://(-\.)?([^\s/?\.#-]+\.?)+(/[^\s]*)?}(\S+)')
+    regex = re.compile('^{(\S+)}(\S+)')
+    for e in lista:
+        result = regex.match(e.tag)
+        if result is not None:  # and result.group(5) != 'link':
+            dict_e = {'tag': result.group(2), 'attrib': e.attrib, 'text': e.text, 'content': _recursive_xml_to_dict(e)}
+            lista_dict.append(dict_e)
+    return lista_dict
