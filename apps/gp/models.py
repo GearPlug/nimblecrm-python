@@ -235,7 +235,7 @@ class StoredData(models.Model):
     name = models.CharField('name', max_length=300)
     value = models.CharField('value', max_length=3000, default='', blank=True)
     datetime = models.DateTimeField(auto_now_add=True)
-    object_id = models.CharField('object_id', max_length=50, null=True)
+    object_id = models.CharField('object_id', max_length=150, null=True)
 
     def __str__(self):
         return '%s %s %s' % (self.id, self.name, self.object_id)
