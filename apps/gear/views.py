@@ -124,13 +124,15 @@ class CreateGearMapView(FormView):
 
     def get_available_source_fields(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
-        fields = ConnectorEnum.get_fields(c)
-        related = plug.connection.related_connection
-        connection_data = {}
-        for field in fields:
-            connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
+        if c == ConnectorEnum.GoogleContacts:
+            self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
+            return ['%%%%%s%%%%' % field for field in self.google_contacts_controller.get_contact_fields()]
+        # fields = ConnectorEnum.get_fields(c)
+        # related = plug.connection.related_connection
+        # connection_data = {}
+        # for field in fields:
+        #     connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
         return ['%%%%%s%%%%' % item['name'] for item in self.get_source_data_list(plug, plug.connection)]
-
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
@@ -201,7 +203,8 @@ class CreateGearMapView(FormView):
                 return []
         elif c == ConnectorEnum.GoogleContacts:
             self.google_contacts_controller.create_connection(related, plug)
-            values = self.google_contacts_controller.get_target_fields()
+            values = self.google_contacts_controller.get_mapping_fields()
+            print(values)
             return values
         else:
             return []

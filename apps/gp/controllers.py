@@ -218,12 +218,17 @@ class GoogleContactsController(BaseController):
             self._credential.refresh(httplib2.Http())
             self._upate_connection_object_credentials()
 
-    def get_contact_fields(self, **kwargs):
+    def get_creation_contact_fields(self):
         return ('name', 'surname', 'notes', 'email', 'display_name', 'email_home', 'phone_work', 'phone_home', 'city',
-                'address', 'region', 'postal_code', 'country')
+                'address', 'region', 'postal_code', 'country', 'formatted_address')
+
+    def get_display_contact_fields(self):
+        return ('title', 'notes', 'email', 'displayName', 'email_home', 'phoneNumber', 'phone_home', 'city',
+                'address', 'region', 'postal_code', 'country', 'formatted_address')
 
     def get_contact_list(self, url="https://www.google.com/m8/feeds/contacts/default/full/"):
-        r = requests.get(url, {'oauth_token': self._token.access_token, 'max-results': 100000})
+        r = requests.get(url, {'oauth_token': self._token.access_token, 'max-results': 100000, },
+                         headers={'Content-Type': 'application/atom+xml', 'GData-Version': '3.0'})
         if r.status_code == 200:
             return xml_to_dict(r.text, iterator_string='{http://www.w3.org/2005/Atom}entry')
         return []
@@ -232,16 +237,35 @@ class GoogleContactsController(BaseController):
         return self.get_contact_fields(**kwargs)
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
+        print("Entre")
         obj_list = []
         data_list = get_dict_with_source_data(source_data, target_fields)
-        print(data_list)
+        # print(data_list)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            extra = {'controller': 'google_contacts'}
+            for obj in data_list:
+                l = [val for val in obj.values()]
+                obj_list.append(l)
+        # print(obj_list)
+
         if self._plug is not None:
             for obj in data_list:
                 l = [val for val in obj.values()]
                 obj_list.append(l)
-        print(obj_list)
+            extra = {'controller': 'google_spreadsheets'}
+            sheet_values = self.get_worksheet_values()
+            for idx, item in enumerate(obj_list, len(sheet_values) + 1):
+                res = self.create_row(item, idx)
+            return
+        raise ControllerError("Incomplete.")
 
-    def _create_contact_xml(dictionary):
+    def _create_contact_xml(self, dictionary):
         if 'email' not in dictionary and 'phone_work' not in dictionary and 'phone_home' not in dictionary:
             raise Exception("Error: es necesario el telefono o el email para crear un contacto.")
 
@@ -274,8 +298,9 @@ class GoogleContactsController(BaseController):
         if 'email' in dictionary and dictionary['email']:
             email = ET.SubElement(root, "gd:email")
             email.attrib.update(
-                {'rel': 'http://schemas.google.com/g/2005#work', 'primary': 'true', 'address': dictionary['email'],
-                 'displayName': dictionary['display_name'], })
+                {'rel': 'http://schemas.google.com/g/2005#work', 'primary': 'true', 'address': dictionary['email'], })
+            if 'display_name' in dictionary and dictionary['display_name']:
+                email.attrib.update({'displayName': dictionary['display_name'], })
             im = ET.SubElement(root, "gd:im")
             im.attrib.update(
                 {'address': dictionary['email'], 'protocol': 'http://schemas.google.com/g/2005#GOOGLE_TALK',
@@ -315,10 +340,13 @@ class GoogleContactsController(BaseController):
         return ET.tostring(root).decode('utf-8')
 
     def create_contact(self, data):
-        xml_string = self._create_contact_xml(data)
-        url = "https://www.google.com/m8/feeds/contacts/default/full/?oauth_token={0}".format(self._token)
-        r = requests.post(url, data=xml_string, headers={'Content-Type': 'application/atom+xml'})
-        print(r.text)
+        xml_sr = self._create_contact_xml(data)
+        url = "https://www.google.com/m8/feeds/contacts/default/full/?oauth_token={0}".format(self._token.access_token)
+        r = requests.post(url, data=xml_sr, headers={'Content-Type': 'application/atom+xml', 'GData-Version': '3.0'})
+        return r.status_code == 201
+
+        # print(r.text)
+        # FALTA MENSAJE EXITOSO
 
     def download_to_stored_data(self, connection_object=None, plug=None, **kwargs):
         if connection_object is None:
@@ -335,51 +363,69 @@ class GoogleContactsController(BaseController):
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id)
             if not q.exists():
                 for column in item['content']:
-                    if column['tag'] not in ['link', 'id', 'category', 'updated']:
+                    if column['tag'] not in ['link', 'id', 'category', 'updated', 'edited']:
                         sd_item = None
-                        StoredData()
                         if column['tag'] in ['email', 'im']:
-                            sd_item = StoredData(name=column['tag'], value=column['attrib']['address'], object_id=id,
+                            text = re.sub(u"[^\x20-\x7f]+", u"", column['attrib']['address']).strip() \
+                                if column['attrib']['address'] is not None else ''
+                            sd_item = StoredData(name=column['tag'], value=text, object_id=id,
                                                  connection=connection_object.connection, plug=plug)
-                        elif column['tag'] in ['organization']:
+                        elif column['tag'] in ['organization', 'name']:
+                            sd_item = []
                             for column2 in column['content']:
+                                text = re.sub(u"[^\x20-\x7f]+", u"", column2['text']).strip() \
+                                    if column2['text'] is not None else ''
                                 if column2['tag'] == 'orgName':
-                                    sd_item = StoredData(name=column['tag'], value=column2['text'],object_id=id,
-                                                         connection=connection_object.connection, plug=plug)
-                                    # print('organization', )
+                                    sd_item.append(StoredData(name=column['tag'], value=text, object_id=id,
+                                                              connection=connection_object.connection, plug=plug))
+                                else:
+                                    sd_item.append(StoredData(name=column2['tag'], value=text, object_id=id,
+                                                              connection=connection_object.connection, plug=plug))
                         elif column['tag'] in ['extendedProperty']:
-                            sd_item = StoredData(name=column['tag'], value=column['attrib']['name'], object_id=id,
+                            text = re.sub(u"[^\x20-\x7f]+", u"", column['attrib']['name']).strip() \
+                                if column['attrib']['name'] is not None else ''
+                            sd_item = StoredData(name=column['tag'], value=text, object_id=id,
                                                  connection=connection_object.connection, plug=plug)
                         elif column['tag'] in ['groupMembershipInfo']:
-                            sd_item = StoredData(name=column['tag'], value=column['attrib']['href'], object_id=id,
+                            text = re.sub(u"[^\x20-\x7f]+", u"", column['attrib']['href']).strip() \
+                                if column['attrib']['href'] is not None else ''
+                            sd_item = StoredData(name=column['tag'], value=text, object_id=id,
                                                  connection=connection_object.connection, plug=plug)
                         else:
-                            sd_item = StoredData(name=column['tag'], value=column['text'], object_id=id,
+                            text = re.sub(u"[^\x20-\x7f]+", u"", column['text']).strip() \
+                                if column['text'] is not None else ''
+                            sd_item = StoredData(name=column['tag'], value=text, object_id=id,
                                                  connection=connection_object.connection, plug=plug)
                         if sd_item is not None:
-                            new_data.append(sd_item)
+                            if type(sd_item) == list:
+                                new_data += sd_item
+                            else:
+                                new_data.append(sd_item)
         if new_data:
-            for xxxxx in new_data:
+            extra = {'controller': 'googlecontacts'}
+            last_id = None
+            for contact_field in new_data:
+                current_id = contact_field.id
+                new_item = current_id != last_id
                 try:
-                    xxxxx.save()
+                    contact_field.save()
+                    if new_item:
+                        extra['status'] = 's'
+                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            current_id, item.plug.id, item.connection.id), extra=extra)
                 except Exception as e:
-                    print("Saving: {0}".format(xxxxx.name))
-                    print(xxxxx.value)
-                    print(e)
-            # field_count = len(parsed_data[0]['data'])
-            # extra = {'controller': 'googlecontacts'}
-            # for i, item in enumerate(new_data):
-            #     try:
-            #         item.save()
-            #         extra['status'] = 's'
-            #         self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-            #             item.object_id, item.plug.id, item.connection.id), extra=extra)
-            #     except:
-            #         extra['status'] = 'f'
-            #         self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-            #             item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+                    print(contact_field.name, contact_field.value, e)
+                    if new_item:
+                        extra['status'] = 'f'
+                        self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                            item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+                finally:
+                    last_id = current_id
             return True
         return False
+
+    def get_mapping_fields(self, ):
+        return self.get_contact_fields()
 
 
 class GoogleSpreadSheetsController(BaseController):
