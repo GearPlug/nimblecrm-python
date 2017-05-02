@@ -601,6 +601,14 @@ class GetResponseController(BaseController):
     def get_target_fields(self):
         return self.get_meta()
 
+    def get_unsubscribe_target_fields(self):
+        return [{
+            'name': 'id',
+            'required': True,
+            'type': 'text',
+
+        }]
+
 
 class GoogleFormsController(BaseController):
     _credential = None

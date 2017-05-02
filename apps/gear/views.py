@@ -210,7 +210,10 @@ class CreateGearMapView(FormView):
         elif c == ConnectorEnum.GetResponse:
             self.getresponsec.create_connection(related, plug)
             try:
-                fields = self.getresponsec.get_meta()
+                if plug.plug_specification.all()[0].action_specification.action.name == 'Unsubscribe':
+                    fields = self.getresponsec.get_unsubscribe_target_fields()
+                else:
+                    fields = self.getresponsec.get_meta()
                 return [MapField(f, controller=ConnectorEnum.GetResponse) for f in fields]
             except:
                 return []
