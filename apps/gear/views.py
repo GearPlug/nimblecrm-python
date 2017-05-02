@@ -6,13 +6,12 @@ from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from apps.gp.controllers import MySQLController, PostgreSQLController, SugarCRMController, MailChimpController, \
     GoogleSpreadSheetsController, MSSQLController, SlackController, BitbucketController, JiraController, \
-    GoogleContactsController
+    GoogleContactsController, GetResponseController
 from apps.gp.enum import ConnectorEnum, MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
 from oauth2client import client
 from apiclient import discovery
-
 import logging
 
 mysqlc = MySQLController()
@@ -76,6 +75,7 @@ class CreateGearMapView(FormView):
     jirac = JiraController()
     bitbucketc = BitbucketController()
     google_contacts_controller = GoogleContactsController()
+    getresponsec = GetResponseController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -211,8 +211,17 @@ class CreateGearMapView(FormView):
         elif c == ConnectorEnum.GoogleContacts:
             self.google_contacts_controller.create_connection(related, plug)
             values = self.google_contacts_controller.get_mapping_fields()
-            print(values)
             return values
+        elif c == ConnectorEnum.GetResponse:
+            self.getresponsec.create_connection(related, plug)
+            try:
+                if plug.plug_specification.all()[0].action_specification.action.name == 'Unsubscribe':
+                    fields = self.getresponsec.get_unsubscribe_target_fields()
+                else:
+                    fields = self.getresponsec.get_meta()
+                return [MapField(f, controller=ConnectorEnum.GetResponse) for f in fields]
+            except:
+                return []
         else:
             return []
 

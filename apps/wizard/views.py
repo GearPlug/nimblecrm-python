@@ -12,7 +12,7 @@ from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
     GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
-    GoogleFormsController, JiraController
+    GoogleFormsController, JiraController, GetResponseController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, \
     StoredData, SlackConnection
@@ -361,6 +361,24 @@ class MailChimpListsList(LoginRequiredMixin, TemplateView):
             lists_list = []
         context['object_list'] = lists_list
         return super(MailChimpListsList, self).render_to_response(context)
+
+
+class GetResponseCampaignsList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = GetResponseController(connection.related_connection)
+        ping = controller.create_connection()
+        if ping:
+            # El id es el mismo nombre del module
+            lists_list = controller.get_campaigns()
+        else:
+            lists_list = []
+        context['object_list'] = lists_list
+        return super(GetResponseCampaignsList, self).render_to_response(context)
 
 
 class FacebookPageList(LoginRequiredMixin, TemplateView):
