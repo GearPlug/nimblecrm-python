@@ -5,7 +5,7 @@ from apps.user.models import User
 
 connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
                'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack',
-               'connection_bitbucket', 'connection_jira', 'connection_googleforms']
+               'connection_bitbucket', 'connection_jira', 'connection_googleforms', 'connection_googlecontacts']
 
 
 class Connector(models.Model):
@@ -208,6 +208,16 @@ class BitbucketConnection(models.Model):
         return self.name
 
 
+class GoogleContactsConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
+                                      related_name='connection_googlecontacts')
+    name = models.CharField('name', max_length=200)
+    credentials_json = JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
     name = models.CharField('name', max_length=120)
@@ -246,7 +256,7 @@ class StoredData(models.Model):
     name = models.CharField('name', max_length=300)
     value = models.CharField('value', max_length=3000, default='', blank=True)
     datetime = models.DateTimeField(auto_now_add=True)
-    object_id = models.CharField('object_id', max_length=50, null=True)
+    object_id = models.CharField('object_id', max_length=150, null=True)
 
     def __str__(self):
         return '%s %s %s' % (self.id, self.name, self.object_id)

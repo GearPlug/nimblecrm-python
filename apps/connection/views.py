@@ -14,12 +14,24 @@ from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.controllers import FacebookController
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection
+from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
+    GoogleContactsConnection
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
 from slacker import Slacker
 import json
 
+GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
+GOOGLE_AUTH_URL = 'http://localhost:8000/connection/google_auth/'
+GOOGLE_AUTH_REDIRECT_URL = 'connection:google_auth_success_create_connection',
+
+GOOGLE_FORMS_SCOPE = ''
+GOOGLE_FORMS_AUTH_URL = 'http://localhost:8000/connection/google_forms_auth/'
+GOOGLE_FORMS_AUTH_REDIRECT_URL = 'connection:google_forms_auth_success_create_connection'
+
+GOOGLE_CONTACTS_SCOPE = 'https://www.google.com/m8/feeds/'
+GOOGLE_CONTACTS_AUTH_URL = GOOGLE_AUTH_URL
+GOOGLE_CONTACTS_AUTH_REDIRECT_URL = GOOGLE_AUTH_REDIRECT_URL
 
 class ListConnectionView(ListView):
     model = Connection
@@ -54,7 +66,9 @@ class CreateConnectionView(CreateView):
                 token = self.request.POST.get('token', '')
                 long_user_access_token = self.fbc.extend_token(token)
                 form.instance.token = long_user_access_token
-            elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets:
+            elif ConnectorEnum.get_connector(
+                    self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets or ConnectorEnum.get_connector(
+                self.kwargs['connector_id']) == ConnectorEnum.GoogleContacts:
                 form.instance.credentials_json = self.request.session['google_credentials']
             elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleForms:
                 form.instance.credentials_json = self.request.session['google_credentials']
@@ -82,10 +96,15 @@ class CreateConnectionView(CreateView):
         if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets:
             flow = get_flow(GOOGLE_AUTH_URL)
             context['google_auth_url'] = flow.step1_get_authorize_url()
+            self.request.session['google_connection_type'] = 'drive'
         elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleForms:
             flow = get_flow(GOOGLE_FORMS_AUTH_URL)
             context['google_auth_url'] = flow.step1_get_authorize_url()
-
+            self.request.session['google_connection_type'] = 'forms'
+        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleContacts:
+            flow = get_flow_google_contacts()
+            context['google_auth_url'] = flow.step1_get_authorize_url()
+            self.request.session['google_connection_type'] = 'contacts'
         elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Slack:
             context['slack_auth_url'] = SLACK_PERMISSIONS_URL
         return context
@@ -122,12 +141,6 @@ class ListConnectorView(ListView):
     model = Connector
     template_name = '%s/list_connector.html' % app_name
 
-GOOGLE_AUTH_URL = 'http://localhost:8000/connection/google_auth/'
-GOOGLE_AUTH_REDIRECT_URL = 'connection:google_auth_success_create_connection'
-GOOGLE_FORMS_AUTH_URL = 'http://localhost:8000/connection/google_forms_auth/'
-GOOGLE_FORMS_AUTH_REDIRECT_URL = 'connection:google_forms_auth_success_create_connection'
-
-
 class GoogleAuthView(View):
     def get(self, request, *args, **kwargs):
         code = request.GET['code']
@@ -135,6 +148,7 @@ class GoogleAuthView(View):
             credentials = get_flow(GOOGLE_FORMS_AUTH_URL).step2_exchange(code)
         else:
             credentials = get_flow(GOOGLE_AUTH_URL).step2_exchange(code)
+        # credentials = get_flow_google_spreadsheets().step2_exchange(code)
         request.session['google_credentials'] = credentials.to_json()
         if kwargs['forms']:
             return redirect(reverse(GOOGLE_FORMS_AUTH_REDIRECT_URL))
@@ -148,20 +162,27 @@ class GoogleAuthSuccessCreateConnection(TemplateView):
         try:
             if 'google_credentials' in request.session:
                 credentials = request.session.pop('google_credentials')
-                if kwargs['forms']:
-                    c = Connection.objects.create(
-                        user=request.user, connector_id=ConnectorEnum.GoogleForms.value)
-                    n = int(GoogleFormsConnection.objects.filter(connection__user=request.user).count()) + 1
-                    gssc = GoogleFormsConnection.objects.create(
-                        connection=c, name="GoogleForms Connection # %s" % n, credentials_json=credentials)
-                else:
+                if request.session['google_connection_type'] == 'contacts':
+                    c = Connection.objects.create(user=request.user,
+                                                  connector_id=ConnectorEnum.GoogleContacts.value)
+                    n = int(GoogleContactsConnection.objects.filter(connection__user=request.user).count()) + 1
+                    gcc = GoogleContactsConnection.objects.create(
+                        connection=c, name="GoogleContacts Connection # %s" % n, credentials_json=credentials)
+                elif request.session['google_connection_type'] == 'drive':
                     c = Connection.objects.create(
                         user=request.user, connector_id=ConnectorEnum.GoogleSpreadSheets.value)
                     n = int(GoogleSpreadSheetsConnection.objects.filter(connection__user=request.user).count()) + 1
                     gssc = GoogleSpreadSheetsConnection.objects.create(
                         connection=c, name="GoogleSheets Connection # %s" % n, credentials_json=credentials)
+                elif request.session['google_connection_type'] == 'forms':
+                    c = Connection.objects.create(
+                        user=request.user, connector_id=ConnectorEnum.GoogleForms.value)
+                    n = int(GoogleFormsConnection.objects.filter(connection__user=request.user).count()) + 1
+                    gfc = GoogleFormsConnection.objects.create(
+                        connection=c, name="GoogleForms Connection # %s" % n, credentials_json=credentials)
         except Exception as e:
-            print("Error creating the GoogleSheets Connection.")
+            # print("Error creating the GoogleSheets Connection.")
+            raise
         return super(GoogleAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
 
@@ -191,9 +212,27 @@ class AuthSuccess(TemplateView):
     template_name = 'connection/auth_success.html'
 
 
-def get_flow(redirect_to):
+def get_flow(redirect_to, scope='https://www.googleapis.com/auth/drive'):
     return client.OAuth2WebServerFlow(
         client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
         client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
-        scope='https://www.googleapis.com/auth/drive',
+        scope=scope,
         redirect_uri=redirect_to)
+
+def get_flow_google(client_id, client_secret, scope=None, redirect_uri='http://localhost:8000/connection/google_auth/'):
+    return client.OAuth2WebServerFlow(client_id=client_id, client_secret=client_secret, scope=scope,
+                                      redirect_uri=redirect_uri)
+
+
+def get_flow_google_spreadsheets():
+    return get_flow_google(client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
+                           client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
+                           scope='https://www.googleapis.com/auth/drive',
+                           redirect_uri='http://localhost:8000/connection/google_auth/')
+
+
+def get_flow_google_contacts():
+    return get_flow_google(client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
+                           client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
+                           scope='https://www.google.com/m8/feeds/',
+                           redirect_uri='http://localhost:8000/connection/google_auth/')

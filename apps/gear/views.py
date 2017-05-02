@@ -2,12 +2,11 @@ import httplib2
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.http.response import JsonResponse
-from django.shortcuts import render
-
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from apps.gp.controllers import MySQLController, PostgreSQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, MSSQLController, SlackController, BitbucketController, JiraController
+    GoogleSpreadSheetsController, MSSQLController, SlackController, BitbucketController, JiraController, \
+    GoogleContactsController
 from apps.gp.enum import ConnectorEnum, MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
@@ -76,6 +75,7 @@ class CreateGearMapView(FormView):
     slack_controller = SlackController()
     jirac = JiraController()
     bitbucketc = BitbucketController()
+    google_contacts_controller = GoogleContactsController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -124,11 +124,14 @@ class CreateGearMapView(FormView):
 
     def get_available_source_fields(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
-        fields = ConnectorEnum.get_fields(c)
-        related = plug.connection.related_connection
-        connection_data = {}
-        for field in fields:
-            connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
+        if c == ConnectorEnum.GoogleContacts:
+            self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
+            return ['%%%%%s%%%%' % field for field in self.google_contacts_controller.get_contact_fields()]
+        # fields = ConnectorEnum.get_fields(c)
+        # related = plug.connection.related_connection
+        # connection_data = {}
+        # for field in fields:
+        #     connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
         return ['%%%%%s%%%%' % item['name'] for item in self.get_source_data_list(plug, plug.connection)]
 
     def get_target_field_list(self, plug):
@@ -205,6 +208,11 @@ class CreateGearMapView(FormView):
                 return [MapField(f, controller=ConnectorEnum.Bitbucket) for f in fields]
             except:
                 return []
+        elif c == ConnectorEnum.GoogleContacts:
+            self.google_contacts_controller.create_connection(related, plug)
+            values = self.google_contacts_controller.get_mapping_fields()
+            print(values)
+            return values
         else:
             return []
 
