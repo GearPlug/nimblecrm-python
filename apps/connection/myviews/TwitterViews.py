@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from apps.gp.controllers import TwitterController
+from apps.gp.controllers.social import TwitterController
 from apps.gp.views import TemplateViewWithPost
 
 

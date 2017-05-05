@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 
-from apps.gp.controllers import PostgreSQLController
+from apps.gp.controllers.database import PostgreSQLController
 from apps.gp.views import TemplateViewWithPost
 
 

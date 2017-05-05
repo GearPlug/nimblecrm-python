@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.views.generic import TemplateView
 
-from apps.gp.controllers import SugarCRMController
+from apps.gp.controllers.crm import SugarCRMController
 from apps.gp.views import TemplateViewWithPost
 
 

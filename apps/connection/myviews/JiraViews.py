@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 
-from apps.gp.controllers import JiraController
+from apps.gp.controllers.project_management import JiraController
 from apps.gp.views import TemplateViewWithPost
 
 

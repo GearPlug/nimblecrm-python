@@ -1,7 +1,7 @@
 import httplib2
 from oauth2client import client
 from django.http import JsonResponse
-from apps.gp.controllers import GoogleSpreadSheetsController
+from apps.gp.controllers.lead import GoogleSpreadSheetsController
 from apps.gp.views import TemplateViewWithPost
 
 
