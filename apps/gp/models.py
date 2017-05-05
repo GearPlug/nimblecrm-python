@@ -9,6 +9,10 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
                'connection_getresponse', 'connection_twitter']
 
 
+class Category(models.Model):
+    name = models.CharField('name', max_length=100)
+
+
 class Connector(models.Model):
     name = models.CharField('name', max_length=120)
     is_active = models.BooleanField('is active', default=False)
@@ -335,6 +339,18 @@ class ControllerLog(DBLogEntry):
     process = models.CharField(max_length=20, blank=True, default='')
     status = models.CharField(max_length=2, blank=False, choices=STATUS, default='f')
     controller = models.CharField(max_length=20, blank=True, default='')
+
+
+class ConnectionData(models.Model):
+    pass
+
+
+class PlugData(models.Model):
+    pass
+
+
+class GearData(models.Model):
+    pass
 
 
 admin.site.register(Connector)

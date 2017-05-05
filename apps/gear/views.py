@@ -14,7 +14,8 @@ from apps.gp.controllers.im import SlackController
 from apps.gp.controllers.social import TwitterController
 from apps.gp.controllers.project_management import JiraController
 from apps.gp.controllers.repository import BitbucketController
-from apps.gp.enum import ConnectorEnum, MapField
+from apps.gp.enum import ConnectorEnum
+from apps.gp.map import MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
 from oauth2client import client
