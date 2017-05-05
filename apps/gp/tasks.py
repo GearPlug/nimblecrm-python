@@ -1,6 +1,6 @@
 from apps.gp.models import Gear, StoredData, GearMapData
 from apps.gp.enum import ConnectorEnum
-from apps.gp.controllers import SugarCRMController
+from apps.gp.controllers.crm import SugarCRMController
 from apiconnector.celery import app
 from django.core.cache import cache
 from django.utils import timezone

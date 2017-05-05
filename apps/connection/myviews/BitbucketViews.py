@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 
-from apps.gp.controllers import BitbucketController
+from apps.gp.controllers.repository import BitbucketController
 from apps.gp.views import TemplateViewWithPost
 
 

@@ -15,7 +15,7 @@ from apps.connection.myviews.JiraViews import *
 from apps.connection.myviews.GetResponseViews import *
 from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
-from apps.gp.controllers import FacebookController
+from apps.gp.controllers.lead import FacebookController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
     GoogleContactsConnection, TwitterConnection
