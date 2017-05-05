@@ -10,9 +10,16 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
-from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
-    GoogleFormsController, JiraController, GetResponseController
+from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
+from apps.gp.controllers.lead import GoogleFormsController, FacebookController
+from apps.gp.controllers.crm import SugarCRMController
+from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
+from apps.gp.controllers.directory import GoogleContactsController
+from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController
+from apps.gp.controllers.im import SlackController
+from apps.gp.controllers.social import TwitterController
+from apps.gp.controllers.project_management import JiraController
+from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, \
     StoredData, SlackConnection
