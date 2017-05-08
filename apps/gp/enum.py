@@ -11,6 +11,7 @@ from apps.gp.controllers.social import TwitterController
 from apps.gp.controllers.project_management import JiraController
 from apps.gp.controllers.repository import BitbucketController
 
+
 class ConnectorEnum(Enum):
     Facebook = 1
     MySQL = 2
