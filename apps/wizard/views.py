@@ -19,7 +19,15 @@ from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpec
 from apps.plug.views import CreatePlugView
 from oauth2client import client
 from apiclient import discovery
+from paypalrestsdk import Sale
+from paypalrestsdk.notifications import WebhookEvent
 import re
+import paypalrestsdk
+
+paypalrestsdk.configure({
+    "mode": "sandbox",  # sandbox or live
+    "client_id": "XXXXXXXXXXX",
+    "client_secret": "YYYYYYYYYY"})
 
 mcc = MailChimpController()
 gsc = GoogleSpreadSheetsController()
@@ -595,6 +603,51 @@ class BitbucketWebhookEvent(TemplateView):
             self._bitbucket_controller.create_connection(plug_specification.plug.connection.related_connection,
                                                          plug_specification.plug)
             self._bitbucket_controller.download_source_data(issue=issue)
+        return JsonResponse({'hola': True})
+
+
+class PaypalWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _bitbucket_controller = BitbucketController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(PaypalWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super(PaypalWebhookEvent, self).get(request)
+
+    def post(self, request, *args, **kwargs):
+        webhook_id = '4EJ052258L4717728'
+        transmission_id = request.META['HTTP_PAYPAL_TRANSMISSION_ID']
+        timestamp = request.META['HTTP_PAYPAL_TRANSMISSION_TIME']
+        actual_signature = request.META['HTTP_PAYPAL_TRANSMISSION_SIG']
+        cert_url = request.META['HTTP_PAYPAL_CERT_URL']
+        auth_algo = request.META['HTTP_PAYPAL_AUTH_ALGO']
+        event_body = request.body.decode('utf-8')
+        response = WebhookEvent.verify(
+            transmission_id, timestamp, webhook_id, event_body, cert_url, actual_signature, auth_algo)
+        print(response)
+        # Devuelve True si es válido
+        # if not response:
+        #     return JsonResponse({'hola': True})
+        webhook_event_json = json.loads(request.body.decode('utf-8'))
+        webhook_event = WebhookEvent(webhook_event_json)
+        event_resource = webhook_event.get_resource()
+        print(event_resource, type(event_resource))
+
+        print(event_resource.parent_payment)
+
+        # payment = paypalrestsdk.Payment.find(event_resource.parent_payment)
+        # print(payment)
+
+        payment_history = paypalrestsdk.Payment.all({"count": 100})
+        print(payment_history.payments)
+
+        sale = Sale.find(event_resource.parent_payment)
+
+        print(sale)
+
         return JsonResponse({'hola': True})
 
 

@@ -3,7 +3,8 @@ from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionVi
     ActionSpecificationsView, CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, MSSQLFieldList, \
     ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
     PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent, \
-    BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList
+    BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList, \
+    PaypalWebhookEvent
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
@@ -47,4 +48,6 @@ urlpatterns = [
     url(r'jira/webhook/event/', JiraWebhookEvent.as_view(), name='jira_webhook_event'),
     # GetResponse
     url(r"async/getresponse/campaigns/list/", GetResponseCampaignsList.as_view(), name='async_getresponse_campaigns'),
+    # Paypal
+    url(r'paypal/webhook/event/', PaypalWebhookEvent.as_view(), name='paypal_webhook_event'),
 ]
