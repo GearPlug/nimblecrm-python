@@ -20,12 +20,21 @@ class Connector(models.Model):
     is_source = models.BooleanField('is source', default=False)
     is_target = models.BooleanField('is target', default=False)
     icon = models.ImageField('icon', upload_to='connector/icon', null=True, default=None)
+    category = models.ManyToManyField(Category, through='ConnectorCategory')
 
     class Meta:
         verbose_name = 'connector'
 
     def __str__(self):
         return self.name
+
+
+class ConnectorCategory(models.Model):
+    Connector = models.ForeignKey(Connector)
+    category = models.ForeignKey(Category)
+
+    class Meta:
+        db_table = 'gp_connector__category'
 
 
 class Action(models.Model):
@@ -341,15 +350,15 @@ class ControllerLog(DBLogEntry):
     controller = models.CharField(max_length=20, blank=True, default='')
 
 
-class ConnectionData(models.Model):
+class ConnectionData():
     pass
 
 
-class PlugData(models.Model):
+class PlugData():
     pass
 
 
-class GearData(models.Model):
+class GearData():
     pass
 
 

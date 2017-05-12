@@ -2,11 +2,13 @@ from django.http import JsonResponse
 
 from apps.gp.controllers.database import MySQLController
 from apps.gp.views import TemplateViewWithPost
+from apps.gp.enum import dynamic_import
 
 
 class AJAXMySQLTestConnection(TemplateViewWithPost):
     template_name = 'test.html'
-    mysqlc = MySQLController()
+    mysqlc = dynamic_import("MySQL", path="apps.gp.enum", suffix='Controller')#MySQLController()
+    print(mysqlc)
 
     def post(self, request, *args, **kwargs):
         name = self.request.POST.get('name', 'nombre')

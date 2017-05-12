@@ -181,3 +181,7 @@ class GoogleSpreadSheetsController(BaseController):
 
     def get_target_fields(self, **kwargs):
         return self.get_worksheet_first_row(**kwargs)
+
+
+class GoogleCalendarController(BaseController):
+    pass

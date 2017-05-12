@@ -263,3 +263,7 @@ class FacebookController(BaseController):
                         item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
             return True
         return False
+
+
+class SurveyMonkeyController(BaseController):
+    pass
