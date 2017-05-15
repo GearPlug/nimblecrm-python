@@ -3,7 +3,7 @@ from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionVi
     ActionSpecificationsView, CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, MSSQLFieldList, \
     ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
     PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent, \
-    BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList
+    BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList, AJAXGetSurveyListView
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
@@ -47,4 +47,7 @@ urlpatterns = [
     url(r'jira/webhook/event/', JiraWebhookEvent.as_view(), name='jira_webhook_event'),
     # GetResponse
     url(r"async/getresponse/campaigns/list/", GetResponseCampaignsList.as_view(), name='async_getresponse_campaigns'),
+
+    #SurveyMonkey
+    url("async/surveymonkey/survey/list/", AJAXGetSurveyListView.as_view(), name='async_surveymonkey_survey_list' )
 ]

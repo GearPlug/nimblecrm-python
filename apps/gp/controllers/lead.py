@@ -12,6 +12,7 @@ import requests
 from apiclient import discovery
 from datetime import time
 from oauth2client import client as GoogleClient
+import surveymonty
 
 
 class GoogleFormsController(BaseController):
@@ -263,3 +264,42 @@ class FacebookController(BaseController):
                         item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
             return True
         return False
+
+
+class SurveyMonkeyController(BaseController):
+    _token = None
+    _client = None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(SurveyMonkeyController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._token = self._connection_object.token
+                    self._client = surveymonty.Client(self._token)
+                    print(self._token)
+                except Exception as e:
+                    print("Error getting the surveymonkey token")
+                    print(e)
+        elif kwargs:
+            host = kwargs.pop('token', None)
+            self._client = surveymonty.Client(self._token)
+        return self._token is not None and self._client is not None
+
+    def get_survey_list(self):
+        lista=self._client.get_surveys()
+        return lista['data']
+
+    def download_to_stored_data(self, connection_object, plug, client=None):
+        if plug is None:
+            plug = self._plug
+        if not self._client:
+            return False
+        survey_id = self._plug.plug_specification.all()[0].value
+        responses=self._client.get_survey_details(survey_id)
+        print(responses)
+        return True
+

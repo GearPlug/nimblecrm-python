@@ -5,7 +5,8 @@ from apps.connection.views import CreateConnectionView, ListConnectionView, List
     AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
     GoogleAuthView, AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, \
     AJAXPostgreSQLTestConnection, AJAXMSSQLTestConnection, SlackAuthView, AuthSuccess, AJAXBitbucketTestConnection, \
-    AJAXJiraTestConnection, AJAXGetResponseTestConnection, TwitterAuthView, TwitterAuthSuccessCreateConnection
+    AJAXJiraTestConnection, AJAXGetResponseTestConnection, TwitterAuthView, TwitterAuthSuccessCreateConnection, \
+    SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection
 
 urlpatterns = [
     url(r'create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create'),
@@ -25,6 +26,11 @@ urlpatterns = [
     url(r"^twitter_auth/$", TwitterAuthView.as_view(), name="twitter_auth"),
     url(r"^twitter_auth/success/$", TwitterAuthSuccessCreateConnection.as_view(),
         name="twitter_auth_success_create_connection"),
+
+    # surveymonkey
+    url(r"^survey_monkey_auth/$", SurveyMonkeyAuthView.as_view(), name="survey_monekey_auth"),
+    url(r"^survey_monkey_auth/success/$", SurveyMonkeyAuthSuccessCreateConnection.as_view(),
+        name="survey_monkey_auth_success_create_connection"),
 
     # Slack
     url(r'^auth/slack/', SlackAuthView.as_view(), name="slack_auth"),

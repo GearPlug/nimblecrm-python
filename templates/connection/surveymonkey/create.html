@@ -4,10 +4,10 @@
 {% block body_content %}
     <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
           method="post" autocomplete="off">
-        <a href="javascript:auth('{{ google_auth_url }}')">Google Auth</a>
+        <a href="javascript:auth('{{ surveymonkey_auth_url }}')">Survey Monkey Auth</a>
         {% csrf_token %}
     </form>
-    {{ request.session.google_credentials }}
+    {{ request.session.survey_monkey_auth_token }}
 {% endblock %}
 
 

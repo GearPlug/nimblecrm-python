@@ -28,6 +28,9 @@ from oauth2client import client
 from apiclient import discovery
 import re
 
+
+from apps.connection.myviews.SurveyMonkeyViews import AJAXGetSurveyListView
+
 mcc = MailChimpController()
 gsc = GoogleSpreadSheetsController()
 gfc = GoogleFormsController()
@@ -68,6 +71,11 @@ class CreateGearView(LoginRequiredMixin, CreateView):
     def get_queryset(self):
         return self.model.objects.filter(user=self.request.user).prefetch_related()
 
+    def get_context_data(self, **kwargs):
+        print("111111")
+        context = super(CreateGearView, self).get_context_data(**kwargs)
+        print("222222")
+        return context
 
 class UpdateGearView(LoginRequiredMixin, UpdateView):
     model = Gear
