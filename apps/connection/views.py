@@ -18,11 +18,17 @@ from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.controllers.lead import FacebookController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
-    GoogleContactsConnection, TwitterConnection
+    GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
 from slacker import Slacker
 import json
+import urllib
+import requests
+
+
+
+
 
 GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
 GOOGLE_AUTH_URL = 'http://localhost:8000/connection/google_auth/'
@@ -115,6 +121,9 @@ class CreateConnectionView(CreateView):
             flow = get_twitter_auth()
             context['twitter_auth_url'] = flow.get_authorization_url()
             self.request.session['twitter_request_token'] = flow.request_token
+        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.SurveyMonkey:
+            #print("Create 1 - SV")
+            context['surveymonkey_auth_url'] = get_survey_monkey_url()
         return context
 
 
@@ -250,6 +259,64 @@ class SlackAuthView(View):
                 print(e)
                 print("Error con el slack")
         return redirect('connection:auth_sucess')
+
+
+class SurveyMonkeyAuthView(View):
+    def get(self, request, *args, **kwargs):
+        #print("Auth SM - CODE")
+        auth_code = request.GET.get('code',None)
+        data = {
+            "client_secret": settings.SURVEYMONKEY_CLIENT_SECRET,
+            "code": auth_code,
+            "redirect_uri": settings.SURVEYMONKEY_REDIRECT_URI,
+            "client_id": settings.SURVEYMONKEY_CLIENT_ID,
+            "grant_type": "authorization_code"
+        }
+        try:
+            access_token_uri = settings.SURVEYMONKEY_API_BASE + settings.SURVEYMONKEY_ACCESS_TOKEN_ENDPOINT
+            access_token_response = requests.post(access_token_uri, data=data)
+            try:
+                access_json = access_token_response.json()
+                print(access_json)
+                self.request.session['survey_monkey_auth_token'] = access_json["access_token"]
+                return redirect(reverse('connection:survey_monkey_auth_success_create_connection'))
+            except Exception as e:
+                raise
+                print(e)
+                print("Error en survey Monkey")
+                return redirect(reverse('connection:survey_monkey_auth_success_create_connection'))
+        except Exception as e:
+            raise
+            print(e)
+            print("Error en Survey Monkey")
+        return redirect(reverse('connection:survey_monkey_auth_success_create_connection'))
+
+
+class SurveyMonkeyAuthSuccessCreateConnection(TemplateView):
+    template_name = 'connection/surveymonkey/success.html'
+
+    def get(self, request, *args, **kwargs):
+        #print("Success SM - Connection")
+        try:
+            if 'survey_monkey_auth_token' in request.session:
+                access_token = request.session.pop('survey_monkey_auth_token')
+                c = Connection.objects.create(
+                    user=request.user, connector_id=ConnectorEnum.SurveyMonkey.value)
+                n = int(SurveyMonkeyConnection.objects.filter(connection__user=request.user).count()) + 1
+                tc = SurveyMonkeyConnection.objects.create(
+                    connection=c, name="Survey Monkey Connection # %s" % n, token=access_token)
+        except Exception as e:
+            print("Error creating the Survey Monkey Connection.")
+        return super(SurveyMonkeyAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
+
+def get_survey_monkey_url():
+    print("URL SV")
+    url_params = urllib.parse.urlencode({
+        "redirect_uri": settings.SURVEYMONKEY_REDIRECT_URI,
+        "client_id": settings.SURVEYMONKEY_CLIENT_ID,
+        "response_type": "code"
+    })
+    return settings.SURVEYMONKEY_API_BASE + settings.SURVEYMONKEY_AUTH_CODE_ENDPOINT + "?" + url_params
 
 
 class AuthSuccess(TemplateView):

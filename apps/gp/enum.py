@@ -5,7 +5,7 @@ from apps.gp.controllers.lead import GoogleFormsController, FacebookController, 
 from apps.gp.controllers.crm import SugarCRMController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.directory import GoogleContactsController
-from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController,GoogleCalendarController
+from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
 from apps.gp.controllers.im import SlackController
 from apps.gp.controllers.social import TwitterController
 from apps.gp.controllers.project_management import JiraController
@@ -61,5 +61,4 @@ class ConnectorEnum(Enum):
         return apps.get_model('gp', '%sConnection' % connector.name)
 
     def get_controller(connector):
-        dynamic_import(connector.name, path="apps.gp.enum", suffix='Controller')
-        return None
+        return dynamic_import(connector.name, path="apps.gp.enum", suffix='Controller')
