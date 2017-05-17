@@ -12,7 +12,7 @@ from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
     GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
-    GoogleFormsController, JiraController, GetResponseController
+    GoogleFormsController, JiraController, GetResponseController, GoogleCalendarController, GooglePushWebhook
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, \
     StoredData, SlackConnection
@@ -191,8 +191,10 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         if ping:
             if self.object.is_source:
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
-            if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA:
-                controller.create_webhook()
+                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA:
+                    controller.create_webhook()
+                elif c == ConnectorEnum.GoogleCalendar:
+                    controller.create_webhook()
             elif self.object.is_target:
                 if c == ConnectorEnum.MailChimp:
                     controller.get_target_fields(list_id=specification_list[0]['value'])
@@ -259,6 +261,23 @@ class GoogleDriveSheetList(LoginRequiredMixin, TemplateView):
             sheet_list = list()
         context['object_list'] = sheet_list
         return super(GoogleDriveSheetList, self).render_to_response(context)
+
+
+class GoogleCalendarsList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = GoogleCalendarController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            calendar_list = controller.get_calendar_list()
+        else:
+            calendar_list = list()
+        context['object_list'] = calendar_list
+        return super(GoogleCalendarsList, self).render_to_response(context)
 
 
 class GoogleSheetsWorksheetList(LoginRequiredMixin, TemplateView):
@@ -674,6 +693,48 @@ class JiraWebhookEvent(TemplateView):
             self._jira_controller.create_connection(plug_specification.plug.connection.related_connection,
                                                     plug_specification.plug)
             self._jira_controller.download_source_data(issue=issue)
+        return JsonResponse({'hola': True})
+
+
+class GoogleCalendarWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _googlecalendar_controller = GoogleCalendarController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(GoogleCalendarWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super(GoogleCalendarWebhookEvent, self).get(request)
+
+    def post(self, request, *args, **kwargs):
+        resource_state = request.META.get('HTTP_X_GOOG_RESOURCE_STATE', None)
+        resource_uri = request.META.get('HTTP_X_GOOG_RESOURCE_URI', None)
+        channel_id = request.META.get('HTTP_X_GOOG_CHANNEL_ID', None)
+        resource_id = request.META.get('HTTP_X_GOOG_RESOURCE_ID', None)
+        channel_expiration = request.META.get('HTTP_X_GOOG_CHANNEL_EXPIRATION', None)
+        message_number = request.META.get('HTTP_X_GOOG_MESSAGE_NUMBER', None)
+
+        if resource_state == 'sync':
+            return JsonResponse({'hola': True})
+
+        try:
+            google_push_webhook = GooglePushWebhook.objects.get(channel_id=channel_id)
+        except GooglePushWebhook.DoesNotExist:
+            return JsonResponse({'hola': True})
+
+        qs = PlugSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="googlecalendar",
+            plug__connection=google_push_webhook.connection,
+            plug__source_gear__is_active=True)
+
+        for plug_specification in qs:
+            self._googlecalendar_controller.create_connection(plug_specification.plug.connection.related_connection,
+                                                              plug_specification.plug)
+            events = self._googlecalendar_controller.get_events()
+            self._googlecalendar_controller.download_source_data(events=events)
+
         return JsonResponse({'hola': True})
 
 

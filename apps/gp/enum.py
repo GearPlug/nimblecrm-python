@@ -3,7 +3,7 @@ from django.apps import apps
 from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
     GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
     GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
-    JiraController, GoogleFormsController, GetResponseController
+    JiraController, GoogleFormsController, GetResponseController, GoogleCalendarController
 
 
 class ConnectorEnum(Enum):
@@ -19,6 +19,7 @@ class ConnectorEnum(Enum):
     Bitbucket = 10
     GoogleForms = 11
     GetResponse = 13
+    GoogleCalendar = 14
 
     def get_connector_data(connector):
         connector = ConnectorEnum.get_connector(connector)
@@ -66,6 +67,8 @@ class ConnectorEnum(Enum):
             return GoogleFormsController
         elif connector == ConnectorEnum.GetResponse:
             return GetResponseController
+        elif connector == ConnectorEnum.GoogleCalendar:
+            return GoogleCalendarController
         return None
 
 
@@ -176,3 +179,9 @@ class MapField(object):
     @property
     def attrs(self):
         return [key for key, value in self.__dict__.items()]
+
+
+class GoogleAPI(Enum):
+    SpreadSheets = 1
+    Forms = 2
+    Calendar = 3

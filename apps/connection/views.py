@@ -14,8 +14,9 @@ from apps.connection.myviews.GetResponseViews import *
 from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.controllers import FacebookController
-from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection
+from apps.gp.enum import ConnectorEnum, GoogleAPI
+from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
+    GoogleCalendarConnection
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
 from slacker import Slacker
@@ -59,6 +60,8 @@ class CreateConnectionView(CreateView):
                 form.instance.credentials_json = self.request.session['google_credentials']
             elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleForms:
                 form.instance.credentials_json = self.request.session['google_credentials']
+            elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleCalendar:
+                form.instance.credentials_json = self.request.session['google_credentials']
             return super(CreateConnectionView, self).form_valid(form, *args, **kwargs)
 
     def get(self, *args, **kwargs):
@@ -86,7 +89,9 @@ class CreateConnectionView(CreateView):
         elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleForms:
             flow = get_flow(GOOGLE_FORMS_AUTH_URL)
             context['google_auth_url'] = flow.step1_get_authorize_url()
-
+        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleCalendar:
+            flow = get_flow(GOOGLE_CALENDAR_AUTH_URL)
+            context['google_auth_url'] = flow.step1_get_authorize_url()
         elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Slack:
             context['slack_auth_url'] = SLACK_PERMISSIONS_URL
         return context
@@ -123,44 +128,59 @@ class ListConnectorView(ListView):
     model = Connector
     template_name = '%s/list_connector.html' % app_name
 
+
 GOOGLE_AUTH_URL = 'http://localhost:8000/connection/google_auth/'
 GOOGLE_AUTH_REDIRECT_URL = 'connection:google_auth_success_create_connection'
 GOOGLE_FORMS_AUTH_URL = 'http://localhost:8000/connection/google_forms_auth/'
 GOOGLE_FORMS_AUTH_REDIRECT_URL = 'connection:google_forms_auth_success_create_connection'
+GOOGLE_CALENDAR_AUTH_URL = 'http://localhost:8000/connection/google_calendar_auth/'
+GOOGLE_CALENDAR_AUTH_REDIRECT_URL = 'connection:google_calendar_auth_success_create_connection'
 
 
 class GoogleAuthView(View):
     def get(self, request, *args, **kwargs):
         code = request.GET['code']
-        if kwargs['forms']:
+        if kwargs['api'] == GoogleAPI.SpreadSheets:
             credentials = get_flow(GOOGLE_FORMS_AUTH_URL).step2_exchange(code)
-        else:
-            credentials = get_flow(GOOGLE_AUTH_URL).step2_exchange(code)
-        request.session['google_credentials'] = credentials.to_json()
-        if kwargs['forms']:
+            request.session['google_credentials'] = credentials.to_json()
             return redirect(reverse(GOOGLE_FORMS_AUTH_REDIRECT_URL))
-        return redirect(reverse(GOOGLE_AUTH_REDIRECT_URL))
+        elif kwargs['api'] == GoogleAPI.SpreadSheets:
+            credentials = get_flow(GOOGLE_AUTH_URL).step2_exchange(code)
+            request.session['google_credentials'] = credentials.to_json()
+            return redirect(reverse(GOOGLE_AUTH_REDIRECT_URL))
+        elif kwargs['api'] == GoogleAPI.Calendar:
+            credentials = get_flow(GOOGLE_CALENDAR_AUTH_URL).step2_exchange(code)
+            request.session['google_credentials'] = credentials.to_json()
+            return redirect(reverse(GOOGLE_CALENDAR_AUTH_REDIRECT_URL))
 
 
 class GoogleAuthSuccessCreateConnection(TemplateView):
     template_name = 'connection/googlespreadsheets/success.html'
 
     def get(self, request, *args, **kwargs):
+        print('auth success')
         try:
+
             if 'google_credentials' in request.session:
                 credentials = request.session.pop('google_credentials')
-                if kwargs['forms']:
+                if kwargs['api'] == GoogleAPI.Forms:
                     c = Connection.objects.create(
                         user=request.user, connector_id=ConnectorEnum.GoogleForms.value)
                     n = int(GoogleFormsConnection.objects.filter(connection__user=request.user).count()) + 1
                     gssc = GoogleFormsConnection.objects.create(
                         connection=c, name="GoogleForms Connection # %s" % n, credentials_json=credentials)
-                else:
+                elif kwargs['api'] == GoogleAPI.SpreadSheets:
                     c = Connection.objects.create(
                         user=request.user, connector_id=ConnectorEnum.GoogleSpreadSheets.value)
                     n = int(GoogleSpreadSheetsConnection.objects.filter(connection__user=request.user).count()) + 1
                     gssc = GoogleSpreadSheetsConnection.objects.create(
                         connection=c, name="GoogleSheets Connection # %s" % n, credentials_json=credentials)
+                elif kwargs['api'] == GoogleAPI.Calendar:
+                    c = Connection.objects.create(
+                        user=request.user, connector_id=ConnectorEnum.GoogleCalendar.value)
+                    n = int(GoogleFormsConnection.objects.filter(connection__user=request.user).count()) + 1
+                    gssc = GoogleCalendarConnection.objects.create(
+                        connection=c, name="GoogleForms Connection # %s" % n, credentials_json=credentials)
         except Exception as e:
             print("Error creating the GoogleSheets Connection.")
         return super(GoogleAuthSuccessCreateConnection, self).get(request, *args, **kwargs)

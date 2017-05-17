@@ -4,7 +4,7 @@ from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionVi
     ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
     PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent, \
     BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList, \
-    PaypalWebhookEvent
+    PaypalWebhookEvent, GoogleCalendarsList, GoogleCalendarWebhookEvent
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
@@ -50,4 +50,7 @@ urlpatterns = [
     url(r"async/getresponse/campaigns/list/", GetResponseCampaignsList.as_view(), name='async_getresponse_campaigns'),
     # Paypal
     url(r'paypal/webhook/event/', PaypalWebhookEvent.as_view(), name='paypal_webhook_event'),
+    # GoogleCalendar
+    url(r"async/goole/calendars/list/", GoogleCalendarsList.as_view(), name='async_google_calendars'),
+    url(r'google/calendar/webhook/event/', GoogleCalendarWebhookEvent.as_view(), name='googlecalendar_webhook_event'),
 ]
