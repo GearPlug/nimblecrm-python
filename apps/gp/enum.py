@@ -1,9 +1,16 @@
 from enum import Enum
 from django.apps import apps
-from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
-    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
-    JiraController, GoogleFormsController, GetResponseController, GoogleCalendarController
+from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
+from apps.gp.controllers.lead import GoogleFormsController, FacebookController, SurveyMonkeyController
+from apps.gp.controllers.crm import SugarCRMController
+from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
+from apps.gp.controllers.directory import GoogleContactsController
+from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
+from apps.gp.controllers.im import SlackController
+from apps.gp.controllers.social import TwitterController
+from apps.gp.controllers.project_management import JiraController
+from apps.gp.controllers.repository import BitbucketController
+from apps.gp.controllers.utils import dynamic_import
 
 
 class ConnectorEnum(Enum):
@@ -18,8 +25,19 @@ class ConnectorEnum(Enum):
     JIRA = 9
     Bitbucket = 10
     GoogleForms = 11
+    Twitter = 12
     GetResponse = 13
-    GoogleCalendar = 14
+    GoogleContacts = 14
+    SurveyMonkey = 15
+    GoogleCalendar = 16
+    MercadoLibre = 17
+    AmazonSellerCentral = 18
+    PayU = 19
+    Gmail = 20
+    Ebay = 21
+    WooComerce = 22
+    Instagram = 23
+    YouTube = 24
 
     def get_connector_data(connector):
         connector = ConnectorEnum.get_connector(connector)
@@ -43,33 +61,7 @@ class ConnectorEnum(Enum):
         return apps.get_model('gp', '%sConnection' % connector.name)
 
     def get_controller(connector):
-        if connector == ConnectorEnum.Facebook:
-            return FacebookController
-        elif connector == ConnectorEnum.MySQL:
-            return MySQLController
-        elif connector == ConnectorEnum.SugarCRM:
-            return SugarCRMController
-        elif connector == ConnectorEnum.MailChimp:
-            return MailChimpController
-        elif connector == ConnectorEnum.GoogleSpreadSheets:
-            return GoogleSpreadSheetsController
-        elif connector == ConnectorEnum.PostgreSQL:
-            return PostgreSQLController
-        elif connector == ConnectorEnum.MSSQL:
-            return MSSQLController
-        elif connector == ConnectorEnum.JIRA:
-            return JiraController
-        elif connector == ConnectorEnum.Slack:
-            return SlackController
-        elif connector == ConnectorEnum.Bitbucket:
-            return BitbucketController
-        elif connector == ConnectorEnum.GoogleForms:
-            return GoogleFormsController
-        elif connector == ConnectorEnum.GetResponse:
-            return GetResponseController
-        elif connector == ConnectorEnum.GoogleCalendar:
-            return GoogleCalendarController
-        return None
+        return dynamic_import(connector.name, path="apps.gp.enum", suffix='Controller')
 
 
 class MapField(object):

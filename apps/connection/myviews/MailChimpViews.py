@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.views.generic import TemplateView
 
-from apps.gp.controllers import MailChimpController
+from apps.gp.controllers.email_marketing import MailChimpController
 from apps.gp.views import TemplateViewWithPost
 
 

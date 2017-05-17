@@ -5,8 +5,12 @@ from apps.user.models import User
 
 connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
                'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack',
-               'connection_bitbucket', 'connection_jira', 'connection_googleforms', 'connection_getresponse',
-               'connection_googlecalendar']
+               'connection_bitbucket', 'connection_jira', 'connection_googleforms', 'connection_googlecontacts',
+               'connection_getresponse', 'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar']
+
+
+class Category(models.Model):
+    name = models.CharField('name', max_length=100)
 
 
 class Connector(models.Model):
@@ -16,12 +20,21 @@ class Connector(models.Model):
     is_source = models.BooleanField('is source', default=False)
     is_target = models.BooleanField('is target', default=False)
     icon = models.ImageField('icon', upload_to='connector/icon', null=True, default=None)
+    category = models.ManyToManyField(Category, through='ConnectorCategory')
 
     class Meta:
         verbose_name = 'connector'
 
     def __str__(self):
         return self.name
+
+
+class ConnectorCategory(models.Model):
+    Connector = models.ForeignKey(Connector)
+    category = models.ForeignKey(Category)
+
+    class Meta:
+        db_table = 'gp_connector__category'
 
 
 class Action(models.Model):
@@ -175,8 +188,26 @@ class GetResponseConnection(models.Model):
     name = models.CharField('name', max_length=200)
     api_key = models.CharField('api key', max_length=200)
 
+
+class SurveyMonkeyConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_surveymonkey')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+
     def __str__(self):
         return self.name
+
+
+class TwitterConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
+                                      related_name='connection_twitter')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+    token_secret = models.CharField('token', max_length=300)
+
+
+def __str__(self):
+    return self.name
 
 
 class GoogleSpreadSheetsConnection(models.Model):
@@ -241,6 +272,16 @@ class BitbucketConnection(models.Model):
         return self.name
 
 
+class GoogleContactsConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
+                                      related_name='connection_googlecontacts')
+    name = models.CharField('name', max_length=200)
+    credentials_json = JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
     name = models.CharField('name', max_length=120)
@@ -279,7 +320,7 @@ class StoredData(models.Model):
     name = models.CharField('name', max_length=300)
     value = models.CharField('value', max_length=3000, default='', blank=True)
     datetime = models.DateTimeField(auto_now_add=True)
-    object_id = models.CharField('object_id', max_length=50, null=True)
+    object_id = models.CharField('object_id', max_length=150, null=True)
 
     def __str__(self):
         return '%s %s %s' % (self.id, self.name, self.object_id)
@@ -339,6 +380,18 @@ class ControllerLog(DBLogEntry):
     process = models.CharField(max_length=20, blank=True, default='')
     status = models.CharField(max_length=2, blank=False, choices=STATUS, default='f')
     controller = models.CharField(max_length=20, blank=True, default='')
+
+
+class ConnectionData():
+    pass
+
+
+class PlugData():
+    pass
+
+
+class GearData():
+    pass
 
 
 admin.site.register(Connector)

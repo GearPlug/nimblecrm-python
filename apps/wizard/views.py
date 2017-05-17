@@ -10,12 +10,19 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
-from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController, SlackController, BitbucketController, \
-    GoogleFormsController, JiraController, GetResponseController, GoogleCalendarController, GooglePushWebhook
+from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
+from apps.gp.controllers.lead import GoogleFormsController, FacebookController
+from apps.gp.controllers.crm import SugarCRMController
+from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
+from apps.gp.controllers.directory import GoogleContactsController
+from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
+from apps.gp.controllers.im import SlackController
+from apps.gp.controllers.social import TwitterController
+from apps.gp.controllers.project_management import JiraController
+from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, \
-    StoredData, SlackConnection
+    StoredData, SlackConnection, GooglePushWebhook
 from apps.plug.views import CreatePlugView
 from oauth2client import client
 from apiclient import discovery
@@ -28,6 +35,8 @@ paypalrestsdk.configure({
     "mode": "sandbox",  # sandbox or live
     "client_id": "XXXXXXXXXXX",
     "client_secret": "YYYYYYYYYY"})
+
+from apps.connection.myviews.SurveyMonkeyViews import AJAXGetSurveyListView
 
 mcc = MailChimpController()
 gsc = GoogleSpreadSheetsController()
@@ -68,6 +77,12 @@ class CreateGearView(LoginRequiredMixin, CreateView):
 
     def get_queryset(self):
         return self.model.objects.filter(user=self.request.user).prefetch_related()
+
+    def get_context_data(self, **kwargs):
+        print("111111")
+        context = super(CreateGearView, self).get_context_data(**kwargs)
+        print("222222")
+        return context
 
 
 class UpdateGearView(LoginRequiredMixin, UpdateView):
@@ -559,7 +574,6 @@ class TestPlugView(TemplateView):
             controller = controller_class()
             ckwargs = {}
             cargs = []
-            print(controller)
             ping = controller.create_connection(p.connection.related_connection, p, *cargs, **ckwargs)
             if ping:
                 if c == ConnectorEnum.MailChimp:

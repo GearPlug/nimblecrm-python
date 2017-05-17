@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 
-from apps.gp.controllers import MSSQLController
+from apps.gp.controllers.database import MSSQLController
 from apps.gp.views import TemplateViewWithPost
 
 

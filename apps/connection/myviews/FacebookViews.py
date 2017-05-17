@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.views.generic import TemplateView
 
-from apps.gp.controllers import FacebookController
+from apps.gp.controllers.lead import FacebookController
 from apps.gp.views import TemplateViewWithPost
 
 

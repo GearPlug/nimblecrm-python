@@ -2,20 +2,23 @@ import httplib2
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.http.response import JsonResponse
-from django.shortcuts import render
-
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
-from apps.gp.controllers import MySQLController, PostgreSQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, MSSQLController, SlackController, BitbucketController, JiraController, \
-    GetResponseController
-from apps.gp.enum import ConnectorEnum, MapField
+from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
+from apps.gp.controllers.lead import GoogleFormsController, FacebookController
+from apps.gp.controllers.crm import SugarCRMController
+from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
+from apps.gp.controllers.directory import GoogleContactsController
+from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController
+from apps.gp.controllers.im import SlackController
+from apps.gp.controllers.social import TwitterController
+from apps.gp.controllers.project_management import JiraController
+from apps.gp.controllers.repository import BitbucketController
+from apps.gp.enum import ConnectorEnum
+from apps.gp.map import MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
 from oauth2client import client
-from apiclient import discovery
-
-import logging
 
 mysqlc = MySQLController()
 postgresqlc = PostgreSQLController()
@@ -77,7 +80,9 @@ class CreateGearMapView(FormView):
     slack_controller = SlackController()
     jirac = JiraController()
     bitbucketc = BitbucketController()
+    google_contacts_controller = GoogleContactsController()
     getresponsec = GetResponseController()
+    twitterc = TwitterController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -126,11 +131,14 @@ class CreateGearMapView(FormView):
 
     def get_available_source_fields(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
-        fields = ConnectorEnum.get_fields(c)
-        related = plug.connection.related_connection
-        connection_data = {}
-        for field in fields:
-            connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
+        if c == ConnectorEnum.GoogleContacts:
+            self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
+            return ['%%%%%s%%%%' % field for field in self.google_contacts_controller.get_contact_fields()]
+        # fields = ConnectorEnum.get_fields(c)
+        # related = plug.connection.related_connection
+        # connection_data = {}
+        # for field in fields:
+        #     connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
         return ['%%%%%s%%%%' % item['name'] for item in self.get_source_data_list(plug, plug.connection)]
 
     def get_target_field_list(self, plug):
@@ -207,6 +215,10 @@ class CreateGearMapView(FormView):
                 return [MapField(f, controller=ConnectorEnum.Bitbucket) for f in fields]
             except:
                 return []
+        elif c == ConnectorEnum.GoogleContacts:
+            self.google_contacts_controller.create_connection(related, plug)
+            values = self.google_contacts_controller.get_mapping_fields()
+            return values
         elif c == ConnectorEnum.GetResponse:
             self.getresponsec.create_connection(related, plug)
             try:
@@ -217,6 +229,10 @@ class CreateGearMapView(FormView):
                 return [MapField(f, controller=ConnectorEnum.GetResponse) for f in fields]
             except:
                 return []
+        elif c == ConnectorEnum.Twitter:
+            self.twitterc.create_connection(related, plug)
+            fields = self.twitterc.get_target_fields()
+            return fields
         else:
             return []
 

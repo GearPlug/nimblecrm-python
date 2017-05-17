@@ -1,5 +1,5 @@
 from django import forms
-from apps.gp.enum import MapField
+from apps.gp.map import MapField
 
 
 class MapForm(forms.Form):

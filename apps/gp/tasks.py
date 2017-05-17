@@ -1,6 +1,6 @@
 from apps.gp.models import Gear, StoredData, GearMapData
 from apps.gp.enum import ConnectorEnum
-from apps.gp.controllers import SugarCRMController
+from apps.gp.controllers.crm import SugarCRMController
 from apiconnector.celery import app
 from django.core.cache import cache
 from django.utils import timezone
@@ -44,7 +44,6 @@ def update_gear(gear_id):
             else:
                 controller = controller_class(gear.source.connection.related_connection, gear.source)
             has_new_data = controller.download_source_data(from_date=gear.gear_map.last_source_update)
-
             # TARGET
             target_connector = ConnectorEnum.get_connector(gear.target.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(target_connector)
@@ -58,13 +57,16 @@ def update_gear(gear_id):
                                         GearMapData.objects.filter(gear_map=gear.gear_map))
             source_data = [{'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}}
                            for item in stored_data.values_list('object_id').distinct()]
+            print(target_fields)
+            print(source_data)
             controller = controller_class(gear.target.connection.related_connection, gear.target)
             entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
+            print(entries)
             gear.gear_map.last_source_update = timezone.now()
             gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
             gear.gear_map.save()
         except Exception as e:
-            # raise
+            #raise
             print("Exception in task %s" % gear_id)
             pass
         finally:

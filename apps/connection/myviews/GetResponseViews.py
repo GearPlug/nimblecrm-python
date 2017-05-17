@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.views.generic import TemplateView
 
-from apps.gp.controllers import GetResponseController
+from apps.gp.controllers.email_marketing import GetResponseController
 from apps.gp.views import TemplateViewWithPost
 
 
