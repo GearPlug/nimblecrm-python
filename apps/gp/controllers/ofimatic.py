@@ -8,6 +8,8 @@ import requests
 import uuid
 from apiclient import discovery
 from oauth2client import client as GoogleClient
+from dateutil.parser import parse
+import pytz
 
 
 class GoogleSpreadSheetsController(BaseController):
@@ -212,8 +214,8 @@ class GoogleCalendarController(BaseController):
                 _json = json.dumps(credentials_json)
                 self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
                 http_auth = self._credential.authorize(httplib2.Http())
-                service = discovery.build('calendar', 'v3', http=http_auth)
-                calendar_list = service.calendarList().list().execute()
+                self._connection = discovery.build('calendar', 'v3', http=http_auth)
+                calendar_list = self._connection.calendarList().list().execute()
                 calendars = calendar_list['items']
             except Exception as e:
                 print("Error getting the GoogleCalendar attributes 2")
@@ -242,11 +244,53 @@ class GoogleCalendarController(BaseController):
                 item.save()
         return False
 
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            for obj in data_list:
+                res = self.create_issue(self._plug.plug_specification.all()[0].value, obj)
+            extra = {'controller': 'googlecalendar'}
+            return
+        raise ControllerError("Incomplete.")
+
+    def create_issue(self, calendar_id, event):
+        if 'start_dateTime' in event:
+            start_datetime = event.pop('start_dateTime')
+            if 'start' not in event:
+                event['start'] = {'dateTime': self._parse_datetime(start_datetime)}
+            else:
+                event['start']['dateTime'] = self._parse_datetime(start_datetime)
+        if 'start_timeZone' in event:
+            start_timezone = event.pop('start_timeZone')
+            if 'start' not in event:
+                event['start'] = {'timeZone': start_timezone}
+            else:
+                event['start']['timeZone'] = start_timezone
+        if 'end_dateTime' in event:
+            end_datetime = event.pop('end_dateTime')
+            if 'end' not in event:
+                event['end'] = {'dateTime': self._parse_datetime(end_datetime)}
+            else:
+                event['end']['dateTime'] = self._parse_datetime(end_datetime)
+        if 'end_timeZone' in event:
+            end_timezone = event.pop('end_timeZone')
+            if 'end' not in event:
+                event['end'] = {'timeZone': end_timezone}
+            else:
+                event['end']['timeZone'] = end_timezone
+        return self._connection.events().insert(calendarId=calendar_id, body=event).execute()
+
+    def _parse_datetime(self, datetime):
+        return parse(datetime).strftime('%Y-%m-%dT%H:%M:%S%z')
+
     def get_calendar_list(self):
-        credential = self._credential
-        http_auth = credential.authorize(httplib2.Http())
-        service = discovery.build('calendar', 'v3', http=http_auth)
-        calendar_list = service.calendarList().list().execute()
+        calendar_list = self._connection.calendarList().list().execute()
         _list = []
         for c in calendar_list['items']:
             c['name'] = c['summary']
@@ -278,10 +322,44 @@ class GoogleCalendarController(BaseController):
         return False
 
     def get_events(self):
-        credential = self._credential
-        http_auth = credential.authorize(httplib2.Http())
-        service = discovery.build('calendar', 'v3', http=http_auth)
-        eventsResult = service.events().list(
+        eventsResult = self._connection.events().list(
             calendarId='primary', maxResults=10, singleEvents=True,
             orderBy='startTime').execute()
         return eventsResult.get('items', None)
+
+    def get_meta(self):
+        _list = [{
+            'name': 'summary',
+            'required': False,
+            'type': 'text',
+        }, {
+            'name': 'location',
+            'required': False,
+            'type': 'text',
+        }, {
+            'name': 'description',
+            'required': False,
+            'type': 'text',
+        }, {
+            'name': 'start_dateTime',
+            'required': False,
+            'type': 'text',
+        }, {
+            'name': 'start_timeZone',
+            'required': False,
+            'type': 'text',
+            'values': [tz for tz in pytz.all_timezones]
+        }, {
+            'name': 'end_dateTime',
+            'required': False,
+            'type': 'text',
+        }, {
+            'name': 'end_timeZone',
+            'required': False,
+            'type': 'text',
+            'values': [tz for tz in pytz.all_timezones]
+        }]
+        return _list
+
+    def get_target_fields(self):
+        return self.get_meta()

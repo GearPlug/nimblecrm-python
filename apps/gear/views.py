@@ -9,7 +9,7 @@ from apps.gp.controllers.lead import GoogleFormsController, FacebookController
 from apps.gp.controllers.crm import SugarCRMController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.directory import GoogleContactsController
-from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController
+from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
 from apps.gp.controllers.im import SlackController
 from apps.gp.controllers.social import TwitterController
 from apps.gp.controllers.project_management import JiraController
@@ -83,6 +83,7 @@ class CreateGearMapView(FormView):
     google_contacts_controller = GoogleContactsController()
     getresponsec = GetResponseController()
     twitterc = TwitterController()
+    gcc = GoogleCalendarController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -227,6 +228,13 @@ class CreateGearMapView(FormView):
                 else:
                     fields = self.getresponsec.get_meta()
                 return [MapField(f, controller=ConnectorEnum.GetResponse) for f in fields]
+            except:
+                return []
+        elif c == ConnectorEnum.GoogleCalendar:
+            self.gcc.create_connection(related, plug)
+            try:
+                fields = self.gcc.get_meta()
+                return [MapField(f, controller=ConnectorEnum.GoogleCalendar) for f in fields]
             except:
                 return []
         elif c == ConnectorEnum.Twitter:

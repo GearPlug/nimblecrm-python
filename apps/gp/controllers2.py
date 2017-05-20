@@ -363,7 +363,7 @@ class JiraController(BaseController):
             priority = fields['priority']
             fields['priority'] = {'id': priority}
         fields['project'] = project_id
-        return self._connection.create_issue(fields=fields)
+        return self._connection.create_issue(event=fields)
 
     def create_webhook(self):
         url = '{}/rest/webhooks/1.0/webhook'.format(self._connection_object.host)

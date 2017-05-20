@@ -7,8 +7,8 @@ from apps.gp.enum import dynamic_import
 
 class AJAXMySQLTestConnection(TemplateViewWithPost):
     template_name = 'test.html'
-    mysqlc = dynamic_import("MySQL", path="apps.gp.enum", suffix='Controller')#MySQLController()
-    print(mysqlc)
+    mysql_class = dynamic_import("MySQL", path="apps.gp.enum", suffix='Controller')#MySQLController()
+    mysqlc = mysql_class()
 
     def post(self, request, *args, **kwargs):
         name = self.request.POST.get('name', 'nombre')
