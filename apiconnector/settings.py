@@ -214,3 +214,7 @@ SURVEYMONKEY_REDIRECT_URI="http://127.0.0.1:8000/connection/survey_monkey_auth/"
 SURVEYMONKEY_API_BASE = "https://api.surveymonkey.net"
 SURVEYMONKEY_AUTH_CODE_ENDPOINT = "/oauth/authorize"
 SURVEYMONKEY_ACCESS_TOKEN_ENDPOINT ="/oauth/token"
+
+# Instagram
+INSTAGRAM_CLIENT_ID = 'xxxxxxxx'
+INSTAGRAM_CLIENT_SECRET = 'yyyyyyyyy'

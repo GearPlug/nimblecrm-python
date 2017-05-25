@@ -17,7 +17,7 @@ from apps.gp.controllers.email_marketing import MailChimpController, GetResponse
 from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController
 from apps.gp.controllers.im import SlackController
-from apps.gp.controllers.social import TwitterController
+from apps.gp.controllers.social import TwitterController, InstagramController
 from apps.gp.controllers.project_management import JiraController
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
@@ -27,7 +27,6 @@ from apps.plug.views import CreatePlugView
 from oauth2client import client
 from apiclient import discovery
 import re
-
 
 from apps.connection.myviews.SurveyMonkeyViews import AJAXGetSurveyListView
 
@@ -76,6 +75,7 @@ class CreateGearView(LoginRequiredMixin, CreateView):
         context = super(CreateGearView, self).get_context_data(**kwargs)
         print("222222")
         return context
+
 
 class UpdateGearView(LoginRequiredMixin, UpdateView):
     model = Gear
@@ -198,8 +198,10 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         if ping:
             if self.object.is_source:
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
-            if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA:
-                controller.create_webhook()
+                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA:
+                    controller.create_webhook()
+                elif c == ConnectorEnum.Instagram:
+                    controller.create_webhook()
             elif self.object.is_target:
                 if c == ConnectorEnum.MailChimp:
                     controller.get_target_fields(list_id=specification_list[0]['value'])
@@ -609,6 +611,60 @@ class BitbucketWebhookEvent(TemplateView):
             self._bitbucket_controller.create_connection(plug_specification.plug.connection.related_connection,
                                                          plug_specification.plug)
             self._bitbucket_controller.download_source_data(issue=issue)
+        return JsonResponse({'hola': True})
+
+
+class InstagramAccountsList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = InstagramController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            # El id es el mismo nombre del module
+            account_list = tuple({'id': a[0], 'name': a[1]} for a in controller.get_account())
+        else:
+            account_list = []
+        context['object_list'] = account_list
+        return super(InstagramAccountsList, self).render_to_response(context)
+
+
+class InstagramWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _instagram_controller = InstagramController()
+    TOKEN = 'GearPlug2017'
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(InstagramWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        mode = request.GET.get('hub.mode', None)
+        challenge = request.GET.get('hub.challenge', None)
+        token = request.GET.get('hub.verify_token', None)
+        if mode != 'subscribe' or not token or token != self.TOKEN:
+            return JsonResponse({'Success': False})
+        return HttpResponse(challenge)
+
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body.decode('utf-8'))
+        if data[0]['changed_aspect'] != 'media':
+            return JsonResponse({'hola': True})
+        media_id = data[0]['data']['media_id']
+        object_id = data[0]['object_id']
+        qs = PlugSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="instagram",
+            value=object_id,
+            plug__source_gear__is_active=True)
+        for plug_specification in qs:
+            self._instagram_controller.create_connection(plug_specification.plug.connection.related_connection,
+                                                         plug_specification.plug)
+            media = self._instagram_controller.get_media(media_id)
+            self._instagram_controller.download_source_data(media=media)
         return JsonResponse({'hola': True})
 
 

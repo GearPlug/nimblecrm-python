@@ -6,7 +6,8 @@ from apps.connection.views import CreateConnectionView, ListConnectionView, List
     GoogleAuthView, AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, \
     AJAXPostgreSQLTestConnection, AJAXMSSQLTestConnection, SlackAuthView, AuthSuccess, AJAXBitbucketTestConnection, \
     AJAXJiraTestConnection, AJAXGetResponseTestConnection, TwitterAuthView, TwitterAuthSuccessCreateConnection, \
-    SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection
+    SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, InstagramAuthView, \
+    InstagramAuthSuccessCreateConnection
 
 urlpatterns = [
     url(r'create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create'),
@@ -26,6 +27,11 @@ urlpatterns = [
     url(r"^twitter_auth/$", TwitterAuthView.as_view(), name="twitter_auth"),
     url(r"^twitter_auth/success/$", TwitterAuthSuccessCreateConnection.as_view(),
         name="twitter_auth_success_create_connection"),
+
+    # Instagram
+    url(r"^instagram_auth/$", InstagramAuthView.as_view(), name="instagram_auth"),
+    url(r"^instagram_auth/success/$", InstagramAuthSuccessCreateConnection.as_view(),
+        name="instagram_auth_success_create_connection"),
 
     # surveymonkey
     url(r"^survey_monkey_auth/$", SurveyMonkeyAuthView.as_view(), name="survey_monekey_auth"),

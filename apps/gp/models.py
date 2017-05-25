@@ -6,7 +6,7 @@ from apps.user.models import User
 connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
                'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack',
                'connection_bitbucket', 'connection_jira', 'connection_googleforms', 'connection_googlecontacts',
-               'connection_getresponse', 'connection_twitter', 'connection_surveymonkey']
+               'connection_getresponse', 'connection_twitter', 'connection_surveymonkey', 'connection_instagram']
 
 
 class Category(models.Model):
@@ -113,6 +113,15 @@ class JiraConnection(models.Model):
 
 class FacebookConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_facebook')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
+class InstagramConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_instagram')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
 

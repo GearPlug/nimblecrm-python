@@ -7,7 +7,7 @@ from apps.gp.controllers.email_marketing import MailChimpController, GetResponse
 from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
 from apps.gp.controllers.im import SlackController
-from apps.gp.controllers.social import TwitterController
+from apps.gp.controllers.social import TwitterController, InstagramController
 from apps.gp.controllers.project_management import JiraController
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.controllers.utils import dynamic_import
@@ -30,14 +30,14 @@ class ConnectorEnum(Enum):
     GoogleContacts = 14
     SurveyMonkey = 15
     GoogleCalendar = 16
-    MercadoLibre = 17
-    AmazonSellerCentral = 18
-    PayU = 19
-    Gmail = 20
-    Ebay = 21
-    WooComerce = 22
-    Instagram = 23
-    YouTube = 24
+    Instagram = 17
+    # AmazonSellerCentral = 18
+    # PayU = 19
+    # Gmail = 20
+    # Ebay = 21
+    # WooComerce = 22
+    # Instagram = 23
+    # YouTube = 24
 
     def get_connector_data(connector):
         connector = ConnectorEnum.get_connector(connector)

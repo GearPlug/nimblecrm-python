@@ -1,4 +1,5 @@
 import tweepy
+from instagram.client import InstagramAPI
 from django.conf import settings
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, View
@@ -18,17 +19,13 @@ from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.controllers.lead import FacebookController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
-    GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection
+    GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
 from slacker import Slacker
 import json
 import urllib
 import requests
-
-
-
-
 
 GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
 GOOGLE_AUTH_URL = 'http://localhost:8000/connection/google_auth/'
@@ -41,6 +38,10 @@ GOOGLE_FORMS_AUTH_REDIRECT_URL = 'connection:google_forms_auth_success_create_co
 GOOGLE_CONTACTS_SCOPE = 'https://www.google.com/m8/feeds/'
 GOOGLE_CONTACTS_AUTH_URL = GOOGLE_AUTH_URL
 GOOGLE_CONTACTS_AUTH_REDIRECT_URL = GOOGLE_AUTH_REDIRECT_URL
+
+INSTAGRAM_SCOPE = ['basic']
+INSTAGRAM_AUTH_URL = 'http://m.gearplug.com/connection/instagram_auth/'
+INSTAGRAM_AUTH_REDIRECT_URL = 'connection:instagram_auth_success_create_connection'
 
 
 class ListConnectionView(ListView):
@@ -122,8 +123,11 @@ class CreateConnectionView(CreateView):
             context['twitter_auth_url'] = flow.get_authorization_url()
             self.request.session['twitter_request_token'] = flow.request_token
         elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.SurveyMonkey:
-            #print("Create 1 - SV")
+            # print("Create 1 - SV")
             context['surveymonkey_auth_url'] = get_survey_monkey_url()
+        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Instagram:
+            flow = get_instagram_auth()
+            context['instagram_auth_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
         return context
 
 
@@ -239,6 +243,43 @@ def get_twitter_auth():
     return tweepy.OAuthHandler(consumer_key, consumer_secret)
 
 
+class InstagramAuthView(View):
+    def get(self, request, *args, **kwargs):
+        flow = get_instagram_auth()
+        access_token = flow.exchange_code_for_access_token(request.GET['code'])
+        print(access_token[0])
+        request.session['instagram_access_token'] = access_token[0]
+        return redirect(reverse('connection:instagram_auth_success_create_connection'))
+
+
+class InstagramAuthSuccessCreateConnection(TemplateView):
+    template_name = 'connection/instagram/success.html'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if 'instagram_access_token' in request.session:
+                access_token = request.session.pop('instagram_access_token')
+                print(access_token)
+                print(request.user)
+                print(ConnectorEnum.Instagram.value)
+                c = Connection.objects.create(
+                    user=request.user, connector_id=ConnectorEnum.Instagram.value)
+                print(c)
+                n = int(InstagramConnection.objects.filter(connection__user=request.user).count()) + 1
+                print(n)
+                tc = InstagramConnection.objects.create(
+                    connection=c, name="Instagram Connection # %s" % n, token=access_token)
+                print(tc)
+        except Exception as e:
+            print("Error creating the Instagram Connection.")
+        return super(InstagramAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
+
+
+def get_instagram_auth():
+    return InstagramAPI(client_id=settings.INSTAGRAM_CLIENT_ID, client_secret=settings.INSTAGRAM_CLIENT_SECRET,
+                        redirect_uri=INSTAGRAM_AUTH_URL)
+
+
 class SlackAuthView(View):
     def get(self, request):
         code = request.GET.get('code', None)
@@ -263,8 +304,8 @@ class SlackAuthView(View):
 
 class SurveyMonkeyAuthView(View):
     def get(self, request, *args, **kwargs):
-        #print("Auth SM - CODE")
-        auth_code = request.GET.get('code',None)
+        # print("Auth SM - CODE")
+        auth_code = request.GET.get('code', None)
         data = {
             "client_secret": settings.SURVEYMONKEY_CLIENT_SECRET,
             "code": auth_code,
@@ -296,7 +337,7 @@ class SurveyMonkeyAuthSuccessCreateConnection(TemplateView):
     template_name = 'connection/surveymonkey/success.html'
 
     def get(self, request, *args, **kwargs):
-        #print("Success SM - Connection")
+        # print("Success SM - Connection")
         try:
             if 'survey_monkey_auth_token' in request.session:
                 access_token = request.session.pop('survey_monkey_auth_token')
@@ -308,6 +349,7 @@ class SurveyMonkeyAuthSuccessCreateConnection(TemplateView):
         except Exception as e:
             print("Error creating the Survey Monkey Connection.")
         return super(SurveyMonkeyAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
+
 
 def get_survey_monkey_url():
     print("URL SV")
