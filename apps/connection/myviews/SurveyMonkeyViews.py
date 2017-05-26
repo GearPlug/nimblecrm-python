@@ -22,4 +22,3 @@ class AJAXGetSurveyListView(TemplateViewWithPost):
             self.has_objects = True
         context['object_list'] = object_list
         return context
-

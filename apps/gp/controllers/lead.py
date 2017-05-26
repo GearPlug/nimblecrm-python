@@ -239,6 +239,8 @@ class FacebookController(BaseController):
             from_date = int(time.mktime(from_date.timetuple()) * 1000)
             # print('from_date: %s' % from_date)
 
+
+
         leads = self.get_leads(connection_object.token, self._form, from_date=from_date)
         new_data = []
         for item in leads:
@@ -293,12 +295,111 @@ class SurveyMonkeyController(BaseController):
         lista=self._client.get_surveys()
         return lista['data']
 
-    def download_to_stored_data(self, connection_object, plug, client=None):
+    def download_to_stored_data(self, connection_object, plug, client=None, responses=None):
         if plug is None:
             plug = self._plug
         if not self._client:
             return False
+
+        if responses == None:
+            responses=self.get_responses().__dict__["_content"].decode()
+            responses=json.loads(responses)["data"]
+
         survey_id = self._plug.plug_specification.all()[0].value
-        responses=self._client.get_survey_details(survey_id)
-        print(responses)
+
+        new_data = []
+        for item in responses:
+            response_id=item["id"]
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=response_id)
+            if not q.exists():
+                details = self.get_response_details(survey_id, response_id)
+                for value in details:
+                    if (value != "page_path" and value != "logic_path" and value != "metadata" and value != "custom_variables"):
+                        new_data.append(StoredData(name=value, value=details[value], object_id=response_id,
+                                               connection=connection_object.connection, plug=plug))
+        if new_data:
+            extra = {'controller': 'surveymonkey'}
+            for item in new_data:
+                try:
+                    self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                    item.object_id, item.plug.id, item.connection.id), extra=extra)
+                    item.save()
+                except:
+                    extra['status'] = 'f'
+                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
         return True
+
+
+    def get_survey_details(self, survey_id):
+        s = requests.Session()
+        s.headers.update({
+            "Authorization": "Bearer %s" % self._token,
+            "Content-Type": "application/json"
+        })
+        url = "https://api.surveymonkey.net/v3/surveys/%s/details" % (survey_id)
+
+        return s.get(url)
+
+    def get_responses(self):
+        survey_id = self._plug.plug_specification.all()[0].value
+        s = requests.session()
+        s.headers.update({
+            "Authorization": "Bearer %s" % self._token,
+            "Content-Type": "application/json"
+        })
+
+        url = "https://api.surveymonkey.net/v3/surveys/%s/responses" % (survey_id)
+        return s.get(url)
+
+    def get_response_details(self, survey_id, response_id):
+        s = requests.session()
+        s.headers.update({
+            "Authorization": "Bearer %s" % self._token,
+            "Content-Type": "application/json"
+        })
+        url="https://api.surveymonkey.net/v3/surveys/%s/responses/%s" % (survey_id,response_id)
+        #url = "https://api.surveymonkey.net/v3/collectors/%s/responses/%s/details" % (collector_id, response_id)
+        data=s.get(url).__dict__
+        data = data["_content"].decode()
+        return json.loads(data)
+
+    def get_list(self,survey_id):
+        details = self.get_survey_details(survey_id).__dict__
+        responses = self.get_responses(survey_id).__dict__['_content'].decode()
+        responses = json.loads(responses)['data']
+        list=[]
+        return list
+
+    def create_webhook (self):
+        survey_id=self._plug.plug_specification.all()[0].value
+        survey_id = str(survey_id)
+        plug_id=self._plug.plug_specification.all()[0].id
+        print("plug_id")
+        print(plug_id)
+        redirect_uri="https://l.grplug.com/wizard/surveymonkey/webhook/event/%s/" % (plug_id)
+        s = requests.session()
+        s.headers.update({
+            "Authorization": "Bearer %s" % self._token,
+            "Content-Type": "application/json"
+        })
+        payload = {
+            "name": "Webhook_prueba",
+            "event_type": "response_completed",
+            "object_type": "survey",
+            "object_ids": [survey_id],
+            "subscription_url": redirect_uri
+        }
+        url = "https://api.surveymonkey.net/v3/webhooks"
+        r = s.post(url, json=payload)
+        print(r.status_code)
+        print(r.text)
+        if r.status_code == 201:
+            print("Se creo el webhook survey monkey")
+            return True
+        return False
+
+
+
+
+
