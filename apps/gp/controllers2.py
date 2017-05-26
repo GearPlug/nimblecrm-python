@@ -1,4 +1,4 @@
-from apps.gp.models import StoredData, PlugSpecification
+from apps.gp.models import StoredData, PlugSpecification, GooglePushWebhook
 from apiconnector.settings import FACEBOOK_APP_SECRET, FACEBOOK_APP_ID, FACEBOOK_GRAPH_VERSION, GOOGLE_CLIEN_ID, \
     GOOGLE_CLIENT_SECRET
 from apiconnector.settings import FACEBOOK_APP_SECRET, FACEBOOK_APP_ID, FACEBOOK_GRAPH_VERSION
@@ -17,6 +17,7 @@ import pymssql
 import copy
 import sugarcrm
 import time
+import uuid
 from apiclient import discovery
 from mailchimp3 import MailChimp
 from oauth2client import client as GoogleClient
@@ -178,6 +179,109 @@ class SlackController(BaseController):
                     new_message.save()
         return False
 
+
+class GoogleCalendarController(BaseController):
+    _connection = None
+    _credential = None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(GoogleCalendarController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    credentials_json = self._connection_object.credentials_json
+                except Exception as e:
+                    print("Error getting the GoogleCalendar attributes 1")
+                    print(e)
+                    credentials_json = None
+        elif not args and kwargs:
+            if 'credentials_json' in kwargs:
+                credentials_json = kwargs.pop('credentials_json')
+        else:
+            credentials_json = None
+        calendars = None
+        if credentials_json is not None:
+            try:
+                _json = json.dumps(credentials_json)
+                self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
+                http_auth = self._credential.authorize(httplib2.Http())
+                service = discovery.build('calendar', 'v3', http=http_auth)
+                calendar_list = service.calendarList().list().execute()
+                calendars = calendar_list['items']
+            except Exception as e:
+                print("Error getting the GoogleCalendar attributes 2")
+                self._credential = None
+                calendars = None
+        return calendars is not None
+
+    def download_to_stored_data(self, connection_object=None, plug=None, events=None, **kwargs):
+        if events is not None:
+            _items = []
+            for event in events:
+                q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                              object_id=event['id'])
+                if not q.exists():
+                    for k, v in event.items():
+                        obj = StoredData(connection=connection_object.connection, plug=plug,
+                                         object_id=event['id'], name=k, value=v or '')
+                        _items.append(obj)
+            extra = {}
+            for item in _items:
+                extra['status'] = 's'
+                extra = {'controller': 'googlecalendar'}
+                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                    item.object_id, item.plug.id, item.connection.id), extra=extra)
+                item.save()
+        return False
+
+    def get_calendar_list(self):
+        credential = self._credential
+        http_auth = credential.authorize(httplib2.Http())
+        service = discovery.build('calendar', 'v3', http=http_auth)
+        calendar_list = service.calendarList().list().execute()
+        _list = []
+        for c in calendar_list['items']:
+            c['name'] = c['summary']
+            _list.append(c)
+        calendars = tuple(c for c in _list)
+        return calendars
+
+    def create_webhook(self):
+        url = 'https://www.googleapis.com/calendar/v3/calendars/{}/events/watch'.format(
+            self._plug.plug_specification.all()[0].value)
+
+        headers = {
+            'Authorization': 'Bearer {}'.format(self._connection_object.credentials_json['access_token']),
+            'Content-Type': 'application/json'
+        }
+
+        body = {
+            "id": str(uuid.uuid4()),
+            "type": "web_hook",
+            "address": "https://m.grplug.com/wizard/google/calendar/webhook/event/"
+        }
+
+        r = requests.post(url, headers=headers, json=body)
+        if r.status_code == 200:
+            data = r.json()
+            GooglePushWebhook.objects.create(connection=self._connection_object.connection, channel_id=data['id'],
+                                             resource_id=data['resourceId'], expiration=data['expiration'])
+            return True
+        return False
+
+    def get_events(self):
+        credential = self._credential
+        http_auth = credential.authorize(httplib2.Http())
+        service = discovery.build('calendar', 'v3', http=http_auth)
+        eventsResult = service.events().list(
+            calendarId='primary', maxResults=10, singleEvents=True,
+            orderBy='startTime').execute()
+        return eventsResult.get('items', None)
+
+
 class JiraController(BaseController):
     _connection = None
 
@@ -259,7 +363,7 @@ class JiraController(BaseController):
             priority = fields['priority']
             fields['priority'] = {'id': priority}
         fields['project'] = project_id
-        return self._connection.create_issue(fields=fields)
+        return self._connection.create_issue(event=fields)
 
     def create_webhook(self):
         url = '{}/rest/webhooks/1.0/webhook'.format(self._connection_object.host)

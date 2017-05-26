@@ -220,7 +220,7 @@ SLACK_CLIENT_SECRET = 'f47642ba090d236c5f9e247cddf76809'
 SLACK_PERMISSIONS_URL = 'https://slack.com/oauth/authorize?client_id={0}&scope=read'.format(SLACK_CLIENT_ID)
 
 # Google Plus
-GOOGLE_CLIEN_ID = '292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com'
+GOOGLE_CLIENT_ID = '292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com'
 GOOGLE_CLIENT_SECRET = 'eqcecSL7Ecp0hiMy84QFSzsD'
 
 # Twitter

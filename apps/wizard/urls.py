@@ -3,7 +3,10 @@ from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionVi
     ActionSpecificationsView, CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, MSSQLFieldList, \
     ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
     PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent, \
-    BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList, AJAXGetSurveyListView, SurveyMonkeyWebhookEvent
+    BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList, \
+    AJAXGetSurveyListView, PaypalWebhookEvent, GoogleCalendarsList, GoogleCalendarWebhookEvent,AJAXGetSurveyListView,\
+    SurveyMonkeyWebhookEvent
+
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
@@ -48,7 +51,15 @@ urlpatterns = [
     # GetResponse
     url(r"async/getresponse/campaigns/list/", GetResponseCampaignsList.as_view(), name='async_getresponse_campaigns'),
 
+
     #SurveyMonkey
     url(r"async/surveymonkey/survey/list/", AJAXGetSurveyListView.as_view(), name='async_surveymonkey_survey_list'),
-    url(r'surveymonkey/webhook/event/(?P<plug_id>\d+)/', SurveyMonkeyWebhookEvent.as_view(), name='surveymonkey_webhook_event')
+    url(r'surveymonkey/webhook/event/(?P<plug_id>\d+)/', SurveyMonkeyWebhookEvent.as_view(), name='surveymonkey_webhook_event'),
+
+    # Paypal
+    url(r'paypal/webhook/event/', PaypalWebhookEvent.as_view(), name='paypal_webhook_event'),
+    # GoogleCalendar
+    url(r"async/google/calendars/list/", GoogleCalendarsList.as_view(), name='async_google_calendars'),
+    url(r'google/calendar/webhook/event/', GoogleCalendarWebhookEvent.as_view(), name='googlecalendar_webhook_event'),
+
 ]
