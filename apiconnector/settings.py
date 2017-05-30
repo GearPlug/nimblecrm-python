@@ -89,6 +89,26 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'log/django/debug.log',
+        },
+    },
+    'loggers': {
+        'django.server': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -137,13 +157,14 @@ LOGGING = {
         },
     },
     'loggers': {
-        'controller': {
-            'handlers': ['controller', ],
+        'django.server': {
+            'handlers': ['request.file', ],
             'level': 'INFO',
             'propagate': True,
         },
     },
 }
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
@@ -206,11 +227,10 @@ GOOGLE_CLIENT_SECRET = 'eqcecSL7Ecp0hiMy84QFSzsD'
 TWITTER_CLIENT_ID = 'D5ZJJmF11n9Sp8E9p7GRGhpiR'
 TWITTER_CLIENT_SECRET = '0RIWtTgeSfOmsIO10MYyFCU4BQhuoISgShAreYy3RHyeQCd5vb'
 
-# surveymonkey
-
-SURVEYMONKEY_CLIENT_ID="QIMqiHnrRvuzCFAmlTNOkA"
-SURVEYMONKEY_CLIENT_SECRET="17068417592671949424384618935059383185"
-SURVEYMONKEY_REDIRECT_URI="http://127.0.0.1:8000/connection/survey_monkey_auth/"
+# SurveyMonkey
+SURVEYMONKEY_CLIENT_ID = "QIMqiHnrRvuzCFAmlTNOkA"
+SURVEYMONKEY_CLIENT_SECRET = "17068417592671949424384618935059383185"
+SURVEYMONKEY_REDIRECT_URI = "https://l.grplug.com/connection/survey_monkey_auth/"
 SURVEYMONKEY_API_BASE = "https://api.surveymonkey.net"
 SURVEYMONKEY_AUTH_CODE_ENDPOINT = "/oauth/authorize"
-SURVEYMONKEY_ACCESS_TOKEN_ENDPOINT ="/oauth/token"
+SURVEYMONKEY_ACCESS_TOKEN_ENDPOINT = "/oauth/token"

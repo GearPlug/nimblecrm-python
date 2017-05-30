@@ -4,8 +4,9 @@ from apps.connection.views import CreateConnectionView, ListConnectionView, List
     AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
     GoogleAuthView, AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, \
     AJAXPostgreSQLTestConnection, AJAXMSSQLTestConnection, SlackAuthView, AuthSuccess, AJAXBitbucketTestConnection, \
-    AJAXJiraTestConnection, AJAXGetResponseTestConnection, AJAXJiraTestConnection, AJAXGetResponseTestConnection, \
-    TwitterAuthView, TwitterAuthSuccessCreateConnection, SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection
+    AJAXJiraTestConnection, AJAXGetResponseTestConnection, TwitterAuthView, TwitterAuthSuccessCreateConnection, \
+    AJAXJiraTestConnection, AJAXGetResponseTestConnection, SurveyMonkeyAuthView, \
+    SurveyMonkeyAuthSuccessCreateConnection, AJAXGetSurveyListView
 from apps.gp.enum import GoogleAPI
 
 urlpatterns = [
@@ -62,4 +63,5 @@ urlpatterns = [
         name='ajax_update_jira_test_connection'),
     url(r'ajax/getresponse/test_connection/', AJAXGetResponseTestConnection.as_view(),
         name='ajax_update_getresponse_test_connection'),
+
 ]

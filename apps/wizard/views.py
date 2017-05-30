@@ -11,7 +11,7 @@ from django.utils.decorators import method_decorator
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
-from apps.gp.controllers.lead import GoogleFormsController, FacebookController
+from apps.gp.controllers.lead import GoogleFormsController, FacebookController, SurveyMonkeyController
 from apps.gp.controllers.crm import SugarCRMController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.directory import GoogleContactsController
@@ -206,9 +206,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         if ping:
             if self.object.is_source:
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
-                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA:
-                    controller.create_webhook()
-                elif c == ConnectorEnum.GoogleCalendar:
+                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA or c == ConnectorEnum.SurveyMonkey or c == ConnectorEnum.GoogleCalendar:
                     controller.create_webhook()
             elif self.object.is_target:
                 if c == ConnectorEnum.MailChimp:
@@ -519,6 +517,38 @@ class SlackWebhookEvent(TemplateView):
         return JsonResponse({'hola': True})
 
 
+class SurveyMonkeyWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _surveymonkey_controller = SurveyMonkeyController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(SurveyMonkeyWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super(SurveyMonkeyWebhookEvent, self).get(request)
+
+    def post(self, request, *args, **kwargs):
+        print("webhook")
+        responses = []
+        data = request.body.decode()
+        data = json.loads(data)
+        print(data['resources']['survey_id'])
+        survey = {'id': data['object_id']}
+        responses.append(survey)
+        qs = PlugSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="SurveyMonkey",
+            value=data['resources']['survey_id']
+        )
+        for plug_specification in qs:
+            print("plug")
+            self._surveymonkey_controller.create_connection(plug_specification.plug.connection.related_connection,
+                                                            plug_specification.plug)
+            self._surveymonkey_controller.download_source_data(responses=responses)
+        return JsonResponse({'hola': True})
+
+
 class BitbucketProjectList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
 
@@ -793,3 +823,25 @@ def async_spreadsheet_values(request, plug_id, spreadsheet_id, worksheet_id):
     data = {'ColumnCount': column_count, 'RowCount': row_count, 'Table': template.render(context)}
     ctx = {'Success': True, 'Data': data}
     return HttpResponse(json.dumps(ctx), content_type='application/json')
+
+
+# def prueba1(request):
+#     ctx = {}
+#     return render()
+
+class Prueba1(CreateView):
+    model = Connector
+    success_url = ''
+    template_name = 'index.html'
+
+    def post(self, request, *args, **kwargs):
+        pass
+
+    def get(self, request, *args, **kwargs):
+        pass
+
+    def form_valid(self, form):
+        pass
+
+    def form_invalid(self, form):
+        pass

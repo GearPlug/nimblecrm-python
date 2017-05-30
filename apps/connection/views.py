@@ -13,6 +13,7 @@ from apps.connection.myviews.MSSQLViews import *
 from apps.connection.myviews.BitbucketViews import *
 from apps.connection.myviews.JiraViews import *
 from apps.connection.myviews.GetResponseViews import *
+from apps.connection.myviews.SurveyMonkeyViews import *
 from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI
@@ -283,25 +284,26 @@ class SurveyMonkeyAuthView(View):
             "client_id": settings.SURVEYMONKEY_CLIENT_ID,
             "grant_type": "authorization_code"
         }
+        print(settings.SURVEYMONKEY_REDIRECT_URI)
         try:
             access_token_uri = settings.SURVEYMONKEY_API_BASE + settings.SURVEYMONKEY_ACCESS_TOKEN_ENDPOINT
             access_token_response = requests.post(access_token_uri, data=data)
+            access_json = access_token_response.json()
+            print("access")
+            print(access_json)
             try:
-                access_json = access_token_response.json()
-                print(access_json)
                 self.request.session['survey_monkey_auth_token'] = access_json["access_token"]
                 return redirect(reverse('connection:survey_monkey_auth_success_create_connection'))
             except Exception as e:
                 raise
                 print(e)
                 print("Error en survey Monkey")
-                return redirect(reverse('connection:survey_monkey_auth_success_create_connection'))
+
         except Exception as e:
             raise
             print(e)
             print("Error en Survey Monkey")
         return redirect(reverse('connection:survey_monkey_auth_success_create_connection'))
-
 
 class SurveyMonkeyAuthSuccessCreateConnection(TemplateView):
     template_name = 'connection/surveymonkey/success.html'
