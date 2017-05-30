@@ -1,5 +1,4 @@
 from django.conf.urls import url
-from django.views.generic import TemplateView
 from apps.connection.views import CreateConnectionView, ListConnectionView, ListConnectorView, \
     AJAXFacebookGetAvailableConnectionsView, AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
     AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
@@ -7,7 +6,8 @@ from apps.connection.views import CreateConnectionView, ListConnectionView, List
     AJAXPostgreSQLTestConnection, AJAXMSSQLTestConnection, SlackAuthView, AuthSuccess, AJAXBitbucketTestConnection, \
     AJAXJiraTestConnection, AJAXGetResponseTestConnection, TwitterAuthView, TwitterAuthSuccessCreateConnection, \
     SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, InstagramAuthView, \
-    InstagramAuthSuccessCreateConnection
+    SurveyMonkeyAuthSuccessCreateConnection, AJAXGetSurveyListView, InstagramAuthSuccessCreateConnection
+from apps.gp.enum import GoogleAPI
 
 urlpatterns = [
     url(r'create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create'),
@@ -15,14 +15,16 @@ urlpatterns = [
     # url(r'delete/(?P<pk>\d+)/$', DeleteGearView.as_view(), name='delete'),
     url(r'list/$', ListConnectionView.as_view(), name='list'),
     url(r'list/connector/$', ListConnectorView.as_view(), name='list_connector'),
-    url(r"^google_auth/$", GoogleAuthView.as_view(), {'forms': False}, name="google_auth"),
-    url(r"^google_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'forms': False},
+    url(r"^google_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.SpreadSheets}, name="google_auth"),
+    url(r"^google_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'api': GoogleAPI.SpreadSheets},
         name="google_auth_success_create_connection"),
 
-    url(r"^google_forms_auth/$", GoogleAuthView.as_view(), {'forms': True}, name="google_forms_auth"),
-    url(r"^google_forms_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'forms': True},
+    url(r"^google_forms_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.Forms}, name="google_forms_auth"),
+    url(r"^google_forms_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'api': GoogleAPI.Forms},
         name="google_forms_auth_success_create_connection"),
-
+    url(r"^google_calendar_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.Calendar}, name="google_calendar_auth"),
+    url(r"^google_calendar_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'api': GoogleAPI.Calendar},
+        name="google_calendar_auth_success_create_connection"),
     # Twitter
     url(r"^twitter_auth/$", TwitterAuthView.as_view(), name="twitter_auth"),
     url(r"^twitter_auth/success/$", TwitterAuthSuccessCreateConnection.as_view(),
@@ -37,7 +39,6 @@ urlpatterns = [
     url(r"^survey_monkey_auth/$", SurveyMonkeyAuthView.as_view(), name="survey_monekey_auth"),
     url(r"^survey_monkey_auth/success/$", SurveyMonkeyAuthSuccessCreateConnection.as_view(),
         name="survey_monkey_auth_success_create_connection"),
-
     # Slack
     url(r'^auth/slack/', SlackAuthView.as_view(), name="slack_auth"),
 
@@ -67,4 +68,5 @@ urlpatterns = [
         name='ajax_update_jira_test_connection'),
     url(r'ajax/getresponse/test_connection/', AJAXGetResponseTestConnection.as_view(),
         name='ajax_update_getresponse_test_connection'),
+
 ]

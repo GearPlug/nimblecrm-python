@@ -11,24 +11,32 @@ from django.utils.decorators import method_decorator
 from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
-from apps.gp.controllers.lead import GoogleFormsController, FacebookController
+from apps.gp.controllers.lead import GoogleFormsController, FacebookController, SurveyMonkeyController
 from apps.gp.controllers.crm import SugarCRMController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.directory import GoogleContactsController
-from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController
+from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
 from apps.gp.controllers.im import SlackController
 from apps.gp.controllers.social import TwitterController, InstagramController
 from apps.gp.controllers.project_management import JiraController
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, \
-    StoredData, SlackConnection
+    StoredData, SlackConnection, GooglePushWebhook
 from apps.plug.views import CreatePlugView
 from oauth2client import client
 from apiclient import discovery
+from paypalrestsdk import Sale
+from paypalrestsdk.notifications import WebhookEvent
 import re
-
+import paypalrestsdk
 from apps.connection.myviews.SurveyMonkeyViews import AJAXGetSurveyListView
+
+paypalrestsdk.configure({
+    "mode": "sandbox",  # sandbox or live
+    "client_id": "XXXXXXXXXXX",
+    "client_secret": "YYYYYYYYYY"})
+
 
 mcc = MailChimpController()
 gsc = GoogleSpreadSheetsController()
@@ -198,9 +206,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         if ping:
             if self.object.is_source:
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
-                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA:
-                    controller.create_webhook()
-                elif c == ConnectorEnum.Instagram:
+                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA or c == ConnectorEnum.SurveyMonkey or c == ConnectorEnum.GoogleCalendar or c == ConnectorEnum.Instagram:
                     controller.create_webhook()
             elif self.object.is_target:
                 if c == ConnectorEnum.MailChimp:
@@ -268,6 +274,23 @@ class GoogleDriveSheetList(LoginRequiredMixin, TemplateView):
             sheet_list = list()
         context['object_list'] = sheet_list
         return super(GoogleDriveSheetList, self).render_to_response(context)
+
+
+class GoogleCalendarsList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = GoogleCalendarController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            calendar_list = controller.get_calendar_list()
+        else:
+            calendar_list = list()
+        context['object_list'] = calendar_list
+        return super(GoogleCalendarsList, self).render_to_response(context)
 
 
 class GoogleSheetsWorksheetList(LoginRequiredMixin, TemplateView):
@@ -494,6 +517,38 @@ class SlackWebhookEvent(TemplateView):
         return JsonResponse({'hola': True})
 
 
+class SurveyMonkeyWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _surveymonkey_controller = SurveyMonkeyController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(SurveyMonkeyWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super(SurveyMonkeyWebhookEvent, self).get(request)
+
+    def post(self, request, *args, **kwargs):
+        print("webhook")
+        responses = []
+        data = request.body.decode()
+        data = json.loads(data)
+        print(data['resources']['survey_id'])
+        survey = {'id': data['object_id']}
+        responses.append(survey)
+        qs = PlugSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="SurveyMonkey",
+            value=data['resources']['survey_id']
+        )
+        for plug_specification in qs:
+            print("plug")
+            self._surveymonkey_controller.create_connection(plug_specification.plug.connection.related_connection,
+                                                            plug_specification.plug)
+            self._surveymonkey_controller.download_source_data(responses=responses)
+        return JsonResponse({'hola': True})
+
+
 class BitbucketProjectList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
 
@@ -667,6 +722,48 @@ class InstagramWebhookEvent(TemplateView):
             self._instagram_controller.download_source_data(media=media)
         return JsonResponse({'hola': True})
 
+class PaypalWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _bitbucket_controller = BitbucketController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(PaypalWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super(PaypalWebhookEvent, self).get(request)
+
+    def post(self, request, *args, **kwargs):
+        webhook_id = '4EJ052258L4717728'
+        transmission_id = request.META['HTTP_PAYPAL_TRANSMISSION_ID']
+        timestamp = request.META['HTTP_PAYPAL_TRANSMISSION_TIME']
+        actual_signature = request.META['HTTP_PAYPAL_TRANSMISSION_SIG']
+        cert_url = request.META['HTTP_PAYPAL_CERT_URL']
+        auth_algo = request.META['HTTP_PAYPAL_AUTH_ALGO']
+        event_body = request.body.decode('utf-8')
+        response = WebhookEvent.verify(
+            transmission_id, timestamp, webhook_id, event_body, cert_url, actual_signature, auth_algo)
+        print(response)
+        # Devuelve True si es válido
+        # if not response:
+        #     return JsonResponse({'hola': True})
+        webhook_event_json = json.loads(request.body.decode('utf-8'))
+        webhook_event = WebhookEvent(webhook_event_json)
+        event_resource = webhook_event.get_resource()
+        print(event_resource, type(event_resource))
+
+        print(event_resource.parent_payment)
+
+        # payment = paypalrestsdk.Payment.find(event_resource.parent_payment)
+        # print(payment)
+
+        payment_history = paypalrestsdk.Payment.all({"count": 100})
+        print(payment_history.payments)
+
+        sale = Sale.find(event_resource.parent_payment)
+        print(sale)
+        return JsonResponse({'hola': True})
+
 
 class JiraWebhookEvent(TemplateView):
     template_name = 'wizard/async/select_options.html'
@@ -691,6 +788,48 @@ class JiraWebhookEvent(TemplateView):
             self._jira_controller.create_connection(plug_specification.plug.connection.related_connection,
                                                     plug_specification.plug)
             self._jira_controller.download_source_data(issue=issue)
+        return JsonResponse({'hola': True})
+
+
+class GoogleCalendarWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _googlecalendar_controller = GoogleCalendarController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(GoogleCalendarWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super(GoogleCalendarWebhookEvent, self).get(request)
+
+    def post(self, request, *args, **kwargs):
+        resource_state = request.META.get('HTTP_X_GOOG_RESOURCE_STATE', None)
+        resource_uri = request.META.get('HTTP_X_GOOG_RESOURCE_URI', None)
+        channel_id = request.META.get('HTTP_X_GOOG_CHANNEL_ID', None)
+        resource_id = request.META.get('HTTP_X_GOOG_RESOURCE_ID', None)
+        channel_expiration = request.META.get('HTTP_X_GOOG_CHANNEL_EXPIRATION', None)
+        message_number = request.META.get('HTTP_X_GOOG_MESSAGE_NUMBER', None)
+
+        if resource_state == 'sync':
+            return JsonResponse({'hola': True})
+
+        try:
+            google_push_webhook = GooglePushWebhook.objects.get(channel_id=channel_id)
+        except GooglePushWebhook.DoesNotExist:
+            return JsonResponse({'hola': True})
+
+        qs = PlugSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="googlecalendar",
+            plug__connection=google_push_webhook.connection,
+            plug__source_gear__is_active=True)
+
+        for plug_specification in qs:
+            self._googlecalendar_controller.create_connection(plug_specification.plug.connection.related_connection,
+                                                              plug_specification.plug)
+            events = self._googlecalendar_controller.get_events()
+            self._googlecalendar_controller.download_source_data(events=events)
+
         return JsonResponse({'hola': True})
 
 
@@ -735,3 +874,25 @@ def async_spreadsheet_values(request, plug_id, spreadsheet_id, worksheet_id):
     data = {'ColumnCount': column_count, 'RowCount': row_count, 'Table': template.render(context)}
     ctx = {'Success': True, 'Data': data}
     return HttpResponse(json.dumps(ctx), content_type='application/json')
+
+
+# def prueba1(request):
+#     ctx = {}
+#     return render()
+
+class Prueba1(CreateView):
+    model = Connector
+    success_url = ''
+    template_name = 'index.html'
+
+    def post(self, request, *args, **kwargs):
+        pass
+
+    def get(self, request, *args, **kwargs):
+        pass
+
+    def form_valid(self, form):
+        pass
+
+    def form_invalid(self, form):
+        pass

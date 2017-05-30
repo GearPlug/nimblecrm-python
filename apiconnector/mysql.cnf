@@ -4,5 +4,5 @@ host = localhost
 port = 3306
 database = apiConnector-00
 user = root
-password =
+password = Packet$0618096
 default-character-set = utf8

@@ -6,7 +6,8 @@ from apps.user.models import User
 connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
                'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack',
                'connection_bitbucket', 'connection_jira', 'connection_googleforms', 'connection_googlecontacts',
-               'connection_getresponse', 'connection_twitter', 'connection_surveymonkey', 'connection_instagram']
+               'connection_getresponse', 'connection_twitter', 'connection_surveymonkey', 'connection_getresponse',
+               'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram']
 
 
 class Category(models.Model):
@@ -237,6 +238,29 @@ class GoogleFormsConnection(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class GoogleCalendarConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
+                                      related_name='connection_googlecalendar')
+    name = models.CharField('name', max_length=200)
+    credentials_json = JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class GooglePushWebhook(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='google_push_webhook')
+    channel_id = models.CharField('channel_id', max_length=200)
+    resource_id = models.CharField('resource_id', max_length=200)
+    expiration = models.CharField('expiration', max_length=200)
+    raw_expiration = models.CharField('raw_expiration', max_length=200)
+    created = models.DateTimeField('created', auto_now_add=True)
+    last_update = models.DateTimeField('last update', auto_now=True)
+
+    def __str__(self):
+        return self.channel_id
 
 
 class SlackConnection(models.Model):

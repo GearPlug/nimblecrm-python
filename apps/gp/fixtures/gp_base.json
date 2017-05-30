@@ -80,7 +80,7 @@
       "css_class": "gr_mssql",
       "is_source": true,
       "is_target": true,
-      "icon": "connector/icon/sql-server.png"
+      "icon": "connector/icon/mssqlserver.png"
     }
   },
   {
@@ -104,7 +104,7 @@
       "css_class": "",
       "is_source": true,
       "is_target": true,
-      "icon": "connector/icon/p7KWyLwu.png"
+      "icon": "connector/icon/jira.png"
     }
   },
   {
@@ -116,7 +116,7 @@
       "css_class": "",
       "is_source": true,
       "is_target": true,
-      "icon": "connector/icon/service_512.png"
+      "icon": "connector/icon/bitbucket.png"
     }
   },
   {
@@ -157,6 +157,30 @@
   },
   {
     "model": "gp.connector",
+    "pk": 14,
+    "fields": {
+      "name": "GoogleContacts",
+      "is_active": false,
+      "css_class": "",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/googlecontacts.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 15,
+    "fields": {
+      "name": "SurveyMonkey",
+      "is_active": true,
+      "css_class": "",
+      "is_source": true,
+      "is_target": false,
+      "icon": "connector/icon/surveymonkey.png"
+    }
+  },
+  {
+    "model": "gp.connector",
     "pk": 16,
     "fields": {
       "name": "GoogleCalendar",
@@ -164,19 +188,115 @@
       "css_class": "",
       "is_source": true,
       "is_target": true,
-      "icon": "connector/icon/calendar_Jogtq8E.png"
+      "icon": "connector/icon/googlecalendar.png"
     }
   },
   {
     "model": "gp.connector",
     "pk": 17,
     "fields": {
-      "name": "Instagram",
-      "is_active": true,
+      "name": "MercadoLibre",
+      "is_active": false,
       "css_class": "",
-      "is_source": true,
+      "is_source": false,
       "is_target": false,
-      "icon": "connector/icon/instagram_RgVmeCL.png"
+      "icon": "connector/icon/mercadolibre.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 18,
+    "fields": {
+      "name": "AmazonSellerCentral",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/amaozonsellercentral.jpg"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 19,
+    "fields": {
+      "name": "PayU",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/payu.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 20,
+    "fields": {
+      "name": "Gmail",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/gmail.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 21,
+    "fields": {
+      "name": "Ebay",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/ebay.jpg"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 22,
+    "fields": {
+      "name": "WooComerce",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/woocomerce.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 23,
+    "fields": {
+      "name": "Instagram",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/instagram.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 24,
+    "fields": {
+      "name": "Youtube",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/youtube.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 25,
+    "fields": {
+      "name": "Vimeo",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/vimeo.png"
     }
   },
   {
@@ -434,6 +554,17 @@
   },
   {
     "model": "gp.action",
+    "pk": 24,
+    "fields": {
+      "connector": 15,
+      "action_type": "source",
+      "name": "read a survey",
+      "description": "read a survey on surveymonkey",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
     "pk": 27,
     "fields": {
       "connector": 16,
@@ -663,6 +794,14 @@
     "fields": {
       "action": 23,
       "name": "campaign"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 36,
+    "fields": {
+      "action": 24,
+      "name": "survey"
     }
   },
   {
