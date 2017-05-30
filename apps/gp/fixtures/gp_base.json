@@ -589,7 +589,7 @@
     "model": "gp.action",
     "pk": 29,
     "fields": {
-      "connector": 17,
+      "connector": 23,
       "action_type": "source",
       "name": "new media",
       "description": "new media",
