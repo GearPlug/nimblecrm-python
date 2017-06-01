@@ -292,6 +292,13 @@ class GoogleContactsConnection(models.Model):
         return self.name
 
 
+class WunderListConnection():
+    pass
+
+class ZohoCRMConnection():
+    pass
+
+
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
     name = models.CharField('name', max_length=120)

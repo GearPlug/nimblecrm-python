@@ -1,0 +1,1 @@
+SELECT c.name, b.action_type, b.name, b.is_active, a.name FROM gearplug_03.gp_actionspecification as a right join gearplug_03.gp_action as b on a.action_id=b.id inner join gearplug_03.gp_connector as c on b.connector_id=c.id;

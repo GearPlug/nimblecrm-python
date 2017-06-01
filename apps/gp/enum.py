@@ -38,6 +38,8 @@ class ConnectorEnum(Enum):
     WooComerce = 22
     Instagram = 23
     YouTube = 24
+    ZohoCRM = 25
+    WunderList = 26
 
     def get_connector_data(connector):
         connector = ConnectorEnum.get_connector(connector)

@@ -300,6 +300,30 @@
     }
   },
   {
+    "model": "gp.connector",
+    "pk": 26,
+    "fields": {
+      "name": "ZohoCRM",
+      "is_active": true,
+      "css_class": "",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/zohocrm.jpg"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 27,
+    "fields": {
+      "name": "WunderList",
+      "is_active": true,
+      "css_class": "",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/wunderlist.png"
+    }
+  },
+  {
     "model": "gp.action",
     "pk": 1,
     "fields": {
@@ -589,10 +613,65 @@
     "model": "gp.action",
     "pk": 29,
     "fields": {
-      "connector": 23,
+      "connector": 26,
       "action_type": "source",
-      "name": "new media",
-      "description": "new media",
+      "name": "new feed",
+      "description": "reads a new fead",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 30,
+    "fields": {
+      "connector": 26,
+      "action_type": "target",
+      "name": "create feed",
+      "description": "creates a new feed",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 31,
+    "fields": {
+      "connector": 27,
+      "action_type": "source",
+      "name": "new task",
+      "description": "new task",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 32,
+    "fields": {
+      "connector": 27,
+      "action_type": "target",
+      "name": "create task",
+      "description": "create task",
+      "is_active": false
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 33,
+    "fields": {
+      "connector": 27,
+      "action_type": "target",
+      "name": "complete task",
+      "description": "complete task",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 34,
+    "fields": {
+      "connector": 27,
+      "action_type": "source",
+      "name": "completed task",
+      "description": "completed task",
       "is_active": true
     }
   },
@@ -798,14 +877,6 @@
   },
   {
     "model": "gp.actionspecification",
-    "pk": 36,
-    "fields": {
-      "action": 24,
-      "name": "survey"
-    }
-  },
-  {
-    "model": "gp.actionspecification",
     "pk": 37,
     "fields": {
       "action": 27,
@@ -824,8 +895,8 @@
     "model": "gp.actionspecification",
     "pk": 39,
     "fields": {
-      "action": 29,
-      "name": "account"
+      "action": 24,
+      "name": "survey"
     }
   }
 ]
