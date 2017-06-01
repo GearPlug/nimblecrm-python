@@ -2,7 +2,7 @@ from enum import Enum
 from django.apps import apps
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
 from apps.gp.controllers.lead import GoogleFormsController, FacebookController, SurveyMonkeyController
-from apps.gp.controllers.crm import SugarCRMController
+from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
@@ -38,8 +38,9 @@ class ConnectorEnum(Enum):
     WooComerce = 22
     Instagram = 23
     YouTube = 24
-    ZohoCRM = 25
-    WunderList = 26
+    Vimeo = 25
+    ZohoCRM = 26
+    WunderList = 27
 
     def get_connector_data(connector):
         connector = ConnectorEnum.get_connector(connector)
