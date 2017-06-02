@@ -15,16 +15,27 @@ urlpatterns = [
     # url(r'delete/(?P<pk>\d+)/$', DeleteGearView.as_view(), name='delete'),
     url(r'list/$', ListConnectionView.as_view(), name='list'),
     url(r'list/connector/$', ListConnectorView.as_view(), name='list_connector'),
+
+    # Google SpreadSheets
     url(r"^google_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.SpreadSheets}, name="google_auth"),
     url(r"^google_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'api': GoogleAPI.SpreadSheets},
         name="google_auth_success_create_connection"),
 
+    # Google Forms
     url(r"^google_forms_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.Forms}, name="google_forms_auth"),
     url(r"^google_forms_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'api': GoogleAPI.Forms},
         name="google_forms_auth_success_create_connection"),
+
+    # Google Calendar
     url(r"^google_calendar_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.Calendar}, name="google_calendar_auth"),
     url(r"^google_calendar_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'api': GoogleAPI.Calendar},
         name="google_calendar_auth_success_create_connection"),
+
+    # Google YouTube
+    url(r"^google_youtube_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.YouTube}, name="google_youtube_auth"),
+    url(r"^google_youtube_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'api': GoogleAPI.YouTube},
+        name="google_youtube_auth_success_create_connection"),
+
     # Twitter
     url(r"^twitter_auth/$", TwitterAuthView.as_view(), name="twitter_auth"),
     url(r"^twitter_auth/success/$", TwitterAuthSuccessCreateConnection.as_view(),

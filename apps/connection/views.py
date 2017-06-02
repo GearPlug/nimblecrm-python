@@ -19,7 +19,8 @@ from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
-    GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection, GoogleCalendarConnection
+    GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection, GoogleCalendarConnection, \
+    YouTubeConnection
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
 from slacker import Slacker
@@ -46,6 +47,10 @@ INSTAGRAM_AUTH_REDIRECT_URL = 'connection:instagram_auth_success_create_connecti
 GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar'
 GOOGLE_CALENDAR_AUTH_URL = 'http://localhost:8000/connection/google_calendar_auth/'
 GOOGLE_CALENDAR_AUTH_REDIRECT_URL = 'connection:google_calendar_auth_success_create_connection'
+
+GOOGLE_YOUTUBE_SCOPE = 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload'
+GOOGLE_YOUTUBE_AUTH_URL = 'https://m.grplug.com/connection/google_youtube_auth/'
+GOOGLE_YOUTUBE_AUTH_REDIRECT_URL = 'connection:google_youtube_auth_success_create_connection'
 
 
 class ListConnectionView(ListView):
@@ -89,6 +94,8 @@ class CreateConnectionView(CreateView):
                 form.instance.credentials_json = self.request.session['google_credentials']
             elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleCalendar:
                 form.instance.credentials_json = self.request.session['google_credentials']
+            elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.YouTube:
+                form.instance.credentials_json = self.request.session['google_credentials']
             return super(CreateConnectionView, self).form_valid(form, *args, **kwargs)
 
     def get(self, *args, **kwargs):
@@ -126,6 +133,10 @@ class CreateConnectionView(CreateView):
             flow = get_flow(GOOGLE_CALENDAR_AUTH_URL, GOOGLE_CALENDAR_SCOPE)
             context['google_auth_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'calendar'
+        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.YouTube:
+            flow = get_flow(GOOGLE_YOUTUBE_AUTH_URL, GOOGLE_YOUTUBE_SCOPE)
+            context['google_auth_url'] = flow.step1_get_authorize_url()
+            self.request.session['google_connection_type'] = 'youtube'
         elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Slack:
             context['slack_auth_url'] = SLACK_PERMISSIONS_URL
         elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Twitter:
@@ -185,9 +196,13 @@ class GoogleAuthView(View):
             request.session['google_credentials'] = credentials.to_json()
             return redirect(reverse(GOOGLE_AUTH_REDIRECT_URL))
         elif kwargs['api'] == GoogleAPI.Calendar:
-            credentials = get_flow(GOOGLE_CALENDAR_AUTH_URL).step2_exchange(code)
+            credentials = get_flow(GOOGLE_CALENDAR_AUTH_URL, GOOGLE_CALENDAR_SCOPE).step2_exchange(code)
             request.session['google_credentials'] = credentials.to_json()
             return redirect(reverse(GOOGLE_CALENDAR_AUTH_REDIRECT_URL))
+        elif kwargs['api'] == GoogleAPI.YouTube:
+            credentials = get_flow(GOOGLE_YOUTUBE_AUTH_URL, GOOGLE_YOUTUBE_SCOPE).step2_exchange(code)
+            request.session['google_credentials'] = credentials.to_json()
+            return redirect(reverse(GOOGLE_YOUTUBE_AUTH_REDIRECT_URL))
 
 
 class GoogleAuthSuccessCreateConnection(TemplateView):
@@ -217,6 +232,12 @@ class GoogleAuthSuccessCreateConnection(TemplateView):
                     n = int(GoogleCalendarConnection.objects.filter(connection__user=request.user).count()) + 1
                     gssc = GoogleCalendarConnection.objects.create(
                         connection=c, name="GoogleCalendar Connection # %s" % n, credentials_json=credentials)
+                elif kwargs['api'] == GoogleAPI.YouTube:
+                    c = Connection.objects.create(
+                        user=request.user, connector_id=ConnectorEnum.YouTube.value)
+                    n = int(YouTubeConnection.objects.filter(connection__user=request.user).count()) + 1
+                    gssc = YouTubeConnection.objects.create(
+                        connection=c, name="YouTube Connection # %s" % n, credentials_json=credentials)
         except Exception as e:
             # print("Error creating the GoogleSheets Connection.")
             raise

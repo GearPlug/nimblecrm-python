@@ -11,7 +11,7 @@ from apps.gp.controllers.email_marketing import MailChimpController, GetResponse
 from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
 from apps.gp.controllers.im import SlackController
-from apps.gp.controllers.social import TwitterController
+from apps.gp.controllers.social import TwitterController, YouTubeController
 from apps.gp.controllers.project_management import JiraController
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
@@ -84,6 +84,7 @@ class CreateGearMapView(FormView):
     getresponsec = GetResponseController()
     twitterc = TwitterController()
     gcc = GoogleCalendarController()
+    youtubec = YouTubeController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -241,6 +242,13 @@ class CreateGearMapView(FormView):
             self.twitterc.create_connection(related, plug)
             fields = self.twitterc.get_target_fields()
             return fields
+        elif c == ConnectorEnum.YouTube:
+            self.youtubec.create_connection(related, plug)
+            try:
+                fields = self.youtubec.get_target_fields()
+                return [MapField(f, controller=ConnectorEnum.YouTube) for f in fields]
+            except:
+                return []
         else:
             return []
 

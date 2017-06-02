@@ -7,7 +7,7 @@ from apps.gp.controllers.email_marketing import MailChimpController, GetResponse
 from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
 from apps.gp.controllers.im import SlackController
-from apps.gp.controllers.social import TwitterController, InstagramController
+from apps.gp.controllers.social import TwitterController, InstagramController, YouTubeController
 from apps.gp.controllers.project_management import JiraController
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.controllers.utils import dynamic_import
@@ -177,3 +177,4 @@ class GoogleAPI(Enum):
     SpreadSheets = 1
     Forms = 2
     Calendar = 3
+    YouTube = 4

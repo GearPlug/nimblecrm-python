@@ -17,7 +17,7 @@ from apps.gp.controllers.email_marketing import MailChimpController, GetResponse
 from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
 from apps.gp.controllers.im import SlackController
-from apps.gp.controllers.social import TwitterController, InstagramController
+from apps.gp.controllers.social import TwitterController, InstagramController, YouTubeController
 from apps.gp.controllers.project_management import JiraController
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
@@ -30,13 +30,13 @@ from paypalrestsdk import Sale
 from paypalrestsdk.notifications import WebhookEvent
 import re
 import paypalrestsdk
+import xmltodict
 from apps.connection.myviews.SurveyMonkeyViews import AJAXGetSurveyListView
 
 paypalrestsdk.configure({
     "mode": "sandbox",  # sandbox or live
     "client_id": "XXXXXXXXXXX",
     "client_secret": "YYYYYYYYYY"})
-
 
 mcc = MailChimpController()
 gsc = GoogleSpreadSheetsController()
@@ -206,7 +206,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         if ping:
             if self.object.is_source:
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
-                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA or c == ConnectorEnum.SurveyMonkey or c == ConnectorEnum.GoogleCalendar or c == ConnectorEnum.Instagram:
+                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA or c == ConnectorEnum.SurveyMonkey or c == ConnectorEnum.GoogleCalendar or c == ConnectorEnum.Instagram or c == ConnectorEnum.YouTube:
                     controller.create_webhook()
             elif self.object.is_target:
                 if c == ConnectorEnum.MailChimp:
@@ -722,6 +722,7 @@ class InstagramWebhookEvent(TemplateView):
             self._instagram_controller.download_source_data(media=media)
         return JsonResponse({'hola': True})
 
+
 class PaypalWebhookEvent(TemplateView):
     template_name = 'wizard/async/select_options.html'
     _bitbucket_controller = BitbucketController()
@@ -763,6 +764,59 @@ class PaypalWebhookEvent(TemplateView):
         sale = Sale.find(event_resource.parent_payment)
         print(sale)
         return JsonResponse({'hola': True})
+
+
+class YouTubeWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _youtube_controller = YouTubeController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(YouTubeWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        mode = request.GET.get('hub.mode', None)
+        challenge = request.GET.get('hub.challenge', None)
+        lease = request.GET.get('hub.lease_seconds', None)
+        if mode != 'subscribe':
+            return JsonResponse({'Success': False})
+        return HttpResponse(challenge)
+
+    def post(self, request, *args, **kwargs):
+        data = request.body.decode('utf-8')
+        root = xmltodict.parse(data)
+        entry = root['feed']['entry']
+        channel_id = entry['yt:channelId']
+        video_id = entry['yt:videoId']
+        qs = PlugSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="youtube",
+            value=channel_id,
+            plug__source_gear__is_active=True)
+
+        for plug_specification in qs:
+            self._youtube_controller.create_connection(plug_specification.plug.connection.related_connection,
+                                                       plug_specification.plug)
+            video = self._youtube_controller.get_video(video_id)
+            self._youtube_controller.download_source_data(video=video)
+        return JsonResponse({'hola': True})
+
+
+class YouTubeChannelsList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = YouTubeController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            channel_list = controller.get_channel_list()
+        else:
+            channel_list = list()
+        context['object_list'] = channel_list
+        return super(YouTubeChannelsList, self).render_to_response(context)
 
 
 class JiraWebhookEvent(TemplateView):

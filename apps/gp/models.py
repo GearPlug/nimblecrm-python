@@ -7,7 +7,8 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
                'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack',
                'connection_bitbucket', 'connection_jira', 'connection_googleforms', 'connection_googlecontacts',
                'connection_getresponse', 'connection_twitter', 'connection_surveymonkey', 'connection_getresponse',
-               'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram']
+               'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram',
+               'connection_youtube']
 
 
 class Category(models.Model):
@@ -243,6 +244,16 @@ class GoogleFormsConnection(models.Model):
 class GoogleCalendarConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
                                       related_name='connection_googlecalendar')
+    name = models.CharField('name', max_length=200)
+    credentials_json = JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class YouTubeConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
+                                      related_name='connection_youtube')
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
 
