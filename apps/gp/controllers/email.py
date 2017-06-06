@@ -4,3 +4,6 @@ from apps.gp.controllers.exception import ControllerError
 
 class GmailController(BaseController):
     pass
+
+class SMTPController(BaseController):
+    pass

@@ -7,7 +7,7 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
                'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack',
                'connection_bitbucket', 'connection_jira', 'connection_googleforms', 'connection_googlecontacts',
                'connection_getresponse', 'connection_twitter', 'connection_surveymonkey', 'connection_getresponse',
-               'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram']
+               'connection_googlecalendar', 'connection_instagram', ] # 'connection_sms', 'connection_smtp',
 
 
 class Category(models.Model):
@@ -296,6 +296,12 @@ class WunderListConnection():
     pass
 
 class ZohoCRMConnection():
+    pass
+
+class SMSConnection():
+    pass
+
+class SMTPConnection():
     pass
 
 

@@ -127,3 +127,6 @@ class SugarCRMController(BaseController):
 
     def get_target_fields(self, module, **kwargs):
         return self.get_module_fields(module, **kwargs)
+
+class ZohoCRMController(BaseController):
+    pass

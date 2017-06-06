@@ -108,3 +108,7 @@ class SlackController(BaseController):
                         new_message.object_id, new_message.plug.id, new_message.connection.id), extra=extra)
                     new_message.save()
         return False
+
+
+class SMSController(BaseController):
+    pass

@@ -41,6 +41,8 @@ class ConnectorEnum(Enum):
     Vimeo = 25
     ZohoCRM = 26
     WunderList = 27
+    SMS = 28
+    SMTP = 29
 
     def get_connector_data(connector):
         connector = ConnectorEnum.get_connector(connector)
