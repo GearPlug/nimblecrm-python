@@ -1,1 +1,983 @@
-[{"model": "gp.connector", "pk": 1, "fields": {"name": "Facebook", "is_active": true, "css_class": "gr_facebook", "is_source": true, "is_target": false, "icon": "connector/icon/facebook.png"}}, {"model": "gp.connector", "pk": 2, "fields": {"name": "MySQL", "is_active": true, "css_class": "gr_mysql", "is_source": true, "is_target": true, "icon": "connector/icon/mysql.png"}}, {"model": "gp.connector", "pk": 3, "fields": {"name": "SugarCRM", "is_active": true, "css_class": "gr_sugarcrm", "is_source": true, "is_target": true, "icon": "connector/icon/sugarcrm.png"}}, {"model": "gp.connector", "pk": 4, "fields": {"name": "MailChimp", "is_active": true, "css_class": "gr_mailchimp", "is_source": false, "is_target": true, "icon": "connector/icon/mailchimp.png"}}, {"model": "gp.connector", "pk": 5, "fields": {"name": "GoogleSpreadSheet", "is_active": true, "css_class": "gr_google_sheets", "is_source": true, "is_target": true, "icon": "connector/icon/googlesheets.png"}}, {"model": "gp.connector", "pk": 6, "fields": {"name": "PostgreSQL", "is_active": true, "css_class": "gr_postgresql", "is_source": true, "is_target": true, "icon": "connector/icon/postgresql.png"}}, {"model": "gp.connector", "pk": 7, "fields": {"name": "MSSQLServer", "is_active": true, "css_class": "gr_mssql", "is_source": true, "is_target": true, "icon": "connector/icon/sql-server.png"}}, {"model": "gp.action", "pk": 1, "fields": {"connector": 1, "action_type": "source", "name": "get leads", "description": "gets facebook leads", "is_active": true}}, {"model": "gp.action", "pk": 2, "fields": {"connector": 2, "action_type": "source", "name": "get row", "description": "get row", "is_active": true}}, {"model": "gp.action", "pk": 3, "fields": {"connector": 2, "action_type": "target", "name": "create row", "description": "create row", "is_active": true}}, {"model": "gp.action", "pk": 4, "fields": {"connector": 3, "action_type": "source", "name": "get module data", "description": "get data", "is_active": true}}, {"model": "gp.action", "pk": 5, "fields": {"connector": 3, "action_type": "target", "name": "set module data", "description": "set data", "is_active": true}}, {"model": "gp.action", "pk": 6, "fields": {"connector": 4, "action_type": "target", "name": "subscribe", "description": "subscribe", "is_active": true}}, {"model": "gp.action", "pk": 7, "fields": {"connector": 4, "action_type": "target", "name": "unsubscribe", "description": "unsubscribe", "is_active": true}}, {"model": "gp.action", "pk": 8, "fields": {"connector": 5, "action_type": "source", "name": "get row", "description": "get row", "is_active": true}}, {"model": "gp.action", "pk": 9, "fields": {"connector": 5, "action_type": "target", "name": "set row", "description": "set row", "is_active": true}}, {"model": "gp.action", "pk": 10, "fields": {"connector": 6, "action_type": "source", "name": "get row", "description": "get row", "is_active": true}}, {"model": "gp.action", "pk": 11, "fields": {"connector": 6, "action_type": "target", "name": "create row", "description": "create row", "is_active": true}}, {"model": "gp.action", "pk": 12, "fields": {"connector": 7, "action_type": "source", "name": "get row", "description": "get row", "is_active": true}}, {"model": "gp.action", "pk": 13, "fields": {"connector": 7, "action_type": "target", "name": "create row", "description": "create row", "is_active": true}}, {"model": "gp.actionspecification", "pk": 1, "fields": {"action": 2, "name": "order by"}}, {"model": "gp.actionspecification", "pk": 2, "fields": {"action": 4, "name": "module"}}, {"model": "gp.actionspecification", "pk": 3, "fields": {"action": 5, "name": "module"}}, {"model": "gp.actionspecification", "pk": 4, "fields": {"action": 6, "name": "list"}}, {"model": "gp.actionspecification", "pk": 5, "fields": {"action": 7, "name": "list"}}, {"model": "gp.actionspecification", "pk": 6, "fields": {"action": 8, "name": "spreadsheet"}}, {"model": "gp.actionspecification", "pk": 7, "fields": {"action": 9, "name": "spreadsheet"}}, {"model": "gp.actionspecification", "pk": 8, "fields": {"action": 8, "name": "worksheet"}}, {"model": "gp.actionspecification", "pk": 9, "fields": {"action": 9, "name": "worksheet"}}, {"model": "gp.actionspecification", "pk": 19, "fields": {"action": 10, "name": "order by"}}, {"model": "gp.actionspecification", "pk": 20, "fields": {"action": 12, "name": "order by"}}, {"model": "gp.actionspecification", "pk": 21, "fields": {"action": 1, "name": "page"}}, {"model": "gp.actionspecification", "pk": 22, "fields": {"action": 1, "name": "form"}}, {"model": "auth.user", "pk": 1, "fields": {"password": "pbkdf2_sha256$30000$xLKK4Y3NPC5Q$ZVhAgcroDnubaOgfECjHU/W1Fl O/b2UJ82qoFYFA4tA=", "last_login": "2017-02-17T19:24:15.507Z", "is_superuser": true, "username": "", "first_name": "", "last_name": "", "email": "admin@grplug.com", "is_staff": true, "is_active": true, "date_joined": "2017-01-10T21:09:44.669Z", "groups": [], "user_permissions": []}}, {"model": "account.emailaddress", "pk": 1, "fields": {"user": 1, "email": "admin@grplug.com", "verified": false, "primary": true}}, {"model": "account.account", "pk": 1, "fields": {"user": 1, "timezone": "", "language": "en-us"}}]
+[
+  {
+    "model": "gp.connector",
+    "pk": 1,
+    "fields": {
+      "name": "Facebook",
+      "is_active": true,
+      "css_class": "gr_facebook",
+      "is_source": true,
+      "is_target": false,
+      "icon": "connector/icon/facebook.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 2,
+    "fields": {
+      "name": "MySQL",
+      "is_active": true,
+      "css_class": "gr_mysql",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/mysql.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 3,
+    "fields": {
+      "name": "SugarCRM",
+      "is_active": true,
+      "css_class": "gr_sugarcrm",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/sugarcrm.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 4,
+    "fields": {
+      "name": "MailChimp",
+      "is_active": true,
+      "css_class": "gr_mailchimp",
+      "is_source": false,
+      "is_target": true,
+      "icon": "connector/icon/mailchimp.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 5,
+    "fields": {
+      "name": "GoogleSpreadSheet",
+      "is_active": true,
+      "css_class": "gr_google_sheets",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/googlesheets.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 6,
+    "fields": {
+      "name": "PostgreSQL",
+      "is_active": true,
+      "css_class": "gr_postgresql",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/postgresql.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 7,
+    "fields": {
+      "name": "MSSQLServer",
+      "is_active": true,
+      "css_class": "gr_mssql",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/mssqlserver.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 8,
+    "fields": {
+      "name": "Slack",
+      "is_active": true,
+      "css_class": "slack_css",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/slack.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 9,
+    "fields": {
+      "name": "JIRA",
+      "is_active": true,
+      "css_class": "",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/jira.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 10,
+    "fields": {
+      "name": "Bitbucket",
+      "is_active": true,
+      "css_class": "",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/bitbucket.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 11,
+    "fields": {
+      "name": "GoogleForms",
+      "is_active": true,
+      "css_class": "",
+      "is_source": true,
+      "is_target": false,
+      "icon": "connector/icon/googleforms.jpg"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 12,
+    "fields": {
+      "name": "Twitter",
+      "is_active": true,
+      "css_class": "",
+      "is_source": false,
+      "is_target": true,
+      "icon": "connector/icon/twitter.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 13,
+    "fields": {
+      "name": "GetResponse",
+      "is_active": true,
+      "css_class": "",
+      "is_source": false,
+      "is_target": true,
+      "icon": "connector/icon/getresponse.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 14,
+    "fields": {
+      "name": "GoogleContacts",
+      "is_active": false,
+      "css_class": "",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/googlecontacts.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 15,
+    "fields": {
+      "name": "SurveyMonkey",
+      "is_active": true,
+      "css_class": "",
+      "is_source": true,
+      "is_target": false,
+      "icon": "connector/icon/surveymonkey.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 16,
+    "fields": {
+      "name": "GoogleCalendar",
+      "is_active": true,
+      "css_class": "",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/googlecalendar.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 17,
+    "fields": {
+      "name": "MercadoLibre",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/mercadolibre.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 18,
+    "fields": {
+      "name": "AmazonSellerCentral",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/amaozonsellercentral.jpg"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 19,
+    "fields": {
+      "name": "PayU",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/payu.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 20,
+    "fields": {
+      "name": "Gmail",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/gmail.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 21,
+    "fields": {
+      "name": "Ebay",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/ebay.jpg"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 22,
+    "fields": {
+      "name": "WooComerce",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/woocomerce.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 23,
+    "fields": {
+      "name": "Instagram",
+      "is_active": true,
+      "css_class": "",
+      "is_source": true,
+      "is_target": false,
+      "icon": "connector/icon/instagram.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 24,
+    "fields": {
+      "name": "Youtube",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/youtube.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 25,
+    "fields": {
+      "name": "Vimeo",
+      "is_active": false,
+      "css_class": "",
+      "is_source": false,
+      "is_target": false,
+      "icon": "connector/icon/vimeo.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 26,
+    "fields": {
+      "name": "ZohoCRM",
+      "is_active": true,
+      "css_class": "",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/zohocrm.jpg"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 27,
+    "fields": {
+      "name": "WunderList",
+      "is_active": true,
+      "css_class": "",
+      "is_source": true,
+      "is_target": true,
+      "icon": "connector/icon/wunderlist.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 28,
+    "fields": {
+      "name": "SMS",
+      "is_active": true,
+      "css_class": "",
+      "is_source": false,
+      "is_target": true,
+      "icon": "connector/icon/sms.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 29,
+    "fields": {
+      "name": "SMTP",
+      "is_active": true,
+      "css_class": "",
+      "is_source": false,
+      "is_target": true,
+      "icon": "connector/icon/smtp.png"
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 1,
+    "fields": {
+      "connector": 1,
+      "action_type": "source",
+      "name": "get leads",
+      "description": "gets facebook leads",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 2,
+    "fields": {
+      "connector": 2,
+      "action_type": "source",
+      "name": "get row",
+      "description": "get row",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 3,
+    "fields": {
+      "connector": 2,
+      "action_type": "target",
+      "name": "create row",
+      "description": "create row",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 4,
+    "fields": {
+      "connector": 3,
+      "action_type": "source",
+      "name": "get module data",
+      "description": "get data",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 5,
+    "fields": {
+      "connector": 3,
+      "action_type": "target",
+      "name": "set module data",
+      "description": "set data",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 6,
+    "fields": {
+      "connector": 4,
+      "action_type": "target",
+      "name": "subscribe",
+      "description": "subscribe",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 7,
+    "fields": {
+      "connector": 4,
+      "action_type": "target",
+      "name": "unsubscribe",
+      "description": "unsubscribe",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 8,
+    "fields": {
+      "connector": 5,
+      "action_type": "source",
+      "name": "get row",
+      "description": "get row",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 9,
+    "fields": {
+      "connector": 5,
+      "action_type": "target",
+      "name": "set row",
+      "description": "set row",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 10,
+    "fields": {
+      "connector": 6,
+      "action_type": "source",
+      "name": "get row",
+      "description": "get row",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 11,
+    "fields": {
+      "connector": 6,
+      "action_type": "target",
+      "name": "create row",
+      "description": "create row",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 12,
+    "fields": {
+      "connector": 7,
+      "action_type": "source",
+      "name": "get row",
+      "description": "get row",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 13,
+    "fields": {
+      "connector": 7,
+      "action_type": "target",
+      "name": "create row",
+      "description": "create row",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 14,
+    "fields": {
+      "connector": 8,
+      "action_type": "source",
+      "name": "new message posted to a chanel",
+      "description": "new message posted to a chanel",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 15,
+    "fields": {
+      "connector": 8,
+      "action_type": "target",
+      "name": "post message to a channel",
+      "description": "post message to a channel",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 16,
+    "fields": {
+      "connector": 8,
+      "action_type": "target",
+      "name": "post message to a user private chat",
+      "description": "post message to a user private chat",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 17,
+    "fields": {
+      "connector": 9,
+      "action_type": "target",
+      "name": "create issue",
+      "description": "create issue",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 18,
+    "fields": {
+      "connector": 10,
+      "action_type": "target",
+      "name": "create issue",
+      "description": "create issue",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 19,
+    "fields": {
+      "connector": 10,
+      "action_type": "source",
+      "name": "new issue created",
+      "description": "new issue created",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 20,
+    "fields": {
+      "connector": 9,
+      "action_type": "source",
+      "name": "new issue",
+      "description": "new issue",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 21,
+    "fields": {
+      "connector": 11,
+      "action_type": "source",
+      "name": "get answer",
+      "description": "get answer",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 22,
+    "fields": {
+      "connector": 13,
+      "action_type": "target",
+      "name": "subscribe",
+      "description": "subscribe",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 23,
+    "fields": {
+      "connector": 13,
+      "action_type": "target",
+      "name": "Unsubscribe",
+      "description": "Unsubscribe",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 24,
+    "fields": {
+      "connector": 15,
+      "action_type": "source",
+      "name": "read a survey",
+      "description": "read a survey on surveymonkey",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 25,
+    "fields": {
+      "connector": 24,
+      "action_type": "source",
+      "name": "push notification",
+      "description": "push notification",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 26,
+    "fields": {
+      "connector": 24,
+      "action_type": "target",
+      "name": "upload video",
+      "description": "upload video",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 27,
+    "fields": {
+      "connector": 16,
+      "action_type": "source",
+      "name": "new event",
+      "description": "new event",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 28,
+    "fields": {
+      "connector": 16,
+      "action_type": "target",
+      "name": "create event",
+      "description": "create event",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 29,
+    "fields": {
+      "connector": 26,
+      "action_type": "source",
+      "name": "new feed",
+      "description": "reads a new fead",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 30,
+    "fields": {
+      "connector": 26,
+      "action_type": "target",
+      "name": "create feed",
+      "description": "creates a new feed",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 31,
+    "fields": {
+      "connector": 27,
+      "action_type": "source",
+      "name": "new task",
+      "description": "new task",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 32,
+    "fields": {
+      "connector": 27,
+      "action_type": "target",
+      "name": "create task",
+      "description": "create task",
+      "is_active": false
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 33,
+    "fields": {
+      "connector": 27,
+      "action_type": "target",
+      "name": "complete task",
+      "description": "complete task",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 34,
+    "fields": {
+      "connector": 27,
+      "action_type": "source",
+      "name": "completed task",
+      "description": "completed task",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 35,
+    "fields": {
+      "connector": 23,
+      "action_type": "source",
+      "name": "new media",
+      "description": "new media",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 1,
+    "fields": {
+      "action": 2,
+      "name": "order by"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 2,
+    "fields": {
+      "action": 4,
+      "name": "module"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 3,
+    "fields": {
+      "action": 5,
+      "name": "module"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 4,
+    "fields": {
+      "action": 6,
+      "name": "list"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 5,
+    "fields": {
+      "action": 7,
+      "name": "list"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 6,
+    "fields": {
+      "action": 8,
+      "name": "spreadsheet"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 7,
+    "fields": {
+      "action": 9,
+      "name": "spreadsheet"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 8,
+    "fields": {
+      "action": 8,
+      "name": "worksheet"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 9,
+    "fields": {
+      "action": 9,
+      "name": "worksheet"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 19,
+    "fields": {
+      "action": 10,
+      "name": "order by"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 20,
+    "fields": {
+      "action": 12,
+      "name": "order by"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 21,
+    "fields": {
+      "action": 1,
+      "name": "page"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 22,
+    "fields": {
+      "action": 1,
+      "name": "form"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 23,
+    "fields": {
+      "action": 14,
+      "name": "channel"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 24,
+    "fields": {
+      "action": 15,
+      "name": "channel"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 25,
+    "fields": {
+      "action": 16,
+      "name": "channel"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 27,
+    "fields": {
+      "action": 17,
+      "name": "project_id"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 28,
+    "fields": {
+      "action": 18,
+      "name": "repository_id"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 29,
+    "fields": {
+      "action": 19,
+      "name": "repository_name"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 30,
+    "fields": {
+      "action": 19,
+      "name": "repository_id"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 31,
+    "fields": {
+      "action": 18,
+      "name": "repository_name"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 32,
+    "fields": {
+      "action": 20,
+      "name": "project_id"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 33,
+    "fields": {
+      "action": 21,
+      "name": "form"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 34,
+    "fields": {
+      "action": 22,
+      "name": "campaign"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 35,
+    "fields": {
+      "action": 23,
+      "name": "campaign"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 37,
+    "fields": {
+      "action": 27,
+      "name": "calendar"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 38,
+    "fields": {
+      "action": 28,
+      "name": "calendar"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 39,
+    "fields": {
+      "action": 24,
+      "name": "survey"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 40,
+    "fields": {
+      "action": 25,
+      "name": "channel"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 41,
+    "fields": {
+      "action": 26,
+      "name": "channel"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 42,
+    "fields": {
+      "action": 35,
+      "name": "account"
+    }
+  }
+]

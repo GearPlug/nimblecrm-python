@@ -4,6 +4,7 @@ from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.models import StoredData, PlugSpecification
 
 from slacker import Slacker
+from utils.nrsgateway import Client as SMSClient
 import json
 
 
@@ -108,3 +109,50 @@ class SlackController(BaseController):
                         new_message.object_id, new_message.plug.id, new_message.connection.id), extra=extra)
                     new_message.save()
         return False
+
+
+class SMSController(BaseController):
+    client = None
+    sender_identifier = 'ZAKARA .23'
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(SMSController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    user = self._connection_object.connection_user
+                    password = self._connection_object.connection_password
+                    self.client = SMSClient(user, password)
+                except Exception as e:
+                    print("Error getting the SMS attributes")
+                    print(e)
+        elif kwargs:
+            user = kwargs['connection_user']
+            password = kwargs['connection_password']
+            self.client = SMSClient(user, password)
+
+        return True
+
+    def get_target_fields(self, **kwargs):
+        return ['number_to', 'message']
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            for obj in data_list:
+                obj['sender_identifier'] = self.sender_identifier
+                print(obj)
+                r = self.client.send_message(**obj)
+                print(r.status_code)
+                print(r.text)
+                print(r.url)
+            extra = {'controller': 'sms'}
+            return
+        raise ControllerError("Incomplete.")

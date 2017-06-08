@@ -5,7 +5,8 @@ from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionVi
     PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent, \
     BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList, \
     AJAXGetSurveyListView, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
-    GoogleCalendarWebhookEvent, AJAXGetSurveyListView, SurveyMonkeyWebhookEvent, YouTubeWebhookEvent, YouTubeChannelsList
+    GoogleCalendarWebhookEvent, AJAXGetSurveyListView, SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
+    YouTubeChannelsList
 
 urlpatterns = [
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
@@ -67,4 +68,8 @@ urlpatterns = [
     # YouTube
     url(r"async/youtube/channels/list/", YouTubeChannelsList.as_view(), name='async_youtube_channels'),
     url(r'youtube/webhook/event/', YouTubeWebhookEvent.as_view(), name='youtube_webhook_event'),
+
+    # ZohoCRM
+    url(r"async/zohocrm/module/list/", ZohoCRMModuleList.as_view(), name='async_zohorcrm_modules'),
+
 ]

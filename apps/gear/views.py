@@ -12,6 +12,8 @@ from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
 from apps.gp.controllers.im import SlackController
 from apps.gp.controllers.social import TwitterController, YouTubeController
+from apps.gp.controllers.im import SlackController, SMSController
+from apps.gp.controllers.social import TwitterController
 from apps.gp.controllers.project_management import JiraController
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
@@ -85,6 +87,7 @@ class CreateGearMapView(FormView):
     twitterc = TwitterController()
     gcc = GoogleCalendarController()
     youtubec = YouTubeController()
+    smsc = SMSController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -129,6 +132,8 @@ class CreateGearMapView(FormView):
 
     def get_form(self, *args, **kwargs):
         form_class = self.get_form_class()
+        print("\n----------------------------\n")
+        print(self.form_field_list)
         return form_class(extra=self.form_field_list, **self.get_form_kwargs())
 
     def get_available_source_fields(self, plug):
@@ -146,6 +151,7 @@ class CreateGearMapView(FormView):
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
         fields = ConnectorEnum.get_fields(c)
+        controller_class = ConnectorEnum.get_controller(c)
         related = plug.connection.related_connection
         connection_data = {}
         for field in fields:
@@ -249,8 +255,18 @@ class CreateGearMapView(FormView):
                 return [MapField(f, controller=ConnectorEnum.YouTube) for f in fields]
             except:
                 return []
+        elif c == ConnectorEnum.SMS:
+            self.smsc.create_connection(related, plug)
+            fields = self.smsc.get_target_fields()
+            return fields
+
         else:
-            return []
+            try:
+                controller = controller_class(**connection_data)
+                return controller.get_mapping_fields()
+            except Exception as e:
+                print(e)
+                return []
 
     def get_source_data_list(self, plug, connection):
         return StoredData.objects.filter(plug=plug, connection=connection).values('name').distinct()

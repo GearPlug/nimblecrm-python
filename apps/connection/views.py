@@ -13,14 +13,16 @@ from apps.connection.myviews.PostgreSQLViews import *
 from apps.connection.myviews.MSSQLViews import *
 from apps.connection.myviews.BitbucketViews import *
 from apps.connection.myviews.JiraViews import *
+from apps.connection.myviews.ZohoCRMViews import *
 from apps.connection.myviews.GetResponseViews import *
 from apps.connection.myviews.SurveyMonkeyViews import *
+from apps.connection.myviews.SMSViews import *
 from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
     GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection, GoogleCalendarConnection, \
-    YouTubeConnection
+    YouTubeConnection, SMSConnection
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
 from slacker import Slacker
