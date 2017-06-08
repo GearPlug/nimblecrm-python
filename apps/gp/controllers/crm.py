@@ -199,16 +199,7 @@ class ZohoCRMController(BaseController):
 
     def get_target_fields(self, **kwargs):
         module_id = self._plug.plug_specification.all()[0].value
-        list=self.get_fields(module_id)
-        fields=[]
-        for val in list:
-            if (type(val)==dict):
-                fields.append(val)
-            else:
-                for i in val:
-                    print(type(i))
-                    print(i)
-        print(fields)
+        fields=self.get_fields(module_id)
         return fields
 
     def get_fields(self, module_id):
@@ -224,7 +215,13 @@ class ZohoCRMController(BaseController):
         values = json.loads(values)
         if (module_name in values):
             values = values[module_name]['section']
-            return values
+            fields = []
+            for val in values:
+                if (type(val['FL']) == dict):
+                    fields.append(val['FL'])
+                else:
+                    for i in val['FL']:fields.append(i)
+            return fields
         else:
             print(response)
             print("no_values")
