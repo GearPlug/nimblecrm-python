@@ -6,9 +6,8 @@ from apps.user.models import User
 connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
                'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack',
                'connection_bitbucket', 'connection_jira', 'connection_googleforms', 'connection_googlecontacts',
-               'connection_getresponse', 'connection_twitter', 'connection_surveymonkey', 'connection_getresponse',
-               'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram',
-               'connection_zohocrm', 'connection_wunderlist']
+               'connection_getresponse', 'connection_getresponse', 'connection_twitter', 'connection_surveymonkey',
+               'connection_zohocrm', 'connection_wunderlist', 'connection_sms']
 
 
 class Category(models.Model):
@@ -301,6 +300,7 @@ class WunderListConnection(models.Model):
     def __str__(self):
         return self.name
 
+
 class ZohoCRMConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_zohocrm')
     token = models.CharField('token', max_length=300)
@@ -308,6 +308,20 @@ class ZohoCRMConnection(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class SMSConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_sms')
+    name = models.CharField('name', max_length=200)
+    connection_user = models.CharField('user', max_length=60)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
+
+
+class SMTPConnection():
+    pass
 
 
 class Plug(models.Model):
