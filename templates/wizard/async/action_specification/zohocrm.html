@@ -1,0 +1,26 @@
+{% extends 'wizard/async/action_specification.html' %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            var load_page = true;
+            console.log("Hola")
+            $(document).on('click', 'select[data-name=feed]', function () {
+                var select = $(this);
+                if (load_page == true) {
+                    var url = "{% url 'wizard:async_zohorcrm_modules' %}";
+                    $.ajax({
+                        method: "POST",
+                        url: url,
+                        data: {connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %}}
+                    }).done(function (response) {
+                        $(select).html(response);
+                        load_page = false;
+                    });
+                }
+            });
+
+        })
+    </script>
+{% endblock %}
