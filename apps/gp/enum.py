@@ -31,6 +31,8 @@ class ConnectorEnum(Enum):
     Vimeo = 25, 'social'
     ZohoCRM = 26, 'crm'
     WunderList = 27, 'ofimatic'
+    SMS = 28, 'im'
+    SMTP = 29, 'email'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)

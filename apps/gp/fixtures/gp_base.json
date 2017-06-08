@@ -324,6 +324,30 @@
     }
   },
   {
+    "model": "gp.connector",
+    "pk": 28,
+    "fields": {
+      "name": "SMS",
+      "is_active": true,
+      "css_class": "",
+      "is_source": false,
+      "is_target": true,
+      "icon": "connector/icon/sms.png"
+    }
+  },
+  {
+    "model": "gp.connector",
+    "pk": 29,
+    "fields": {
+      "name": "SMTP",
+      "is_active": true,
+      "css_class": "",
+      "is_source": false,
+      "is_target": true,
+      "icon": "connector/icon/smtp.png"
+    }
+  },
+  {
     "model": "gp.action",
     "pk": 1,
     "fields": {
@@ -584,6 +608,28 @@
       "action_type": "source",
       "name": "read a survey",
       "description": "read a survey on surveymonkey",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 25,
+    "fields": {
+      "connector": 24,
+      "action_type": "source",
+      "name": "push notification",
+      "description": "push notification",
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.action",
+    "pk": 26,
+    "fields": {
+      "connector": 24,
+      "action_type": "target",
+      "name": "upload video",
+      "description": "upload video",
       "is_active": true
     }
   },
@@ -897,6 +943,22 @@
     "fields": {
       "action": 24,
       "name": "survey"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 40,
+    "fields": {
+      "action": 25,
+      "name": "channel"
+    }
+  },
+  {
+    "model": "gp.actionspecification",
+    "pk": 41,
+    "fields": {
+      "action": 26,
+      "name": "channel"
     }
   }
 ]

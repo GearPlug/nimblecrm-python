@@ -9,6 +9,7 @@ from apps.gp.models import StoredData
 from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 
+
 class CustomSugarObject(sugarcrm.SugarObject):
     module = "CustomObject"
 
@@ -132,6 +133,7 @@ class SugarCRMController(BaseController):
     def get_target_fields(self, module, **kwargs):
         return self.get_module_fields(module, **kwargs)
 
+
 class ZohoCRMController(BaseController):
     _token = None
 
@@ -155,10 +157,10 @@ class ZohoCRMController(BaseController):
                 print("Error getting zohocrm token")
                 print(e)
         if self._token is not None:
-            response= self.get_modules()['_content'].decode()
-            response=json.loads(response)
+            response = self.get_modules()['_content'].decode()
+            response = json.loads(response)
             if "result" in response["response"]:
-               return self._token is not None
+                return self._token is not None
 
     def get_modules(self):
         params = {'authtoken': self._token, 'scope': 'crmapi'}
@@ -167,11 +169,12 @@ class ZohoCRMController(BaseController):
 
     def download_to_stored_data(self, connection_object, plug, ):
         module_id = self._plug.plug_specification.all()[0].value
-        module_name=self.get_module_name(module_id)
-        data=self.get_feeds(module_name)
-        new_data=[]
+        module_name = self.get_module_name(module_id)
+        data = self.get_feeds(module_name)
+        new_data = []
         for item in data:
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item[item['id']])
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                          object_id=item[item['id']])
             if not q.exists():
                 for column in item:
                     new_data.append(StoredData(name=column, value=item[column], object_id=item[item['id']],
@@ -205,7 +208,7 @@ class ZohoCRMController(BaseController):
     def get_fields(self, module_id):
         modules = self.get_modules()['_content'].decode()
         modules = json.loads(modules)['response']['result']['row']
-        module_name=self.get_module_name(module_id)
+        module_name = self.get_module_name(module_id)
         authtoken = self._token
         params = {'authtoken': authtoken, 'scope': 'crmapi'}
         url = "https://crm.zoho.com/crm/private/json/" + module_name + "/getFields"
@@ -226,7 +229,7 @@ class ZohoCRMController(BaseController):
             print(response)
             print("no_values")
 
-    def get_lists(self, result,name):
+    def get_lists(self, result, name):
         modules = []
         if (type(result) == list):
             for v in result:
@@ -235,27 +238,28 @@ class ZohoCRMController(BaseController):
             modules.append(self.create_dictionary(result, name))
         return modules
 
-    def create_dictionary(self, my_dictionary,name):
+    def create_dictionary(self, my_dictionary, name):
         modules = {}
-        if name=="Tasks":
-            module_n="Activity"
-        elif name=="PriceBooks":
-            module_n="Book"
+        if name == "Tasks":
+            module_n = "Activity"
+        elif name == "PriceBooks":
+            module_n = "Book"
         else:
-            module_n=name
+            module_n = name
             module_n = module_n[: - 1]
         modules['name'] = name
-        modules['id']=module_n.upper()+'ID'
+        modules['id'] = module_n.upper() + 'ID'
         for d in my_dictionary['FL']:
-            if ('content' in d): modules[d['val']] = d['content']
+            if ('content' in d):
+                modules[d['val']] = d['content']
             else:
                 for v2 in d:
                     if (v2 != 'val'): self.get_lists(d[v2], v2)
         return modules
 
     def get_feeds(self, module_name):
-        max_result=30
-        params = {'toIndex':30, 'authtoken': self._token, 'scope': 'crmapi', 'sortOrderString':'desc'}
+        max_result = 30
+        params = {'toIndex': 30, 'authtoken': self._token, 'scope': 'crmapi', 'sortOrderString': 'desc'}
         url = "https://crm.zoho.com/crm/private/json/" + module_name + "/getMyRecords"
         response = requests.get(url, params).__dict__['_content'].decode()
         response = json.loads(response)
