@@ -4,7 +4,8 @@ from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionVi
     ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
     PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent, \
     BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList, \
-    AJAXGetSurveyListView, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, GoogleCalendarWebhookEvent,AJAXGetSurveyListView, SurveyMonkeyWebhookEvent
+    AJAXGetSurveyListView, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
+    GoogleCalendarWebhookEvent,AJAXGetSurveyListView, SurveyMonkeyWebhookEvent, ZohoCRMModuleList
 
 
 urlpatterns = [
@@ -63,4 +64,7 @@ urlpatterns = [
     # GoogleCalendar
     url(r"async/google/calendars/list/", GoogleCalendarsList.as_view(), name='async_google_calendars'),
     url(r'google/calendar/webhook/event/', GoogleCalendarWebhookEvent.as_view(), name='googlecalendar_webhook_event'),
+
+    #ZohoCRM
+    url(r"async/zohocrm/module/list/", ZohoCRMModuleList.as_view(), name='async_zohorcrm_modules'),
 ]

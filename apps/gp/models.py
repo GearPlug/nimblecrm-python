@@ -7,7 +7,8 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
                'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack',
                'connection_bitbucket', 'connection_jira', 'connection_googleforms', 'connection_googlecontacts',
                'connection_getresponse', 'connection_twitter', 'connection_surveymonkey', 'connection_getresponse',
-               'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram']
+               'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram',
+               'connection_zohocrm', 'connection_wunderlist']
 
 
 class Category(models.Model):
@@ -292,11 +293,21 @@ class GoogleContactsConnection(models.Model):
         return self.name
 
 
-class WunderListConnection():
-    pass
+class WunderListConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_wunderlist')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
 
-class ZohoCRMConnection():
-    pass
+    def __str__(self):
+        return self.name
+
+class ZohoCRMConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_zohocrm')
+    token = models.CharField('token', max_length=300)
+    name = models.CharField('name', max_length=200)
+
+    def __str__(self):
+        return self.name
 
 
 class Plug(models.Model):

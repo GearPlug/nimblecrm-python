@@ -13,6 +13,7 @@ from apps.connection.myviews.PostgreSQLViews import *
 from apps.connection.myviews.MSSQLViews import *
 from apps.connection.myviews.BitbucketViews import *
 from apps.connection.myviews.JiraViews import *
+from apps.connection.myviews.ZohoCRMViews import *
 from apps.connection.myviews.GetResponseViews import *
 from apps.connection.myviews.SurveyMonkeyViews import *
 from apps.connection.myviews.MailChimpViews import *

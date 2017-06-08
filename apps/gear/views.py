@@ -128,6 +128,8 @@ class CreateGearMapView(FormView):
 
     def get_form(self, *args, **kwargs):
         form_class = self.get_form_class()
+        print("\n----------------------------\n")
+        print(self.form_field_list)
         return form_class(extra=self.form_field_list, **self.get_form_kwargs())
 
     def get_available_source_fields(self, plug):
@@ -145,6 +147,7 @@ class CreateGearMapView(FormView):
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
         fields = ConnectorEnum.get_fields(c)
+        controller_class = ConnectorEnum.get_controller(c)
         related = plug.connection.related_connection
         connection_data = {}
         for field in fields:
@@ -242,7 +245,12 @@ class CreateGearMapView(FormView):
             fields = self.twitterc.get_target_fields()
             return fields
         else:
-            return []
+            try:
+                controller = controller_class(**connection_data)
+                return controller.get_mapping_fields()
+            except Exception as e:
+                print(e)
+                return []
 
     def get_source_data_list(self, plug, connection):
         return StoredData.objects.filter(plug=plug, connection=connection).values('name').distinct()

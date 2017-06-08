@@ -12,7 +12,7 @@ from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
 from apps.gp.controllers.lead import GoogleFormsController, FacebookController, SurveyMonkeyController
-from apps.gp.controllers.crm import SugarCRMController
+from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
@@ -30,6 +30,7 @@ from paypalrestsdk import Sale
 from paypalrestsdk.notifications import WebhookEvent
 import re
 import paypalrestsdk
+import json
 from apps.connection.myviews.SurveyMonkeyViews import AJAXGetSurveyListView
 
 paypalrestsdk.configure({
@@ -79,9 +80,9 @@ class CreateGearView(LoginRequiredMixin, CreateView):
         return self.model.objects.filter(user=self.request.user).prefetch_related()
 
     def get_context_data(self, **kwargs):
-        print("111111")
+        #print("111111")
         context = super(CreateGearView, self).get_context_data(**kwargs)
-        print("222222")
+        #print("222222")
         return context
 
 
@@ -384,6 +385,29 @@ class SugarCRMModuleList(LoginRequiredMixin, TemplateView):
         context['object_list'] = module_list
         return super(SugarCRMModuleList, self).render_to_response(context)
 
+class ZohoCRMModuleList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = ZohoCRMController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            print("ping")
+            modules=controller.get_modules()['_content'].decode()
+            modules=json.loads(modules)['response']['result']['row']
+            module_list=[]
+            for m in modules:
+                if (m['pl']!="Feeds" and m['pl']!="Visits" and m['pl']!="Social" and m['pl']!="Documents"):
+                    values={'id': m['id'], 'name': m['pl']}
+                    module_list.append(values)
+        else:
+            module_list = []
+        module_list=tuple(module_list)
+        context['object_list'] = module_list
+        return super(ZohoCRMModuleList, self).render_to_response(context)
 
 class MailChimpListsList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
