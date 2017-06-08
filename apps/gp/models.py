@@ -7,7 +7,7 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
                'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack',
                'connection_bitbucket', 'connection_jira', 'connection_googleforms', 'connection_googlecontacts',
                'connection_getresponse', 'connection_twitter', 'connection_surveymonkey', 'connection_getresponse',
-               'connection_googlecalendar', 'connection_instagram', ] # 'connection_sms', 'connection_smtp',
+               'connection_googlecalendar', 'connection_instagram', 'connection_sms']  # 'connection_smtp',
 
 
 class Category(models.Model):
@@ -295,11 +295,20 @@ class GoogleContactsConnection(models.Model):
 class WunderListConnection():
     pass
 
+
 class ZohoCRMConnection():
     pass
 
-class SMSConnection():
-    pass
+
+class SMSConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_sms')
+    name = models.CharField('name', max_length=200)
+    connection_user = models.CharField('user', max_length=60)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
+
 
 class SMTPConnection():
     pass
