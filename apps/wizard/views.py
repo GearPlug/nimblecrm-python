@@ -44,101 +44,6 @@ gsc = GoogleSpreadSheetsController()
 gfc = GoogleFormsController()
 
 
-class ListGearView(LoginRequiredMixin, ListView):
-    model = Gear
-    template_name = 'wizard/gear_list.html'
-    login_url = '/account/login/'
-
-    def get_context_data(self, **kwargs):
-        context = super(ListGearView, self).get_context_data(**kwargs)
-        return context
-
-    def get_queryset(self):
-        queryset = self.model._default_manager.all()
-        return queryset.filter(user=self.request.user)
-
-
-class CreateGearView(LoginRequiredMixin, CreateView):
-    model = Gear
-    template_name = 'wizard/gear_create.html'
-    fields = ['name', ]
-    login_url = '/account/login/'
-
-    def get(self, request, *args, **kwargs):
-        request.session['gear_id'] = None
-        return super(CreateGearView, self).get(request, *args, **kwargs)
-
-    def get_success_url(self):
-        self.request.session['gear_id'] = self.object.id
-        return reverse('wizard:connector_list', kwargs={'type': 'source'})
-
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        return super(CreateGearView, self).form_valid(form)
-
-    def get_queryset(self):
-        return self.model.objects.filter(user=self.request.user).prefetch_related()
-
-    def get_context_data(self, **kwargs):
-        #print("111111")
-        context = super(CreateGearView, self).get_context_data(**kwargs)
-        #print("222222")
-        return context
-
-
-class UpdateGearView(LoginRequiredMixin, UpdateView):
-    model = Gear
-    template_name = 'wizard/gear_create.html'
-    fields = ['name', ]
-    login_url = '/account/login/'
-    success_url = reverse_lazy('wizard:connector_list', kwargs={'type': 'source'})
-
-    def get(self, request, *args, **kwargs):
-        request.session['gear_id'] = self.kwargs.get('pk', None)
-        return super(UpdateGearView, self).get(request, *args, **kwargs)
-
-
-class ListConnectorView(LoginRequiredMixin, ListView):
-    model = Connector
-    template_name = 'wizard/connector_list.html'
-    login_url = '/account/login/'
-
-    def get_queryset(self):
-        if self.kwargs['type'] == 'source':
-            kw = {'is_source': True}
-        elif self.kwargs['type'] == 'target':
-            kw = {'is_target': True}
-        return self.model.objects.filter(**kw)
-
-    def get_context_data(self, **kwargs):
-        context = super(ListConnectorView, self).get_context_data(**kwargs)
-        context['type'] = self.kwargs['type']
-        return context
-
-
-class ListConnectionView(LoginRequiredMixin, ListView):
-    model = Connection
-    template_name = 'wizard/connection_list.html'
-    login_url = '/account/login/'
-
-    def get_queryset(self):
-        return self.model.objects.filter(user=self.request.user,
-                                         connector_id=self.kwargs['connector_id']).prefetch_related()
-
-    def get_context_data(self, **kwargs):
-        context = super(ListConnectionView, self).get_context_data(**kwargs)
-        context['connector_id'] = self.kwargs['connector_id']
-        return context
-
-    def post(self, request, *args, **kwargs):
-        self.object_list = []
-        # context = self.get_context_data()
-        connection_id = request.POST.get('connection', None)
-        connector_type = kwargs['type']
-        request.session['%s_connection_id' % connector_type] = connection_id
-        return redirect(reverse('wizard:plug_create', kwargs={'plug_type': connector_type}))
-
-
 class CreateConnectionView(LoginRequiredMixin, CreateConnectionView):
     login_url = '/account/login/'
     fields = []
@@ -385,6 +290,7 @@ class SugarCRMModuleList(LoginRequiredMixin, TemplateView):
         context['object_list'] = module_list
         return super(SugarCRMModuleList, self).render_to_response(context)
 
+
 class ZohoCRMModuleList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
 
@@ -396,18 +302,19 @@ class ZohoCRMModuleList(LoginRequiredMixin, TemplateView):
         ping = controller.create_connection(connection.related_connection)
         if ping:
             print("ping")
-            modules=controller.get_modules()['_content'].decode()
-            modules=json.loads(modules)['response']['result']['row']
-            module_list=[]
+            modules = controller.get_modules()['_content'].decode()
+            modules = json.loads(modules)['response']['result']['row']
+            module_list = []
             for m in modules:
-                if (m['pl']!="Feeds" and m['pl']!="Visits" and m['pl']!="Social" and m['pl']!="Documents"):
-                    values={'id': m['id'], 'name': m['pl']}
+                if (m['pl'] != "Feeds" and m['pl'] != "Visits" and m['pl'] != "Social" and m['pl'] != "Documents"):
+                    values = {'id': m['id'], 'name': m['pl']}
                     module_list.append(values)
         else:
             module_list = []
-        module_list=tuple(module_list)
+        module_list = tuple(module_list)
         context['object_list'] = module_list
         return super(ZohoCRMModuleList, self).render_to_response(context)
+
 
 class MailChimpListsList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
@@ -658,14 +565,6 @@ class TestPlugView(TemplateView):
                 print(data_list)
         context = self.get_context_data()
         return super(TestPlugView, self).render_to_response(context)
-
-
-class CreateGearMapView(LoginRequiredMixin, CreateGearMapView):
-    login_url = '/account/login/'
-    template_name = 'gear/map/create.html'
-
-    def get_success_url(self, *args, **kwargs):
-        return super(CreateGearMapView, self).get_success_url(*args, **kwargs)
 
 
 class BitbucketWebhookEvent(TemplateView):

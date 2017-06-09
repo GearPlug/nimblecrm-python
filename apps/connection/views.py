@@ -1,6 +1,7 @@
 import tweepy
 from instagram.client import InstagramAPI
 from django.conf import settings
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, View
 from django.core.urlresolvers import reverse
@@ -55,16 +56,59 @@ GOOGLE_YOUTUBE_AUTH_URL = 'https://m.grplug.com/connection/google_youtube_auth/'
 GOOGLE_YOUTUBE_AUTH_REDIRECT_URL = 'connection:google_youtube_auth_success_create_connection'
 
 
-class ListConnectionView(ListView):
+class ListConnectorView(LoginRequiredMixin, ListView):
+    """
+    Lists all connectors that can be used as the type requested.
+
+    - Called after creating a gear.
+    - Called after testing the source plug.
+
+    """
+    model = Connector
+    template_name = 'wizard/connector_list.html'
+    login_url = '/account/login/'
+
+    def get_queryset(self):
+        if self.kwargs['type'].lower() == 'source':
+            kw = {'is_source': True}
+        elif self.kwargs['type'].lower() == 'target':
+            kw = {'is_target': True}
+        else:
+            raise (Exception("Not an available type. must be either Source or Target."))
+        return self.model.objects.filter(**kw)
+
+    def get_context_data(self, **kwargs):
+        context = super(ListConnectorView, self).get_context_data(**kwargs)
+        context['type'] = self.kwargs['type']
+        return context
+
+
+class ListConnectionView(LoginRequiredMixin, ListView):
+    """
+    Lists all connections related to the authenticated user for a specific connector.
+
+    - Called after the user selects a connector to use/create a connection.
+
+    """
     model = Connection
-    template_name = '%s/list.html' % app_name
+    template_name = 'wizard/connection_list.html'
+    login_url = '/account/login/'
+
+    def get_queryset(self):
+        return self.model.objects.filter(user=self.request.user,
+                                         connector_id=self.kwargs['connector_id']).prefetch_related()
 
     def get_context_data(self, **kwargs):
         context = super(ListConnectionView, self).get_context_data(**kwargs)
+        context['connector_id'] = self.kwargs['connector_id']
         return context
 
-    def get_queryset(self):
-        return self.model.objects.filter(user=self.request.user).prefetch_related()
+    def post(self, request, *args, **kwargs):
+        self.object_list = []
+        connection_id = request.POST.get('connection', None)
+        connector_type = kwargs['type']
+        request.session['%s_connection_id' % connector_type] = connection_id
+        return redirect(reverse('wizard:plug_create', kwargs={'plug_type': connector_type}))
 
 
 class CreateConnectionView(CreateView):
@@ -74,10 +118,6 @@ class CreateConnectionView(CreateView):
     success_url = reverse_lazy('%s:list' % app_name)
     fbc = FacebookController()
     mcc = GoogleSpreadSheetsController()
-
-    def form_invalid(self, form, *args, **kwargs):
-        print("invalid")
-        return super(CreateConnectionView, self).form_invalid(form, *args, **kwargs)
 
     def form_valid(self, form, *args, **kwargs):
         print('valid')
@@ -179,11 +219,6 @@ class DeleteConnectionView(DeleteView):
     model = Connection
     template_name = '%s/delete.html' % app_name
     success_url = reverse_lazy('%s:list' % app_name)
-
-
-class ListConnectorView(ListView):
-    model = Connector
-    template_name = '%s/list_connector.html' % app_name
 
 
 class GoogleAuthView(View):

@@ -1,6 +1,8 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
+from apps.gp.enum import ConnectorEnum
+from apps.gp.map import MapField
 
 from mailchimp3 import MailChimp
 from getresponse.client import GetResponse
@@ -239,3 +241,9 @@ class MailChimpController(BaseController):
         return [dict(m, hash_id=l['id']) for m in members for l in _list['members'] if
                 m['email_address'] == l['email_address']]
 
+    def get_mapping_fields(self, **kwargs):
+        list_id = self._plug.plug_specification.all()[0].value
+        mfl = [MapField(f, controller=ConnectorEnum.MailChimp) for f in self.get_list_merge_fields(list_id)]
+        mfl.append(MapField({'tag': 'email_address', 'name': 'Email', 'required': True, 'type': 'email',
+                             'options': {'size': 100}}, controller=ConnectorEnum.MailChimp))
+        return mfl

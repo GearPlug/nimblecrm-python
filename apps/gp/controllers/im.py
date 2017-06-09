@@ -110,6 +110,9 @@ class SlackController(BaseController):
                     new_message.save()
         return False
 
+    def get_mapping_fields(self, **kwargs):
+        return self.get_target_fields()
+
 
 class SMSController(BaseController):
     client = None

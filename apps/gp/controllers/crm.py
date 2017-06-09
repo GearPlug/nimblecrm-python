@@ -1,13 +1,13 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
+from apps.gp.enum import ConnectorEnum
+from apps.gp.map import MapField
+from apps.gp.models import StoredData
 import requests
 import sugarcrm
 import json
 import string
-from apps.gp.models import StoredData
-from apps.gp.map import MapField
-from apps.gp.enum import ConnectorEnum
 
 
 class CustomSugarObject(sugarcrm.SugarObject):
@@ -132,6 +132,10 @@ class SugarCRMController(BaseController):
 
     def get_target_fields(self, module, **kwargs):
         return self.get_module_fields(module, **kwargs)
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_module_fields(self._plug.plug_specification.all()[0].value, get_structure=True)
+        return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields]
 
 
 class ZohoCRMController(BaseController):

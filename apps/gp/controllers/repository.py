@@ -205,3 +205,7 @@ class BitbucketController(BaseController):
 
     def get_target_fields(self):
         return self.get_meta()
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_meta()
+        return [MapField(f, controller=ConnectorEnum.Bitbucket) for f in fields]

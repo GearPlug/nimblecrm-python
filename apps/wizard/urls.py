@@ -1,28 +1,45 @@
 from django.conf.urls import url
-from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionView, TestPlugView, \
-    ActionSpecificationsView, CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, MSSQLFieldList, \
-    ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
+from apps.wizard.views import CreatePlugView, CreateConnectionView, TestPlugView, \
+    ActionSpecificationsView, CreateGearMapView, ActionListView, MSSQLFieldList, \
+    GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList,\
     PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent, \
     BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList, \
     AJAXGetSurveyListView, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
     GoogleCalendarWebhookEvent, AJAXGetSurveyListView, SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
     YouTubeChannelsList
 
+from apps.connection.views import ListConnectionView, ListConnectorView
+from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, DeleteGearView
+
 urlpatterns = [
+
+    # WIZARD EN ORDEN
+
+    # GEAR LIST
+    url(r'^gear/list/$', ListGearView.as_view(), name='gear_list'),
+    # GEAR CREATE OR UPDATE
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
     url(r'^gear/update/(?P<pk>\d+)/$', UpdateGearView.as_view(), name='gear_update'),
-    url(r'^gear/list/$', ListGearView.as_view(), name='gear_list'),
-    url(r'gear/map/(?P<gear_id>\d+)/$', CreateGearMapView.as_view(), name='create_gear_map'),
+    # CONNECTOR LIST
     url(r'^connector/list/(?P<type>(source|target)+)/$', ListConnectorView.as_view(), name='connector_list'),
-    url(r'connection/create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create_connection'),
+    # CONNECTION LIST
     url(r'^connection/list/(?P<connector_id>\d+)/(?P<type>(source|target)+)/$', ListConnectionView.as_view(),
         name='connection_list'),
+    # CONNECTION CREATE
+    url(r'^connection/create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create_connection'),
+    # PLUG CREATE
     url(r'^plug/create/(?P<plug_type>(source|target)+)/$', CreatePlugView.as_view(), name='plug_create'),
-    url('^plug/test/(?P<pk>\d+)/$', TestPlugView.as_view(), name='plug_test'),
-    url(r'^plug/action/list/$', ActionListView.as_view(), name='action_list'),
+    # PLUG ACTION LIST (AJAX)
     url(r'^plug/action/(?P<pk>\d+)/specifications/$', ActionSpecificationsView.as_view(), name='action_specifications'),
-    # PLUG CREATION ASYNC
+    # PLUG ACTION SPECIFICATION LIST (AJAX)
+    url(r'^plug/action/list/$', ActionListView.as_view(), name='action_list'),
+    # PLUG TEST
+    url('^plug/test/(?P<pk>\d+)/$', TestPlugView.as_view(), name='plug_test'),
+    # GEAR MAP
+    url(r'^gear/map/(?P<gear_id>\d+)/$', CreateGearMapView.as_view(), name='create_gear_map'),
 
+
+    # PLUG CREATION SPECIFICS FOR CONNECTOR
     # GoogleSheets
     url(r"async/google/drive/sheets/list/", GoogleDriveSheetList.as_view(), name='async_google_drive_sheets'),
     url(r"async/google/sheet/worksheets/", GoogleSheetsWorksheetList.as_view(), name='async_google_sheet_worksheets'),
