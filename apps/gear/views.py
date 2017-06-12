@@ -129,8 +129,6 @@ class CreateGearMapView(FormView):
 
     def get_form(self, *args, **kwargs):
         form_class = self.get_form_class()
-        print("\n----------------------------\n")
-        print(self.form_field_list)
         return form_class(extra=self.form_field_list, **self.get_form_kwargs())
 
     def get_available_source_fields(self, plug):
@@ -251,7 +249,7 @@ class CreateGearMapView(FormView):
             return fields
         else:
             try:
-                controller = controller_class(**connection_data)
+                controller = controller_class(related, plug)
                 return controller.get_mapping_fields()
             except Exception as e:
                 print(e)
