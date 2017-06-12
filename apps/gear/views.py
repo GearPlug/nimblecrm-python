@@ -7,6 +7,7 @@ from apps.gear.forms import MapForm
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
 from apps.gp.controllers.lead import GoogleFormsController, FacebookController
 from apps.gp.controllers.crm import SugarCRMController
+from apps.gp.controllers.email import SMTPController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
@@ -88,6 +89,7 @@ class CreateGearMapView(FormView):
     gcc = GoogleCalendarController()
     youtubec = YouTubeController()
     smsc = SMSController()
+    smtpc = SMTPController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -259,7 +261,10 @@ class CreateGearMapView(FormView):
             self.smsc.create_connection(related, plug)
             fields = self.smsc.get_target_fields()
             return fields
-
+        elif c == ConnectorEnum.SMTP:
+            self.smtpc.create_connection(related, plug)
+            fields = self.smtpc.get_target_fields()
+            return fields
         else:
             try:
                 controller = controller_class(**connection_data)
