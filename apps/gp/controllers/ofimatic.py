@@ -5,10 +5,6 @@ from apps.gp.models import StoredData, GooglePushWebhook
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 import httplib2
-import json
-import requests
-import uuid
-from apiclient import discovery
 from oauth2client import client as GoogleClient
 from dateutil.parser import parse
 import pytz
