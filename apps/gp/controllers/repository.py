@@ -2,6 +2,8 @@ from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.models import StoredData
+from apps.gp.enum import ConnectorEnum
+from apps.gp.map import MapField
 
 import requests
 from base64 import b64encode
