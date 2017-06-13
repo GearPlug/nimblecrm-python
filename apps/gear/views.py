@@ -257,122 +257,13 @@ class CreateGearMapView(FormView):
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
-        fields = ConnectorEnum.get_fields(c)
         controller_class = ConnectorEnum.get_controller(c)
-        related = plug.connection.related_connection
-        connection_data = {}
-        for field in fields:
-            connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
-        if c == ConnectorEnum.MySQL:
-            mysqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
-                                     connection_user=connection_data['connection_user'],
-                                     connection_password=connection_data['connection_password'],
-                                     database=connection_data['database'], table=connection_data['table'])
-            form_data = mysqlc.describe_table()
-            return [item['name'] for item in form_data if item['is_primary'] is not True]
-        elif c == ConnectorEnum.PostgreSQL:
-            postgresqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
-                                          connection_user=connection_data['connection_user'],
-                                          connection_password=connection_data['connection_password'],
-                                          database=connection_data['database'], table=connection_data['table'])
-            form_data = postgresqlc.describe_table()
-            primary_keys = postgresqlc.get_primary_keys()
-            return [item['name'] for item in form_data if item['name'] not in primary_keys]
-        elif c == ConnectorEnum.MSSQL:
-            mssqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
-                                     connection_user=connection_data['connection_user'],
-                                     connection_password=connection_data['connection_password'],
-                                     database=connection_data['database'], table=connection_data['table'])
-            form_data = mssqlc.describe_table()
-            primary_keys = mssqlc.get_primary_keys()
-            return [item['name'] for item in form_data if item['name'] not in primary_keys]
-        elif c == ConnectorEnum.JIRA:
-            self.jirac.create_connection(related, plug)
-            try:
-                fields = self.jirac.get_meta()
-                return [MapField(f, controller=ConnectorEnum.JIRA) for f in fields]
-            except:
-                return []
-        elif c == ConnectorEnum.SugarCRM:
-            ping = self.scrmc.create_connection(url=connection_data['url'],
-                                                connection_user=connection_data['connection_user'],
-                                                connection_password=connection_data['connection_password'])
-            try:
-                fields = self.scrmc.get_module_fields(plug.plug_specification.all()[0].value, get_structure=True)
-                return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields]
-            except:
-                return []
-        elif c == ConnectorEnum.MailChimp:
-            list_id = plug.plug_specification.all()[0].value
-            try:
-                ping = mcc.create_connection(user=connection_data['connection_user'],
-                                             api_key=connection_data['api_key'])
-                fields = mcc.get_list_merge_fields(list_id)
-                mfl = [MapField(f, controller=ConnectorEnum.MailChimp) for f in fields]
-                mfl.append(MapField({'tag': 'email_address', 'name': 'Email', 'required': True, 'type': 'email',
-                                     'options': {'size': 100}}, controller=ConnectorEnum.MailChimp))
-                return mfl
-            except:
-                return []
-        elif c == ConnectorEnum.GoogleSpreadSheets:
-            self.gsc.create_connection(related, plug)
-            values = self.gsc.get_worksheet_first_row()
-            return values
-        elif c == ConnectorEnum.Slack:
-            self.slack_controller.create_connection(related)
-            fields = self.slack_controller.get_target_fields()
-            return fields
-        elif c == ConnectorEnum.Bitbucket:
-            self.bitbucketc.create_connection(related, plug)
-            try:
-                fields = self.bitbucketc.get_meta()
-                return [MapField(f, controller=ConnectorEnum.Bitbucket) for f in fields]
-            except:
-                return []
-        elif c == ConnectorEnum.GoogleContacts:
-            self.google_contacts_controller.create_connection(related, plug)
-            values = self.google_contacts_controller.get_mapping_fields()
-            return values
-        elif c == ConnectorEnum.GetResponse:
-            self.getresponsec.create_connection(related, plug)
-            try:
-                if plug.plug_specification.all()[0].action_specification.action.name == 'Unsubscribe':
-                    fields = self.getresponsec.get_unsubscribe_target_fields()
-                else:
-                    fields = self.getresponsec.get_meta()
-                return [MapField(f, controller=ConnectorEnum.GetResponse) for f in fields]
-            except:
-                return []
-        elif c == ConnectorEnum.GoogleCalendar:
-            self.gcc.create_connection(related, plug)
-            try:
-                fields = self.gcc.get_meta()
-                return [MapField(f, controller=ConnectorEnum.GoogleCalendar) for f in fields]
-            except:
-                return []
-        elif c == ConnectorEnum.Twitter:
-            self.twitterc.create_connection(related, plug)
-            fields = self.twitterc.get_target_fields()
-            return fields
-        elif c == ConnectorEnum.YouTube:
-            self.youtubec.create_connection(related, plug)
-            try:
-                fields = self.youtubec.get_target_fields()
-                return [MapField(f, controller=ConnectorEnum.YouTube) for f in fields]
-            except:
-                return []
-        elif c == ConnectorEnum.SMS:
-            self.smsc.create_connection(related, plug)
-            fields = self.smsc.get_target_fields()
-            return fields
-
-        else:
-            try:
-                controller = controller_class(**connection_data)
-                return controller.get_mapping_fields()
-            except Exception as e:
-                print(e)
-                return []
+        try:
+            controller = controller_class(plug.connection.related_connection, plug)
+            return controller.get_mapping_fields()
+        except Exception as e:
+            print(e)
+            return []
 
     def get_source_data_list(self, plug, connection):
         return StoredData.objects.filter(plug=plug, connection=connection).values('name').distinct()

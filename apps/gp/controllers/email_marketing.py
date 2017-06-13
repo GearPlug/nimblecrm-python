@@ -133,6 +133,13 @@ class GetResponseController(BaseController):
 
         }]
 
+    def get_mapping_fields(self, **kwargs):
+        if self._plug.plug_specification.all()[0].action_specification.action.name == 'Unsubscribe':
+            fields = self.getresponsec.get_unsubscribe_target_fields()
+        else:
+            fields = self.getresponsec.get_meta()
+        return [MapField(f, controller=ConnectorEnum.GetResponse) for f in fields]
+
 
 class MailChimpController(BaseController):
     """

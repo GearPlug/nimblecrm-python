@@ -159,3 +159,7 @@ class SMSController(BaseController):
             extra = {'controller': 'sms'}
             return
         raise ControllerError("Incomplete.")
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return fields

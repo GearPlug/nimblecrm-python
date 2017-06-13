@@ -4,6 +4,8 @@ from apps.gp.controllers.utils import get_dict_with_source_data
 from django.conf import settings
 from apps.gp.models import StoredData
 from instagram.client import InstagramAPI
+from apps.gp.enum import ConnectorEnum
+from apps.gp.map import MapField
 from apiclient import discovery, errors, http
 from oauth2client import client as GoogleClient
 from http import client as httplib
@@ -91,6 +93,10 @@ class TwitterController(BaseController):
             'required': False,
             'type': 'text',
         }]
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return fields
 
 
 class InstagramController(BaseController):
@@ -413,3 +419,7 @@ class YouTubeController(BaseController):
         }
         categories = self._client.videoCategories().list(**params).execute()
         return categories['items']
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.YouTube) for f in fields]
