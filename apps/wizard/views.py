@@ -44,30 +44,6 @@ gsc = GoogleSpreadSheetsController()
 gfc = GoogleFormsController()
 
 
-class CreateConnectionView(LoginRequiredMixin, CreateConnectionView):
-    login_url = '/account/login/'
-    fields = []
-
-    def form_valid(self, form, *args, **kwargs):
-        if self.request.is_ajax():
-            if self.kwargs['connector_id'] is not None:
-                c = Connection.objects.create(user=self.request.user, connector_id=self.kwargs['connector_id'])
-                form.instance.connection = c
-                if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Facebook:
-                    fbc = FacebookController()
-                    token = self.request.POST.get('token', '')
-                    long_user_access_token = fbc.extend_token(token)
-                    form.instance.token = long_user_access_token
-            self.object = form.save()
-            self.request.session['auto_select_connection_id'] = c.id
-            return JsonResponse({'data': self.object.id is not None})
-        return super(CreateConnectionView, self).form_valid(form, *args, *kwargs)
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(CreateConnectionView, self).get_context_data(*args, **kwargs)
-        return context
-
-
 class CreatePlugView(LoginRequiredMixin, CreateView):
     model = Plug
     fields = ['connection', ]

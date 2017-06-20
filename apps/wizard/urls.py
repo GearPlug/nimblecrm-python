@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from apps.wizard.views import CreatePlugView, CreateConnectionView, TestPlugView, \
+from apps.wizard.views import CreatePlugView, TestPlugView, \
     ActionSpecificationsView, CreateGearMapView, ActionListView, MSSQLFieldList, \
     GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList,\
     PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent, \
@@ -8,7 +8,7 @@ from apps.wizard.views import CreatePlugView, CreateConnectionView, TestPlugView
     GoogleCalendarWebhookEvent, AJAXGetSurveyListView, SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
     YouTubeChannelsList
 
-from apps.connection.views import ListConnectionView, ListConnectorView
+from apps.connection.views import ListConnectionView, ListConnectorView, CreateConnectionView
 from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, DeleteGearView
 
 urlpatterns = [
@@ -37,7 +37,6 @@ urlpatterns = [
     url('^plug/test/(?P<pk>\d+)/$', TestPlugView.as_view(), name='plug_test'),
     # GEAR MAP
     url(r'^gear/map/(?P<gear_id>\d+)/$', CreateGearMapView.as_view(), name='create_gear_map'),
-
 
     # PLUG CREATION SPECIFICS FOR CONNECTOR
     # GoogleSheets

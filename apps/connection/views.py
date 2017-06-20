@@ -31,7 +31,7 @@ import json
 import urllib
 import requests
 
-GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
+GOOGLE_DRIVE_SCOPE = ''
 GOOGLE_AUTH_URL = 'http://localhost:8000/connection/google_auth/'
 GOOGLE_AUTH_REDIRECT_URL = 'connection:google_auth_success_create_connection',
 
@@ -111,84 +111,86 @@ class ListConnectionView(LoginRequiredMixin, ListView):
         return redirect(reverse('wizard:plug_create', kwargs={'plug_type': connector_type}))
 
 
-class CreateConnectionView(CreateView):
+class CreateConnectionView(LoginRequiredMixin, CreateView):
+    """
+    TODO
+    """
     model = Connection
+    login_url = '/account/login/'
     fields = []
     template_name = '%s/create.html' % app_name
     success_url = reverse_lazy('%s:list' % app_name)
-    fbc = FacebookController()
-    mcc = GoogleSpreadSheetsController()
 
     def form_valid(self, form, *args, **kwargs):
-        print('valid')
+        connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
         if self.kwargs['connector_id'] is not None:
             c = Connection.objects.create(user=self.request.user, connector_id=self.kwargs['connector_id'])
             form.instance.connection = c
-            if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Facebook:
-                token = self.request.POST.get('token', '')
-                long_user_access_token = self.fbc.extend_token(token)
-                form.instance.token = long_user_access_token
-            elif ConnectorEnum.get_connector(
-                    self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets or ConnectorEnum.get_connector(
-                self.kwargs['connector_id']) == ConnectorEnum.GoogleContacts:
+            if connector == ConnectorEnum.Facebook:  # Extender token de facebook antes de guardar.
+                facebook_controller = FacebookController()
+                form.instance.token = facebook_controller.extend_token(self.request.POST.get('token', ''))
+            elif connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleContacts,
+                               ConnectorEnum.GoogleForms, ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube]:
+                # Guardar credenciales de google en el formulario. (deben venir en la sessión
                 form.instance.credentials_json = self.request.session['google_credentials']
-            elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleForms:
-                form.instance.credentials_json = self.request.session['google_credentials']
-            elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleCalendar:
-                form.instance.credentials_json = self.request.session['google_credentials']
-            elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.YouTube:
-                form.instance.credentials_json = self.request.session['google_credentials']
-            return super(CreateConnectionView, self).form_valid(form, *args, **kwargs)
+            self.object = form.save()
+            self.request.session['auto_select_connection_id'] = c.id
+        if self.request.is_ajax():  # Si es ajax devolver True si se guarda en base de datos el objeto.
+            return JsonResponse({'data': self.object.id is not None})
+        return super(CreateConnectionView, self).form_valid(form, *args, **kwargs)
 
     def get(self, *args, **kwargs):
+        # El model y los fields varían dependiendo de la conexion.
         if self.kwargs['connector_id'] is not None:
-            self.model, self.fields = ConnectorEnum.get_connector_data(self.kwargs['connector_id'])
+            connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
+            self.model, self.fields = ConnectorEnum.get_connector_data(connector)
             name = 'ajax_create' if self.request.is_ajax() else 'create'
-            self.template_name = '%s/%s/%s.html' % (
-                app_name, ConnectorEnum.get_connector(self.kwargs['connector_id']).name.lower(), name)
+            self.template_name = '%s/%s/%s.html' % (app_name, connector.name.lower(), name)
         return super(CreateConnectionView, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
+        # El model y los fields varían dependiendo de la conexion.
         if self.kwargs['connector_id'] is not None:
-            self.model, self.fields = ConnectorEnum.get_connector_data(self.kwargs['connector_id'])
+            connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
+            self.model, self.fields = ConnectorEnum.get_connector_data(connector)
             name = 'ajax_create' if self.request.is_ajax() else 'create'
-            self.template_name = '%s/%s/%s.html' % (
-                app_name, ConnectorEnum.get_connector(self.kwargs['connector_id']).name.lower(), name)
+            self.template_name = '%s/%s/%s.html' % (app_name, connector.name.lower(), name)
         return super(CreateConnectionView, self).post(*args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):
+        connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
         context = super(CreateConnectionView, self).get_context_data(**kwargs)
-        context['connection'] = ConnectorEnum.get_connector(self.kwargs['connector_id']).name
-        if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleSpreadSheets:
+        context['connection'] = connector.name
+        if connector == ConnectorEnum.GoogleSpreadSheets:
             flow = get_flow(GOOGLE_AUTH_URL)
             context['google_auth_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'drive'
-        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleForms:
+        elif connector == ConnectorEnum.GoogleForms:
             flow = get_flow(GOOGLE_FORMS_AUTH_URL)
             context['google_auth_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'forms'
-        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleContacts:
+        elif connector == ConnectorEnum.GoogleContacts:
             flow = get_flow_google_contacts()
             context['google_auth_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'contacts'
-        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.GoogleCalendar:
+        elif connector == ConnectorEnum.GoogleCalendar:
             flow = get_flow(GOOGLE_CALENDAR_AUTH_URL, GOOGLE_CALENDAR_SCOPE)
             context['google_auth_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'calendar'
-        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.YouTube:
+        elif connector == ConnectorEnum.YouTube:
             flow = get_flow(GOOGLE_YOUTUBE_AUTH_URL, GOOGLE_YOUTUBE_SCOPE)
             context['google_auth_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'youtube'
-        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Slack:
+        elif connector == ConnectorEnum.Slack:
             context['slack_auth_url'] = SLACK_PERMISSIONS_URL
-        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Twitter:
+        elif connector == ConnectorEnum.Twitter:
             flow = get_twitter_auth()
             context['twitter_auth_url'] = flow.get_authorization_url()
             self.request.session['twitter_request_token'] = flow.request_token
-        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.SurveyMonkey:
+        elif connector == ConnectorEnum.SurveyMonkey:
             # print("Create 1 - SV")
             context['surveymonkey_auth_url'] = get_survey_monkey_url()
-        elif ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Instagram:
+        elif connector == ConnectorEnum.Instagram:
             flow = get_instagram_auth()
             context['instagram_auth_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
         return context
