@@ -44,6 +44,7 @@ class ConnectorEnum(Enum):
     AgileCRM = 38, 'crm'
     GitLab = 39, 'repository'
     Shopify = 40, 'ecomerce'
+    Dropbox = 41, ''
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
