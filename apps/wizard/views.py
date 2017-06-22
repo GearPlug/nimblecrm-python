@@ -18,6 +18,7 @@ from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
 from apps.gp.controllers.im import SlackController
 from apps.gp.controllers.social import TwitterController, InstagramController, YouTubeController
+from apps.gp.controllers.ecomerce import ShopifyController
 from apps.gp.controllers.project_management import JiraController
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
@@ -28,6 +29,7 @@ from oauth2client import client
 from apiclient import discovery
 from paypalrestsdk import Sale
 from paypalrestsdk.notifications import WebhookEvent
+from apps.gp.views import TemplateViewWithPost
 import re
 import paypalrestsdk
 import xmltodict
@@ -88,7 +90,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         if ping:
             if self.object.is_source:
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
-                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA or c == ConnectorEnum.SurveyMonkey or c == ConnectorEnum.GoogleCalendar or c == ConnectorEnum.Instagram or c == ConnectorEnum.YouTube:
+                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA or c == ConnectorEnum.SurveyMonkey or c == ConnectorEnum.GoogleCalendar or c == ConnectorEnum.Instagram or c == ConnectorEnum.YouTube or c==ConnectorEnum.Shopify:
                     controller.create_webhook()
             elif self.object.is_target:
                 if c == ConnectorEnum.MailChimp:
@@ -291,6 +293,21 @@ class ZohoCRMModuleList(LoginRequiredMixin, TemplateView):
         context['object_list'] = module_list
         return super(ZohoCRMModuleList, self).render_to_response(context)
 
+class ShopifyList(TemplateViewWithPost):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = ShopifyController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            object_list = [{'name': o['name'], 'id': o['id']} for o in controller.get_topics()]
+        else:
+            object_list = []
+        context['object_list'] = object_list
+        return super(ShopifyList, self).render_to_response(context)
 
 class MailChimpListsList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
@@ -436,7 +453,6 @@ class SurveyMonkeyWebhookEvent(TemplateView):
         return super(SurveyMonkeyWebhookEvent, self).get(request)
 
     def post(self, request, *args, **kwargs):
-        print("webhook")
         responses = []
         data = request.body.decode()
         data = json.loads(data)
@@ -453,6 +469,36 @@ class SurveyMonkeyWebhookEvent(TemplateView):
             self._surveymonkey_controller.create_connection(plug_specification.plug.connection.related_connection,
                                                             plug_specification.plug)
             self._surveymonkey_controller.download_source_data(responses=responses)
+        return JsonResponse({'hola': True})
+
+class ShopifyWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _shopify_controller = ShopifyController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(ShopifyWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super(ShopifyWebhookEvent, self).get(request)
+
+    def post(self, request, *args, **kwargs):
+        responses = []
+        data = request.body.decode()
+        # data = json.loads(data)
+        # print(data['resources']['survey_id'])
+        # survey = {'id': data['object_id']}
+        # responses.append(survey)
+        # qs = PlugSpecification.objects.filter(
+        #     action_specification__action__action_type='source',
+        #     action_specification__action__connector__name__iexact="SurveyMonkey",
+        #     value=data['resources']['survey_id']
+        # )
+        # for plug_specification in qs:
+        #     print("plug")
+        #     self._surveymonkey_controller.create_connection(plug_specification.plug.connection.related_connection,
+        #                                                     plug_specification.plug)
+        #     self._surveymonkey_controller.download_source_data(responses=responses)
         return JsonResponse({'hola': True})
 
 

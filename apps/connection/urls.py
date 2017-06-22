@@ -7,7 +7,7 @@ from apps.connection.views import CreateConnectionView, ListConnectorView, \
     AJAXJiraTestConnection, AJAXGetResponseTestConnection, TwitterAuthView, TwitterAuthSuccessCreateConnection, \
     SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, InstagramAuthView, \
     SurveyMonkeyAuthSuccessCreateConnection, AJAXGetSurveyListView, InstagramAuthSuccessCreateConnection, \
-    AJAXZohoCRMTestConnection, AJAXSMSTestConnection
+    AJAXZohoCRMTestConnection, AJAXSMSTestConnection, ShopifyAuthView, ShopifyAuthSuccessCreateConnection
 from apps.gp.enum import GoogleAPI
 
 urlpatterns = [
@@ -48,9 +48,15 @@ urlpatterns = [
         name="instagram_auth_success_create_connection"),
 
     # surveymonkey
-    url(r"^survey_monkey_auth/$", SurveyMonkeyAuthView.as_view(), name="survey_monekey_auth"),
+    url(r"^survey_monkey_auth/$", SurveyMonkeyAuthView.as_view(), name="survey_monkey_auth"),
     url(r"^survey_monkey_auth/success/$", SurveyMonkeyAuthSuccessCreateConnection.as_view(),
         name="survey_monkey_auth_success_create_connection"),
+
+    #shopify
+    url(r"^shopify_auth/$", ShopifyAuthView.as_view(), name="shopify_auth"),
+    url(r"^shopify_auth/success/$", ShopifyAuthSuccessCreateConnection.as_view(),
+        name="shopify_auth_success_create_connection"),
+
     # Slack
     url(r'^auth/slack/', SlackAuthView.as_view(), name="slack_auth"),
 
