@@ -52,7 +52,6 @@ class ConnectorEnum(Enum):
         return obj
 
     def get_connector_data(connector):
-        connector = ConnectorEnum.get_connector(connector)
         return ConnectorEnum.get_model(connector), ConnectorEnum.get_fields(connector)
 
     def get_connector(connector_id):
