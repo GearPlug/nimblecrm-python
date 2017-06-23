@@ -115,6 +115,12 @@ class MapField(object):
                 self.choices = [(choice, choice) for choice in d['values']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
+        elif controller == ConnectorEnum.Shopify:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
         else:
             if 'name' in d:
                 self.name = d['name']

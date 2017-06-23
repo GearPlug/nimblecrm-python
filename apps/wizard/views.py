@@ -483,24 +483,20 @@ class ShopifyWebhookEvent(TemplateView):
         return super(ShopifyWebhookEvent, self).get(request)
 
     def post(self, request, *args, **kwargs):
-        responses = []
+        notifications = []
         data = request.body.decode()
-        # data = json.loads(data)
-        # print(data['resources']['survey_id'])
-        # survey = {'id': data['object_id']}
-        # responses.append(survey)
-        # qs = PlugSpecification.objects.filter(
-        #     action_specification__action__action_type='source',
-        #     action_specification__action__connector__name__iexact="SurveyMonkey",
-        #     value=data['resources']['survey_id']
-        # )
-        # for plug_specification in qs:
-        #     print("plug")
-        #     self._surveymonkey_controller.create_connection(plug_specification.plug.connection.related_connection,
-        #                                                     plug_specification.plug)
-        #     self._surveymonkey_controller.download_source_data(responses=responses)
+        notifications.append(data)
+        qs = PlugSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="Shopify",
+            plug__source_gear__is_active=True
+        )
+        for plug_specification in qs:
+            print("plug")
+            self._shopify_controller.create_connection(plug_specification.plug.connection.related_connection,
+                                                            plug_specification.plug)
+            self._shopify_controller.download_source_data(list=notifications)
         return JsonResponse({'hola': True})
-
 
 class BitbucketProjectList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
