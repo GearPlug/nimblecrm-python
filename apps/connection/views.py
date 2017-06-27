@@ -18,6 +18,7 @@ from apps.connection.myviews.ZohoCRMViews import *
 from apps.connection.myviews.GetResponseViews import *
 from apps.connection.myviews.SurveyMonkeyViews import *
 from apps.connection.myviews.SMSViews import *
+from apps.connection.myviews.SalesforceViews import *
 from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI

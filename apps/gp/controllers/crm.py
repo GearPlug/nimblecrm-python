@@ -4,6 +4,9 @@ from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.models import StoredData
+from simple_salesforce import Salesforce
+from simple_salesforce.login import SalesforceAuthenticationFailed
+from dateutil.parser import parse
 import requests
 import sugarcrm
 import json
@@ -293,3 +296,90 @@ class ZohoCRMController(BaseController):
         module_name = module_name.replace("-", " ")
         module_name = string.capwords(module_name)
         return module_name.replace(" ", "")
+
+
+class SalesforceController(BaseController):
+    _client = None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        user, password, token = None, None, None
+        if args:
+            super(SalesforceController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    user = self._connection_object.connection_user
+                    password = self._connection_object.connection_password
+                    token = self._connection_object.token
+                except Exception as e:
+                    print("Error getting salesforce attributes")
+                    print(e)
+        elif kwargs:
+            try:
+                user = kwargs.pop('connection_user', None)
+                password = kwargs.pop('connection_password', None)
+                token = kwargs.pop('token', None)
+            except Exception as e:
+                print("Error getting salesforce attributes")
+                print(e)
+        if user is not None and password is not None and token is not None:
+            try:
+                self._client = Salesforce(username=user, password=password, security_token=token)
+            except SalesforceAuthenticationFailed:
+                self._client = None
+        return self._client is not None
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            for obj in data_list:
+                success = self.create(obj)
+                print(success)
+            extra = {'controller': 'bitbucket'}
+            return
+        raise ControllerError("Incomplete.")
+
+    def create(self, fields):
+        birthdate = fields.pop('Birthdate', None)
+        if birthdate:
+            fields['Birthdate'] = parse(birthdate).strftime('%Y-%m-%d')
+        email_bounced_date = fields.pop('EmailBouncedDate', None)
+        if email_bounced_date:
+            fields['EmailBouncedDate'] = parse(email_bounced_date).strftime('%Y-%m-%dT%H:%M:%S%z')
+        last_activity_date = fields.pop('LastActivityDate', None)
+        if last_activity_date:
+            fields['LastActivityDate'] = parse(last_activity_date).strftime('%Y-%m-%d')
+        last_referenced_date = fields.pop('LastReferencedDate', None)
+        if last_referenced_date:
+            fields['LastReferencedDate'] = parse(last_referenced_date).strftime('%Y-%m-%d')
+        last_viewed_date = fields.pop('LastViewedDate', None)
+        if last_viewed_date:
+            fields['LastViewedDate'] = parse(last_viewed_date).strftime('%Y-%m-%d')
+
+        # TODO Comprobar el tipo Action, si es lead o contact y llamar al metodo correcto
+        self._client.Contact.create(data=fields)
+
+    def get_contact_meta(self):
+        data = self._client.Contact.describe()
+        return [f for f in data['fields'] if f['createable'] and f['type'] != 'reference']
+
+    def get_lead_meta(self):
+        data = self._client.Lead.describe()
+        return [f for f in data['fields'] if f['createable'] and f['type'] != 'reference']
+
+    def get_mapping_fields(self):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.Salesforce) for f in fields]
+
+    def get_target_fields(self, **kwargs):
+        # TODO Comprobar el tipo de Action, si es lead o contact y devolver los fields correctos.
+        return self.get_contact_meta()

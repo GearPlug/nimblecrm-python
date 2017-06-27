@@ -7,7 +7,7 @@ from apps.gear.forms import MapForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
 from apps.gp.controllers.lead import GoogleFormsController, FacebookController
-from apps.gp.controllers.crm import SugarCRMController
+from apps.gp.controllers.crm import SugarCRMController, SalesforceController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
@@ -201,6 +201,7 @@ class CreateGearMapView(FormView):
     gcc = GoogleCalendarController()
     youtubec = YouTubeController()
     smsc = SMSController()
+    sfc = SalesforceController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
