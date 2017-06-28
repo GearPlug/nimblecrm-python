@@ -69,6 +69,8 @@ class MapForm(forms.Form):
                             del (params['max_length'])
                         if 'choices' in params:
                             del (params['choices'])
+                        # No permitir boolean requeridos o siempre tendrán que marcar el checkbox en el Mapeo
+                        params['required'] = False
                         custom_field = forms.BooleanField
                     elif field_type == 'enum' or field_type == 'radioenum' or field_type == 'choices' or field_type == 'picklist':
                         if 'max_length' in params:

@@ -364,9 +364,14 @@ class SalesforceController(BaseController):
         last_viewed_date = fields.pop('LastViewedDate', None)
         if last_viewed_date:
             fields['LastViewedDate'] = parse(last_viewed_date).strftime('%Y-%m-%d')
+        converted_date = fields.pop('ConvertedDate', None)
+        if converted_date:
+            fields['ConvertedDate'] = parse(converted_date).strftime('%Y-%m-%d')
 
-        # TODO Comprobar el tipo Action, si es lead o contact y llamar al metodo correcto
-        self._client.Contact.create(data=fields)
+        if self._plug.action.name == 'create contact':
+            self._client.Contact.create(data=fields)
+        else:
+            self._client.Lead.create(data=fields)
 
     def get_contact_meta(self):
         data = self._client.Contact.describe()
@@ -381,5 +386,7 @@ class SalesforceController(BaseController):
         return [MapField(f, controller=ConnectorEnum.Salesforce) for f in fields]
 
     def get_target_fields(self, **kwargs):
-        # TODO Comprobar el tipo de Action, si es lead o contact y devolver los fields correctos.
-        return self.get_contact_meta()
+        if self._plug.action.name == 'create contact':
+            return self.get_contact_meta()
+        else:
+            return self.get_lead_meta()
