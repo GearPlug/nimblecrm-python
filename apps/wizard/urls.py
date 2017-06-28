@@ -4,9 +4,9 @@ from apps.wizard.views import CreatePlugView, TestPlugView, \
     GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList,\
     PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent, \
     BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList, \
-    AJAXGetSurveyListView, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
+    InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
     GoogleCalendarWebhookEvent, AJAXGetSurveyListView, SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
-    YouTubeChannelsList
+    YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent
 
 from apps.connection.views import ListConnectionView, ListConnectorView, CreateConnectionView
 from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, DeleteGearView
@@ -70,6 +70,11 @@ urlpatterns = [
     url(r"async/surveymonkey/survey/list/", AJAXGetSurveyListView.as_view(), name='async_surveymonkey_survey_list'),
     url(r'surveymonkey/webhook/event/(?P<plug_id>\d+)/', SurveyMonkeyWebhookEvent.as_view(),
         name='surveymonkey_webhook_event'),
+
+    #Shopify
+    url(r"async/shopify/topic/list/", ShopifyList.as_view(), name='async_shopify_topic_list'),
+    url(r'shopify/webhook/event/(?P<plug_id>\d+)/', ShopifyWebhookEvent.as_view(),
+        name='shopify_webhook_event'),
 
     # Instagram
     url(r'instagram/webhook/event/', InstagramWebhookEvent.as_view(), name='instagram_webhook_event'),

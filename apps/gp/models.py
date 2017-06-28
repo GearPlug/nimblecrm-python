@@ -10,7 +10,7 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
                'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram',
                'connection_getresponse', 'connection_getresponse', 'connection_twitter', 'connection_surveymonkey',
                'connection_zohocrm', 'connection_wunderlist', 'connection_sms', 'connection_youtube', 'connection_smtp'
-               'connection_salesforce']
+               'connection_salesforce', 'connection_shopify']
 
 class Category(models.Model):
     name = models.CharField('name', max_length=100)
@@ -203,6 +203,14 @@ class GetResponseConnection(models.Model):
 
 class SurveyMonkeyConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_surveymonkey')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+class ShopifyConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_shopify')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
 

@@ -143,6 +143,18 @@ class MapField(object):
             if 'picklistValues' in d and d['picklistValues']:
                 self.choices = [(c['value'], c['label']) for c in d['picklistValues'] if c['active']]
                 self.choices.insert(0, ('', ''))
+        elif controller == ConnectorEnum.Shopify:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'values' in d:
+                self.choices = [(choice, choice) for choice in d['values']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
         else:
             if 'name' in d:
                 self.name = d['name']

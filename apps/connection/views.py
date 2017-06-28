@@ -25,7 +25,7 @@ from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
     GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection, GoogleCalendarConnection, \
-    YouTubeConnection, SMSConnection
+    YouTubeConnection, SMSConnection, ShopifyConnection
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
 from slacker import Slacker
@@ -190,8 +190,11 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             context['twitter_auth_url'] = flow.get_authorization_url()
             self.request.session['twitter_request_token'] = flow.request_token
         elif connector == ConnectorEnum.SurveyMonkey:
-            # print("Create 1 - SV")
             context['surveymonkey_auth_url'] = get_survey_monkey_url()
+        elif connector == ConnectorEnum.Shopify:
+            print("shopify")
+            print(ConnectorEnum.Shopify)
+            context['shopify_auth_url'] = get_shopify_url()
         elif connector == ConnectorEnum.Instagram:
             flow = get_instagram_auth()
             context['instagram_auth_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
@@ -395,8 +398,6 @@ class SurveyMonkeyAuthView(View):
             access_token_uri = settings.SURVEYMONKEY_API_BASE + settings.SURVEYMONKEY_ACCESS_TOKEN_ENDPOINT
             access_token_response = requests.post(access_token_uri, data=data)
             access_json = access_token_response.json()
-            print("access")
-            print(access_json)
             try:
                 self.request.session['survey_monkey_auth_token'] = access_json["access_token"]
                 return redirect(reverse('connection:survey_monkey_auth_success_create_connection'))
@@ -438,6 +439,50 @@ def get_survey_monkey_url():
         "response_type": "code"
     })
     return settings.SURVEYMONKEY_API_BASE + settings.SURVEYMONKEY_AUTH_CODE_ENDPOINT + "?" + url_params
+
+class ShopifyAuthView(View):
+    def get(self, request, *args, **kwargs):
+        code = request.GET.get('code', '')
+        url = "https://" + settings.SHOPIFY_SHOP_URL+ ".myshopify.com/admin/oauth/access_token"
+        params = {'client_id': settings.SHOPIFY_API_KEY, 'client_secret': settings.SHOPIFY_API_KEY_SECRET, 'code': code}
+        try:
+            response = requests.post(url, params).__dict__['_content'].decode()
+            token = json.loads(response)['access_token']
+            print("token")
+            print(token)
+            try:
+                request.session['shopify_token'] = token
+                return redirect(reverse('connection:shopify_auth_success_create_connection'))
+            except Exception as e:
+                raise
+                print(e)
+                print("Error en Shopify")
+
+        except Exception as e:
+            raise
+            print(e)
+            print("Error en Shopify")
+        return redirect(reverse('connection:shopify_success_create_connection'))
+
+
+class ShopifyAuthSuccessCreateConnection(TemplateView):
+    template_name = 'connection/shopify/sucess.html'
+    def get(self, request, *args, **kwargs):
+        try:
+            if 'shopify_token' in request.session:
+                access_token = request.session.pop('shopify_token')
+                c = Connection.objects.create(
+                    user=request.user, connector_id=ConnectorEnum.Shopify.value)
+                n = int(ShopifyConnection.objects.filter(connection__user=request.user).count()) + 1
+                tc = ShopifyConnection.objects.create(
+                    connection=c, name="Shopify Connection # %s" % n, token=access_token)
+        except Exception as e:
+            print("Error creating Shopify Connection.")
+        return super(ShopifyAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
+
+def get_shopify_url():
+    scopes = "read_products, write_products, read_orders, read_customers, write_orders, write_customers"
+    return "https://"+settings.SHOPIFY_SHOP_URL+".myshopify.com/admin/oauth/authorize?client_id="+settings.SHOPIFY_API_KEY+"&scope="+scopes+"&redirect_uri="+settings.SHOPIFY_REDIRECT_URI
 
 
 class AuthSuccess(TemplateView):
