@@ -33,6 +33,18 @@ class ConnectorEnum(Enum):
     WunderList = 27, 'ofimatic'
     SMS = 28, 'im'
     SMTP = 29, 'email'
+    Evernote = 30, 'ofimatic'
+    Salesforce = 31, 'crm'
+    Vtiger = 32, 'crm'
+    ProsperWorks = 33, 'crm'
+    HubSpot = 34, 'crm'
+    PipeDrive = 35, 'crm'
+    DynamicCRM = 36, 'crm'
+    FreshDesk = 37, 'crm'
+    AgileCRM = 38, 'crm'
+    GitLab = 39, 'repository'
+    Shopify = 40, 'ecomerce'
+    Dropbox = 41, ''
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
@@ -41,7 +53,6 @@ class ConnectorEnum(Enum):
         return obj
 
     def get_connector_data(connector):
-        connector = ConnectorEnum.get_connector(connector)
         return ConnectorEnum.get_model(connector), ConnectorEnum.get_fields(connector)
 
     def get_connector(connector_id):
@@ -67,7 +78,14 @@ class ConnectorEnum(Enum):
 
 
 class GoogleAPI(Enum):
-    SpreadSheets = 1
-    Forms = 2
-    Calendar = 3
-    YouTube = 4
+    SpreadSheets = 1, 'https://www.googleapis.com/auth/drive'
+    Forms = 2, 'https://www.googleapis.com/auth/drive'
+    Calendar = 3, 'https://www.googleapis.com/auth/calendar'
+    YouTube = 4, 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload'
+    Contacts = 5, 'https://www.google.com/m8/feeds/'
+
+    def __new__(cls, *args, **kwargs):
+        obj = object.__new__(cls)
+        obj._value_ = args[0]
+        obj.scope = args[1]
+        return obj

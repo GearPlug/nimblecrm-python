@@ -2,7 +2,8 @@ from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.models import StoredData
-
+from apps.gp.enum import ConnectorEnum
+from apps.gp.map import MapField
 import requests
 from base64 import b64encode
 from bitbucket.bitbucket import Bitbucket
@@ -205,3 +206,7 @@ class BitbucketController(BaseController):
 
     def get_target_fields(self):
         return self.get_meta()
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_meta()
+        return [MapField(f, controller=ConnectorEnum.Bitbucket) for f in fields]

@@ -10,6 +10,10 @@ import pymssql
 
 
 class MySQLController(BaseController):
+    """
+    MySQL Controller.
+
+    """
     _connection = None
     _database = None
     _table = None
@@ -164,6 +168,9 @@ class MySQLController(BaseController):
 
     def get_target_fields(self, **kwargs):
         return self.describe_table(**kwargs)
+
+    def get_mapping_fields(self, **kwargs):
+        return [item['name'] for item in self.describe_table() if item['is_primary'] is not True]
 
 
 class PostgreSQLController(BaseController):
@@ -327,6 +334,9 @@ class PostgreSQLController(BaseController):
     def get_target_fields(self, **kwargs):
         return self.describe_table(**kwargs)
 
+    def get_mapping_fields(self, **kwargs):
+        return [item['name'] for item in self.describe_table() if item['name'] not in self.get_primary_keys()]
+
 
 class MSSQLController(BaseController):
     _connection = None
@@ -488,3 +498,6 @@ class MSSQLController(BaseController):
 
     def get_target_fields(self):
         return self.describe_table()
+
+    def get_mapping_fields(self, **kwargs):
+        return [item['name'] for item in self.describe_table() if item['name'] not in self.get_primary_keys()]

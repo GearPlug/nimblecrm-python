@@ -2,11 +2,9 @@ from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.models import StoredData, GooglePushWebhook
+from apps.gp.enum import ConnectorEnum
+from apps.gp.map import MapField
 import httplib2
-import json
-import requests
-import uuid
-from apiclient import discovery
 from oauth2client import client as GoogleClient
 from dateutil.parser import parse
 import pytz
@@ -179,11 +177,13 @@ class GoogleSpreadSheetsController(BaseController):
             spreadsheetId=self._spreadsheet_id,
             range=_range, valueInputOption='RAW',
             body=body).execute()
-
         return res
 
     def get_target_fields(self, **kwargs):
         return self.get_worksheet_first_row(**kwargs)
+
+    def get_mapping_fields(self, **kwargs):
+        return self.get_worksheet_first_row()
 
 
 class GoogleCalendarController(BaseController):
@@ -363,3 +363,7 @@ class GoogleCalendarController(BaseController):
 
     def get_target_fields(self):
         return self.get_meta()
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_meta()
+        return [MapField(f, controller=ConnectorEnum.GoogleCalendar) for f in fields]
