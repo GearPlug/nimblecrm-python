@@ -9,9 +9,8 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
                'connection_getresponse', 'connection_twitter', 'connection_surveymonkey', 'connection_getresponse',
                'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram',
                'connection_getresponse', 'connection_getresponse', 'connection_twitter', 'connection_surveymonkey',
-               'connection_zohocrm', 'connection_wunderlist', 'connection_sms', 'connection_youtube',
+               'connection_zohocrm', 'connection_wunderlist', 'connection_sms', 'connection_youtube', 'connection_smtp'
                'connection_salesforce']
-
 
 class Category(models.Model):
     name = models.CharField('name', max_length=100)
@@ -332,7 +331,6 @@ class SMSConnection(models.Model):
     def __str__(self):
         return self.name
 
-
 class SalesforceConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_salesforce')
     name = models.CharField('name', max_length=200)
@@ -344,8 +342,16 @@ class SalesforceConnection(models.Model):
         return self.name
 
 
-class SMTPConnection():
-    pass
+class SMTPConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_smtp')
+    name = models.CharField('name', max_length=200)
+    host = models.CharField('host', max_length=200)
+    port = models.CharField('port', max_length=200)
+    connection_user = models.CharField('user', max_length=60)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
 
 
 class Plug(models.Model):
