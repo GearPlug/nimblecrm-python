@@ -121,6 +121,12 @@ class MapField(object):
                 self.label = d['name']
             if 'required' in d:
                 self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'values' in d:
+                self.choices = [(choice, choice) for choice in d['values']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
         else:
             if 'name' in d:
                 self.name = d['name']

@@ -244,7 +244,7 @@ INSTAGRAM_CLIENT_SECRET = 'yyyyyyyyy'
 YOUTUBE_API_KEY = 'XXXXXXXXXXXX'
 
 #Shopify
-SHOPIFY_SHOP_URL="prueba-2017-my-store"
+SHOPIFY_SHOP_URL="my-first-project-2017"
 SHOPIFY_API_KEY="8058ebd552b2ba23d9d1c6221b514fab"
 SHOPIFY_API_KEY_SECRET="d32f6b242ddaa2dd2b29bf3eb329a1c5"
-SHOPIFY_REDIRECT_URI="https://l.grplug.com/connection/shopify_auth/"
+SHOPIFY_REDIRECT_URI="http://127.0.0.1:8000/connection/shopify_auth/"
