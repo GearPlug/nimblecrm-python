@@ -419,6 +419,20 @@ class GearMapData(models.Model):
         return '%s: %s' % (self.target_name, self.source_value)
 
 
+class Webhook(models.Model):
+    name = models.CharField('webhook name', max_length=100)
+    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='webhook')
+    url = models.URLField('url')
+    generated_id = models.CharField('generated id', max_length=200)
+    created = models.DateTimeField('created', auto_now_add=True)
+    is_active = models.BooleanField('is active', default=False)
+    is_deleted = models.BooleanField('is deleted', default=False)
+    expiration = models.CharField('expiration', max_length=200)
+
+    def __str__(self):
+        return '%s webhook of %s' % (self.name, self.plug)
+
+
 class DBLogEntry(models.Model):
     time = models.DateTimeField(auto_now_add=True)
     level = models.CharField(max_length=10)
@@ -436,16 +450,13 @@ class ControllerLog(DBLogEntry):
     controller = models.CharField(max_length=20, blank=True, default='')
 
 
-class ConnectionData():
-    pass
-
-
-class PlugData():
-    pass
-
-
-class GearData():
-    pass
+class ProcessedData(models.Model):
+    gear = models.ForeignKey(Gear, related_name='processed_data')
+    plug = models.ForeignKey(Plug)
+    connection = models.ForeignKey(Connection)
+    connector = models.ForeignKey(Connector)
+    process_type = models.CharField('process type', max_length=20, choices=(('source', 'Source'), ('target', 'target')))
+    created = models.DateTimeField('created', auto_now_add=True)
 
 
 admin.site.register(Connector)
