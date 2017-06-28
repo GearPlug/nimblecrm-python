@@ -10,7 +10,12 @@ from dateutil.parser import parse
 import requests
 import sugarcrm
 import json
+import xmltodict
 import string
+from apps.gp.models import StoredData
+from apps.gp.map import MapField
+from apps.gp.enum import ConnectorEnum
+import xml.etree.ElementTree as ET
 
 
 class CustomSugarObject(sugarcrm.SugarObject):
@@ -168,6 +173,7 @@ class ZohoCRMController(BaseController):
             response = json.loads(response)
             if "result" in response["response"]:
                 return self._token is not None
+        return False
 
     def get_modules(self):
         params = {'authtoken': self._token, 'scope': 'crmapi'}
@@ -203,22 +209,34 @@ class ZohoCRMController(BaseController):
             return True
         return False
 
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if self._plug is not None:
+            obj_list = []
+            module_id = self._plug.plug_specification.all()[0].value
+            extra = {'controller': 'zohocrm'}
+            for item in data_list:
+                try:
+                    response=self.insert_records(item,module_id)
+                    self._log.info('Item: %s successfully sent.' % (int(response['#text'])), extra=extra)
+                    obj_list.append(id)
+                except Exception as e:
+                    print(e)
+                    extra['status'] = 'f'
+                    self._log.info('Item: %s failed to send.' % (int(response['#text'])), extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")
+
+    def get_target_fields(self, module, **kwargs):
+        return self.get_module_fields(module, **kwargs)
+
     def get_mapping_fields(self):
         fields = self.get_target_fields()
         return [MapField(f, controller=ConnectorEnum.ZohoCRM) for f in fields]
 
     def get_target_fields(self, **kwargs):
         module_id = self._plug.plug_specification.all()[0].value
-        list = self.get_fields(module_id)
-        fields = []
-        for val in list:
-            if (type(val) == dict):
-                fields.append(val)
-            else:
-                for i in val:
-                    print(type(i))
-                    print(i)
-        print(fields)
+        fields=self.get_fields(module_id)
         return fields
 
     def get_fields(self, module_id):
@@ -234,7 +252,13 @@ class ZohoCRMController(BaseController):
         values = json.loads(values)
         if (module_name in values):
             values = values[module_name]['section']
-            return values
+            fields = []
+            for val in values:
+                if (type(val['FL']) == dict):
+                    fields.append(val['FL'])
+                else:
+                    for i in val['FL']:fields.append(i)
+            return fields
         else:
             print(response)
             print("no_values")
@@ -364,9 +388,14 @@ class SalesforceController(BaseController):
         last_viewed_date = fields.pop('LastViewedDate', None)
         if last_viewed_date:
             fields['LastViewedDate'] = parse(last_viewed_date).strftime('%Y-%m-%d')
+        converted_date = fields.pop('ConvertedDate', None)
+        if converted_date:
+            fields['ConvertedDate'] = parse(converted_date).strftime('%Y-%m-%d')
 
-        # TODO Comprobar el tipo Action, si es lead o contact y llamar al metodo correcto
-        self._client.Contact.create(data=fields)
+        if self._plug.action.name == 'create contact':
+            self._client.Contact.create(data=fields)
+        else:
+            self._client.Lead.create(data=fields)
 
     def get_contact_meta(self):
         data = self._client.Contact.describe()
@@ -381,5 +410,8 @@ class SalesforceController(BaseController):
         return [MapField(f, controller=ConnectorEnum.Salesforce) for f in fields]
 
     def get_target_fields(self, **kwargs):
-        # TODO Comprobar el tipo de Action, si es lead o contact y devolver los fields correctos.
-        return self.get_contact_meta()
+        if self._plug.action.name == 'create contact':
+            return self.get_contact_meta()
+        else:
+            return self.get_lead_meta()
+

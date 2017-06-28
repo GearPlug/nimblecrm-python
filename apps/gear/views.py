@@ -8,6 +8,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
 from apps.gp.controllers.lead import GoogleFormsController, FacebookController
 from apps.gp.controllers.crm import SugarCRMController, SalesforceController
+from apps.gp.controllers.crm import SugarCRMController
+from apps.gp.controllers.email import SMTPController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
@@ -22,6 +24,7 @@ from apps.gp.map import MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
 from oauth2client import client
+
 
 # mysqlc = MySQLController()
 # postgresqlc = PostgreSQLController()
@@ -109,7 +112,7 @@ class DeleteGearView(DeleteView):
     success_url = reverse_lazy('%s:list' % app_name)
 
 
-class CreateGearMapView2(FormView,LoginRequiredMixin):
+class CreateGearMapView2(FormView, LoginRequiredMixin):
     """
     Creates a Map for the selected gear.
 
@@ -184,6 +187,7 @@ class CreateGearMapView2(FormView,LoginRequiredMixin):
         except Exception as e:
             return []
 
+
 class CreateGearMapView(FormView):
     template_name = 'gear/map/create.html'
     form_class = MapForm
@@ -202,6 +206,7 @@ class CreateGearMapView(FormView):
     youtubec = YouTubeController()
     smsc = SMSController()
     sfc = SalesforceController()
+    smtpc = SMTPController()
 
     def get(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
@@ -245,8 +250,6 @@ class CreateGearMapView(FormView):
 
     def get_form(self, *args, **kwargs):
         form_class = self.get_form_class()
-        print("\n----------------------------\n")
-        print(self.form_field_list)
         return form_class(extra=self.form_field_list, **self.get_form_kwargs())
 
     def get_available_source_fields(self, plug):

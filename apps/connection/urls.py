@@ -7,7 +7,9 @@ from apps.connection.views import CreateConnectionView, ListConnectorView, \
     AJAXJiraTestConnection, AJAXGetResponseTestConnection, TwitterAuthView, TwitterAuthSuccessCreateConnection, \
     SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, InstagramAuthView, \
     SurveyMonkeyAuthSuccessCreateConnection, AJAXGetSurveyListView, InstagramAuthSuccessCreateConnection, \
-    AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection
+    AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection, ShopifyAuthView, \
+    ShopifyAuthSuccessCreateConnection, AJAXSMTPTestConnection
+
 from apps.gp.enum import GoogleAPI
 
 urlpatterns = [
@@ -48,9 +50,15 @@ urlpatterns = [
         name="instagram_auth_success_create_connection"),
 
     # surveymonkey
-    url(r"^survey_monkey_auth/$", SurveyMonkeyAuthView.as_view(), name="survey_monekey_auth"),
+    url(r"^survey_monkey_auth/$", SurveyMonkeyAuthView.as_view(), name="survey_monkey_auth"),
     url(r"^survey_monkey_auth/success/$", SurveyMonkeyAuthSuccessCreateConnection.as_view(),
         name="survey_monkey_auth_success_create_connection"),
+
+    # shopify
+    url(r"^shopify_auth/$", ShopifyAuthView.as_view(), name="shopify_auth"),
+    url(r"^shopify_auth/success/$", ShopifyAuthSuccessCreateConnection.as_view(),
+        name="shopify_auth_success_create_connection"),
+
     # Slack
     url(r'^auth/slack/', SlackAuthView.as_view(), name="slack_auth"),
 
@@ -86,5 +94,6 @@ urlpatterns = [
         name='ajax_update_sms_test_connection'),
     url(r'ajax/salesforce/test_connection/', AJAXSalesforceTestConnection.as_view(),
         name='ajax_update_salesforce_test_connection'),
-
+    url(r'ajax/smtp/test_connection/', AJAXSMTPTestConnection.as_view(),
+        name='ajax_update_smtp_test_connection'),
 ]
