@@ -282,9 +282,9 @@ class ZohoCRMModuleList(LoginRequiredMixin, TemplateView):
             modules = json.loads(modules)['response']['result']['row']
             module_list = []
             for m in modules:
-                if (m['pl'] != "Feeds" and m['pl'] != "Visits" and m['pl'] != "Social" and m['pl'] != "Documents"):
-                    values = {'id': m['id'], 'name': m['pl']}
-                    module_list.append(values)
+                if (m['pl'] != "Feeds" and m['pl'] != "Visits" and m['pl'] != "Social" and m['pl'] != "Documents" and m[
+                    'pl'] != "Quotes" and m['pl'] != "Sales Orders" and m['pl'] != "Purchase Orders"):
+                    module_list.append({'id': m['id'], 'name': m['pl']})
         else:
             module_list = []
         module_list = tuple(module_list)

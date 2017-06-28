@@ -7,7 +7,12 @@ from apps.gp.models import StoredData
 import requests
 import sugarcrm
 import json
+import xmltodict
 import string
+from apps.gp.models import StoredData
+from apps.gp.map import MapField
+from apps.gp.enum import ConnectorEnum
+import xml.etree.ElementTree as ET
 
 
 class CustomSugarObject(sugarcrm.SugarObject):
@@ -165,6 +170,7 @@ class ZohoCRMController(BaseController):
             response = json.loads(response)
             if "result" in response["response"]:
                 return self._token is not None
+        return False
 
     def get_modules(self):
         params = {'authtoken': self._token, 'scope': 'crmapi'}
@@ -200,22 +206,34 @@ class ZohoCRMController(BaseController):
             return True
         return False
 
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if self._plug is not None:
+            obj_list = []
+            module_id = self._plug.plug_specification.all()[0].value
+            extra = {'controller': 'zohocrm'}
+            for item in data_list:
+                try:
+                    response=self.insert_records(item,module_id)
+                    self._log.info('Item: %s successfully sent.' % (int(response['#text'])), extra=extra)
+                    obj_list.append(id)
+                except Exception as e:
+                    print(e)
+                    extra['status'] = 'f'
+                    self._log.info('Item: %s failed to send.' % (int(response['#text'])), extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")
+
+    def get_target_fields(self, module, **kwargs):
+        return self.get_module_fields(module, **kwargs)
+
     def get_mapping_fields(self):
         fields = self.get_target_fields()
         return [MapField(f, controller=ConnectorEnum.ZohoCRM) for f in fields]
 
     def get_target_fields(self, **kwargs):
         module_id = self._plug.plug_specification.all()[0].value
-        list = self.get_fields(module_id)
-        fields = []
-        for val in list:
-            if (type(val) == dict):
-                fields.append(val)
-            else:
-                for i in val:
-                    print(type(i))
-                    print(i)
-        print(fields)
+        fields=self.get_fields(module_id)
         return fields
 
     def get_fields(self, module_id):
@@ -231,7 +249,13 @@ class ZohoCRMController(BaseController):
         values = json.loads(values)
         if (module_name in values):
             values = values[module_name]['section']
-            return values
+            fields = []
+            for val in values:
+                if (type(val['FL']) == dict):
+                    fields.append(val['FL'])
+                else:
+                    for i in val['FL']:fields.append(i)
+            return fields
         else:
             print(response)
             print("no_values")
@@ -293,3 +317,42 @@ class ZohoCRMController(BaseController):
         module_name = module_name.replace("-", " ")
         module_name = string.capwords(module_name)
         return module_name.replace(" ", "")
+
+    def insert_records(self, data, module_id):
+        module_name = self.get_module_name(module_id)
+        id = self.get_user_id()
+        fields=self.get_fields(module_id)
+        xml_s=self.create_xml(data, fields, module_name, id)
+        #print(xml_s)
+        response=self.insert_xml(xml_s,module_name)
+        o = xmltodict.parse(response.text)
+        response=json.dumps(o)
+        response=json.loads(response)
+        return response['response']['result']['recorddetail']['FL'][0]
+
+
+    def get_user_id(self):
+        module_name = "Users"
+        params = {'authtoken': self._token, 'scope': 'crmapi', 'type': "AllUsers"}
+        url = "https://crm.zoho.com/crm/private/json/" + module_name + "/getUsers"
+        response = requests.get(url, params).__dict__['_content'].decode()
+        response=json.loads(response)
+        return response['users']['user']['id']
+
+    def create_xml(self, data,fields, module_name,id):
+        root = ET.Element(module_name)
+        row = ET.SubElement(root, "row", no="1")
+        id = ET.SubElement(row, "FL", val="SMOWNERID").text = id
+        for i in fields:
+            valor = i['label']
+            valor = valor.replace("-", " ")
+            for l in data:
+                if l==i['label']: ET.SubElement(row, "FL", val=valor).text = data[l]
+                else: ET.SubElement(row, "FL", val=valor)
+        return ET.tostring(root).decode('utf-8')
+
+    def insert_xml(self, xml_s, module_name):
+        params = {'authtoken': self._token, 'scope': 'crmapi', 'xmlData': xml_s}
+        url = "https://crm.zoho.com/crm/private/xml/"+module_name+"/insertRecords"
+        response = requests.post(url, params)
+        return response
