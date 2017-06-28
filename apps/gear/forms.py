@@ -70,7 +70,7 @@ class MapForm(forms.Form):
                         if 'choices' in params:
                             del (params['choices'])
                         custom_field = forms.BooleanField
-                    elif field_type == 'enum' or field_type == 'radioenum' or field_type == 'choices':
+                    elif field_type == 'enum' or field_type == 'radioenum' or field_type == 'choices' or field_type == 'Pick List':
                         if 'max_length' in params:
                             del (params['max_length'])
                         custom_field = forms.ChoiceField
@@ -91,15 +91,21 @@ class MapForm(forms.Form):
                         params['max_digits'] = length
                         params['decimal_places'] = 2
                         custom_field = forms.DecimalField
+                    else:
+                        custom_field = forms.CharField
                     # elif field_type == 'email':
                     #     custom_field = forms.EmailField
                     if 'required' not in params:
                         params['required'] = False
 
                     try:
+
                         self.fields[getattr(field, 'name')] = custom_field(**params)
                     except Exception as e:
-                        print(e)
+                        #print(e)
+                        print(field_type)
+                        print(custom_field)
+                        print(params)
                         raise
                         self.fields['custom_%s' % field] = forms.CharField(**params)
         except Exception as e:
