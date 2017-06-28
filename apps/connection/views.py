@@ -34,7 +34,7 @@ import requests
 
 GOOGLE_DRIVE_SCOPE = ''
 GOOGLE_AUTH_URL = 'http://localhost:8000/connection/google_auth/'
-GOOGLE_AUTH_REDIRECT_URL = 'connection:google_auth_success_create_connection',
+GOOGLE_AUTH_REDIRECT_URL = 'connection:google_auth_success_create_connection'
 
 GOOGLE_FORMS_SCOPE = ''
 GOOGLE_FORMS_AUTH_URL = 'http://localhost:8000/connection/google_forms_auth/'
