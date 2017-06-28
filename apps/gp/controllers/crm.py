@@ -4,6 +4,9 @@ from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.models import StoredData
+from simple_salesforce import Salesforce
+from simple_salesforce.login import SalesforceAuthenticationFailed
+from dateutil.parser import parse
 import requests
 import sugarcrm
 import json
@@ -318,41 +321,97 @@ class ZohoCRMController(BaseController):
         module_name = string.capwords(module_name)
         return module_name.replace(" ", "")
 
-    def insert_records(self, data, module_id):
-        module_name = self.get_module_name(module_id)
-        id = self.get_user_id()
-        fields=self.get_fields(module_id)
-        xml_s=self.create_xml(data, fields, module_name, id)
-        #print(xml_s)
-        response=self.insert_xml(xml_s,module_name)
-        o = xmltodict.parse(response.text)
-        response=json.dumps(o)
-        response=json.loads(response)
-        return response['response']['result']['recorddetail']['FL'][0]
 
+class SalesforceController(BaseController):
+    _client = None
 
-    def get_user_id(self):
-        module_name = "Users"
-        params = {'authtoken': self._token, 'scope': 'crmapi', 'type': "AllUsers"}
-        url = "https://crm.zoho.com/crm/private/json/" + module_name + "/getUsers"
-        response = requests.get(url, params).__dict__['_content'].decode()
-        response=json.loads(response)
-        return response['users']['user']['id']
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
 
-    def create_xml(self, data,fields, module_name,id):
-        root = ET.Element(module_name)
-        row = ET.SubElement(root, "row", no="1")
-        id = ET.SubElement(row, "FL", val="SMOWNERID").text = id
-        for i in fields:
-            valor = i['label']
-            valor = valor.replace("-", " ")
-            for l in data:
-                if l==i['label']: ET.SubElement(row, "FL", val=valor).text = data[l]
-                else: ET.SubElement(row, "FL", val=valor)
-        return ET.tostring(root).decode('utf-8')
+    def create_connection(self, *args, **kwargs):
+        user, password, token = None, None, None
+        if args:
+            super(SalesforceController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    user = self._connection_object.connection_user
+                    password = self._connection_object.connection_password
+                    token = self._connection_object.token
+                except Exception as e:
+                    print("Error getting salesforce attributes")
+                    print(e)
+        elif kwargs:
+            try:
+                user = kwargs.pop('connection_user', None)
+                password = kwargs.pop('connection_password', None)
+                token = kwargs.pop('token', None)
+            except Exception as e:
+                print("Error getting salesforce attributes")
+                print(e)
+        if user is not None and password is not None and token is not None:
+            try:
+                self._client = Salesforce(username=user, password=password, security_token=token)
+            except SalesforceAuthenticationFailed:
+                self._client = None
+        return self._client is not None
 
-    def insert_xml(self, xml_s, module_name):
-        params = {'authtoken': self._token, 'scope': 'crmapi', 'xmlData': xml_s}
-        url = "https://crm.zoho.com/crm/private/xml/"+module_name+"/insertRecords"
-        response = requests.post(url, params)
-        return response
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            for obj in data_list:
+                success = self.create(obj)
+                print(success)
+            extra = {'controller': 'bitbucket'}
+            return
+        raise ControllerError("Incomplete.")
+
+    def create(self, fields):
+        birthdate = fields.pop('Birthdate', None)
+        if birthdate:
+            fields['Birthdate'] = parse(birthdate).strftime('%Y-%m-%d')
+        email_bounced_date = fields.pop('EmailBouncedDate', None)
+        if email_bounced_date:
+            fields['EmailBouncedDate'] = parse(email_bounced_date).strftime('%Y-%m-%dT%H:%M:%S%z')
+        last_activity_date = fields.pop('LastActivityDate', None)
+        if last_activity_date:
+            fields['LastActivityDate'] = parse(last_activity_date).strftime('%Y-%m-%d')
+        last_referenced_date = fields.pop('LastReferencedDate', None)
+        if last_referenced_date:
+            fields['LastReferencedDate'] = parse(last_referenced_date).strftime('%Y-%m-%d')
+        last_viewed_date = fields.pop('LastViewedDate', None)
+        if last_viewed_date:
+            fields['LastViewedDate'] = parse(last_viewed_date).strftime('%Y-%m-%d')
+        converted_date = fields.pop('ConvertedDate', None)
+        if converted_date:
+            fields['ConvertedDate'] = parse(converted_date).strftime('%Y-%m-%d')
+
+        if self._plug.action.name == 'create contact':
+            self._client.Contact.create(data=fields)
+        else:
+            self._client.Lead.create(data=fields)
+
+    def get_contact_meta(self):
+        data = self._client.Contact.describe()
+        return [f for f in data['fields'] if f['createable'] and f['type'] != 'reference']
+
+    def get_lead_meta(self):
+        data = self._client.Lead.describe()
+        return [f for f in data['fields'] if f['createable'] and f['type'] != 'reference']
+
+    def get_mapping_fields(self):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.Salesforce) for f in fields]
+
+    def get_target_fields(self, **kwargs):
+        if self._plug.action.name == 'create contact':
+            return self.get_contact_meta()
+        else:
+            return self.get_lead_meta()
+

@@ -62,15 +62,17 @@ class MapForm(forms.Form):
                     field_type = getattr(field, 'field_type')
                     # print(field_type)
                     if field_type in ['text', 'varchar', 'phone', 'url', 'name', 'id', 'relate', 'assigned_user_name',
-                                      'email', 'image', 'fullname', 'relate']:
+                                      'email', 'image', 'fullname', 'relate', 'string']:
                         custom_field = forms.CharField
-                    elif field_type == 'bool':
+                    elif field_type == 'bool' or field_type == 'boolean':
                         if 'max_length' in params:
                             del (params['max_length'])
                         if 'choices' in params:
                             del (params['choices'])
+                        # No permitir boolean requeridos o siempre tendrán que marcar el checkbox en el Mapeo
+                        params['required'] = False
                         custom_field = forms.BooleanField
-                    elif field_type == 'enum' or field_type == 'radioenum' or field_type == 'choices' or field_type == 'Pick List':
+                    elif field_type in ['enum', 'radioenum', 'choices', 'Pick List', 'picklist']:
                         if 'max_length' in params:
                             del (params['max_length'])
                         custom_field = forms.ChoiceField
@@ -102,7 +104,7 @@ class MapForm(forms.Form):
 
                         self.fields[getattr(field, 'name')] = custom_field(**params)
                     except Exception as e:
-                        #print(e)
+                        # print(e)
                         print(field_type)
                         print(custom_field)
                         print(params)

@@ -56,6 +56,8 @@ class ConnectorEnum(Enum):
         return ConnectorEnum.get_model(connector), ConnectorEnum.get_fields(connector)
 
     def get_connector(connector_id):
+        if isinstance(connector_id, ConnectorEnum):
+            connector_id = connector_id.value
         connector_id = int(connector_id)
         for field in ConnectorEnum:
             if connector_id == int(field.value):

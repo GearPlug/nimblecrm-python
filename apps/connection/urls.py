@@ -7,7 +7,7 @@ from apps.connection.views import CreateConnectionView, ListConnectorView, \
     AJAXJiraTestConnection, AJAXGetResponseTestConnection, TwitterAuthView, TwitterAuthSuccessCreateConnection, \
     SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, InstagramAuthView, \
     SurveyMonkeyAuthSuccessCreateConnection, AJAXGetSurveyListView, InstagramAuthSuccessCreateConnection, \
-    AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSMTPTestConnection
+    AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection, AJAXSMTPTestConnection
 from apps.gp.enum import GoogleAPI
 
 urlpatterns = [
@@ -84,6 +84,8 @@ urlpatterns = [
         name='ajax_zohocrm_test_connection'),
     url(r'ajax/sms/test_connection/', AJAXSMSTestConnection.as_view(),
         name='ajax_update_sms_test_connection'),
+    url(r'ajax/salesforce/test_connection/', AJAXSalesforceTestConnection.as_view(),
+        name='ajax_update_salesforce_test_connection'),
     url(r'ajax/smtp/test_connection/', AJAXSMTPTestConnection.as_view(),
         name='ajax_update_smtp_test_connection'),
 ]

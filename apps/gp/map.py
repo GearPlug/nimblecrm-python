@@ -131,6 +131,18 @@ class MapField(object):
                 self.choices = [(choice, choice) for choice in d['values']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
+        elif controller == ConnectorEnum.Salesforce:
+            if 'name' in d:
+                self.name = d['name']
+            if 'label' in d:
+                self.label = d['label']
+            if 'nillable' in d:
+                self.required = True if not d['nillable'] else False
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'picklistValues' in d and d['picklistValues']:
+                self.choices = [(c['value'], c['label']) for c in d['picklistValues'] if c['active']]
+                self.choices.insert(0, ('', ''))
         else:
             if 'name' in d:
                 self.name = d['name']
