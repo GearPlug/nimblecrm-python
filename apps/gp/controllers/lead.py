@@ -310,8 +310,7 @@ class SurveyMonkeyController(BaseController):
             if not q.exists():
                 details = self.get_response_details(survey_id, response_id)
                 for value in details:
-                    if (
-                                    value != "page_path" and value != "logic_path" and value != "metadata" and value != "custom_variables"):
+                    if (value != "page_path" and value != "logic_path" and value != "metadata" and value != "custom_variables"):
                         new_data.append(StoredData(name=value, value=details[value], object_id=response_id,
                                                    connection=connection_object.connection, plug=plug))
         if new_data:
