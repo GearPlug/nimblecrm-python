@@ -22,7 +22,7 @@ from apps.gp.controllers.ecomerce import ShopifyController
 from apps.gp.controllers.project_management import JiraController
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugSpecification, \
+from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugActionSpecification, \
     StoredData, SlackConnection, GooglePushWebhook
 from apps.plug.views import CreatePlugView
 from oauth2client import client
@@ -44,103 +44,6 @@ paypalrestsdk.configure({
 mcc = MailChimpController()
 gsc = GoogleSpreadSheetsController()
 gfc = GoogleFormsController()
-
-
-class CreatePlugView(LoginRequiredMixin, CreateView):
-    model = Plug
-    fields = ['connection', ]
-    template_name = 'wizard/plug_create.html'
-    success_url = ''
-    login_url = '/account/login/'
-
-    def get_context_data(self, **kwargs):
-        context = super(CreatePlugView, self).get_context_data(**kwargs)
-        context['plug_type'] = self.kwargs['plug_type']
-        return context
-
-    def form_valid(self, form, *args, **kwargs):
-        form.instance.user = self.request.user
-        n = int(Plug.objects.filter(connection__user=self.request.user).count()) + 1
-        form.instance.name = "Plug # %s for user %s" % (n, self.request.user.email)
-        form.instance.action_id = self.request.POST.get('action-id', None)
-        form.instance.plug_type = self.kwargs['plug_type']
-        self.object = form.save()
-        try:
-            g = Gear.objects.get(pk=self.request.session['gear_id'])
-            if self.object.plug_type == 'source':
-                g.source = self.object
-            elif self.object.plug_type == 'target':
-                g.target = self.object
-            g.save()
-        except:
-            print("There's no gear in session.")
-        exp = re.compile('(^specification-)(\d+)')
-        specification_list = [{'name': m.group(0), 'id': m.group(2), 'value': self.request.POST.get(m.group(0), None)}
-                              for s in self.request.POST.keys() for m in [exp.search(s)] if m]
-        for s in specification_list:
-            PlugSpecification.objects.create(plug=self.object, action_specification_id=s['id'], value=s['value'])
-        # Download data
-        c = ConnectorEnum.get_connector(self.object.connection.connector.id)
-        controller_class = ConnectorEnum.get_controller(c)
-        controller = controller_class()
-        ckwargs = {}
-        cargs = []
-        ping = controller.create_connection(self.object.connection.related_connection, self.object, *cargs, **ckwargs)
-        print("PING: %s" % ping)
-        if ping:
-            if self.object.is_source:
-                controller.download_to_stored_data(self.object.connection.related_connection, self.object)
-                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA or c == ConnectorEnum.SurveyMonkey or c == ConnectorEnum.GoogleCalendar or c == ConnectorEnum.Instagram or c == ConnectorEnum.YouTube or c==ConnectorEnum.Shopify:
-                    controller.create_webhook()
-            elif self.object.is_target:
-                if c == ConnectorEnum.MailChimp:
-                    controller.get_target_fields(list_id=specification_list[0]['value'])
-        self.request.session['source_connection_id'] = None
-        self.request.session['target_connection_id'] = None
-        return HttpResponseRedirect(self.get_success_url())
-
-    def get_success_url(self):
-        return reverse('wizard:plug_test', kwargs={'pk': self.object.id})
-
-
-class ActionListView(LoginRequiredMixin, ListView):
-    model = Action
-    template_name = 'wizard/action_list.html'
-
-    def post(self, request, *args, **kwargs):
-        if not request.is_ajax():
-            return super(ActionListView, self).get(request, *args, **kwargs)
-        plug_type = request.POST.get('type', None)
-        kw = {'action_type': plug_type}
-        if plug_type == 'source':
-            if 'source_connection_id' in request.session:
-                kw['connector_id'] = Connection.objects.get(pk=request.session['source_connection_id']).connector_id
-        if plug_type == 'target':
-            if 'target_connection_id' in request.session:
-                kw['connector_id'] = Connection.objects.get(pk=request.session['target_connection_id']).connector_id
-        self.object_list = self.model.objects.filter(**kw)
-        a = [{'name': a.name, 'id': a.id} for a in self.object_list]
-        return JsonResponse(a, safe=False)
-
-
-class ActionSpecificationsView(LoginRequiredMixin, ListView):
-    model = ActionSpecification
-    template_name = 'wizard/async/action_specification.html'
-
-    def get_context_data(self, **kwargs):
-        context = super(ActionSpecificationsView, self).get_context_data(**kwargs)
-        return context
-
-    def post(self, request, *args, **kwargs):
-        if not request.is_ajax():
-            return super(ActionSpecificationsView, self).get(request, *args, **kwargs)
-        action = Action.objects.get(pk=self.kwargs['pk'])
-        kw = {'action_id': action.id}
-        self.object_list = self.model.objects.filter(**kw)
-        context = self.get_context_data()
-        c = ConnectorEnum.get_connector(action.connector.id)
-        self.template_name = 'wizard/async/action_specification/' + c.name.lower() + '.html'
-        return super(ActionSpecificationsView, self).render_to_response(context)
 
 
 class GoogleDriveSheetList(LoginRequiredMixin, TemplateView):
@@ -427,7 +330,7 @@ class SlackWebhookEvent(TemplateView):
             return JsonResponse({'challenge': data['challenge']})
         elif 'type' in data.keys() and data['type'] == 'event_callback':
             event = data['event']
-            slack_channel_list = PlugSpecification.objects.filter(
+            slack_channel_list = PlugActionSpecification.objects.filter(
                 action_specification__action__action_type='source',
                 action_specification__action__connector__name__iexact="slack",
                 plug__source_gear__is_active=True)
@@ -459,7 +362,7 @@ class SurveyMonkeyWebhookEvent(TemplateView):
         print(data['resources']['survey_id'])
         survey = {'id': data['object_id']}
         responses.append(survey)
-        qs = PlugSpecification.objects.filter(
+        qs = PlugActionSpecification.objects.filter(
             action_specification__action__action_type='source',
             action_specification__action__connector__name__iexact="SurveyMonkey",
             value=data['resources']['survey_id']
@@ -486,7 +389,7 @@ class ShopifyWebhookEvent(TemplateView):
         notifications = []
         data = request.body.decode()
         notifications.append(data)
-        qs = PlugSpecification.objects.filter(
+        qs = PlugActionSpecification.objects.filter(
             action_specification__action__action_type='source',
             action_specification__action__connector__name__iexact="Shopify",
             plug__source_gear__is_active=True
@@ -599,7 +502,7 @@ class BitbucketWebhookEvent(TemplateView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body.decode('utf-8'))
         issue = data['issue']
-        qs = PlugSpecification.objects.filter(
+        qs = PlugActionSpecification.objects.filter(
             action_specification__action__action_type='source',
             action_specification__action__connector__name__iexact="bitbucket",
             plug__source_gear__is_active=True)
@@ -651,7 +554,7 @@ class InstagramWebhookEvent(TemplateView):
             return JsonResponse({'hola': True})
         media_id = data[0]['data']['media_id']
         object_id = data[0]['object_id']
-        qs = PlugSpecification.objects.filter(
+        qs = PlugActionSpecification.objects.filter(
             action_specification__action__action_type='source',
             action_specification__action__connector__name__iexact="instagram",
             value=object_id,
@@ -729,7 +632,7 @@ class YouTubeWebhookEvent(TemplateView):
         entry = root['feed']['entry']
         channel_id = entry['yt:channelId']
         video_id = entry['yt:videoId']
-        qs = PlugSpecification.objects.filter(
+        qs = PlugActionSpecification.objects.filter(
             action_specification__action__action_type='source',
             action_specification__action__connector__name__iexact="youtube",
             value=channel_id,
@@ -774,7 +677,7 @@ class JiraWebhookEvent(TemplateView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body.decode('utf-8'))
         issue = data['issue']
-        qs = PlugSpecification.objects.filter(
+        qs = PlugActionSpecification.objects.filter(
             action_specification__action__action_type='source',
             action_specification__action__connector__name__iexact="jira",
             value=issue['fields']['project']['id'],
@@ -813,7 +716,7 @@ class GoogleCalendarWebhookEvent(TemplateView):
         except GooglePushWebhook.DoesNotExist:
             return JsonResponse({'hola': True})
 
-        qs = PlugSpecification.objects.filter(
+        qs = PlugActionSpecification.objects.filter(
             action_specification__action__action_type='source',
             action_specification__action__connector__name__iexact="googlecalendar",
             plug__connection=google_push_webhook.connection,

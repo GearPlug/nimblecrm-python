@@ -1,4 +1,6 @@
 import logging
+from apps.gp.controllers.exception import ControllerError
+from apps.gp.models import Action, ActionSpecification
 
 logger = logging.getLogger('controller')
 
@@ -12,18 +14,33 @@ class BaseController(object):
     _connection_object = None
     _plug = None
     _log = logging.getLogger('controller')
+    _connector = None
 
     def __init__(self, *args, **kwargs):
         self.create_connection(*args, **kwargs)
 
     def create_connection(self, *args):
+        """
+        El args[0] debe ser la connection (especifica).
+        El args[1] puede ser el Plug o None.
+
+        :param args:
+        :return:
+        """
         if args:
             self._connection_object = args[0]
+            try:
+                self._connector = self._connection_object.connector
+            except:
+                pass
             try:
                 self._plug = args[1]
             except:
                 pass
             return
+
+    def test_connection(self):
+        raise ControllerError('Not implemented yet.')
 
     def send_stored_data(self, *args, **kwargs):
         raise ControllerError('Not implemented yet.')
@@ -38,7 +55,14 @@ class BaseController(object):
             raise ControllerError("There's no active connection or plug.")
 
     def get_target_fields(self, **kwargs):
-        raise ControllerError("Not implemented yet.")
+        raise ControllerError('Not implemented yet.')
 
     def get_mapping_fields(self, **kwargs):
-        raise ControllerError("Not implemented yet.")
+        raise ControllerError('Not implemented yet.')
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        if action_specification.action.connector == self._connector:
+            raise ControllerError('Not implemented yet.')
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")

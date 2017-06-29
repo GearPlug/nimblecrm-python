@@ -2,7 +2,7 @@ from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 
-from apps.gp.models import StoredData
+from apps.gp.models import StoredData, ActionSpecification
 import MySQLdb
 import copy
 import psycopg2
@@ -27,28 +27,18 @@ class MySQLController(BaseController):
             super(MySQLController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
-                    host = self._connection_object.host
-                    port = self._connection_object.port
-                    user = self._connection_object.connection_user
-                    password = self._connection_object.connection_password
                     self._database = self._connection_object.database
                     self._table = self._connection_object.table
                 except Exception as e:
-                    pass
-                    # raise
-                    print("Error getting the MySQL attributes")
-        elif not args and kwargs:
-            try:
-                host = kwargs.pop('host')
-                port = kwargs.pop('port')
-                user = kwargs.pop('connection_user')
-                password = kwargs.pop('connection_password')
-                self._database = kwargs.pop('database')
-                self._table = kwargs.pop('table', None)
-            except Exception as e:
-                pass
-                # raise
-                print("Error getting the MySQL attributes")
+                    print("Error getting the MySQL attributes args")
+
+    def test_connection(self):
+        if self._connection_object is not None:
+            raise ControllerError('No connection.')
+        host = self._connection_object.host
+        port = self._connection_object.port
+        user = self._connection_object.connection_user
+        password = self._connection_object.connection_password
         try:
             self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self._database)
             self._cursor = self._connection.cursor()
@@ -172,6 +162,14 @@ class MySQLController(BaseController):
     def get_mapping_fields(self, **kwargs):
         return [item['name'] for item in self.describe_table() if item['is_primary'] is not True]
 
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        if action_specification.action.connector == self._connector:
+            if action_specification.name.lower() == 'order by':
+                return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
+
 
 class PostgreSQLController(BaseController):
     _connection = None
@@ -187,28 +185,18 @@ class PostgreSQLController(BaseController):
             super(PostgreSQLController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
-                    host = self._connection_object.host
-                    port = self._connection_object.port
-                    user = self._connection_object.connection_user
-                    password = self._connection_object.connection_password
                     self._database = self._connection_object.database
                     self._table = self._connection_object.table
                 except Exception as e:
-                    pass
-                    # raise
-                    print("Error getting the PostgreSQL attributes")
-        elif not args and kwargs:
-            try:
-                host = kwargs.pop('host')
-                port = kwargs.pop('port')
-                user = kwargs.pop('connection_user')
-                password = kwargs.pop('connection_password')
-                self._database = kwargs.pop('database')
-                self._table = kwargs.pop('table', None)
-            except Exception as e:
-                pass
-                # raise
-                print("Error getting the PostgreSQL attributes")
+                    print("Error getting the PostgreSQL attributes args")
+
+    def test_connection(self):
+        if self._connection_object is not None:
+            raise ControllerError('No connection.')
+        host = self._connection_object.host
+        port = self._connection_object.port
+        user = self._connection_object.connection_user
+        password = self._connection_object.connection_password
         try:
             self._connection = psycopg2.connect(host=host, port=int(port), user=user, password=password,
                                                 database=self._database)
@@ -331,11 +319,16 @@ class PostgreSQLController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def get_target_fields(self, **kwargs):
-        return self.describe_table(**kwargs)
-
     def get_mapping_fields(self, **kwargs):
         return [item['name'] for item in self.describe_table() if item['name'] not in self.get_primary_keys()]
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        if action_specification.action.connector == self._connector:
+            if action_specification.name.lower() == 'order by':
+                return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class MSSQLController(BaseController):
@@ -496,8 +489,13 @@ class MSSQLController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def get_target_fields(self):
-        return self.describe_table()
-
     def get_mapping_fields(self, **kwargs):
         return [item['name'] for item in self.describe_table() if item['name'] not in self.get_primary_keys()]
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        if action_specification.action.connector == self._connector:
+            if action_specification.name.lower() == 'order by':
+                return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")

@@ -10,7 +10,9 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
                'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram',
                'connection_getresponse', 'connection_getresponse', 'connection_twitter', 'connection_surveymonkey',
                'connection_zohocrm', 'connection_wunderlist', 'connection_sms', 'connection_youtube', 'connection_smtp'
-               'connection_salesforce', 'connection_shopify']
+                                                                                                      'connection_salesforce',
+               'connection_shopify']
+
 
 class Category(models.Model):
     name = models.CharField('name', max_length=100)
@@ -209,6 +211,7 @@ class SurveyMonkeyConnection(models.Model):
     def __str__(self):
         return self.name
 
+
 class ShopifyConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_shopify')
     name = models.CharField('name', max_length=200)
@@ -339,6 +342,7 @@ class SMSConnection(models.Model):
     def __str__(self):
         return self.name
 
+
 class SalesforceConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_salesforce')
     name = models.CharField('name', max_length=200)
@@ -385,9 +389,10 @@ class Plug(models.Model):
         return self.name
 
 
-class PlugSpecification(models.Model):
-    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='plug_specification')
-    action_specification = models.ForeignKey(ActionSpecification)
+class PlugActionSpecification(models.Model):
+    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='plug')
+    action_specification = models.ForeignKey(ActionSpecification, on_delete=models.CASCADE,
+                                             related_name='action_specification')
     value = models.CharField('value', max_length=1000)
 
     class Meta:
@@ -476,7 +481,7 @@ class ControllerLog(DBLogEntry):
     controller = models.CharField(max_length=20, blank=True, default='')
 
 
-class ProcessedData(models.Model):
+class ProcessedData():
     gear = models.ForeignKey(Gear, related_name='processed_data')
     plug = models.ForeignKey(Plug)
     connection = models.ForeignKey(Connection)
@@ -491,4 +496,4 @@ admin.site.register(ActionSpecification)
 admin.site.register(Connection)
 admin.site.register(Gear)
 admin.site.register(Plug)
-admin.site.register(PlugSpecification)
+admin.site.register(PlugActionSpecification)

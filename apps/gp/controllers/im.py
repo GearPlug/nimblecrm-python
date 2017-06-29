@@ -1,7 +1,7 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import StoredData, PlugSpecification
+from apps.gp.models import StoredData, PlugActionSpecification
 
 from slacker import Slacker
 from utils.nrsgateway import Client as SMSClient
@@ -78,8 +78,8 @@ class SlackController(BaseController):
             extra = {'controller': 'slack'}
             for specification in self._plug.plug_specification.all():
                 try:
-                    target = PlugSpecification.objects.get(plug=self._plug,
-                                                           action_specification=specification.action_specification)
+                    target = PlugActionSpecification.objects.get(plug=self._plug,
+                                                                 action_specification=specification.action_specification)
                 except Exception as e:
                     raise
             for obj in data_list:
