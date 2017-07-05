@@ -204,10 +204,9 @@ class PlugActionSpecificationOptionsView(LoginRequiredMixin, TemplateView):
         connection = Connection.objects.get(pk=connection_id)
         controller_class = ConnectorEnum.get_connector(connection.connector_id)
         controller = controller_class(connection.related_connection)
-        ping = controller.tes
+        ping = controller.test_connection()
         if ping:
-            # El id es el mismo nombre del module
-            field_list = tuple({'id': f['name'], 'name': f['name']} for f in controller.describe_table())
+            field_list = controller.get_action_specification_options()
         else:
             field_list = list()
         context['object_list'] = field_list

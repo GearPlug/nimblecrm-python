@@ -42,7 +42,7 @@ class MySQLController(BaseController):
         try:
             self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self._database)
             self._cursor = self._connection.cursor()
-        except:
+        except Exception as e:
             self._connection = None
         return self._connection is not None
 
@@ -201,7 +201,7 @@ class PostgreSQLController(BaseController):
             self._connection = psycopg2.connect(host=host, port=int(port), user=user, password=password,
                                                 database=self._database)
             self._cursor = self._connection.cursor()
-        except:
+        except Exception as e:
             self._connection = None
         return self._connection is not None
 
@@ -345,33 +345,25 @@ class MSSQLController(BaseController):
             super(MSSQLController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
-                    host = self._connection_object.host
-                    port = self._connection_object.port
-                    user = self._connection_object.connection_user
-                    password = self._connection_object.connection_password
                     self._database = self._connection_object.database
                     self._table = self._connection_object.table
                 except Exception as e:
                     pass
                     # raise
                     print("Error getting the MSSQL attributes")
-        elif not args and kwargs:
-            try:
-                host = kwargs.pop('host')
-                port = kwargs.pop('port')
-                user = kwargs.pop('connection_user')
-                password = kwargs.pop('connection_password')
-                self._database = kwargs.pop('database')
-                self._table = kwargs.pop('table', None)
-            except Exception as e:
-                pass
-                # raise
-                print("Error getting the MSSQL attributes")
+
+    def test_connection(self):
+        if self._connection_object is not None:
+            raise ControllerError('No connection.')
+        host = self._connection_object.host
+        port = self._connection_object.port
+        user = self._connection_object.connection_user
+        password = self._connection_object.connection_password
         try:
             self._connection = pymssql.connect(host=host, port=int(port), user=user, password=password,
                                                database=self._database)
             self._cursor = self._connection.cursor()
-        except:
+        except Exception as e:
             self._connection = None
         return self._connection is not None
 

@@ -57,11 +57,8 @@ def update_gear(gear_id):
                                         GearMapData.objects.filter(gear_map=gear.gear_map))
             source_data = [{'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}}
                            for item in stored_data.values_list('object_id').distinct()]
-            print(target_fields)
-            print(source_data)
             controller = controller_class(gear.target.connection.related_connection, gear.target)
             entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
-            print(entries)
             gear.gear_map.last_source_update = timezone.now()
             gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
             gear.gear_map.save()
