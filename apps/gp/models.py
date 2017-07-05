@@ -10,7 +10,9 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
                'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram',
                'connection_getresponse', 'connection_getresponse', 'connection_twitter', 'connection_surveymonkey',
                'connection_zohocrm', 'connection_wunderlist', 'connection_sms', 'connection_youtube', 'connection_smtp'
-               'connection_salesforce', 'connection_shopify']
+                                                                                                      'connection_salesforce',
+               'connection_shopify']
+
 
 class Category(models.Model):
     name = models.CharField('name', max_length=100)
@@ -209,6 +211,7 @@ class SurveyMonkeyConnection(models.Model):
     def __str__(self):
         return self.name
 
+
 class ShopifyConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_shopify')
     name = models.CharField('name', max_length=200)
@@ -339,6 +342,7 @@ class SMSConnection(models.Model):
     def __str__(self):
         return self.name
 
+
 class SalesforceConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_salesforce')
     name = models.CharField('name', max_length=200)
@@ -385,9 +389,10 @@ class Plug(models.Model):
         return self.name
 
 
-class PlugSpecification(models.Model):
-    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='plug_specification')
-    action_specification = models.ForeignKey(ActionSpecification)
+class PlugActionSpecification(models.Model):
+    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='plug')
+    action_specification = models.ForeignKey(ActionSpecification, on_delete=models.CASCADE,
+                                             related_name='action_specification')
     value = models.CharField('value', max_length=1000)
 
     class Meta:
@@ -445,6 +450,20 @@ class GearMapData(models.Model):
         return '%s: %s' % (self.target_name, self.source_value)
 
 
+class Webhook(models.Model):
+    name = models.CharField('webhook name', max_length=100)
+    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='webhook')
+    url = models.URLField('url')
+    generated_id = models.CharField('generated id', max_length=200)
+    created = models.DateTimeField('created', auto_now_add=True)
+    is_active = models.BooleanField('is active', default=False)
+    is_deleted = models.BooleanField('is deleted', default=False)
+    expiration = models.CharField('expiration', max_length=200)
+
+    def __str__(self):
+        return '%s webhook of %s' % (self.name, self.plug)
+
+
 class DBLogEntry(models.Model):
     time = models.DateTimeField(auto_now_add=True)
     level = models.CharField(max_length=10)
@@ -462,16 +481,13 @@ class ControllerLog(DBLogEntry):
     controller = models.CharField(max_length=20, blank=True, default='')
 
 
-class ConnectionData():
-    pass
-
-
-class PlugData():
-    pass
-
-
-class GearData():
-    pass
+class ProcessedData():
+    gear = models.ForeignKey(Gear, related_name='processed_data')
+    plug = models.ForeignKey(Plug)
+    connection = models.ForeignKey(Connection)
+    connector = models.ForeignKey(Connector)
+    process_type = models.CharField('process type', max_length=20, choices=(('source', 'Source'), ('target', 'target')))
+    created = models.DateTimeField('created', auto_now_add=True)
 
 
 admin.site.register(Connector)
@@ -480,4 +496,4 @@ admin.site.register(ActionSpecification)
 admin.site.register(Connection)
 admin.site.register(Gear)
 admin.site.register(Plug)
-admin.site.register(PlugSpecification)
+admin.site.register(PlugActionSpecification)

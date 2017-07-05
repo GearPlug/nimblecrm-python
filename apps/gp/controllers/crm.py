@@ -3,7 +3,7 @@ from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
-from apps.gp.models import StoredData
+from apps.gp.models import StoredData, ActionSpecification
 from simple_salesforce import Salesforce
 from simple_salesforce.login import SalesforceAuthenticationFailed
 from dateutil.parser import parse
@@ -55,15 +55,10 @@ class SugarCRMController(BaseController):
                     self._module = args[2]
                 except:
                     pass
-        elif not args and kwargs:
-            try:
-                self._user = kwargs.pop('connection_user')
-                self._password = kwargs.pop('connection_password')
-                self._url = kwargs.pop('url')
-            except Exception as e:
-                print("Error getting the SugarCRM attributes")
         if self._url is not None and self._user is not None and self._password is not None:
             self._session = sugarcrm.Session(self._url, self._user, self._password)
+
+    def test_connection(self):
         return self._session is not None and self._session.session_id is not None
 
     def get_available_modules(self):
@@ -145,6 +140,15 @@ class SugarCRMController(BaseController):
         fields = self.get_module_fields(self._plug.plug_specification.all()[0].value, get_structure=True)
         return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields]
 
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        if action_specification.action.connector == self._connector:
+            if action_specification.name.lower() == 'module':
+                module_list = tuple({'id': m.module_key, 'name': m.module_key} for m in self.get_available_modules())
+                return module_list
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
+
 
 class ZohoCRMController(BaseController):
     _token = None
@@ -158,19 +162,13 @@ class ZohoCRMController(BaseController):
             if self._connection_object is not None:
                 try:
                     self._token = self._connection_object.token
-                    print(self._token)
                 except Exception as e:
                     print("Error getting zohocrm token")
                     print(e)
-        elif kwargs:
-            try:
-                self._token = kwargs.pop('token', None)
-            except Exception as e:
-                print("Error getting zohocrm token")
-                print(e)
+
+    def test_connection(self):
         if self._token is not None:
-            response = self.get_modules()['_content'].decode()
-            response = json.loads(response)
+            response = json.loads(self.get_modules()['_content'].decode())
             if "result" in response["response"]:
                 return self._token is not None
         return False
@@ -217,7 +215,7 @@ class ZohoCRMController(BaseController):
             extra = {'controller': 'zohocrm'}
             for item in data_list:
                 try:
-                    response=self.insert_records(item,module_id)
+                    response = self.insert_records(item, module_id)
                     self._log.info('Item: %s successfully sent.' % (int(response['#text'])), extra=extra)
                     obj_list.append(id)
                 except Exception as e:
@@ -236,7 +234,7 @@ class ZohoCRMController(BaseController):
 
     def get_target_fields(self, **kwargs):
         module_id = self._plug.plug_specification.all()[0].value
-        fields=self.get_fields(module_id)
+        fields = self.get_fields(module_id)
         return fields
 
     def get_fields(self, module_id):
@@ -257,7 +255,7 @@ class ZohoCRMController(BaseController):
                 if (type(val['FL']) == dict):
                     fields.append(val['FL'])
                 else:
-                    for i in val['FL']:fields.append(i)
+                    for i in val['FL']: fields.append(i)
             return fields
         else:
             print(response)
@@ -299,7 +297,6 @@ class ZohoCRMController(BaseController):
         response = json.loads(response)
         response = response['response']
         if ("result" in response):
-            print("result")
             response = response['result'][module_name]['row']
             modules = self.get_lists(response, module_name)
             return modules
@@ -320,6 +317,21 @@ class ZohoCRMController(BaseController):
         module_name = module_name.replace("-", " ")
         module_name = string.capwords(module_name)
         return module_name.replace(" ", "")
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        if action_specification.action.connector == self._connector:
+            if action_specification.name.lower() == 'feed':
+                modules = self.get_modules()['_content'].decode()
+                modules = json.loads(modules)['response']['result']['row']
+                module_list = []
+                for m in modules:
+                    if m['pl'] not in ['Feeds', 'Visits', 'Social', 'Documents', 'Quotes', 'Sales Orders',
+                                       'Purchase Orders']:
+                        module_list.append({'id': m['id'], 'name': m['pl']})
+                return tuple(module_list)
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class SalesforceController(BaseController):
@@ -415,3 +427,10 @@ class SalesforceController(BaseController):
         else:
             return self.get_lead_meta()
 
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        if action_specification.action.connector == self._connector:
+            raise ControllerError('Not implemented yet.')
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")

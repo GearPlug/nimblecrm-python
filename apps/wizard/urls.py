@@ -1,15 +1,15 @@
 from django.conf.urls import url
-from apps.wizard.views import CreatePlugView, TestPlugView, \
-    ActionSpecificationsView, CreateGearMapView, ActionListView, MSSQLFieldList, \
-    GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList,\
-    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent, \
-    BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList, \
-    InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
+from apps.wizard.views import TestPlugView, \
+    CreateGearMapView, MSSQLFieldList, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, \
+    MySQLFieldList, PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, \
+    SlackWebhookEvent, BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, \
+    GetResponseCampaignsList, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
     GoogleCalendarWebhookEvent, AJAXGetSurveyListView, SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
     YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent
 
 from apps.connection.views import ListConnectionView, ListConnectorView, CreateConnectionView
 from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, DeleteGearView
+from apps.plug.views import ActionListView, ActionSpecificationsListView, CreatePlugView
 
 urlpatterns = [
 
@@ -30,7 +30,8 @@ urlpatterns = [
     # PLUG CREATE
     url(r'^plug/create/(?P<plug_type>(source|target)+)/$', CreatePlugView.as_view(), name='plug_create'),
     # PLUG ACTION LIST (AJAX)
-    url(r'^plug/action/(?P<pk>\d+)/specifications/$', ActionSpecificationsView.as_view(), name='action_specifications'),
+    url(r'^plug/action/(?P<pk>\d+)/specifications/$', ActionSpecificationsListView.as_view(),
+        name='action_specifications'),
     # PLUG ACTION SPECIFICATION LIST (AJAX)
     url(r'^plug/action/list/$', ActionListView.as_view(), name='action_list'),
     # PLUG TEST
@@ -71,7 +72,7 @@ urlpatterns = [
     url(r'surveymonkey/webhook/event/(?P<plug_id>\d+)/', SurveyMonkeyWebhookEvent.as_view(),
         name='surveymonkey_webhook_event'),
 
-    #Shopify
+    # Shopify
     url(r"async/shopify/topic/list/", ShopifyList.as_view(), name='async_shopify_topic_list'),
     url(r'shopify/webhook/event/(?P<plug_id>\d+)/', ShopifyWebhookEvent.as_view(),
         name='shopify_webhook_event'),

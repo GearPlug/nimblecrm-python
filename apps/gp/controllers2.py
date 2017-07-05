@@ -1,6 +1,4 @@
-from apps.gp.models import StoredData, PlugSpecification, GooglePushWebhook
-from apiconnector.settings import FACEBOOK_APP_SECRET, FACEBOOK_APP_ID, FACEBOOK_GRAPH_VERSION, GOOGLE_CLIEN_ID, \
-    GOOGLE_CLIENT_SECRET
+from apps.gp.models import StoredData, PlugActionSpecification, GooglePushWebhook
 from apiconnector.settings import FACEBOOK_APP_SECRET, FACEBOOK_APP_ID, FACEBOOK_GRAPH_VERSION
 from django.conf import settings
 import tweepy
@@ -147,8 +145,8 @@ class SlackController(BaseController):
             extra = {'controller': 'slack'}
             for specification in self._plug.plug_specification.all():
                 try:
-                    target = PlugSpecification.objects.get(plug=self._plug,
-                                                           action_specification=specification.action_specification)
+                    target = PlugActionSpecification.objects.get(plug=self._plug,
+                                                                 action_specification=specification.action_specification)
                 except Exception as e:
                     raise
             for obj in data_list:
