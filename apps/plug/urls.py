@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from apps.plug.views import CreatePlugView, CreatePlugSpecificationsView, UpdatePlugSpecificationsView
+from apps.plug.views import CreatePlugView,    CreatePlugSpecificationsView, UpdatePlugSpecificationsView
 
 urlpatterns = [
     url(r'create/$', CreatePlugView.as_view(), name='create'),

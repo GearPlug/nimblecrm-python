@@ -1,11 +1,11 @@
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from django.views.generic import CreateView, UpdateView, ListView, View, TemplateView
+from django.views.generic import CreateView, UpdateView, ListView, View, TemplateView, ListView, UpdateView
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from apps.plug.apps import APP_NAME as app_name
-from apps.gp.models import Gear, Plug, PlugActionSpecification, Action, ActionSpecification, Connection
 from apps.gp.enum import ConnectorEnum
+from apps.gp.models import Gear, Plug, PlugActionSpecification, Action, ActionSpecification, Connection
 from extra_views import ModelFormSetView
 import re
 
