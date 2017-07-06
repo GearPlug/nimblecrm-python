@@ -33,7 +33,7 @@ class MySQLController(BaseController):
                     print("Error getting the MySQL attributes args")
 
     def test_connection(self):
-        if self._connection_object is not None:
+        if self._connection_object is None:
             raise ControllerError('No connection.')
         host = self._connection_object.host
         port = self._connection_object.port
@@ -163,10 +163,10 @@ class MySQLController(BaseController):
         return [item['name'] for item in self.describe_table() if item['is_primary'] is not True]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
-        if action_specification.action.connector == self._connector:
-            if action_specification.name.lower() == 'order by':
-                return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'order by':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
@@ -191,7 +191,7 @@ class PostgreSQLController(BaseController):
                     print("Error getting the PostgreSQL attributes args")
 
     def test_connection(self):
-        if self._connection_object is not None:
+        if self._connection_object is None:
             raise ControllerError('No connection.')
         host = self._connection_object.host
         port = self._connection_object.port
@@ -323,10 +323,9 @@ class PostgreSQLController(BaseController):
         return [item['name'] for item in self.describe_table() if item['name'] not in self.get_primary_keys()]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
-        if action_specification.action.connector == self._connector:
-            if action_specification.name.lower() == 'order by':
-                return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'order by':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
@@ -353,7 +352,7 @@ class MSSQLController(BaseController):
                     print("Error getting the MSSQL attributes")
 
     def test_connection(self):
-        if self._connection_object is not None:
+        if self._connection_object is None:
             raise ControllerError('No connection.')
         host = self._connection_object.host
         port = self._connection_object.port
@@ -485,9 +484,8 @@ class MSSQLController(BaseController):
         return [item['name'] for item in self.describe_table() if item['name'] not in self.get_primary_keys()]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
-        if action_specification.action.connector == self._connector:
-            if action_specification.name.lower() == 'order by':
-                return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'order by':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
