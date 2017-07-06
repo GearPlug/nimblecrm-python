@@ -102,7 +102,7 @@ class Connection(models.Model):
         return 'Object not found'
 
     def __str__(self):
-        return '%s' % self.name
+        return self.name
 
 
 class JiraConnection(models.Model):
@@ -145,7 +145,7 @@ class MySQLConnection(models.Model):
     connection_password = models.CharField('password', max_length=40)
 
     def __str__(self):
-        return self.name
+        return '{0}'.format(self.name)
 
 
 class PostgreSQLConnection(models.Model):

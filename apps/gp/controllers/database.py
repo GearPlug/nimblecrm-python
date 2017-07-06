@@ -33,7 +33,7 @@ class MySQLController(BaseController):
                     print("Error getting the MySQL attributes args")
 
     def test_connection(self):
-        if self._connection_object is not None:
+        if self._connection_object is None:
             raise ControllerError('No connection.')
         host = self._connection_object.host
         port = self._connection_object.port
@@ -191,7 +191,7 @@ class PostgreSQLController(BaseController):
                     print("Error getting the PostgreSQL attributes args")
 
     def test_connection(self):
-        if self._connection_object is not None:
+        if self._connection_object is None:
             raise ControllerError('No connection.')
         host = self._connection_object.host
         port = self._connection_object.port
@@ -353,7 +353,7 @@ class MSSQLController(BaseController):
                     print("Error getting the MSSQL attributes")
 
     def test_connection(self):
-        if self._connection_object is not None:
+        if self._connection_object is None:
             raise ControllerError('No connection.')
         host = self._connection_object.host
         port = self._connection_object.port

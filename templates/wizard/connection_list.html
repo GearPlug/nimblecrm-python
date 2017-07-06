@@ -15,7 +15,8 @@
                         <label>
                             <input type="radio" name="connection" value="{{ connection.id }}"> {{ connection.name }}
                         </label>
-                        <button>TEST</button>
+                        <button type="button" class="testConnectionButton" connection_id="{{ connection.id }}">TEST
+                        </button>
                         <br>
                     </li>
                 {% endfor %}
@@ -41,5 +42,23 @@
                 window.location.reload();
             }, 100);
         }
+        $('.testConnectionButton').click(function (e) {
+            var button = $(this);
+            $.ajax({
+                method: "POST",
+                url: "{% url 'connection:test' connector_id=connector_id %}",
+                data: {connection_id: $(button).attr('connection_id')},
+            }).done(function (response) {
+                console.log(response)
+                if (response.data == true || response.data == 'true') {
+                    $(button).css('background-color', 'green');
+                } else {
+                    $(button).css('background-color', 'red');
+
+                }
+            });
+            return false;
+
+        })
     </script>
 {% endblock %}

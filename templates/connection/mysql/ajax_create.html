@@ -1,6 +1,7 @@
 {% load bootstrap_tags %}
 
 
+<p>HOLA{{ connection_id }}</p>
 <form id="formCreateConnection" class="create-connection-form form-horizontal"
       action="{% url 'wizard:create_connection' connector_id=2 %}"
       method="post" autocomplete="off">

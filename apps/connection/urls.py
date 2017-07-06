@@ -8,13 +8,18 @@ from apps.connection.views import CreateConnectionView, ListConnectorView, \
     SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, InstagramAuthView, \
     SurveyMonkeyAuthSuccessCreateConnection, AJAXGetSurveyListView, InstagramAuthSuccessCreateConnection, \
     AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection, ShopifyAuthView, \
-    ShopifyAuthSuccessCreateConnection, AJAXSMTPTestConnection
+    ShopifyAuthSuccessCreateConnection, AJAXSMTPTestConnection, TestConnectionView, CreateConnectionSuccessView
 
 from apps.gp.enum import GoogleAPI
 
 urlpatterns = [
-    # CRUD?
+    # Create
     url(r'create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create'),
+    # TestConnection
+    url(r'^test/(?P<connector_id>\d+)/$', TestConnectionView.as_view(), name="test"),
+    # Create Success
+    url(r'create/success/$', CreateConnectionSuccessView.as_view(), name='create_success'),
+    # Update??
     url(r'update/(?P<connector_id>\d+)/(?P<pk>\d+)/$', UpdateConnectionView.as_view(), name='update'),
     # url(r'delete/(?P<pk>\d+)/$', DeleteGearView.as_view(), name='delete'),
     url(r'list/connector/$', ListConnectorView.as_view(), name='list_connector'),

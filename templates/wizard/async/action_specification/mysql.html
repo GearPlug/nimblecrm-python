@@ -13,7 +13,8 @@
                     $.ajax({
                         method: "POST",
                         url: url,
-                        data: {connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %}}
+                        data: {connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %},
+                               actions_specification_id:1}
                     }).done(function (response) {
                         $(select).html(response);
                         load_options = false;
