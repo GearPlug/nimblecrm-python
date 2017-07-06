@@ -1,7 +1,8 @@
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
+from django.http import HttpResponse
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView, View
 from django.urls import reverse_lazy
 from apps.plug.apps import APP_NAME as app_name
-from apps.gp.models import Plug, PlugSpecification
+from apps.gp.models import Plug, PlugSpecification, Action, ActionSpecification
 from extra_views import ModelFormSetView
 
 
@@ -95,3 +96,15 @@ class UpdatePlugSpecificationsView(UpdateView):
     template_name = '%s/specifications/update.html' % app_name
     fields = ['value']
     success_url = reverse_lazy('%s:list' % app_name)
+
+
+class GetActionsView(View):
+    def get(self, request, *args, **kwargs):
+        actions = Action.objects.filter(connector_id=kwargs['connector_id'], action_type=kwargs['action_type'])
+        return HttpResponse(actions)
+
+
+class GetActionSpecifications(View):
+    def get(self, request, *args, **kwargs):
+        specifications = ActionSpecification.objects.filter(action_id=kwargs['action_id'])
+        return HttpResponse(specifications)

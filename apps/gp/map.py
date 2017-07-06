@@ -91,6 +91,22 @@ class MapField(object):
                 self.choices = [(choice, choice) for choice in d['values']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
+        elif controller == ConnectorEnum.ZohoCRM:
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'dv' in d:
+                self.name = d['dv']
+            if 'label' in d:
+                self.label = d['label']
+            if 'req' in d:
+                self.required = True if d['req'] == 'true' else False
+            if 'val' in d:
+                if isinstance(d['val'], list):
+                    self.choices = [(choice, choice) for choice in d['val']]
+                    self.choices.insert(0, ('', ''))
+                    self.field_type = 'choices'
+            if 'maxlength' in d:
+                self.max_length = int(d['maxlength'])
         elif controller == ConnectorEnum.GoogleCalendar:
             if 'name' in d:
                 self.name = d['name']
@@ -115,6 +131,18 @@ class MapField(object):
                 self.choices = [(choice, choice) for choice in d['values']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
+        elif controller == ConnectorEnum.Salesforce:
+            if 'name' in d:
+                self.name = d['name']
+            if 'label' in d:
+                self.label = d['label']
+            if 'nillable' in d:
+                self.required = True if not d['nillable'] else False
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'picklistValues' in d and d['picklistValues']:
+                self.choices = [(c['value'], c['label']) for c in d['picklistValues'] if c['active']]
+                self.choices.insert(0, ('', ''))
         elif controller == ConnectorEnum.Shopify:
             if 'name' in d:
                 self.name = d['name']

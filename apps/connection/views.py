@@ -18,6 +18,8 @@ from apps.connection.myviews.ZohoCRMViews import *
 from apps.connection.myviews.GetResponseViews import *
 from apps.connection.myviews.SurveyMonkeyViews import *
 from apps.connection.myviews.SMSViews import *
+from apps.connection.myviews.SalesforceViews import *
+from apps.connection.myviews.SMTPViews import *
 from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI
@@ -33,7 +35,7 @@ import requests
 
 GOOGLE_DRIVE_SCOPE = ''
 GOOGLE_AUTH_URL = 'http://localhost:8000/connection/google_auth/'
-GOOGLE_AUTH_REDIRECT_URL = 'connection:google_auth_success_create_connection',
+GOOGLE_AUTH_REDIRECT_URL = 'connection:google_auth_success_create_connection'
 
 GOOGLE_FORMS_SCOPE = ''
 GOOGLE_FORMS_AUTH_URL = 'http://localhost:8000/connection/google_forms_auth/'
