@@ -8,6 +8,7 @@ from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.controllers.utils import get_dict_with_source_data
 
+
 class EbayController(BaseController):
     pass
 
@@ -23,6 +24,7 @@ class AmazonSellerCentralController(BaseController):
 class PayUController(BaseController):
     pass
 
+
 class ShopifyController(BaseController):
     _token = None
 
@@ -37,13 +39,13 @@ class ShopifyController(BaseController):
                     self._token = self._connection_object.token
                 except Exception as e:
                     print("Error getting the shopify token")
-                    print(e)
-        elif kwargs:
-            host = kwargs.pop('token', None)
+
+    def test_connection(self):
         return self._token is not None
+        raise ControllerError("TODO")
 
     def get_topics(self):
-        return [{'name':'customers', 'id':'customers'},{'name':'products', 'id':'products'}]
+        return [{'name': 'customers', 'id': 'customers'}, {'name': 'products', 'id': 'products'}]
 
     def download_to_stored_data(self, connection_object, plug, list=None):
         if plug is None:
@@ -53,8 +55,10 @@ class ShopifyController(BaseController):
         if list is None:
             session = shopify.Session("https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com", self._token)
             shopify.ShopifyResource.activate_session(session)
-            if (topic_id=="customers"):list=shopify.Customer.find()
-            elif (topic_id=="products"): list=shopify.Products.find()
+            if (topic_id == "customers"):
+                list = shopify.Customer.find()
+            elif (topic_id == "products"):
+                list = shopify.Products.find()
 
         new_data = []
         for item in list:
@@ -62,14 +66,16 @@ class ShopifyController(BaseController):
             id = int(m[0])
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id)
             if not q.exists():
-                if (topic_id == "customers"):details = shopify.Customer.find(id)
-                elif (topic_id == "products"):details = shopify.Products.find(id)
+                if (topic_id == "customers"):
+                    details = shopify.Customer.find(id)
+                elif (topic_id == "products"):
+                    details = shopify.Products.find(id)
                 for value in details.attributes:
-                    information=details.attributes[value]
-                    if (information==None):
-                        information=''
+                    information = details.attributes[value]
+                    if (information == None):
+                        information = ''
                     new_data.append(StoredData(name=value, value=information, object_id=id,
-                                                   connection=connection_object.connection, plug=plug))
+                                               connection=connection_object.connection, plug=plug))
         if new_data:
             extra = {'controller': 'shopify'}
             for item in new_data:
@@ -83,15 +89,14 @@ class ShopifyController(BaseController):
                         item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
         return True
 
-
     def create_webhook(self):
         topic_id = self._plug.plug_specification.all()[0].value
         plug_id = self._plug.plug_specification.all()[0].id
         session = shopify.Session("https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com", self._token)
         shopify.ShopifyResource.activate_session(session)
         new_webhook = shopify.Webhook()
-        new_webhook.topic = topic_id+"/create"
-        new_webhook.address =  "https://l.grplug.com/wizard/shopify/webhook/event/%s/" % (plug_id)
+        new_webhook.topic = topic_id + "/create"
+        new_webhook.address = "https://l.grplug.com/wizard/shopify/webhook/event/%s/" % (plug_id)
         new_webhook.format = "json"
         success = new_webhook.save()
         if success == True:
@@ -99,8 +104,8 @@ class ShopifyController(BaseController):
             return True
         return False
 
-    def get_list_webhooks(self):  #Metodo para listar los webhooks
-        session = shopify.Session("https://" + settings.SHOPIFY_SHOP_URL+ ".myshopify.com", self._token)
+    def get_list_webhooks(self):  # Metodo para listar los webhooks
+        session = shopify.Session("https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com", self._token)
         shopify.ShopifyResource.activate_session(session)
         webhook = shopify.Webhook.find()
         return webhook
@@ -114,21 +119,21 @@ class ShopifyController(BaseController):
 
     def get_fields(self):
         topic_id = self._plug.plug_specification.all()[0].value
-        if (topic_id=='customers'):
-            return [{"name":"first Name", "required":True, "type":'varchar'},
-                    {"name":"last Name","required":False, "type":'varchar'},
-                    {"name":"email","required":True, "type": 'varchar'},
-                    {"name":"address1", "required":False, "type": 'varchar'},
-                    {"name":"city","required":False, "type": 'varchar'},
-                    {"name":"country","required":False, "type": 'varchar'},
-                    {"name":"zip","required":False, "type": 'varchar'},
-                    {"name":"phone","required":True, "type": 'varchar'},
-                   ]
-        if (topic_id=='products'):
-            return [{"name":"title", "required":True, "type":'varchar'},
-                    {"name":"type","required":False, "type":'varchar'},
-                    {"name":"vendor","required":False, "type": 'varchar'},
-                   ]
+        if (topic_id == 'customers'):
+            return [{"name": "first Name", "required": True, "type": 'varchar'},
+                    {"name": "last Name", "required": False, "type": 'varchar'},
+                    {"name": "email", "required": True, "type": 'varchar'},
+                    {"name": "address1", "required": False, "type": 'varchar'},
+                    {"name": "city", "required": False, "type": 'varchar'},
+                    {"name": "country", "required": False, "type": 'varchar'},
+                    {"name": "zip", "required": False, "type": 'varchar'},
+                    {"name": "phone", "required": True, "type": 'varchar'},
+                    ]
+        if (topic_id == 'products'):
+            return [{"name": "title", "required": True, "type": 'varchar'},
+                    {"name": "type", "required": False, "type": 'varchar'},
+                    {"name": "vendor", "required": False, "type": 'varchar'},
+                    ]
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
@@ -138,9 +143,9 @@ class ShopifyController(BaseController):
             extra = {'controller': 'shopify'}
             for item in data_list:
                 try:
-                    if (topic_id=="customers"):
-                        response=self.create_customers(data=item)
-                    if (topic_id=="products"):
+                    if (topic_id == "customers"):
+                        response = self.create_customers(data=item)
+                    if (topic_id == "products"):
                         response = self.create_product(data=item)
                     if response is True:
                         list = shopify.Customer.find()
@@ -161,7 +166,7 @@ class ShopifyController(BaseController):
         return [MapField(f, controller=ConnectorEnum.Shopify) for f in fields]
 
     def create_customers(self, data):
-        values=self.get_values(data)
+        values = self.get_values(data)
         session = shopify.Session("https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com", self._token)
         shopify.ShopifyResource.activate_session(session)
         new_customer = shopify.Customer()
@@ -169,7 +174,7 @@ class ShopifyController(BaseController):
         new_customer.last_name = values["last Name"]
         new_customer.email = values["email"]
         new_customer.addresses = [{"address1": values["address1"], "city": values["city"], "phone": values["phone"]}]
-        sucess=new_customer.save()
+        sucess = new_customer.save()
         return sucess
 
     def create_product(self, data):
@@ -182,7 +187,7 @@ class ShopifyController(BaseController):
         new_product.vendor = values['vendor']
         return new_product.save()
 
-    def get_values(self,data):
+    def get_values(self, data):
         fields = self.get_fields()
         values = {}
         for i in fields:
@@ -193,5 +198,3 @@ class ShopifyController(BaseController):
                     find = True
             if find is False: values[i['name']] = ""
         return values
-
-

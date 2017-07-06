@@ -3,6 +3,7 @@ from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
+from apps.gp.models import ActionSpecification
 
 from mailchimp3 import MailChimp
 from getresponse.client import GetResponse
@@ -23,19 +24,9 @@ class GetResponseController(BaseController):
                 except Exception as e:
                     print("Error getting the GetResponse attributes")
                     self._client = None
-        elif not args and kwargs:
-            if 'api_key' in kwargs:
-                api_key = kwargs.pop('api_key')
-            try:
-                self._client = GetResponse(api_key)
-                print("%s %s", (api_key))
-                print(self._client)
-            except Exception as e:
-                print(e)
-                print("Error getting the GetResponse attributes")
-                self._client = None
-        t = self.get_campaigns()
-        return t is not None
+
+    def test_connection(self):
+        return self._client is not None and self.get_campaigns() is not None
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
@@ -155,26 +146,13 @@ class MailChimpController(BaseController):
             super(MailChimpController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
-                    print(self._connection_object.connection_user, self._connection_object.api_key)
                     self._client = MailChimp(self._connection_object.connection_user, self._connection_object.api_key)
                 except Exception as e:
                     print("Error getting the MailChimp attributes")
                     self._client = None
-        elif not args and kwargs:
-            if 'user' in kwargs:
-                user = kwargs.pop('user')
-            if 'api_key' in kwargs:
-                api_key = kwargs.pop('api_key')
-            try:
-                self._client = MailChimp(user, api_key)
-                print("%s %s", (user, api_key))
-                print(self._client)
-            except Exception as e:
-                print(e)
-                print("Error getting the MailChimp attributes")
-                self._client = None
-        t = self.get_lists()
-        return t is not None
+
+    def test_connection(self):
+        return self._client is not None and self.get_lists() is not None
 
     def get_lists(self):
         if self._client:
@@ -254,3 +232,11 @@ class MailChimpController(BaseController):
         mfl.append(MapField({'tag': 'email_address', 'name': 'Email', 'required': True, 'type': 'email',
                              'options': {'size': 100}}, controller=ConnectorEnum.MailChimp))
         return mfl
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        if action_specification.action.connector == self._connector:
+            if action_specification.name.lower() == 'list':
+                return tuple({'id': c['id'], 'name': c['name']} for c in self.get_lists())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")

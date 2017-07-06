@@ -1,7 +1,7 @@
 {% block body %}
     {% for o in object_list %}
-        {{ o.name }}:
-        <select data-name="{{ o.name|slugify|lower }}" id="specification-{{ o.id }}" name="specification-{{ o.id }}">
+        {{ o.name }}: 1
+        <select data-name="{{ o.name|slugify|lower }}" data-id="{{ o.id }}" id="specification-{{ o.id }}" name="specification-{{ o.id }}">
             <option>---------</option>
         </select>
         <br>

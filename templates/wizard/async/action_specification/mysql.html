@@ -5,16 +5,18 @@
     <script type="application/javascript">
         $(document).ready(function () {
             var load_options = true;
-
             $(document).on('click', 'select[data-name=order-by]', function () {
                 var select = $(this);
                 if (load_options == true) {
-                    var url = "{% url 'wizard:async_mysql_fields' %}";
+                    var url = "{% url 'plug:action_specification_options' %}";
+                    var action_id = $('#action_list_selector').val();
                     $.ajax({
                         method: "POST",
                         url: url,
-                        data: {connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %},
-                               actions_specification_id:1}
+                        data: {
+                            connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %},
+                            action_specification_id: $(select).attr('data-id')
+                        }
                     }).done(function (response) {
                         $(select).html(response);
                         load_options = false;

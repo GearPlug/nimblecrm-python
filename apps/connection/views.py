@@ -460,7 +460,6 @@ class SurveyMonkeyAuthSuccessCreateConnection(TemplateView):
 
 
 def get_survey_monkey_url():
-    print("URL SV")
     url_params = urllib.parse.urlencode({
         "redirect_uri": settings.SURVEYMONKEY_REDIRECT_URI,
         "client_id": settings.SURVEYMONKEY_CLIENT_ID,

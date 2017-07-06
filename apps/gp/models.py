@@ -390,7 +390,7 @@ class Plug(models.Model):
 
 
 class PlugActionSpecification(models.Model):
-    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='plug')
+    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='plug',)
     action_specification = models.ForeignKey(ActionSpecification, on_delete=models.CASCADE,
                                              related_name='action_specification')
     value = models.CharField('value', max_length=1000)

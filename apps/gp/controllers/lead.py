@@ -1,8 +1,7 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
-from apps.gp.models import StoredData
+from apps.gp.models import StoredData, ActionSpecification
 from apiconnector.settings import FACEBOOK_APP_SECRET, FACEBOOK_APP_ID, FACEBOOK_GRAPH_VERSION
-
 import facebook
 import hashlib
 import hmac
@@ -150,24 +149,18 @@ class FacebookController(BaseController):
                     self._token = self._connection_object.token
                 except Exception as e:
                     print("Error getting the Facebook token")
-                    # raise
-        elif kwargs:
-            try:
-                self._token = kwargs.pop('token')
-            except Exception as e:
-                print("Error getting the Facebook token")
         try:
             if self._plug is not None:
+                # self._page = self._plug.plug_specification.all().get(action_specification__name__iexact='page')
                 for s in self._plug.plug_specification.all():
                     if s.action_specification.name.lower() == 'page':
                         self._page = s.value
                     if s.action_specification.name.lower() == 'form':
                         self._form = s.value
-                        # else:
-                        #     print("There is no Plug asigned to the FacebookController")
         except:
             print("Error asignando los specifications")
 
+    def test_connection(self):
         try:
             object_list = self.get_account(self._token).json()
             if 'id' in object_list:
@@ -263,6 +256,17 @@ class FacebookController(BaseController):
             return True
         return False
 
+    def get_action_specification_options(self, action_specification_id, **kwargs):
+        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        if action_specification.name.lower() == 'page':
+            pages = self.get_pages(self._token)
+            return tuple({'id': p['id'], 'name': p['name']} for p in pages)
+        elif action_specification.name.lower() == 'form':
+            forms = self.get_forms(self._token, kwargs.get('page_id', ''))
+            return tuple({'id': p['id'], 'name': p['name']} for p in forms)
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
+
 
 class SurveyMonkeyController(BaseController):
     _token = None
@@ -300,9 +304,7 @@ class SurveyMonkeyController(BaseController):
         if responses == None:
             responses = self.get_responses().__dict__["_content"].decode()
             responses = json.loads(responses)["data"]
-
         survey_id = self._plug.plug_specification.all()[0].value
-
         new_data = []
         for item in responses:
             response_id = item["id"]
@@ -387,8 +389,6 @@ class SurveyMonkeyController(BaseController):
         }
         url = "https://api.surveymonkey.net/v3/webhooks"
         r = s.post(url, json=payload)
-        print(r.status_code)
-        print(r.text)
         if r.status_code == 201:
             print("Se creo el webhook survey monkey")
             return True

@@ -163,10 +163,10 @@ class MySQLController(BaseController):
         return [item['name'] for item in self.describe_table() if item['is_primary'] is not True]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
-        if action_specification.action.connector == self._connector:
-            if action_specification.name.lower() == 'order by':
-                return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'order by':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
@@ -323,10 +323,9 @@ class PostgreSQLController(BaseController):
         return [item['name'] for item in self.describe_table() if item['name'] not in self.get_primary_keys()]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
-        if action_specification.action.connector == self._connector:
-            if action_specification.name.lower() == 'order by':
-                return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'order by':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
@@ -485,9 +484,8 @@ class MSSQLController(BaseController):
         return [item['name'] for item in self.describe_table() if item['name'] not in self.get_primary_keys()]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
-        if action_specification.action.connector == self._connector:
-            if action_specification.name.lower() == 'order by':
-                return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'order by':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
