@@ -9,9 +9,8 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
                'connection_getresponse', 'connection_twitter', 'connection_surveymonkey', 'connection_getresponse',
                'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram',
                'connection_getresponse', 'connection_getresponse', 'connection_twitter', 'connection_surveymonkey',
-               'connection_zohocrm', 'connection_wunderlist', 'connection_sms', 'connection_youtube', 'connection_smtp'
-                                                                                                      'connection_salesforce',
-               'connection_shopify']
+               'connection_zohocrm', 'connection_wunderlist', 'connection_sms', 'connection_youtube', 'connection_smtp',
+               'connection_salesforce', 'connection_shopify', 'connection_hubspotcrm']
 
 
 class Category(models.Model):
@@ -332,6 +331,14 @@ class ZohoCRMConnection(models.Model):
     def __str__(self):
         return self.name
 
+class HubSpotConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_hubspotcrm')
+    token = models.CharField('token', max_length=300)
+    refresh_token = models.CharField('token', max_length=300)
+    name = models.CharField('name', max_length=200)
+
+    def __str__(self):
+        return self.name
 
 class SMSConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_sms')

@@ -25,7 +25,7 @@ from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
     GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection, GoogleCalendarConnection, \
-    YouTubeConnection, SMSConnection, ShopifyConnection
+    YouTubeConnection, SMSConnection, ShopifyConnection, HubSpotConnection
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
 from slacker import Slacker
@@ -153,6 +153,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
     def post(self, *args, **kwargs):
         # El model y los fields varían dependiendo de la conexion.
         if self.kwargs['connector_id'] is not None:
+            print("Es post")
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
             name = 'ajax_create' if self.request.is_ajax() else 'create'
@@ -192,12 +193,12 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         elif connector == ConnectorEnum.SurveyMonkey:
             context['surveymonkey_auth_url'] = get_survey_monkey_url()
         elif connector == ConnectorEnum.Shopify:
-            print("shopify")
-            print(ConnectorEnum.Shopify)
             context['shopify_auth_url'] = get_shopify_url()
         elif connector == ConnectorEnum.Instagram:
             flow = get_instagram_auth()
             context['instagram_auth_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
+        elif connector == ConnectorEnum.HubSpot:
+            context['hubspot_auth_url'] = get_hubspot_url()
         return context
 
 
@@ -354,12 +355,9 @@ class InstagramAuthSuccessCreateConnection(TemplateView):
             print("Error creating the Instagram Connection.")
         return super(InstagramAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
-
 def get_instagram_auth():
     return InstagramAPI(client_id=settings.INSTAGRAM_CLIENT_ID, client_secret=settings.INSTAGRAM_CLIENT_SECRET,
                         redirect_uri=INSTAGRAM_AUTH_URL)
-
-
 class SlackAuthView(View):
     def get(self, request):
         code = request.GET.get('code', None)
@@ -483,6 +481,41 @@ class ShopifyAuthSuccessCreateConnection(TemplateView):
 def get_shopify_url():
     scopes = "read_products, write_products, read_orders, read_customers, write_orders, write_customers"
     return "https://"+settings.SHOPIFY_SHOP_URL+".myshopify.com/admin/oauth/authorize?client_id="+settings.SHOPIFY_API_KEY+"&scope="+scopes+"&redirect_uri="+settings.SHOPIFY_REDIRECT_URI
+
+class HubspotAuthView(View):
+    def get(self, request, *args, **kwargs):
+        code = request.GET.get('code', '')
+        data = {'grant_type': 'authorization_code', 'client_id': settings.HUBSPOT_CLIENT_ID, 'client_secret': settings.HUBSPOT_CLIENT_SECRET, 'redirect_uri': settings.HUBSPOT_REDIRECT_URI, 'code': code}
+        headers = {'Content-Type': 'application/x-www-form-urlencoded', 'charset': 'utf-8'}
+        url = "https://api.hubapi.com/oauth/v1/token"
+        response = requests.post(url, headers=headers, data=data)
+        try:
+            response = response.json()
+            self.request.session['hubspot_token'] = response['access_token']
+            return redirect(reverse('connection:hubspot_auth_success_create_connection'))
+        except Exception as e:
+            raise
+            print(e)
+            print("Error en Hubspot")
+        return redirect(reverse('connection:hubspot_auth_success_create_connection'))
+
+class HubspotAuthSuccessCreateConnection(TemplateView):
+    template_name = 'connection/hubspot/sucess.html'
+    def get(self, request, *args, **kwargs):
+        try:
+            if 'hubspot_token' in request.session:
+                access_token = request.session.pop('hubspot_token')
+                c = Connection.objects.create(
+                    user=request.user, connector_id=ConnectorEnum.HubSpot.value)
+                n = int(HubSpotConnection.objects.filter(connection__user=request.user).count()) + 1
+                tc = ShopifyConnection.objects.create(
+                    connection=c, name="Hubspot Connection # %s" % n, token=access_token)
+        except Exception as e:
+            print("Error creating Hubspot Connection.")
+        return super(HubspotAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
+
+def get_hubspot_url():
+    return "https://app.hubspot.com/oauth/1234/authorize?client_id="+settings.HUBSPOT_CLIENT_ID+"&scope=contacts&redirect_uri="+settings.HUBSPOT_REDIRECT_URI
 
 
 class AuthSuccess(TemplateView):

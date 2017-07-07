@@ -8,7 +8,7 @@ from apps.connection.views import CreateConnectionView, ListConnectorView, \
     SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, InstagramAuthView, \
     SurveyMonkeyAuthSuccessCreateConnection, AJAXGetSurveyListView, InstagramAuthSuccessCreateConnection, \
     AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection, ShopifyAuthView, \
-    ShopifyAuthSuccessCreateConnection, AJAXSMTPTestConnection
+    ShopifyAuthSuccessCreateConnection, AJAXSMTPTestConnection, HubspotAuthView, HubspotAuthSuccessCreateConnection
 
 from apps.gp.enum import GoogleAPI
 
@@ -44,6 +44,11 @@ urlpatterns = [
     url(r"^twitter_auth/success/$", TwitterAuthSuccessCreateConnection.as_view(),
         name="twitter_auth_success_create_connection"),
 
+    # Hubspot
+    url(r"^hubspot_auth/$", HubspotAuthView.as_view(), name="hubspot_auth"),
+    url(r"^hubspot_auth/success/$", HubspotAuthSuccessCreateConnection.as_view(),
+        name="hubspot_auth_success_create_connection"),
+
     # Instagram
     url(r"^instagram_auth/$", InstagramAuthView.as_view(), name="instagram_auth"),
     url(r"^instagram_auth/success/$", InstagramAuthSuccessCreateConnection.as_view(),
@@ -74,8 +79,10 @@ urlpatterns = [
         name='ajax_update_facebook_get_leads'),
     url(r'ajax/mysql/test_connection/', AJAXMySQLTestConnection.as_view(),
         name='ajax_update_mysql_test_connection'),
+
     url(r'ajax/sugarcrm/test_connection/', AJAXSugarCRMTestConnection.as_view(),
         name='ajax_sugarcrm_test_connection'),
+
     url(r'ajax/mailchimp/test_connection/', AJAXMailChimpTestConnection.as_view(),
         name='ajax_mailchimp_test_connection'),
     url(r'ajax/postgresql/test_connection/', AJAXPostgreSQLTestConnection.as_view(),

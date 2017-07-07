@@ -434,3 +434,26 @@ class SalesforceController(BaseController):
             raise ControllerError('Not implemented yet.')
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+class HubspotController(BaseController):
+    _token = None
+    _refresh_token=None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(HubspotController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._token = self._connection_object.token
+                except Exception as e:
+                    print("Error getting the hubspot token")
+                    print(e)
+        elif kwargs:
+            host = kwargs.pop('hubspot', None)
+        return self._token is not None
+
+    def get_modules(self):
+        return [{'name':'customers', 'id':'customers'},{'name':'products', 'id':'products'}]

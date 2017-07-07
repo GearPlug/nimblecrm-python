@@ -12,7 +12,7 @@ from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
 from apps.gp.controllers.lead import GoogleFormsController, FacebookController, SurveyMonkeyController
-from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController
+from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController, HubspotController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
@@ -211,6 +211,22 @@ class ShopifyList(TemplateViewWithPost):
             object_list = []
         context['object_list'] = object_list
         return super(ShopifyList, self).render_to_response(context)
+
+class HubspotList(TemplateViewWithPost):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = HubspotController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            object_list = [{'name': o['name'], 'id': o['id']} for o in controller.get_modules()]
+        else:
+            object_list = []
+        context['object_list'] = object_list
+        return super(HubspotList, self).render_to_response(context)
 
 class MailChimpListsList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
