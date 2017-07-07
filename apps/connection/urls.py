@@ -65,7 +65,7 @@ urlpatterns = [
         name="shopify_auth_success_create_connection"),
 
     # Slack
-    url(r'^auth/slack/', SlackAuthView.as_view(), name="slack_auth"),
+    url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),
 
     # AuthSuccess
     url(r'^auth/success/$', AuthSuccess.as_view(), name="auth_sucess"),
