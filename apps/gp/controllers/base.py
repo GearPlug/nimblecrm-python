@@ -61,8 +61,4 @@ class BaseController(object):
         raise ControllerError('Not implemented yet.')
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
-        if action_specification.action.connector == self._connector:
-            raise ControllerError('Not implemented yet.')
-        else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+        raise ControllerError('Not implemented yet.')
