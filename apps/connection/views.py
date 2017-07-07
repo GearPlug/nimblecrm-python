@@ -24,7 +24,7 @@ from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
     GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection, GoogleCalendarConnection, \
-    YouTubeConnection, SMSConnection
+    YouTubeConnection, SMSConnection, SalesforceConnection
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
 from slacker import Slacker
@@ -194,6 +194,9 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         elif connector == ConnectorEnum.Instagram:
             flow = get_instagram_auth()
             context['instagram_auth_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
+        elif connector == ConnectorEnum.Salesforce:
+            flow = get_salesforce_auth()
+            context['salesforce_auth_url'] = flow
         return context
 
 
@@ -354,6 +357,49 @@ class InstagramAuthSuccessCreateConnection(TemplateView):
 def get_instagram_auth():
     return InstagramAPI(client_id=settings.INSTAGRAM_CLIENT_ID, client_secret=settings.INSTAGRAM_CLIENT_SECRET,
                         redirect_uri=INSTAGRAM_AUTH_URL)
+
+
+class SalesforceAuthView(View):
+    def get(self, request, *args, **kwargs):
+        headers = {
+            'content-type': 'application/x-www-form-urlencoded'
+        }
+
+        data = {
+            'grant_type': 'authorization_code',
+            'redirect_uri': settings.SALESFORCE_REDIRECT_URI,
+            'code': request.GET['code'],
+            'client_id': settings.SALESFORCE_CLIENT_ID,
+            'client_secret': settings.SALESFORCE_CLIENT_SECRET
+        }
+
+        req = requests.post(settings.SALESFORCE_ACCESS_TOKEN_URL, data=data, headers=headers)
+        response = req.json()
+
+        request.session['salesforce_access_token'] = response['access_token']
+        return redirect(reverse('connection:salesforce_auth_success_create_connection'))
+
+
+class SalesforceAuthSuccessCreateConnection(TemplateView):
+    template_name = 'connection/instagram/success.html'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if 'salesforce_access_token' in request.session:
+                access_token = request.session.pop('salesforce_access_token')
+                c = Connection.objects.create(
+                    user=request.user, connector_id=ConnectorEnum.Salesforce.value)
+                n = int(SalesforceConnection.objects.filter(connection__user=request.user).count()) + 1
+                tc = SalesforceConnection.objects.create(
+                    connection=c, name="Salesforce Connection # %s" % n, token=access_token)
+        except Exception as e:
+            print("Error creating the Salesforce Connection.")
+        return super(SalesforceAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
+
+
+def get_salesforce_auth():
+    return 'https://login.salesforce.com/services/oauth2/authorize?response_type=code&client_id={}&redirect_uri={}'.format(
+        settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_REDIRECT_URI)
 
 
 class SlackAuthView(View):

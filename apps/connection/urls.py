@@ -7,7 +7,8 @@ from apps.connection.views import CreateConnectionView, ListConnectorView, \
     AJAXJiraTestConnection, AJAXGetResponseTestConnection, TwitterAuthView, TwitterAuthSuccessCreateConnection, \
     SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, InstagramAuthView, \
     SurveyMonkeyAuthSuccessCreateConnection, AJAXGetSurveyListView, InstagramAuthSuccessCreateConnection, \
-    AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection
+    AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection, SalesforceAuthView, \
+    SalesforceAuthSuccessCreateConnection
 from apps.gp.enum import GoogleAPI
 
 urlpatterns = [
@@ -46,6 +47,11 @@ urlpatterns = [
     url(r"^instagram_auth/$", InstagramAuthView.as_view(), name="instagram_auth"),
     url(r"^instagram_auth/success/$", InstagramAuthSuccessCreateConnection.as_view(),
         name="instagram_auth_success_create_connection"),
+
+    # SalesForce
+    url(r"^salesforce_auth/$", SalesforceAuthView.as_view(), name="salesforce_auth"),
+    url(r"^salesforce_auth/success/$", SalesforceAuthSuccessCreateConnection.as_view(),
+        name="salesforce_auth_success_create_connection"),
 
     # surveymonkey
     url(r"^survey_monkey_auth/$", SurveyMonkeyAuthView.as_view(), name="survey_monekey_auth"),

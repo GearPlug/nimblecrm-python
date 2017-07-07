@@ -12,7 +12,7 @@ from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
 from apps.gp.controllers.lead import GoogleFormsController, FacebookController, SurveyMonkeyController
-from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController
+from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController, SalesforceController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
@@ -88,7 +88,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         if ping:
             if self.object.is_source:
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
-                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA or c == ConnectorEnum.SurveyMonkey or c == ConnectorEnum.GoogleCalendar or c == ConnectorEnum.Instagram or c == ConnectorEnum.YouTube:
+                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA or c == ConnectorEnum.SurveyMonkey or c == ConnectorEnum.GoogleCalendar or c == ConnectorEnum.Instagram or c == ConnectorEnum.YouTube or c == ConnectorEnum.Salesforce:
                     controller.create_webhook()
             elif self.object.is_target:
                 if c == ConnectorEnum.MailChimp:
@@ -139,6 +139,73 @@ class ActionSpecificationsView(LoginRequiredMixin, ListView):
         c = ConnectorEnum.get_connector(action.connector.id)
         self.template_name = 'wizard/async/action_specification/' + c.name.lower() + '.html'
         return super(ActionSpecificationsView, self).render_to_response(context)
+
+
+class SalesforceSObjectList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = SalesforceController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            sobjects = tuple({'id': a, 'name': a} for a in controller.get_sobject_list())
+        else:
+            sobjects = list()
+        context['object_list'] = sobjects
+        return super(SalesforceSObjectList, self).render_to_response(context)
+
+
+class SalesforceEventList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = SalesforceController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            events = tuple({'id': a, 'name': a} for a in controller.get_event_list())
+        else:
+            events = list()
+        context['object_list'] = events
+        return super(SalesforceEventList, self).render_to_response(context)
+
+
+class SalesforceWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _instagram_controller = SalesforceController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(SalesforceWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body.decode('utf-8'))
+
+        import pprint
+        print(request.META)
+        pprint.pprint(data)
+        # TODO Esperar que los webhooks puedan ser dinámicos
+        # print(data)
+        # if data[0]['changed_aspect'] != 'media':
+        #     return JsonResponse({'hola': True})
+        # media_id = data[0]['data']['media_id']
+        # object_id = data[0]['object_id']
+        # qs = PlugSpecification.objects.filter(
+        #     action_specification__action__action_type='source',
+        #     action_specification__action__connector__name__iexact="instagram",
+        #     value=object_id,
+        #     plug__source_gear__is_active=True)
+        # for plug_specification in qs:
+        #     self._instagram_controller.create_connection(plug_specification.plug.connection.related_connection,
+        #                                                  plug_specification.plug)
+        #     media = self._instagram_controller.get_media(media_id)
+        #     self._instagram_controller.download_source_data(media=media)
+        return JsonResponse({'hola': True})
 
 
 class GoogleDriveSheetList(LoginRequiredMixin, TemplateView):

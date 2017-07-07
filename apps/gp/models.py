@@ -336,9 +336,7 @@ class SMSConnection(models.Model):
 class SalesforceConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_salesforce')
     name = models.CharField('name', max_length=200)
-    connection_user = models.CharField('user', max_length=60)
-    connection_password = models.CharField('password', max_length=40)
-    token = models.CharField('token', max_length=40)
+    token = models.CharField('token', max_length=300)
 
     def __str__(self):
         return self.name

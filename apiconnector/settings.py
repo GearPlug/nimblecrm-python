@@ -242,3 +242,12 @@ INSTAGRAM_CLIENT_SECRET = 'yyyyyyyyy'
 
 # YouTube
 YOUTUBE_API_KEY = 'XXXXXXXXXXXX'
+
+# SalesForce
+SALESFORCE_CLIENT_ID = ''
+SALESFORCE_CLIENT_SECRET = ''
+SALESFORCE_REQUEST_TOKEN_URL = 'https://login.salesforce.com/services/oauth2/token'
+SALESFORCE_ACCESS_TOKEN_URL = 'https://login.salesforce.com/services/oauth2/token'
+SALESFORCE_REDIRECT_URI = ''
+SALESFORCE_AUTHORIZE_URL = 'https://login.salesforce.com/services/oauth2/authorize'
+SALESFORCE_WEBHOOK_URI = ''

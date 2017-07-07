@@ -1,12 +1,12 @@
 from django.conf.urls import url
 from apps.wizard.views import CreatePlugView, TestPlugView, \
     ActionSpecificationsView, CreateGearMapView, ActionListView, MSSQLFieldList, \
-    GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList,\
+    GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, \
     PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent, \
     BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList, \
     AJAXGetSurveyListView, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
     GoogleCalendarWebhookEvent, AJAXGetSurveyListView, SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
-    YouTubeChannelsList
+    YouTubeChannelsList, SalesforceSObjectList, SalesforceEventList, SalesforceWebhookEvent
 
 from apps.connection.views import ListConnectionView, ListConnectorView, CreateConnectionView
 from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, DeleteGearView
@@ -88,4 +88,8 @@ urlpatterns = [
     # ZohoCRM
     url(r"async/zohocrm/module/list/", ZohoCRMModuleList.as_view(), name='async_zohorcrm_modules'),
 
+    # Salesforce
+    url(r"async/salesforce/sobjects/list/", SalesforceSObjectList.as_view(), name='async_salesforce_sobjects'),
+    url(r"async/salesforce/event/list/", SalesforceEventList.as_view(), name='async_salesforce_events'),
+    url(r"salesforce/webhook/event/", SalesforceWebhookEvent.as_view(), name='async_salesforce_events'),
 ]
