@@ -142,10 +142,9 @@ class SugarCRMController(BaseController):
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
-        if action_specification.action.connector == self._connector:
-            if action_specification.name.lower() == 'module':
-                module_list = tuple({'id': m.module_key, 'name': m.module_key} for m in self.get_available_modules())
-                return module_list
+        if action_specification.name.lower() == 'module':
+            module_list = tuple({'id': m.module_key, 'name': m.module_key} for m in self.get_available_modules())
+            return module_list
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
@@ -320,16 +319,15 @@ class ZohoCRMController(BaseController):
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
-        if action_specification.action.connector == self._connector:
-            if action_specification.name.lower() == 'feed':
-                modules = self.get_modules()['_content'].decode()
-                modules = json.loads(modules)['response']['result']['row']
-                module_list = []
-                for m in modules:
-                    if m['pl'] not in ['Feeds', 'Visits', 'Social', 'Documents', 'Quotes', 'Sales Orders',
-                                       'Purchase Orders']:
-                        module_list.append({'id': m['id'], 'name': m['pl']})
-                return tuple(module_list)
+        if action_specification.name.lower() == 'feed':
+            modules = self.get_modules()['_content'].decode()
+            modules = json.loads(modules)['response']['result']['row']
+            module_list = []
+            for m in modules:
+                if m['pl'] not in ['Feeds', 'Visits', 'Social', 'Documents', 'Quotes', 'Sales Orders',
+                                   'Purchase Orders']:
+                    module_list.append({'id': m['id'], 'name': m['pl']})
+            return tuple(module_list)
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 

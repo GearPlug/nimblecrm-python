@@ -42,7 +42,7 @@
                 $('select#id_connection').val({{ request.session.target_connection_id }});
             {% endif %}
             var url_actions = "{% url 'wizard:action_list' %}";
-            $.ajax({method: "POST", url: url_actions, data: {type: '{{ plug_type }}'}})
+            $.ajax({method: "POST", url: url_actions, data: {type: '{{ plug_type }}', }})
                 .done(function (response) {
                     var actions = response;
                     var selectList = document.createElement("select");

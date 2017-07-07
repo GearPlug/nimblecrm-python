@@ -183,30 +183,20 @@ class UpdatePlugSpecificationsView(UpdateView):
     success_url = reverse_lazy('%s:list' % app_name)
 
 
-class ActionListView(View):
-    def get(self, request, *args, **kwargs):
-        actions = Action.objects.filter(connector_id=kwargs['connector_id'], action_type=kwargs['action_type'])
-        return HttpResponse(actions)
-
-
-class ActionSpecificationListView(View):
-    def get(self, request, *args, **kwargs):
-        specifications = ActionSpecification.objects.filter(action_id=kwargs['action_id'])
-        return HttpResponse(specifications)
-
-
 class PlugActionSpecificationOptionsView(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
 
     def post(self, request, *args, **kwargs):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
+        action_specification_id = request.POST.get('action_specification_id', None)
         connection = Connection.objects.get(pk=connection_id)
-        controller_class = ConnectorEnum.get_connector(connection.connector_id)
+        connector = ConnectorEnum.get_connector(connection.connector_id)
+        controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class(connection.related_connection)
         ping = controller.test_connection()
         if ping:
-            field_list = controller.get_action_specification_options()
+            field_list = controller.get_action_specification_options(action_specification_id, **kwargs)
         else:
             field_list = list()
         context['object_list'] = field_list

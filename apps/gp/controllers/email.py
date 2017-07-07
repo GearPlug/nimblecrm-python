@@ -24,15 +24,9 @@ class SMTPController(BaseController):
                     self.client = SMTPClient(host, port, user, password)
                 except Exception as e:
                     print("Error getting the SMS attributes")
-                    print(e)
-        elif kwargs:
-            host = kwargs['host']
-            port = kwargs['port']
-            user = kwargs['connection_user']
-            password = kwargs['connection_password']
-            self.client = SMTPClient(host, port, user, password)
 
-        return self.client.is_valid_connection() if self.client else None
+    def test_connection(self):
+        return self.client is not None and self.client.is_valid_connection()
 
     def get_target_fields(self, **kwargs):
         return ['recipient', 'message']
