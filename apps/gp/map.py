@@ -155,6 +155,19 @@ class MapField(object):
                 self.choices = [(choice, choice) for choice in d['values']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
+        elif controller == ConnectorEnum.HubSpot:
+            if 'name' in d:
+                self.name = d['name']
+            if 'label' in d:
+                self.label = d['label']
+            if 'favorited' in d:
+                self.required = d['favorited']
+            if 'type' in d:
+                self.field_type = d['type']
+            if  d['type']=='enumeration':
+                self.choices = [(choice, choice) for choice in d['options']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
         else:
             if 'name' in d:
                 self.name = d['name']

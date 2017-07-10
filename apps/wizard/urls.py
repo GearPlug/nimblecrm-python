@@ -5,7 +5,7 @@ from apps.wizard.views import TestPlugView, \
     SlackWebhookEvent, BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, \
     GetResponseCampaignsList, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
     GoogleCalendarWebhookEvent, AJAXGetSurveyListView, SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
-    YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent, HubspotList
+    YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent
 
 from apps.connection.views import ListConnectionView, ListConnectorView, CreateConnectionView
 from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, DeleteGearView
@@ -76,9 +76,6 @@ urlpatterns = [
     url(r"async/shopify/topic/list/", ShopifyList.as_view(), name='async_shopify_topic_list'),
     url(r'shopify/webhook/event/(?P<plug_id>\d+)/', ShopifyWebhookEvent.as_view(),
         name='shopify_webhook_event'),
-
-    # hubspot
-    url(r"async/hubspot/topic/list/", HubspotList.as_view(), name='async_hubspot_topic_list'),
 
     # Instagram
     url(r'instagram/webhook/event/', InstagramWebhookEvent.as_view(), name='instagram_webhook_event'),

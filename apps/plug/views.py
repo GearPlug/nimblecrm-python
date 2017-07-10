@@ -50,6 +50,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
             g.save()
         except:
             print("There's no gear in session.")
+        print(self.request.POST)
         exp = re.compile('(^specification-)(\d+)')
         specification_list = [{'name': m.group(0), 'id': m.group(2), 'value': self.request.POST.get(m.group(0), None)}
                               for s in self.request.POST.keys() for m in [exp.search(s)] if m]
@@ -58,10 +59,8 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         # Download data
         c = ConnectorEnum.get_connector(self.object.connection.connector.id)
         controller_class = ConnectorEnum.get_controller(c)
-        controller = controller_class()
-        ckwargs = {}
-        cargs = []
-        ping = controller.create_connection(self.object.connection.related_connection, self.object, *cargs, **ckwargs)
+        controller = controller_class(self.object.connection.related_connection, self.object)
+        ping = controller.test_connection()
         print("PING: %s" % ping)
         if ping:
             if self.object.is_source:
@@ -102,6 +101,7 @@ class ActionListView(LoginRequiredMixin, ListView):
                 kw['connector_id'] = Connection.objects.get(
                     pk=request.session['{0}_connection_id'.format(plug_type)]).connector_id
         self.object_list = self.model.objects.filter(**kw)
+        print(self.object_list.query)
         a = [{'name': a.name, 'id': a.id} for a in self.object_list]
         return JsonResponse(a, safe=False)
 
