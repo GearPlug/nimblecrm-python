@@ -219,9 +219,9 @@ SLACK_CLIENT_ID = '129041278545.145241406374'
 SLACK_CLIENT_SECRET = 'f47642ba090d236c5f9e247cddf76809'
 SLACK_PERMISSIONS_URL = 'https://slack.com/oauth/authorize?client_id={0}&scope=read'.format(SLACK_CLIENT_ID)
 
-# Google Plus
-GOOGLE_CLIENT_ID = '292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com'
-GOOGLE_CLIENT_SECRET = 'eqcecSL7Ecp0hiMy84QFSzsD'
+# Google (Gustavo)
+GOOGLE_CLIENT_ID = '278354320502-6ptllif5k11cn8uskm8aotp6fqb2g7dr.apps.googleusercontent.com'
+GOOGLE_CLIENT_SECRET = 'LgJ2hrSVu_lmAJkJhwzgfiDG'
 
 # Twitter
 TWITTER_CLIENT_ID = 'D5ZJJmF11n9Sp8E9p7GRGhpiR'

@@ -421,8 +421,8 @@ class StoredData(models.Model):
 class Gear(models.Model):
     name = models.CharField('name', max_length=120)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    source = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='source_gear')
-    target = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='target_gear')
+    source = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='gear')
+    target = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='gear')
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)

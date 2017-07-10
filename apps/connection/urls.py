@@ -72,6 +72,7 @@ urlpatterns = [
 
     # Slack
     url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),
+    url(r'^auth-callback/google/', GoogleAuthView.as_view(), name="google_auth_a"),
 
     # AuthSuccess
     url(r'^auth/success/$', AuthSuccess.as_view(), name="auth_sucess"),
