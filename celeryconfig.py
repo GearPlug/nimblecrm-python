@@ -5,11 +5,13 @@ CELERY_IMPORTS = ('apiconnector.celery',)
 
 ## Broker settings.
 # BROKER_URL = 'redis://localhost:6379/0'
-BROKER_URL = 'amqp://guest:guest@localhost:5672//'
+BROKER_URL = 'amqp://gearplug:12357*_HoLa@192.168.10.210:5672//'
+# BROKER_URL = 'amqp://gearplug:gearplug@192.168.10.210:5672//'
 
 ## Using the database to store task state and results.
 # CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'amqp://guest:guest@localhost:5672//'
+# CELERY_RESULT_BACKEND = 'amqp://gearplug:gearplug@192.168.10.166:5672//'
+# CELERY_RESULT_BACKEND = 'amqp://gearplug:gearplug@192.168.10.210:5672//'
 
 CELERYBEAT_SCHEDULE = {
     'update-plugs-1-minutes': {

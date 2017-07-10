@@ -266,7 +266,7 @@ class CreateGearMapView(FormView):
             controller = controller_class(plug.connection.related_connection, plug)
             return controller.get_mapping_fields()
         except Exception as e:
-            print(e)
+            raise
             return []
 
     def get_source_data_list(self, plug, connection):

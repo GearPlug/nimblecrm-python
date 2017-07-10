@@ -31,19 +31,19 @@ class MySQLController(BaseController):
                     self._table = self._connection_object.table
                 except Exception as e:
                     print("Error getting the MySQL attributes args")
+            if self._connection_object is None:
+                raise ControllerError('No connection.')
+            host = self._connection_object.host
+            port = self._connection_object.port
+            user = self._connection_object.connection_user
+            password = self._connection_object.connection_password
+            try:
+                self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self._database)
+                self._cursor = self._connection.cursor()
+            except Exception as e:
+                self._connection = None
 
     def test_connection(self):
-        if self._connection_object is None:
-            raise ControllerError('No connection.')
-        host = self._connection_object.host
-        port = self._connection_object.port
-        user = self._connection_object.connection_user
-        password = self._connection_object.connection_password
-        try:
-            self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self._database)
-            self._cursor = self._connection.cursor()
-        except Exception as e:
-            self._connection = None
         return self._connection is not None
 
     def describe_table(self):
@@ -53,6 +53,7 @@ class MySQLController(BaseController):
                 return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2], 'is_primary': item[3] == 'PRI'} for
                         item in self._cursor]
             except:
+                raise
                 print('Error describing table: %s')
         return []
 

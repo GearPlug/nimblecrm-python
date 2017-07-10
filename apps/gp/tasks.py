@@ -14,7 +14,7 @@ def suma(a, b):
     return a + b
 
 
-@app.task
+@app.task(queue="beat")
 def update_all_gears():
     print("Starting to update gears...")
     active_gears = Gear.objects.filter(is_active=True, gear_map__is_active=True)
@@ -27,8 +27,9 @@ def update_all_gears():
 
 
 @app.task
-def update_plug(plug_id, gear_id):
+def update_plug(plug_id, gear_id, **kwargs):
     plug = Plug.objects.get(pk=plug_id)
+    gear = Gear.objects.get(pk=gear_id)
     source_connector = ConnectorEnum.get_connector(plug.connection.connector.id)
     controller_class = ConnectorEnum.get_controller(source_connector)
     if controller_class == SugarCRMController:
@@ -37,16 +38,16 @@ def update_plug(plug_id, gear_id):
         controller = controller_class(plug.connection.related_connection, plug)
     # Source
     if plug.plug_type.lower() == 'source':
-        has_new_data = controller.download_source_data(from_date=plug.last_source_update)
+        has_new_data = controller.download_source_data(from_date=gear.gear_map.last_source_update)
         print("HAS NEW DATA: {0}.".format(has_new_data))
         print("HAS NEW DATA: {0}.".format(has_new_data))
         print("HAS NEW DATA: {0}.".format(has_new_data))
         # Call update del target.
-        if has_new_data:
-            connector = ConnectorEnum.get_connector(plug.gear.target.connection.connector_id)
-            update_plug.s(plug.gear.target.id, gear_id).apply_async(queue="source_{0}".format(connector.name.lower()))
+        kwargs['force_update'] = True
+        if has_new_data or 'force_update' in kwargs and kwargs['force_update'] == True:
+            connector = ConnectorEnum.get_connector(gear.target.connection.connector_id)
+            update_plug.s(gear.target.id, gear_id).apply_async(queue="source_{0}".format(connector.name.lower()))
     elif plug.plug_type.lower() == 'target':
-        gear = Gear.objects.get(pk=gear_id)
         kwargs = {'connection': gear.source.connection, 'plug': gear.source, }
         if gear.gear_map.last_sent_stored_data_id is not None:
             kwargs['id__gt'] = gear.gear_map.last_sent_stored_data_id

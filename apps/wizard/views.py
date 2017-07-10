@@ -459,20 +459,21 @@ class TestPlugView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(TestPlugView, self).get_context_data()
         p = Plug.objects.get(pk=self.kwargs.get('pk'))
+        print("Test")
         if p.plug_type == 'source':
+            print("source")
             try:
                 sd_sample = StoredData.objects.filter(plug=p, connection=p.connection).order_by('-id')[0]
                 sd = StoredData.objects.filter(plug=p, connection=p.connection, object_id=sd_sample.object_id)
                 context['object_list'] = sd
+                print("gg")
             except IndexError:
-                pass
+                print("error")
         elif p.plug_type == 'target':
             c = ConnectorEnum.get_connector(p.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(c)
-            controller = controller_class()
-            ckwargs = {}
-            cargs = []
-            ping = controller.create_connection(p.connection.related_connection, p, *cargs, **ckwargs)
+            controller = controller_class(p.connection.related_connection, p)
+            ping = controller.test_connection()
             if ping:
                 if c == ConnectorEnum.MailChimp:
                     target_fields = controller.get_target_fields(list_id=p.plug_specification.all()[0].value)
@@ -491,11 +492,9 @@ class TestPlugView(TemplateView):
         p = Plug.objects.get(pk=self.kwargs.get('pk'))
         c = ConnectorEnum.get_connector(p.connection.connector.id)
         controller_class = ConnectorEnum.get_controller(c)
-        controller = controller_class()
-        ckwargs = {}
-        cargs = []
+        controller = controller_class(p.connection.related_connection, p)
         if p.plug_type == 'source':
-            ping = controller.create_connection(p.connection.related_connection, p, *cargs, **ckwargs)
+            ping = controller.test_connection()
             print("PING: %s" % ping)
             if ping:
                 data_list = controller.download_to_stored_data(p.connection.related_connection, p)
