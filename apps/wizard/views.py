@@ -12,7 +12,7 @@ from apps.connection.views import CreateConnectionView
 from apps.gear.views import CreateGearView, UpdateGearView, CreateGearMapView
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
 from apps.gp.controllers.lead import GoogleFormsController, FacebookController, SurveyMonkeyController
-from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController, HubspotController
+from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.directory import GoogleContactsController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
@@ -24,7 +24,6 @@ from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugActionSpecification, \
     StoredData, SlackConnection, GooglePushWebhook
-from apps.plug.views import CreatePlugView
 from oauth2client import client
 from apiclient import discovery
 from paypalrestsdk import Sale
@@ -211,22 +210,6 @@ class ShopifyList(TemplateViewWithPost):
             object_list = []
         context['object_list'] = object_list
         return super(ShopifyList, self).render_to_response(context)
-
-class HubspotList(TemplateViewWithPost):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = HubspotController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            object_list = [{'name': o['name'], 'id': o['id']} for o in controller.get_modules()]
-        else:
-            object_list = []
-        context['object_list'] = object_list
-        return super(HubspotList, self).render_to_response(context)
 
 class MailChimpListsList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
@@ -469,10 +452,10 @@ class TestPlugView(TemplateView):
         elif p.plug_type == 'target':
             c = ConnectorEnum.get_connector(p.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(c)
-            controller = controller_class()
+            controller = controller_class(p.connection.related_connection, p,**kwargs)
             ckwargs = {}
             cargs = []
-            ping = controller.create_connection(p.connection.related_connection, p, *cargs, **ckwargs)
+            ping = controller.test_connection()
             if ping:
                 if c == ConnectorEnum.MailChimp:
                     target_fields = controller.get_target_fields(list_id=p.plug_specification.all()[0].value)

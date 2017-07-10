@@ -464,19 +464,93 @@ class HubSpotController(BaseController):
 
     def download_to_stored_data(self, connection_object, plug, ):
         module_id = self._plug.plug_action_specification.all()[0].value
-        print("module_name")
-        print(module_id)
-        if (module_id=='contacts'):
-            data=self.get_contacts()
         new_data = []
-        print("data")
-        print(data)
-
+        data=self.get_data(module_id)
+        for item in data:
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                          object_id=item['id'])
+            if not q.exists():
+                for column in item:
+                    new_data.append(StoredData(name=column, value=item[column], object_id=item['id'],
+                                               connection=connection_object.connection, plug=plug))
+        if new_data:
+            field_count = len(data)
+            extra = {'controller': 'hubspot'}
+            for i, item in enumerate(new_data):
+                try:
+                    item.save()
+                    if (i + 1) % field_count == 0:
+                        extra['status'] = 's'
+                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                except:
+                    extra['status'] = 'f'
+                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+            return True
         return False
 
-    def get_contacts(self):
-        url = "https://api.hubapi.com/contacts/v1/lists/all/contacts/all"
-        headers = {'Authorization': 'Bearer {0}'.format(self._token), 'count': '30'}
-        return requests.get(url, headers=headers).json()['contacts']
+    def get_data(self, module_id):
+        if (module_id=='contacts'):
+            url = "https://api.hubapi.com/contacts/v1/lists/all/contacts/all"
+        if (module_id=='companies'):
+            url = "https://api.hubapi.com/companies/v2/companies/"
+        if (module_id=='deals'):
+            url = "https://api.hubapi.com/deals/v1/deal/paged?includeAssociations=true&limit=30&properties=dealname"
+        headers = {'Authorization': 'Bearer {0}'.format(self._token), }
+        result=requests.get(url, headers=headers).json()[module_id]
+        data=[]
+        for i in result:
+            item = {}
+            if (module_id == 'contacts'):
+                item['id']=i['vid']
+            if (module_id == 'companies'):
+                item['id']=i['companyId']
+            if (module_id == 'deals'):
+                item['id'] = i['dealId']
+            for d in i["properties"]:
+                item[d]=i["properties"][d]['value']
+            data.append(item)
+        return data
 
+    def get_mapping_fields(self):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.HubSpot) for f in fields]
+
+    def get_target_fields(self, **kwargs):
+        module_id = self._plug.plug_action_specification.all()[0].value
+        url = "https://api.hubapi.com/properties/v1/"+module_id+"/properties"
+        headers = {'Authorization': 'Bearer {0}'.format(self._token)}
+        response = requests.get(url, headers=headers).json()
+        return [i for i in response if "label" in i and i['readOnlyValue']== False]
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        response = self.insert_data(data_list[0])
+        json = self.insert_data()
+        print("json")
+        print(json)
+        return None
+
+        # if self._plug is not None:
+        #     obj_list = []
+        #     module_id = self._plug.plug_specification.all()[0].value
+        #     extra = {'controller': 'hubspot'}
+        #     for item in data_list:
+        #         try:
+
+
+            #         self._log.info('Item: %s successfully sent.' % (int(response['#text'])), extra=extra)
+            #         obj_list.append(id)
+            #     except Exception as e:
+            #         print(e)
+            #         extra['status'] = 'f'
+            #         self._log.info('Item: %s failed to send.' % (int(response['#text'])), extra=extra)
+            # return obj_list
+        #raise ControllerError("There's no plug")
+
+    def insert_data(self,fields):
+        url = "https://api.hubapi.com/contacts/v1/contact/"
+        headers = {'Authorization': 'Bearer {0}'.format(self._token)}
+        return {"properties":[{'property':i,'value':fields[i]}] for i in fields}
 
