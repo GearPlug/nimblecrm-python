@@ -425,7 +425,6 @@ class SalesforceController(BaseController):
         else:
             return self.get_lead_meta()
 
-
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
         if action_specification.action.connector == self._connector:
@@ -433,25 +432,51 @@ class SalesforceController(BaseController):
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
-class HubspotController(BaseController):
+
+class HubSpotController(BaseController):
     _token = None
-    _refresh_token=None
+    _refresh_token = None
 
     def __init__(self, *args, **kwargs):
         BaseController.__init__(self, *args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
         if args:
-            super(HubspotController, self).create_connection(*args)
+            super(HubSpotController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
                     self._token = self._connection_object.token
                 except Exception as e:
                     print("Error getting the hubspot token")
-                    print(e)
-        elif kwargs:
-            host = kwargs.pop('hubspot', None)
+
+    def test_connection(self):
         return self._token is not None
 
     def get_modules(self):
-        return [{'name':'customers', 'id':'customers'},{'name':'products', 'id':'products'}]
+        return [{'name': 'companies', 'id': 'companies'}, {'name': 'contacts', 'id': 'contacts'}, {'name': 'deals', 'id': 'deals'}]
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'data':
+            return tuple({'name': o['name'], 'id': o['id']} for o in self.get_modules())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def download_to_stored_data(self, connection_object, plug, ):
+        module_id = self._plug.plug_action_specification.all()[0].value
+        print("module_name")
+        print(module_id)
+        if (module_id=='contacts'):
+            data=self.get_contacts()
+        new_data = []
+        print("data")
+        print(data)
+
+        return False
+
+    def get_contacts(self):
+        url = "https://api.hubapi.com/contacts/v1/lists/all/contacts/all"
+        headers = {'Authorization': 'Bearer {0}'.format(self._token), 'count': '30'}
+        return requests.get(url, headers=headers).json()['contacts']
+
+
