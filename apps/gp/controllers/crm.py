@@ -82,7 +82,7 @@ class SugarCRMController(BaseController):
         return self._session.set_entries(obj_list)
 
     def download_to_stored_data(self, connection_object, plug, limit=29, order_by="date_entered DESC", **kwargs):
-        module = plug.plug_specification.all()[0].value  # Especificar que specification
+        module = plug.plug_action_specification.all()[0].value  # Especificar que specification
         data = self.get_entry_list(module, max_results=limit, order_by=order_by)
         new_data = []
         for item in data:
@@ -118,7 +118,7 @@ class SugarCRMController(BaseController):
                     data_list = []
         if self._plug is not None:
             obj_list = []
-            module_name = self._plug.plug_specification.all()[0].value
+            module_name = self._plug.plug_action_specification.all()[0].value
             extra = {'controller': 'sugarcrm'}
             for item in data_list:
                 try:
@@ -137,7 +137,7 @@ class SugarCRMController(BaseController):
         return self.get_module_fields(module, **kwargs)
 
     def get_mapping_fields(self, **kwargs):
-        fields = self.get_module_fields(self._plug.plug_specification.all()[0].value, get_structure=True)
+        fields = self.get_module_fields(self._plug.plug_action_specification.all()[0].value, get_structure=True)
         return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields]
 
     def get_action_specification_options(self, action_specification_id):
@@ -178,7 +178,7 @@ class ZohoCRMController(BaseController):
         return requests.get(url, params).__dict__
 
     def download_to_stored_data(self, connection_object, plug, ):
-        module_id = self._plug.plug_specification.all()[0].value
+        module_id = self._plug.plug_action_specification.all()[0].value
         module_name = self.get_module_name(module_id)
         data = self.get_feeds(module_name)
         new_data = []
@@ -210,7 +210,7 @@ class ZohoCRMController(BaseController):
         data_list = get_dict_with_source_data(source_data, target_fields)
         if self._plug is not None:
             obj_list = []
-            module_id = self._plug.plug_specification.all()[0].value
+            module_id = self._plug.plug_action_specification.all()[0].value
             extra = {'controller': 'zohocrm'}
             for item in data_list:
                 try:
@@ -232,7 +232,7 @@ class ZohoCRMController(BaseController):
         return [MapField(f, controller=ConnectorEnum.ZohoCRM) for f in fields]
 
     def get_target_fields(self, **kwargs):
-        module_id = self._plug.plug_specification.all()[0].value
+        module_id = self._plug.plug_action_specification.all()[0].value
         fields = self.get_fields(module_id)
         return fields
 
@@ -534,7 +534,7 @@ class HubSpotController(BaseController):
 
         # if self._plug is not None:
         #     obj_list = []
-        #     module_id = self._plug.plug_specification.all()[0].value
+        #     module_id = self._plug.plug_action_specification.all()[0].value
         #     extra = {'controller': 'hubspot'}
         #     for item in data_list:
         #         try:

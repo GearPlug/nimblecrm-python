@@ -75,7 +75,7 @@ class SlackController(BaseController):
                     data_list = []
         if self._plug is not None:
             extra = {'controller': 'slack'}
-            for specification in self._plug.plug_specification.all():
+            for specification in self._plug.plug_action_specification.all():
                 try:
                     target = PlugActionSpecification.objects.get(plug=self._plug,
                                                                  action_specification=specification.action_specification)

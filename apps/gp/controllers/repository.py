@@ -120,7 +120,7 @@ class BitbucketController(BaseController):
         return r['values'] if r else []
 
     def _get_repository(self, get_id):
-        for specification in self._plug.plug_specification.all():
+        for specification in self._plug.plug_action_specification.all():
             if specification.action_specification.name == ('repository_id' if get_id else 'repository_name'):
                 return specification.value
 

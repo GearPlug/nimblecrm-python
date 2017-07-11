@@ -283,7 +283,7 @@ class YouTubeController(BaseController):
             'hub.mode': 'subscribe',
             'hub.callback': callback_url,
             'hub.lease_seconds': 60 * 60 * 24 * 365,
-            'hub.topic': topic_url + self._plug.plug_specification.all()[0].value
+            'hub.topic': topic_url + self._plug.plug_action_specification.all()[0].value
         }
 
         response = requests.post(url=subscribe_url, data=params)

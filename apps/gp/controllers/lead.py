@@ -39,7 +39,7 @@ class GoogleFormsController(BaseController):
         files = None
         if credentials_json is not None:
             try:
-                for s in self._plug.plug_specification.all():
+                for s in self._plug.plug_action_specification.all():
                     if s.action_specification.name.lower() == 'form':
                         self._spreadsheet_id = s.value
             except:
@@ -151,8 +151,8 @@ class FacebookController(BaseController):
                     print("Error getting the Facebook token")
         try:
             if self._plug is not None:
-                # self._page = self._plug.plug_specification.all().get(action_specification__name__iexact='page')
-                for s in self._plug.plug_specification.all():
+                # self._page = self._plug.plug_action_specification.all().get(action_specification__name__iexact='page')
+                for s in self._plug.plug_action_specification.all():
                     if s.action_specification.name.lower() == 'page':
                         self._page = s.value
                     if s.action_specification.name.lower() == 'form':
@@ -304,7 +304,7 @@ class SurveyMonkeyController(BaseController):
         if responses == None:
             responses = self.get_responses().__dict__["_content"].decode()
             responses = json.loads(responses)["data"]
-        survey_id = self._plug.plug_specification.all()[0].value
+        survey_id = self._plug.plug_action_specification.all()[0].value
         new_data = []
         for item in responses:
             response_id = item["id"]
@@ -339,7 +339,7 @@ class SurveyMonkeyController(BaseController):
         return s.get(url)
 
     def get_responses(self):
-        survey_id = self._plug.plug_specification.all()[0].value
+        survey_id = self._plug.plug_action_specification.all()[0].value
         s = requests.session()
         s.headers.update({
             "Authorization": "Bearer %s" % self._token,
@@ -369,9 +369,9 @@ class SurveyMonkeyController(BaseController):
         return list
 
     def create_webhook(self):
-        survey_id = self._plug.plug_specification.all()[0].value
+        survey_id = self._plug.plug_action_specification.all()[0].value
         survey_id = str(survey_id)
-        plug_id = self._plug.plug_specification.all()[0].id
+        plug_id = self._plug.plug_action_specification.all()[0].id
         print("plug_id")
         print(plug_id)
         redirect_uri = "https://l.grplug.com/wizard/surveymonkey/webhook/event/%s/" % (plug_id)

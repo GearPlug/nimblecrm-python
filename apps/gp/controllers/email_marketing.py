@@ -39,7 +39,7 @@ class GetResponseController(BaseController):
                     data_list = []
         if self._plug is not None:
             status = None
-            for specification in self._plug.plug_specification.all():
+            for specification in self._plug.plug_action_specification.all():
                 if specification.action_specification.action.name == 'subscribe':
                     status = 'subscribed'
                 elif specification.action_specification.action.name == 'unsubscribe':
@@ -47,7 +47,7 @@ class GetResponseController(BaseController):
             extra = {'controller': 'getresponse'}
             for obj in data_list:
                 if status == 'subscribed':
-                    res = self.subscribe_contact(self._plug.plug_specification.all()[0].value, obj)
+                    res = self.subscribe_contact(self._plug.plug_action_specification.all()[0].value, obj)
                 else:
                     res = self.unsubscribe_contact(obj)
             return
@@ -125,7 +125,7 @@ class GetResponseController(BaseController):
         }]
 
     def get_mapping_fields(self, **kwargs):
-        if self._plug.plug_specification.all()[0].action_specification.action.name == 'Unsubscribe':
+        if self._plug.plug_action_specification.all()[0].action_specification.action.name == 'Unsubscribe':
             fields = self.getresponsec.get_unsubscribe_target_fields()
         else:
             fields = self.getresponsec.get_meta()
@@ -182,14 +182,14 @@ class MailChimpController(BaseController):
         if self._plug is not None:
             status = None
             _list = None
-            for specification in self._plug.plug_specification.all():
+            for specification in self._plug.plug_action_specification.all():
                 if specification.action_specification.action.name == 'subscribe':
                     status = 'subscribed'
                 elif specification.action_specification.action.name == 'unsubscribe':
                     status = 'unsubscribed'
-                    _list = self.get_all_members(self._plug.plug_specification.all()[0].value)
+                    _list = self.get_all_members(self._plug.plug_action_specification.all()[0].value)
 
-            list_id = self._plug.plug_specification.all()[0].value
+            list_id = self._plug.plug_action_specification.all()[0].value
             for obj in data_list:
                 d = {'email_address': obj.pop('email_address'), 'status': status,
                      'merge_fields': {key: obj[key] for key in obj.keys()}}
@@ -227,7 +227,7 @@ class MailChimpController(BaseController):
                 m['email_address'] == l['email_address']]
 
     def get_mapping_fields(self, **kwargs):
-        list_id = self._plug.plug_specification.all()[0].value
+        list_id = self._plug.plug_action_specification.all()[0].value
         mfl = [MapField(f, controller=ConnectorEnum.MailChimp) for f in self.get_list_merge_fields(list_id)]
         mfl.append(MapField({'tag': 'email_address', 'name': 'Email', 'required': True, 'type': 'email',
                              'options': {'size': 100}}, controller=ConnectorEnum.MailChimp))

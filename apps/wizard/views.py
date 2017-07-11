@@ -331,9 +331,9 @@ class SlackWebhookEvent(TemplateView):
                 action_specification__action__connector__name__iexact="slack",
                 plug__source_gear__is_active=True)
             if event['type'] == "message" and event['channel'] in [c.value for c in slack_channel_list]:
-                for plug_specification in slack_channel_list:
-                    self._slack_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                             plug_specification.plug)
+                for plug_action_specification in slack_channel_list:
+                    self._slack_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                             plug_action_specification.plug)
                     self._slack_controller.download_source_data(event=data)
         else:
             print("No callback event")
@@ -363,10 +363,10 @@ class SurveyMonkeyWebhookEvent(TemplateView):
             action_specification__action__connector__name__iexact="SurveyMonkey",
             value=data['resources']['survey_id']
         )
-        for plug_specification in qs:
+        for plug_action_specification in qs:
             print("plug")
-            self._surveymonkey_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                            plug_specification.plug)
+            self._surveymonkey_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                            plug_action_specification.plug)
             self._surveymonkey_controller.download_source_data(responses=responses)
         return JsonResponse({'hola': True})
 
@@ -390,10 +390,10 @@ class ShopifyWebhookEvent(TemplateView):
             action_specification__action__connector__name__iexact="Shopify",
             plug__source_gear__is_active=True
         )
-        for plug_specification in qs:
+        for plug_action_specification in qs:
             print("plug")
-            self._shopify_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                            plug_specification.plug)
+            self._shopify_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                            plug_action_specification.plug)
             self._shopify_controller.download_source_data(list=notifications)
         return JsonResponse({'hola': True})
 
@@ -456,9 +456,9 @@ class TestPlugView(TemplateView):
             ping = controller.test_connection()
             if ping:
                 if c == ConnectorEnum.MailChimp:
-                    target_fields = controller.get_target_fields(list_id=p.plug_specification.all()[0].value)
+                    target_fields = controller.get_target_fields(list_id=p.plug_action_specification.all()[0].value)
                 elif c == ConnectorEnum.SugarCRM:
-                    target_fields = controller.get_target_fields(p.plug_specification.all()[0].value)
+                    target_fields = controller.get_target_fields(p.plug_action_specification.all()[0].value)
                 elif c == ConnectorEnum.JIRA:
                     target_fields = controller.get_target_fields()
                 else:
@@ -501,9 +501,9 @@ class BitbucketWebhookEvent(TemplateView):
             action_specification__action__action_type='source',
             action_specification__action__connector__name__iexact="bitbucket",
             plug__source_gear__is_active=True)
-        for plug_specification in qs:
-            self._bitbucket_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                         plug_specification.plug)
+        for plug_action_specification in qs:
+            self._bitbucket_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                         plug_action_specification.plug)
             self._bitbucket_controller.download_source_data(issue=issue)
         return JsonResponse({'hola': True})
 
@@ -554,9 +554,9 @@ class InstagramWebhookEvent(TemplateView):
             action_specification__action__connector__name__iexact="instagram",
             value=object_id,
             plug__source_gear__is_active=True)
-        for plug_specification in qs:
-            self._instagram_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                         plug_specification.plug)
+        for plug_action_specification in qs:
+            self._instagram_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                         plug_action_specification.plug)
             media = self._instagram_controller.get_media(media_id)
             self._instagram_controller.download_source_data(media=media)
         return JsonResponse({'hola': True})
@@ -633,9 +633,9 @@ class YouTubeWebhookEvent(TemplateView):
             value=channel_id,
             plug__source_gear__is_active=True)
 
-        for plug_specification in qs:
-            self._youtube_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                       plug_specification.plug)
+        for plug_action_specification in qs:
+            self._youtube_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                       plug_action_specification.plug)
             video = self._youtube_controller.get_video(video_id)
             self._youtube_controller.download_source_data(video=video)
         return JsonResponse({'hola': True})
@@ -677,9 +677,9 @@ class JiraWebhookEvent(TemplateView):
             action_specification__action__connector__name__iexact="jira",
             value=issue['fields']['project']['id'],
             plug__source_gear__is_active=True)
-        for plug_specification in qs:
-            self._jira_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                    plug_specification.plug)
+        for plug_action_specification in qs:
+            self._jira_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                    plug_action_specification.plug)
             self._jira_controller.download_source_data(issue=issue)
         return JsonResponse({'hola': True})
 
@@ -717,9 +717,9 @@ class GoogleCalendarWebhookEvent(TemplateView):
             plug__connection=google_push_webhook.connection,
             plug__source_gear__is_active=True)
 
-        for plug_specification in qs:
-            self._googlecalendar_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                              plug_specification.plug)
+        for plug_action_specification in qs:
+            self._googlecalendar_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                              plug_action_specification.plug)
             events = self._googlecalendar_controller.get_events()
             self._googlecalendar_controller.download_source_data(events=events)
 

@@ -50,7 +50,7 @@ class ShopifyController(BaseController):
     def download_to_stored_data(self, connection_object, plug, list=None):
         if plug is None:
             plug = self._plug
-        topic_id = self._plug.plug_specification.all()[0].value
+        topic_id = self._plug.plug_action_specification.all()[0].value
 
         if list is None:
             session = shopify.Session("https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com", self._token)
@@ -90,8 +90,8 @@ class ShopifyController(BaseController):
         return True
 
     def create_webhook(self):
-        topic_id = self._plug.plug_specification.all()[0].value
-        plug_id = self._plug.plug_specification.all()[0].id
+        topic_id = self._plug.plug_action_specification.all()[0].value
+        plug_id = self._plug.plug_action_specification.all()[0].id
         session = shopify.Session("https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com", self._token)
         shopify.ShopifyResource.activate_session(session)
         new_webhook = shopify.Webhook()
@@ -118,7 +118,7 @@ class ShopifyController(BaseController):
         return [MapField(f, controller=ConnectorEnum.Shopify) for f in fields]
 
     def get_fields(self):
-        topic_id = self._plug.plug_specification.all()[0].value
+        topic_id = self._plug.plug_action_specification.all()[0].value
         if (topic_id == 'customers'):
             return [{"name": "first Name", "required": True, "type": 'varchar'},
                     {"name": "last Name", "required": False, "type": 'varchar'},
@@ -139,7 +139,7 @@ class ShopifyController(BaseController):
         data_list = get_dict_with_source_data(source_data, target_fields)
         if self._plug is not None:
             obj_list = []
-            topic_id = self._plug.plug_specification.all()[0].value
+            topic_id = self._plug.plug_action_specification.all()[0].value
             extra = {'controller': 'shopify'}
             for item in data_list:
                 try:
