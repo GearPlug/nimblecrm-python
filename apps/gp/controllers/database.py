@@ -79,7 +79,6 @@ class MySQLController(BaseController):
             if limit is not None and isinstance(limit, int):
                 select += 'LIMIT %s' % limit
             try:
-                print(select)
                 self._cursor.execute(select)
                 cursor_select_all = copy.copy(self._cursor)
                 self.describe_table()
@@ -92,29 +91,22 @@ class MySQLController(BaseController):
     def download_to_stored_data(self, connection_object, plug, **kwargs):
         if plug is None:
             plug = self._plug
-        print("Controller dtsd: 1")
         data = self.select_all()
         id_list = self.get_primary_keys()
         parsed_data = [{'id': tuple(item[key] for key in id_list),
                         'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}
                        for item in data]
         new_data = []
-        print(len(parsed_data))
-        print("Controller dtsd: 2")
         for item in parsed_data:
             try:
                 id_item = item['id'][0]
             except IndexError:
                 id_item = None
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id_item)
-            print("Connection: {0}  Plug: {1}  ID: {2}".format(connection_object.connection.id, plug.id, id_item))
-            print(q.exists())
             if not q.exists():
-                print("+1")
                 for column in item['data']:
                     new_data.append(StoredData(name=column['name'], value=column['value'], object_id=id_item,
                                                connection=connection_object.connection, plug=plug))
-        print(new_data)
         if new_data:
             field_count = len(parsed_data[0]['data'])
             extra = {'controller': 'mysql'}

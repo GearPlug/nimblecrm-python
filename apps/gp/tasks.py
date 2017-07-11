@@ -27,7 +27,7 @@ def update_all_gears():
         update_plug.s(gear.source.id, gear.id).apply_async(queue="source_{0}".format(connector.name.lower()))
         print("Asignado el plug {0} a update de source.".format(gear.source))
 
-@app.task
+@app.task(queue="connector")
 def update_plug(plug_id, gear_id, **kwargs):
     plug = Plug.objects.get(pk=plug_id)
     lock_id = 'lock-{0}-gear'.format(plug.id)
@@ -49,7 +49,7 @@ def update_plug(plug_id, gear_id, **kwargs):
                 has_new_data = controller.download_source_data(from_date=gear.gear_map.last_source_update)
                 print("HAS NEW DATA: {0}.".format(has_new_data))
                 # Call update del target.
-                kwargs['force_update'] = True
+                # kwargs['force_update'] = True
                 if has_new_data or 'force_update' in kwargs and kwargs['force_update'] == True:
                     connector = ConnectorEnum.get_connector(gear.target.connection.connector_id)
                     update_plug.s(gear.target.id, gear_id).apply_async(queue="source_{0}".format(connector.name.lower()))
@@ -58,7 +58,6 @@ def update_plug(plug_id, gear_id, **kwargs):
                 if gear.gear_map.last_sent_stored_data_id is not None:
                     kwargs['id__gt'] = gear.gear_map.last_sent_stored_data_id
                 stored_data = StoredData.objects.filter(**kwargs)
-                print("StoredData target send: ".format(stored_data))
                 if stored_data:
                     target_fields = OrderedDict((data.target_name, data.source_value) for data in
                                                 GearMapData.objects.filter(gear_map=gear.gear_map))
@@ -70,9 +69,8 @@ def update_plug(plug_id, gear_id, **kwargs):
                     gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
                     gear.gear_map.save()
         except Exception as e:
-            raise
+            # raise
             print("Exception in task %s" % gear_id)
-            pass
         finally:
             release_lock()
         return True

@@ -15,9 +15,13 @@ BROKER_URL = 'amqp://gearplug:12357*_HoLa@192.168.10.210:5672//'
 
 CELERYBEAT_SCHEDULE = {
     'update-plugs-1-minutes': {
-        'task': 'apps.gp.tasks.update_gears',
-        'schedule': timedelta(minutes=1, ),  # , seconds=30
+        'task': 'apps.gp.tasks.update_all_gears',
+        'schedule': timedelta(seconds=15, ),  # , seconds=30
     },
+    # 'update-plugs-1-minutes': {
+    #     'task': 'apps.gp.tasks.update_gears',
+    #     'schedule': timedelta(seconds=10, ),  # , seconds=30
+    # },
 }
 
 CELERY_TIMEZONE = 'UTC'
