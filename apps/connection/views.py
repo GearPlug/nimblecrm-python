@@ -522,6 +522,7 @@ class HubspotAuthView(View):
         try:
             response = response.json()
             self.request.session['hubspot_token'] = response['access_token']
+            self.request.session['refresh_token'] = response['refresh_token']
             return redirect(reverse('connection:hubspot_auth_success_create_connection'))
         except Exception as e:
             raise
@@ -533,14 +534,15 @@ class HubspotAuthSuccessCreateConnection(TemplateView):
     template_name = 'connection/hubspot/sucess.html'
     def get(self, request, *args, **kwargs):
         try:
-            if 'hubspot_token' in request.session:
+            if 'hubspot_token' and 'refresh_token' in request.session:
                 access_token = request.session.pop('hubspot_token')
-                c = Connection.objects.create(
-                    user=request.user, connector_id=ConnectorEnum.HubSpot.value)
+                refresh_token= request.session.pop('refresh_token')
+                c = Connection.objects.create(user=request.user, connector_id=ConnectorEnum.HubSpot.value)
                 n = int(HubSpotConnection.objects.filter(connection__user=request.user).count()) + 1
-                tc = ShopifyConnection.objects.create(
-                    connection=c, name="Hubspot Connection # %s" % n, token=access_token)
+                tc = HubSpotConnection.objects.create(
+                    connection=c, name="Hubspot Connection # %s" % n, token=access_token, refresh_token=refresh_token)
         except Exception as e:
+            raise
             print("Error creating Hubspot Connection.")
         return super(HubspotAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
