@@ -112,7 +112,7 @@ class DeleteGearView(DeleteView):
     success_url = reverse_lazy('%s:list' % app_name)
 
 
-class CreateGearMapView2(FormView, LoginRequiredMixin):
+class CreateGearMapView(FormView, LoginRequiredMixin):
     """
     Creates a Map for the selected gear.
 
@@ -175,7 +175,7 @@ class CreateGearMapView2(FormView, LoginRequiredMixin):
         if c == ConnectorEnum.GoogleContacts:
             self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
             return ['%%%%%s%%%%' % field for field in self.google_contacts_controller.get_contact_fields()]
-        return ['%%%%%s%%%%' % item['name'] for item in self.get_source_data_list(plug, plug.connection)]
+        return ['%%%%%s%%%%' % item['name'] for item in StoredData.objects.filter(plug=plug, connection=plug.connection).values('name').distinct()]
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
@@ -188,7 +188,7 @@ class CreateGearMapView2(FormView, LoginRequiredMixin):
             return []
 
 
-class CreateGearMapView(FormView):
+class CreateGearMapView2(FormView):
     template_name = 'gear/map/create.html'
     form_class = MapForm
     form_field_list = []

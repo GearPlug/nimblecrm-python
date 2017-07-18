@@ -38,7 +38,8 @@ class MySQLController(BaseController):
             user = self._connection_object.connection_user
             password = self._connection_object.connection_password
             try:
-                self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self._database)
+                self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password,
+                                                   db=self._database)
                 self._cursor = self._connection.cursor()
             except Exception as e:
                 self._connection = None
@@ -215,7 +216,8 @@ class PostgreSQLController(BaseController):
                     self._table.split('.'))
                 return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
                         item in self._cursor]
-            except:
+            except Exception as e:
+                raise
                 print('Error describing table: %s')
         return []
 
@@ -330,6 +332,9 @@ class PostgreSQLController(BaseController):
             return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def get_target_fields(self, **kwargs):
+        return self.describe_table(**kwargs)
 
 
 class MSSQLController(BaseController):

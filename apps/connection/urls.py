@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from apps.connection.views import CreateConnectionView, ListConnectorView, \
     AJAXFacebookGetAvailableConnectionsView, AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
-    AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
+    AJAXMySQLTestConnection, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
     GoogleAuthView, AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, \
     AJAXPostgreSQLTestConnection, AJAXMSSQLTestConnection, SlackAuthView, AuthSuccess, AJAXBitbucketTestConnection, \
     AJAXJiraTestConnection, AJAXGetResponseTestConnection, TwitterAuthView, TwitterAuthSuccessCreateConnection, \
@@ -14,19 +14,21 @@ from apps.connection.views import CreateConnectionView, ListConnectorView, \
 from apps.gp.enum import GoogleAPI
 
 urlpatterns = [
-    # Create
+    # Create Connection
     url(r'create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create'),
-    # TestConnection
-    url(r'^test/(?P<connector_id>\d+)/$', TestConnectionView.as_view(), name="test"),
     # Create Success
     url(r'create/success/$', CreateConnectionSuccessView.as_view(), name='create_success'),
-    # Update??
-    url(r'update/(?P<connector_id>\d+)/(?P<pk>\d+)/$', UpdateConnectionView.as_view(), name='update'),
-    # url(r'delete/(?P<pk>\d+)/$', DeleteGearView.as_view(), name='delete'),
+    # Test Connection
+    url(r'^test/(?P<connector_id>\d+)/$', TestConnectionView.as_view(), name="test"),
+    # List Connectors
     url(r'list/connector/$', ListConnectorView.as_view(), name='list_connector'),
 
+    # Auth Callbacks
+    url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),
+    url(r'^auth-callback/google/', GoogleAuthView.as_view(), name="google_auth"),
+
     # Google SpreadSheets
-    url(r"^google_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.SpreadSheets}, name="google_auth"),
+    url(r"^google_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.SpreadSheets}, name="google_auth_gss"),
     url(r"^google_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'api': GoogleAPI.SpreadSheets},
         name="google_auth_success_create_connection"),
 
@@ -71,8 +73,6 @@ urlpatterns = [
         name="shopify_auth_success_create_connection"),
 
     # Slack
-    url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),
-    url(r'^auth-callback/google/', GoogleAuthView.as_view(), name="google_auth_a"),
 
     # AuthSuccess
     url(r'^auth/success/$', AuthSuccess.as_view(), name="auth_sucess"),

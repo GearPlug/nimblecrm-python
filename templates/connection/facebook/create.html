@@ -77,14 +77,12 @@
 
             $('form#formCreateConnection').submit(function () {
                 var url = $(this).attr('action');
-                console.log('url:' + url);
                 $.ajax({
                     method: "POST",
                     url: url,
                     data: $(this).serialize(),
                 }).done(function (response) {
                     if (response.data) {
-                        console.log('reload')
                         location.reload();
                     }
                 });

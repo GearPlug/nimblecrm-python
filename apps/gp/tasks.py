@@ -8,12 +8,6 @@ from collections import OrderedDict
 
 LOCK_EXPIRE = 60 * 1
 
-
-@app.task
-def suma(a, b):
-    return a + b
-
-
 @app.task(queue="beat")
 def update_all_gears():
     print("Starting to update all gears...")
@@ -43,13 +37,8 @@ def update_plug(plug_id, gear_id, **kwargs):
                 controller = controller_class(plug.connection.related_connection, plug, plug.plug_action_specification.all()[0].value)
             else:
                 controller = controller_class(plug.connection.related_connection, plug)
-            # Source
-            print("PLUG TYPE: {0}".format(plug.plug_type.lower()))
             if plug.plug_type.lower() == 'source':
                 has_new_data = controller.download_source_data(from_date=gear.gear_map.last_source_update)
-                print("HAS NEW DATA: {0}.".format(has_new_data))
-                # Call update del target.
-                # kwargs['force_update'] = True
                 if has_new_data or 'force_update' in kwargs and kwargs['force_update'] == True:
                     connector = ConnectorEnum.get_connector(gear.target.connection.connector_id)
                     update_plug.s(gear.target.id, gear_id).apply_async(queue="source_{0}".format(connector.name.lower()))
