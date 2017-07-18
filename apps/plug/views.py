@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from apps.plug.apps import APP_NAME as app_name
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Gear, Plug, PlugActionSpecification, Action, ActionSpecification, Connection
+from apps.gp.models import Gear, Plug, PlugActionSpecification, Action, ActionSpecification, Connection, StoredData
 from extra_views import ModelFormSetView
 import re
 
@@ -174,6 +174,52 @@ class CreatePlugSpecificationsView(ModelFormSetView):
         context['plug_id'] = self.kwargs['plug_id']
         print("c")
         return context
+
+
+class TestPlugView(TemplateView):
+    """
+
+    """
+    template_name = 'wizard/plug_test.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(TestPlugView, self).get_context_data()
+        p = Plug.objects.get(pk=self.kwargs.get('pk'))
+        if p.plug_type == 'source':
+            try:
+                sd_sample = StoredData.objects.filter(plug=p, connection=p.connection).order_by('-id')[0]
+                sd = StoredData.objects.filter(plug=p, connection=p.connection, object_id=sd_sample.object_id)
+                context['object_list'] = sd
+            except IndexError:
+                print("error")
+        elif p.plug_type == 'target':
+            c = ConnectorEnum.get_connector(p.connection.connector.id)
+            controller_class = ConnectorEnum.get_controller(c)
+            controller = controller_class(p.connection.related_connection, p)
+            ping = controller.test_connection()
+            if ping:
+                if c == ConnectorEnum.JIRA:
+                    target_fields = controller.get_target_fields()
+                else:
+                    target_fields = [field.name for field in controller.get_mapping_fields()]
+                context['object_list'] = target_fields
+        context['plug_type'] = p.plug_type
+        return context
+
+    def post(self, request, *args, **kwargs):
+        # Download data
+        p = Plug.objects.get(pk=self.kwargs.get('pk'))
+        c = ConnectorEnum.get_connector(p.connection.connector.id)
+        controller_class = ConnectorEnum.get_controller(c)
+        controller = controller_class(p.connection.related_connection, p)
+        if p.plug_type == 'source':
+            ping = controller.test_connection()
+            print("PING: %s" % ping)
+            if ping:
+                data_list = controller.download_to_stored_data(p.connection.related_connection, p)
+                print(data_list)
+        context = self.get_context_data()
+        return super(TestPlugView, self).render_to_response(context)
 
 
 class UpdatePlugSpecificationsView(UpdateView):

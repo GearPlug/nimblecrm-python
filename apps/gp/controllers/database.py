@@ -216,7 +216,6 @@ class PostgreSQLController(BaseController):
                 return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
                         item in self._cursor]
             except Exception as e:
-                raise
                 print('Error describing table: %s')
         return []
 

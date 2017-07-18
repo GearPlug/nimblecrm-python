@@ -132,6 +132,13 @@ class GetResponseController(BaseController):
         return [MapField(f, controller=ConnectorEnum.GetResponse) for f in fields]
 
 
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'list':
+            return tuple({'id': c['id'], 'name': c['name']} for c in self.get_lists())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
+
 class MailChimpController(BaseController):
     """
     MailChimpController Class
@@ -217,7 +224,8 @@ class MailChimpController(BaseController):
         raise ControllerError("Incomplete.")
 
     def get_target_fields(self, **kwargs):
-        return self.get_list_merge_fields(**kwargs)
+        list = self._plug.plug_action_specification.get(action_specification__name__iexact='list')
+        return self.get_list_merge_fields(list_id=list.id)
 
     def get_all_members(self, list_id):
         return self._client.lists.members.all(list_id, get_all=True, fields="members.id,members.email_address")
@@ -227,16 +235,17 @@ class MailChimpController(BaseController):
                 m['email_address'] == l['email_address']]
 
     def get_mapping_fields(self, **kwargs):
-        list_id = self._plug.plug_action_specification.all()[0].value
-        mfl = [MapField(f, controller=ConnectorEnum.MailChimp) for f in self.get_list_merge_fields(list_id)]
-        mfl.append(MapField({'tag': 'email_address', 'name': 'Email', 'required': True, 'type': 'email',
-                             'options': {'size': 100}}, controller=ConnectorEnum.MailChimp))
-        return mfl
+        specification = self._plug.plug_action_specification.first()
+        if specification.action_specification.name.lower() == 'list':
+            list_id = specification.value
+            mfl = [MapField(f, controller=ConnectorEnum.MailChimp) for f in self.get_list_merge_fields(list_id)]
+            mfl.append(MapField({'tag': 'email_address', 'name': 'Email', 'required': True, 'type': 'email',
+                                 'options': {'size': 100}}, controller=ConnectorEnum.MailChimp))
+            return mfl
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
-        if action_specification.action.connector == self._connector:
-            if action_specification.name.lower() == 'list':
-                return tuple({'id': c['id'], 'name': c['name']} for c in self.get_lists())
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'list':
+            return tuple({'id': c['id'], 'name': c['name']} for c in self.get_lists())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")

@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from apps.wizard.views import TestPlugView, MSSQLFieldList, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, \
+from apps.wizard.views import MSSQLFieldList, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, \
     MySQLFieldList, PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, \
     SlackWebhookEvent, BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, \
     GetResponseCampaignsList, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
@@ -8,7 +8,7 @@ from apps.wizard.views import TestPlugView, MSSQLFieldList, GoogleDriveSheetList
 
 from apps.connection.views import ListConnectionView, ListConnectorView, CreateConnectionView
 from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, DeleteGearView, CreateGearMapView
-from apps.plug.views import ActionListView, ActionSpecificationsListView, CreatePlugView
+from apps.plug.views import ActionListView, ActionSpecificationsListView, CreatePlugView, TestPlugView
 
 urlpatterns = [
 
