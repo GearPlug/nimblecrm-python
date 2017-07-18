@@ -5,12 +5,11 @@
 {% block body %}
     <div>
         {% block body_title %}
-            new connection: {{ connector_name }}
+            New Connection: {{ connector_name }}
         {% endblock %}
     </div>
     {% block body_content %}
-        <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
-              method="post" autocomplete="off">
+        <form id="formCreateConnection" class="create-connection-form form-horizontal" action="" method="post" autocomplete="off">
             {% csrf_token %}
             {{ form|as_bootstrap }}
             <button id="btnTestConnection">Test connection</button>
@@ -30,8 +29,6 @@
             $('button#btnTestConnection').click(function () {
                 $('form#formCreateConnection').attr('action', "{% url 'connection:test' connector_id=connector_id %}");
                 $('form#formCreateConnection').attr('is_ajax', true);
-                $('form#formCreateConnection').submit();
-                return false;
             });
 
             $('button#btnCreateConnection').click(function () {
@@ -53,7 +50,7 @@
                     });
                     return false;
                 }
-            })
+            });
         });
 
     </script>

@@ -133,7 +133,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                 form.instance.token = facebook_controller.extend_token(self.request.POST.get('token', ''))
             elif connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleContacts,
                                ConnectorEnum.GoogleForms, ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube]:
-                # Guardar credenciales de google en el formulario. (deben venir en la sessión
+                # Guardar credenciales de google en el formulario (deben venir en la sessión).
                 form.instance.credentials_json = self.request.session['google_credentials']
             self.object = form.save()
             self.request.session['auto_select_connection_id'] = c.id
@@ -146,18 +146,27 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            name = 'ajax_create' if self.request.is_ajax() else 'create'
-            self.template_name = '%s/%s/%s.html' % (app_name, connector.name.lower(), name)
+            if connector.name.lower() in ['googlesheets', ]:  # Creación con url de authorization.
+                name = 'create_with_auth'
+            elif connector.name.lower() == 'facebook':  # Especial para facebook
+                name = 'facebook/create'
+            else:  # Sin autorization. Creación por formulario.
+                name = 'create'
+            self.template_name = '%s/%s.html' % (app_name, name)
         return super(CreateConnectionView, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
         # El model y los fields varían dependiendo de la conexion.
         if self.kwargs['connector_id'] is not None:
-            print("Es post")
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            name = 'ajax_create' if self.request.is_ajax() else 'create'
-            self.template_name = '%s/%s/%s.html' % (app_name, connector.name.lower(), name)
+            if connector.name.lower() in ['googlesheets', ]:  # Creación con url de authorization.
+                name = 'create_with_auth'
+            elif connector.name.lower() == 'facebook':  # Especial para facebook
+                name = 'facebook/create'
+            else:  # Sin autorizacion. Creación por formulario.
+                name = 'create'
+            self.template_name = '%s/%s.html' % (app_name, name)
         return super(CreateConnectionView, self).post(*args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):
@@ -168,39 +177,39 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         context['connector_id'] = connector.value
         if connector == ConnectorEnum.GoogleSpreadSheets:
             flow = get_flow(GOOGLE_AUTH_URL)
-            context['google_auth_url'] = flow.step1_get_authorize_url()
+            context['authorizaton_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'drive'
         elif connector == ConnectorEnum.GoogleForms:
             flow = get_flow(GOOGLE_FORMS_AUTH_URL)
-            context['google_auth_url'] = flow.step1_get_authorize_url()
+            context['authorizaton_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'forms'
         elif connector == ConnectorEnum.GoogleContacts:
             flow = get_flow_google_contacts()
-            context['google_auth_url'] = flow.step1_get_authorize_url()
+            context['authorizaton_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'contacts'
         elif connector == ConnectorEnum.GoogleCalendar:
             flow = get_flow(GOOGLE_CALENDAR_AUTH_URL, GOOGLE_CALENDAR_SCOPE)
-            context['google_auth_url'] = flow.step1_get_authorize_url()
+            context['authorizaton_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'calendar'
         elif connector == ConnectorEnum.YouTube:
             flow = get_flow(GOOGLE_YOUTUBE_AUTH_URL, GOOGLE_YOUTUBE_SCOPE)
-            context['google_auth_url'] = flow.step1_get_authorize_url()
+            context['authorizaton_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'youtube'
         elif connector == ConnectorEnum.Slack:
-            context['slack_auth_url'] = SLACK_PERMISSIONS_URL
+            context['authorizaton_url'] = SLACK_PERMISSIONS_URL
         elif connector == ConnectorEnum.Twitter:
             flow = get_twitter_auth()
-            context['twitter_auth_url'] = flow.get_authorization_url()
+            context['authorizaton_url'] = flow.get_authorization_url()
             self.request.session['twitter_request_token'] = flow.request_token
         elif connector == ConnectorEnum.SurveyMonkey:
-            context['surveymonkey_auth_url'] = get_survey_monkey_url()
+            context['authorizaton_url'] = get_survey_monkey_url()
         elif connector == ConnectorEnum.Shopify:
-            context['shopify_auth_url'] = get_shopify_url()
+            context['authorizaton_url'] = get_shopify_url()
         elif connector == ConnectorEnum.Instagram:
             flow = get_instagram_auth()
-            context['instagram_auth_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
+            context['authorizaton_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
         elif connector == ConnectorEnum.HubSpot:
-            context['hubspot_auth_url'] = get_hubspot_url()
+            context['authorizaton_url'] = get_hubspot_url()
         return context
 
 
@@ -227,34 +236,8 @@ class TestConnectionView(LoginRequiredMixin, View):
             connection_object = connection_model(**connection_params)
             controller_class = ConnectorEnum.get_controller(connector)
             controller = controller_class(connection_object)
+        print(controller)
         return JsonResponse({'data': controller.test_connection(), 'connection_test': controller.test_connection()})
-
-
-class UpdateConnectionView(UpdateView):
-    model = Connection
-    fields = []
-    template_name = '%s/update.html' % app_name
-    success_url = reverse_lazy('%s:list' % app_name)
-
-    def get(self, *args, **kwargs):
-        if self.kwargs['connector_id'] is not None:
-            self.model, self.fields = ConnectorEnum.get_connector_data(self.kwargs['connector_id'])
-            if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Facebook:
-                self.template_name = '%s/%s/update.html' % (app_name, ConnectorEnum.Facebook.name.lower())
-        return super(UpdateConnectionView, self).get(*args, **kwargs)
-
-    def post(self, *args, **kwargs):
-        if self.kwargs['connector_id'] is not None:
-            self.model, self.fields = ConnectorEnum.get_connector_data(self.kwargs['connector_id'])
-            if ConnectorEnum.get_connector(self.kwargs['connector_id']) == ConnectorEnum.Facebook:
-                self.template_name = '%s/%s/update.html' % (app_name, ConnectorEnum.Facebook.name.lower())
-        return super(UpdateConnectionView, self).post(*args, **kwargs)
-
-
-class DeleteConnectionView(DeleteView):
-    model = Connection
-    template_name = '%s/delete.html' % app_name
-    success_url = reverse_lazy('%s:list' % app_name)
 
 
 class GoogleAuthView(View):
@@ -284,7 +267,6 @@ class GoogleAuthSuccessCreateConnection(TemplateView):
     def get(self, request, *args, **kwargs):
         print('auth success')
         try:
-
             if 'google_credentials' in request.session:
                 credentials = request.session.pop('google_credentials')
                 if kwargs['api'] == GoogleAPI.Forms:
@@ -312,7 +294,6 @@ class GoogleAuthSuccessCreateConnection(TemplateView):
                     gssc = YouTubeConnection.objects.create(
                         connection=c, name="YouTube Connection # %s" % n, credentials_json=credentials)
         except Exception as e:
-            # print("Error creating the GoogleSheets Connection.")
             raise
         return super(GoogleAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
@@ -383,9 +364,12 @@ class InstagramAuthSuccessCreateConnection(TemplateView):
             print("Error creating the Instagram Connection.")
         return super(InstagramAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
+
 def get_instagram_auth():
     return InstagramAPI(client_id=settings.INSTAGRAM_CLIENT_ID, client_secret=settings.INSTAGRAM_CLIENT_SECRET,
                         redirect_uri=INSTAGRAM_AUTH_URL)
+
+
 class SlackAuthView(View):
     def get(self, request):
         code = request.GET.get('code', None)
@@ -508,14 +492,12 @@ class ShopifyAuthSuccessCreateConnection(TemplateView):
         return super(ShopifyAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
 
-def get_shopify_url():
-    scopes = "read_products, write_products, read_orders, read_customers, write_orders, write_customers"
-    return "https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com/admin/oauth/authorize?client_id=" + settings.SHOPIFY_API_KEY + "&scope=" + scopes + "&redirect_uri=" + settings.SHOPIFY_REDIRECT_URI
-
 class HubspotAuthView(View):
     def get(self, request, *args, **kwargs):
         code = request.GET.get('code', '')
-        data = {'grant_type': 'authorization_code', 'client_id': settings.HUBSPOT_CLIENT_ID, 'client_secret': settings.HUBSPOT_CLIENT_SECRET, 'redirect_uri': settings.HUBSPOT_REDIRECT_URI, 'code': code}
+        data = {'grant_type': 'authorization_code', 'client_id': settings.HUBSPOT_CLIENT_ID,
+                'client_secret': settings.HUBSPOT_CLIENT_SECRET, 'redirect_uri': settings.HUBSPOT_REDIRECT_URI,
+                'code': code}
         headers = {'Content-Type': 'application/x-www-form-urlencoded', 'charset': 'utf-8'}
         url = "https://api.hubapi.com/oauth/v1/token"
         response = requests.post(url, headers=headers, data=data)
@@ -529,8 +511,10 @@ class HubspotAuthView(View):
             print("Error en Hubspot")
         return redirect(reverse('connection:hubspot_auth_success_create_connection'))
 
+
 class HubspotAuthSuccessCreateConnection(TemplateView):
     template_name = 'connection/hubspot/sucess.html'
+
     def get(self, request, *args, **kwargs):
         try:
             if 'hubspot_token' in request.session:
@@ -544,8 +528,14 @@ class HubspotAuthSuccessCreateConnection(TemplateView):
             print("Error creating Hubspot Connection.")
         return super(HubspotAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
+
 def get_hubspot_url():
-    return "https://app.hubspot.com/oauth/1234/authorize?client_id="+settings.HUBSPOT_CLIENT_ID+"&scope=contacts&redirect_uri="+settings.HUBSPOT_REDIRECT_URI
+    return "https://app.hubspot.com/oauth/1234/authorize?client_id=" + settings.HUBSPOT_CLIENT_ID + "&scope=contacts&redirect_uri=" + settings.HUBSPOT_REDIRECT_URI
+
+
+def get_shopify_url():
+    scopes = "read_products, write_products, read_orders, read_customers, write_orders, write_customers"
+    return "https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com/admin/oauth/authorize?client_id=" + settings.SHOPIFY_API_KEY + "&scope=" + scopes + "&redirect_uri=" + settings.SHOPIFY_REDIRECT_URI
 
 
 class AuthSuccess(TemplateView):
