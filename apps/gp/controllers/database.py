@@ -167,7 +167,6 @@ class MySQLController(BaseController):
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'order by':
             return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
         else:
