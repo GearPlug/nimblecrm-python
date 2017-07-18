@@ -182,11 +182,13 @@ class CreateGearMapView2(FormView, LoginRequiredMixin):
         controller_class = ConnectorEnum.get_controller(c)
         related = plug.connection.related_connection
         controller = controller_class(related, plug)
-        try:
-            return controller.get_mapping_fields()
-        except Exception as e:
+        if controller.test_connection():
+            try:
+                return controller.get_mapping_fields()
+            except Exception as e:
+                return []
+        else:
             return []
-
 
 class CreateGearMapView(FormView):
     template_name = 'gear/map/create.html'
