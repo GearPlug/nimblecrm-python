@@ -84,7 +84,6 @@ class ActionListView(LoginRequiredMixin, ListView):
 
         - Is used by the CreatePlugView in the wizard via AJAX.
 
-
         TODO
         - Revisar flujo y funcionalidad
     """
@@ -217,7 +216,6 @@ class TestPlugView(TemplateView):
             print("PING: %s" % ping)
             if ping:
                 data_list = controller.download_to_stored_data(p.connection.related_connection, p)
-                print(data_list)
         context = self.get_context_data()
         return super(TestPlugView, self).render_to_response(context)
 

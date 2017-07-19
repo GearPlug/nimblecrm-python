@@ -41,6 +41,8 @@ class SlackController(BaseController):
 
     def post_message_to_target(self, message='', target=''):
         try:
+            print(target)
+            print(message)
             self._slacker.chat.post_message(target, message)
             return True
         except Exception as e:
@@ -113,8 +115,9 @@ class SlackController(BaseController):
         return self.get_target_fields()
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
-        if action_specification.name.lower() == 'chanel':
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        print()
+        if action_specification.name.lower() == 'channel':
             return tuple({'id': c['id'], 'name': c['name']} for c in self.get_channel_list())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
