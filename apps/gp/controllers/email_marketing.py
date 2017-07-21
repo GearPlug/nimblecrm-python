@@ -1,3 +1,5 @@
+import datetime
+import mandrill
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
@@ -240,3 +242,209 @@ class MailChimpController(BaseController):
                 return tuple({'id': c['id'], 'name': c['name']} for c in self.get_lists())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+
+class MandrillController(BaseController):
+    """
+    MandrillController Class
+    """
+    _client = None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(MandrillController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._client = mandrill.Mandrill(self._connection_object.api_key)
+                except Exception as e:
+                    print("Error getting the Mandrill attributes")
+                    self._client = None
+
+    def test_connection(self):
+        try:
+            return self._client is not None and self._client.users.info() is not None
+        except mandrill.InvalidKeyError:
+            return False
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            extra = {'controller': 'mandrill'}
+            for obj in data_list:
+                res = self.send_email(obj)
+            return
+        raise ControllerError("Incomplete.")
+
+    def send_email(self, obj):
+        to_email = obj.pop('to_email')
+        obj['to'] = [{'email': to_email}]
+        print(obj)
+        result = self._client.messages.send(message=obj, async=False, ip_pool='Main Pool',
+                                            send_at=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        print(result)
+
+    def get_meta(self):
+        _dict = [
+            # {
+            #     'name': 'attachments',
+            #     'required': False,
+            #     'type': 'file'
+            # },
+            {
+                'name': 'auto_html',
+                'required': False,
+                'type': 'bool'
+            }, {
+                'name': 'auto_text',
+                'required': False,
+                'type': 'bool'
+            }, {
+                'name': 'bcc_address',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'from_email',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'from_name',
+                'required': False,
+                'type': 'text'
+            },
+            # {
+            #     'name': 'global_merge_vars',
+            #     'required': False,
+            #     'type': 'array'
+            # },
+            {
+                'name': 'google_analytics_campaign',
+                'required': False,
+                'type': 'text'
+            },
+            {
+                'name': 'google_analytics_domains',
+                'required': False,
+                'type': 'text'
+            },
+            # {
+            #     'name': 'headers',
+            #     'required': False,
+            #     'type': 'struct'
+            # },
+            {
+                'name': 'html',
+                'required': False,
+                'type': 'text'
+            },
+            # {
+            #     'name': 'images',
+            #     'required': False,
+            #     'type': 'array'
+            # },
+            {
+                'name': 'important',
+                'required': False,
+                'type': 'bool'
+            }, {
+                'name': 'inline_css',
+                'required': False,
+                'type': 'bool'
+            }, {
+                'name': 'merge',
+                'required': False,
+                'type': 'bool'
+            }, {
+                'name': 'merge_language',
+                'required': False,
+                'type': 'text'
+            },
+            # {
+            #     'name': 'merge_vars',
+            #     'required': False,
+            #     'type': 'array'
+            # },
+            {
+                'name': 'metadata',
+                'required': False,
+                'type': 'array'
+            }, {
+                'name': 'preserve_recipients',
+                'required': False,
+                'type': 'bool'
+            },
+            # {
+            #     'name': 'recipient_metadata',
+            #     'required': False,
+            #     'type': 'array'
+            # },
+            {
+                'name': 'return_path_domain',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'signing_domain',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'subaccount',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'subject',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'tags',
+                'required': False,
+                'type': 'array'
+            }, {
+                'name': 'text',
+                'required': False,
+                'type': 'text'
+            },
+            # To: originalmente una lista de diccionarios
+            {
+                'name': 'to_email',
+                'required': False,
+                'type': 'text'
+            },
+            {
+                'name': 'track_clicks',
+                'required': False,
+                'type': 'bool'
+            }, {
+                'name': 'track_opens',
+                'required': False,
+                'type': 'bool'
+            }, {
+                'name': 'tracking_domain',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'url_strip_qs',
+                'required': False,
+                'type': 'bool'
+            }, {
+                'name': 'view_content_link',
+                'required': False,
+                'type': 'bool'
+            },
+        ]
+        return _dict
+
+    def get_mapping_fields(self, **kwargs):
+        mfl = [MapField(f, controller=ConnectorEnum.Mandrill) for f in self.get_meta()]
+        return mfl
+
+    def get_target_fields(self):
+        return self.get_meta()

@@ -9,7 +9,7 @@ from apps.connection.views import CreateConnectionView, ListConnectorView, \
     SurveyMonkeyAuthSuccessCreateConnection, AJAXGetSurveyListView, InstagramAuthSuccessCreateConnection, \
     AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection, ShopifyAuthView, \
     ShopifyAuthSuccessCreateConnection, AJAXSMTPTestConnection, TestConnectionView, CreateConnectionSuccessView, \
-    HubspotAuthView, HubspotAuthSuccessCreateConnection
+    HubspotAuthView, HubspotAuthSuccessCreateConnection, AJAXMandrillTestConnection
 
 from apps.gp.enum import GoogleAPI
 
@@ -92,6 +92,8 @@ urlpatterns = [
 
     url(r'ajax/mailchimp/test_connection/', AJAXMailChimpTestConnection.as_view(),
         name='ajax_mailchimp_test_connection'),
+    url(r'ajax/mandrill/test_connection/', AJAXMandrillTestConnection.as_view(),
+        name='ajax_mandrill_test_connection'),
     url(r'ajax/postgresql/test_connection/', AJAXPostgreSQLTestConnection.as_view(),
         name='ajax_update_postgresql_test_connection'),
     url(r'ajax/mssql/test_connection/', AJAXMSSQLTestConnection.as_view(),
