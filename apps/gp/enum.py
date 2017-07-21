@@ -65,7 +65,7 @@ class ConnectorEnum(Enum):
                     return field
         elif name is not None and isinstance(name, str):
             for field in ConnectorEnum:
-                if name == field.name:
+                if name.lower() == field.name.lower():
                     return field
 
     def get_connector_list():

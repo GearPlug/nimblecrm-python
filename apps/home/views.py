@@ -38,7 +38,9 @@ class IncomingWebhook(View):
         return super(IncomingWebhook, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        connector_name = self.kwargs.get('connector').lower()
+        print(self.kwargs)
+        connector_name = self.kwargs['connector'].lower()
+        print(connector_name)
         connector = ConnectorEnum.get_connector(name=connector_name)
         print(connector)
         if connector == ConnectorEnum.Slack:
