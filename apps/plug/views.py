@@ -61,11 +61,12 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         controller_class = ConnectorEnum.get_controller(c)
         controller = controller_class(self.object.connection.related_connection, self.object)
         ping = controller.test_connection()
-        print("PING: %s" % ping)
         if ping:
             if self.object.is_source:
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
-                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA or c == ConnectorEnum.SurveyMonkey or c == ConnectorEnum.GoogleCalendar or c == ConnectorEnum.Instagram or c == ConnectorEnum.YouTube or c == ConnectorEnum.Shopify:
+                if c in [ConnectorEnum.Bitbucket, ConnectorEnum.JIRA, ConnectorEnum.SurveyMonkey,
+                         ConnectorEnum.Instagram, ConnectorEnum.YouTube, ConnectorEnum.Shopify,
+                         ConnectorEnum.GoogleCalendar, ConnectorEnum.Slack]:
                     controller.create_webhook()
             elif self.object.is_target:
                 if c == ConnectorEnum.MailChimp:

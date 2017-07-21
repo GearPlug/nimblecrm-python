@@ -403,24 +403,6 @@ class ShopifyWebhookEvent(TemplateView):
         return JsonResponse({'hola': True})
 
 
-class BitbucketProjectList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = BitbucketController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            # El id es el mismo nombre del module
-            project_list = tuple({'id': p['uuid'], 'name': p['name']} for p in controller.get_repositories())
-        else:
-            project_list = []
-        context['object_list'] = project_list
-        return super(BitbucketProjectList, self).render_to_response(context)
-
-
 class JiraProjectList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
 

@@ -47,13 +47,12 @@ def update_plug(plug_id, gear_id, **kwargs):
             if ping is not True:
                 print("Error en la connection.")
                 return
-            print(plug.plug_type.lower())
             if plug.plug_type.lower() == 'source':
                 has_new_data = controller.download_source_data(from_date=gear.gear_map.last_source_update)
                 if gear.gear_map.last_sent_stored_data_id is None:
                     kwargs['force_update'] = True
                 if has_new_data or 'force_update' in kwargs and kwargs['force_update'] == True:
-                    connector = ConnectorEnum.get_connector(gear.target.connection.connector_id)
+                    # connector = ConnectorEnum.get_connector(gear.target.connection.connector_id)
                     # update_plug.s(gear.target.id, gear_id).apply_async(
                     #     queue="source_{0}".format(connector.name.lower()))
                     update_plug.s(gear.target.id, gear_id).apply_async()
@@ -70,9 +69,11 @@ def update_plug(plug_id, gear_id, **kwargs):
                         for item in stored_data.values_list('object_id').distinct()]
                     is_first = gear.gear_map.last_sent_stored_data_id is None
                     entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
-                    gear.gear_map.last_source_update = timezone.now()
-                    gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
-                    gear.gear_map.save()
+                    print("Result target: {0}".format(entries))
+                    if entries:
+                        gear.gear_map.last_source_update = timezone.now()
+                        gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
+                        gear.gear_map.save()
         except Exception as e:
             raise
             print("Exception in task %s" % gear_id)

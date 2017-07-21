@@ -116,7 +116,6 @@ class SlackController(BaseController):
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
-        print()
         if action_specification.name.lower() == 'channel':
             return tuple({'id': c['id'], 'name': c['name']} for c in self.get_channel_list())
         else:

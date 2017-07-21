@@ -135,7 +135,7 @@ class MySQLController(BaseController):
         if is_first:
             if data_list:
                 try:
-                    data_list = [data_list[0]]
+                    data_list = [data_list[-1]]
                 except:
                     data_list = []
         if self._plug is not None:
@@ -297,7 +297,7 @@ class PostgreSQLController(BaseController):
         if is_first:
             if data_list:
                 try:
-                    data_list = [data_list[0]]
+                    data_list = [data_list[-1]]
                 except:
                     data_list = []
         if self._plug is not None:
@@ -308,6 +308,7 @@ class PostgreSQLController(BaseController):
                     insert = self._get_insert_statement(item)
                     self._cursor.execute(insert)
                     extra['status'] = 's'
+                    # Lastrowid not working.
                     self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
                     obj_list.append(self._cursor.lastrowid)
                 except Exception as e:
@@ -461,7 +462,7 @@ class MSSQLController(BaseController):
         if is_first:
             if data_list:
                 try:
-                    data_list = [data_list[0]]
+                    data_list = [data_list[-1]]
                 except:
                     data_list = []
         if self._plug is not None:
