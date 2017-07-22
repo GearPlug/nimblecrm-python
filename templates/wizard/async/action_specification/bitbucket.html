@@ -1,11 +1,14 @@
 {% extends 'wizard/async/action_specification.html' %}
 
+
 {% block scripts %}
     {{ block.super }}
     <script type="application/javascript">
         $(document).ready(function () {
+            var load_options = true;
+            $('div#speicification-container-19').hide();
             $(document).on('change', 'select[data-name=repository_id]', function () {
-                $('select[data-name=repository_name]').append(new Option($(this).find('option:selected').text(), $(this).find('option:selected').text(), true, true));
+                $('select[data-name=repository_name]').html(new Option($(this).find('option:selected').text(), $(this).find('option:selected').text(), true, true));
             })
         })
     </script>

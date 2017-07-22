@@ -38,29 +38,25 @@ class IncomingWebhook(View):
         return super(IncomingWebhook, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        print(self.kwargs)
         connector_name = self.kwargs['connector'].lower()
-        print(connector_name)
         connector = ConnectorEnum.get_connector(name=connector_name)
-        print(connector)
         if connector == ConnectorEnum.Slack:
             data = json.loads(request.body.decode('utf-8'))
             if 'challenge' in data.keys():
                 return JsonResponse({'challenge': data['challenge']})
             elif 'type' in data.keys() and data['type'] == 'event_callback':
-                print("Slack event: {0}".format(data['event']))
                 event = data['event']
-                slack_channel_list = PlugActionSpecification.objects.filter(
-                    action_specification__action__action_type='source',
-                    action_specification__action__connector__name__iexact="slack",
-                    plug__source_gear__is_active=True)
-                if event['type'] == "message" and event['channel'] in [c.value for c in slack_channel_list]:
-                    for plug_action_specification in slack_channel_list:
-                        self._slack_controller.create_connection(
-                            plug_action_specification.plug.connection.related_connection,
-                            plug_action_specification.plug)
-                        self._slack_controller.download_source_data(event=data)
+                if event['type'] == "message":
+                    channel_list = PlugActionSpecification.objects.filter(
+                        action_specification__action__action_type='source',
+                        action_specification__action__connector__name__iexact="slack",
+                        plug__gear_source__is_active=True, # TODO  TEST NO FUNCIONA POR ESTO
+                        value=event['channel'])
+                    controller_class = ConnectorEnum.get_controller(connector)
+                    for plug_action_specification in channel_list:
+                        controller = controller_class(plug_action_specification.plug.connection.related_connection,
+                                                      plug_action_specification.plug)
+                        controller.download_source_data(event=data)
             else:
                 print("No callback event")
             return JsonResponse({'slack': True})
-

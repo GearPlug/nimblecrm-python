@@ -229,6 +229,9 @@ class UpdatePlugSpecificationsView(UpdateView):
 
 
 class PlugActionSpecificationOptionsView(LoginRequiredMixin, TemplateView):
+    """
+
+    """
     template_name = 'wizard/async/select_options.html'
 
     def post(self, request, *args, **kwargs):
@@ -243,6 +246,6 @@ class PlugActionSpecificationOptionsView(LoginRequiredMixin, TemplateView):
         if ping:
             field_list = controller.get_action_specification_options(action_specification_id, **kwargs)
         else:
-            field_list = list()
+            field_list = []
         context['object_list'] = field_list
         return super(PlugActionSpecificationOptionsView, self).render_to_response(context)

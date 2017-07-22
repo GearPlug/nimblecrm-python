@@ -1,10 +1,12 @@
 {% block body %}
     {% for o in object_list %}
-        {{ o.name }}: 1
-        <select data-name="{{ o.name|slugify|lower }}" data-id="{{ o.id }}" name="specification-{{ o.id }}" class="specification_select">
-            <option>---------</option>
-        </select>
-        <br>
+        <div class="specification" id="speicification-container-{{ o.id }}">
+            {{ o.name }}:
+            <select data-name="{{ o.name|slugify|lower }}" data-id="{{ o.id }}" name="specification-{{ o.id }}"
+                    class="specification_select">
+                <option>---------</option>
+            </select>
+        </div><br>
     {% endfor %}
 {% endblock %}
 
@@ -27,7 +29,7 @@
                             action_specification_id: $(select).attr('data-id')
                         }
                     }).done(function (response) {
-                        $(select).html(response);
+                        $(select).html(response).trigger('change');
                         load_options = false;
                     });
                 }
