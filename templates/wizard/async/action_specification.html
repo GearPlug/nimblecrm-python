@@ -12,7 +12,7 @@
 
 
 {% block scripts %}
-    {{ block.super }}
+{#    {{ block.super }}#}
     <script type="application/javascript">
         $(document).ready(function () {
             var load_options = true;
@@ -20,7 +20,6 @@
                 var select = $(this);
                 if (load_options == true) {
                     var url = "{% url 'plug:action_specification_options' %}";
-                    var action_id = $('#action_list_selector').val();
                     $.ajax({
                         method: "POST",
                         url: url,

@@ -257,12 +257,14 @@ class FacebookController(BaseController):
         return False
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        print(kwargs)
         if action_specification.name.lower() == 'page':
             pages = self.get_pages(self._token)
             return tuple({'id': p['id'], 'name': p['name']} for p in pages)
         elif action_specification.name.lower() == 'form':
             forms = self.get_forms(self._token, kwargs.get('page_id', ''))
+            print(forms.json())
             return tuple({'id': p['id'], 'name': p['name']} for p in forms)
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")

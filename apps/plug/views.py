@@ -127,12 +127,15 @@ class ActionSpecificationsListView(LoginRequiredMixin, ListView):
     def post(self, request, *args, **kwargs):
         if not request.is_ajax():
             return super(ActionSpecificationsListView, self).get(request, *args, **kwargs)
-        action = Action.objects.get(pk=self.kwargs['pk'])
-        kw = {'action_id': action.id}
+        action = Action.objects.get(pk=self.kwargs['action_id'])
+        kw = {'action_id': self.kwargs['action_id']}
         self.object_list = self.model.objects.filter(**kw)
         context = self.get_context_data()
         c = ConnectorEnum.get_connector(action.connector.id)
-        self.template_name = 'wizard/async/action_specification/' + c.name.lower() + '.html'
+        if c.name.lower() in ['facebook', ]:
+            self.template_name = 'wizard/async/action_specification/' + c.name.lower() + '.html'
+        else:
+            self.template_name = 'wizard/async/action_specification.html'
         return super(ActionSpecificationsListView, self).render_to_response(context)
 
 
@@ -243,6 +246,8 @@ class PlugActionSpecificationOptionsView(LoginRequiredMixin, TemplateView):
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class(connection.related_connection)
         ping = controller.test_connection()
+        kwargs.update(request.POST)
+        del kwargs['action_specification_id']
         if ping:
             field_list = controller.get_action_specification_options(action_specification_id, **kwargs)
         else:

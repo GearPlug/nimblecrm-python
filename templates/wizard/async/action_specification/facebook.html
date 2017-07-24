@@ -1,36 +1,19 @@
 {% extends 'wizard/async/action_specification.html' %}
-
+{##}
 {% block scripts %}
     {{ block.super }}
     <script type="application/javascript">
         $(document).ready(function () {
-            var load_page = true;
-
-            $(document).on('click', 'select[data-name=page]', function () {
-                var select = $(this);
-                if (load_page == true) {
-                    var url = "{% url 'wizard:async_facebook_pages' %}";
-                    $.ajax({
-                        method: "POST",
-                        url: url,
-                        data: {connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %}}
-                    }).done(function (response) {
-                        $(select).html(response);
-                        load_page = false;
-                    });
-                }
-            });
-
             $(document).on('change', 'select[data-name=page]', function () {
                 var select = $('select[data-name=form]');
-                var url = "{% url 'wizard:async_facebook_forms' %}";
-                var page_id = $(this).val();
+                var url = "{% url 'plug:action_specification_options' %}";
                 $.ajax({
                     method: "POST",
                     url: url,
                     data: {
                         connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %},
-                        page_id: page_id,
+                        action_specification_id: $(select).attr('data-id'),
+                        page_id: $(this).val()
                     }
                 }).done(function (response) {
                     $(select).html(response);

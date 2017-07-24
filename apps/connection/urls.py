@@ -26,6 +26,7 @@ urlpatterns = [
     # Auth Callbacks
     url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),
     url(r'^auth-callback/google/', GoogleAuthView.as_view(), name="google_auth"),
+    url(r'^auth-callback/facebook/', GoogleAuthView.as_view(), name="facebook_auth"),
 
     # Google SpreadSheets
     url(r"^google_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.SpreadSheets}, name="google_auth_gss"),
