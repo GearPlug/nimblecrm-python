@@ -10,7 +10,7 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
                'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram',
                'connection_getresponse', 'connection_getresponse', 'connection_twitter', 'connection_surveymonkey',
                'connection_zohocrm', 'connection_wunderlist', 'connection_sms', 'connection_youtube', 'connection_smtp',
-               'connection_salesforce', 'connection_shopify', 'connection_hubspotcrm']
+               'connection_salesforce', 'connection_shopify', 'connection_hubspotcrm', 'connection_evernote']
 
 
 class Category(models.Model):
@@ -287,6 +287,14 @@ class GooglePushWebhook(models.Model):
 
 class SlackConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_slack')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=100)
+
+    def __str__(self):
+        return self.name
+
+class EvernoteConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_evernote')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=100)
 

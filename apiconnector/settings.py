@@ -254,3 +254,7 @@ HUBSPOT_REDIRECT_URI="https://122eaa1d.ngrok.io/connection/hubspot_auth/"
 HUBSPOT_CLIENT_ID="633af850-f08a-42e5-a6e7-da65a177bcd5"
 HUBSPOT_CLIENT_SECRET="94e688b7-9390-4b59-a6df-151eac348e89"
 
+#Evernote
+EVERNOTE_CONSUMER_KEY="ltorres-6238"
+EVERNOTE_CONSUMER_SECRET="a4673a77baca5424"
+EVERNOTE_REDIRECT_URL="http://127.0.0.1:8000/connection/evernote_auth/"

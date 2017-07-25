@@ -168,6 +168,18 @@ class MapField(object):
                 self.choices = [(choice, choice) for choice in d['options']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
+        elif controller == ConnectorEnum.Evernote:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
+            if  d['type']=='enumeration':
+                self.choices = [(choice, choice) for choice in d['options']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
         else:
             if 'name' in d:
                 self.name = d['name']

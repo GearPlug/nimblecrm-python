@@ -25,13 +25,16 @@ from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
     GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection, GoogleCalendarConnection, \
-    YouTubeConnection, SMSConnection, ShopifyConnection, HubSpotConnection, MySQLConnection
+    YouTubeConnection, SMSConnection, ShopifyConnection, HubSpotConnection, MySQLConnection, EvernoteConnection
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
 from slacker import Slacker
 import json
 import urllib
 import requests
+from evernote.api.client import EvernoteClient
+import evernote.edam.type.ttypes as Types
+from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
 
 GOOGLE_DRIVE_SCOPE = ''
 GOOGLE_AUTH_URL = 'http://localhost:8000/connection/google_auth/'
@@ -146,7 +149,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            if connector.name.lower() in ['googlesheets', ]:  # Creación con url de authorization.
+            if connector.name.lower() in ['googlesheets','evernote' ]:  # Creación con url de authorization.
                 name = 'create_with_auth'
             elif connector.name.lower() == 'facebook':  # Especial para facebook
                 name = 'facebook/create'
@@ -160,7 +163,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            if connector.name.lower() in ['googlesheets', ]:  # Creación con url de authorization.
+            if connector.name.lower() in ['googlesheets','evernote' ]:  # Creación con url de authorization.
                 name = 'create_with_auth'
             elif connector.name.lower() == 'facebook':  # Especial para facebook
                 name = 'facebook/create'
@@ -210,6 +213,12 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             context['authorizaton_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
         elif connector == ConnectorEnum.HubSpot:
             context['authorizaton_url'] = get_hubspot_url()
+        elif connector == ConnectorEnum.Evernote:
+            client = EvernoteClient(consumer_key=settings.EVERNOTE_CONSUMER_KEY,
+                                    consumer_secret=settings.EVERNOTE_CONSUMER_SECRET, sandbox=True)
+            request_token = client.get_request_token(settings.EVERNOTE_REDIRECT_URL)
+            self.request.session['oauth_secret_evernote']= request_token['oauth_token_secret']
+            context['authorization_url'] = client.get_authorize_url(request_token)
         return context
 
 
@@ -491,6 +500,9 @@ class ShopifyAuthSuccessCreateConnection(TemplateView):
             print("Error creating Shopify Connection.")
         return super(ShopifyAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
+def get_shopify_url():
+    scopes = "read_products, write_products, read_orders, read_customers, write_orders, write_customers"
+    return "https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com/admin/oauth/authorize?client_id=" + settings.SHOPIFY_API_KEY + "&scope=" + scopes + "&redirect_uri=" + settings.SHOPIFY_REDIRECT_URI
 
 class HubspotAuthView(View):
     def get(self, request, *args, **kwargs):
@@ -532,10 +544,38 @@ class HubspotAuthSuccessCreateConnection(TemplateView):
 def get_hubspot_url():
     return "https://app.hubspot.com/oauth/1234/authorize?client_id=" + settings.HUBSPOT_CLIENT_ID + "&scope=contacts&redirect_uri=" + settings.HUBSPOT_REDIRECT_URI
 
+class EvernoteAuthView(View):
 
-def get_shopify_url():
-    scopes = "read_products, write_products, read_orders, read_customers, write_orders, write_customers"
-    return "https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com/admin/oauth/authorize?client_id=" + settings.SHOPIFY_API_KEY + "&scope=" + scopes + "&redirect_uri=" + settings.SHOPIFY_REDIRECT_URI
+    def get(self, request, *args, **kwargs):
+        oauth_token = request.GET.get('oauth_token', '')
+        val=request.GET.get('oauth_verifier', '')
+        oauth_secret = self.request.session['oauth_secret_evernote']
+        client = EvernoteClient(consumer_key=settings.EVERNOTE_CONSUMER_KEY,
+                                consumer_secret=settings.EVERNOTE_CONSUMER_SECRET, sandbox=True)
+        auth_token = client.get_access_token(oauth_token, oauth_secret, val)
+        self.request.session['auth_token'] = auth_token
+        return redirect(reverse('connection:evernote_success_create_connection'))
+
+class EvernoteAuthSuccessCreateConnection(TemplateView):
+    template_name = 'connection/evernote/sucess.html'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if 'auth_token' in request.session:
+                access_token = request.session.pop('auth_token')
+                c = Connection.objects.create(
+                    user=request.user, connector_id=ConnectorEnum.Evernote.value)
+                n = int(EvernoteConnection.objects.filter(connection__user=request.user).count()) + 1
+                tc = EvernoteConnection.objects.create(
+                    connection=c, name="Evernote Connection # %s" % n, token=access_token)
+        except Exception as e:
+            print("Error creating Evernote Connection.")
+        return super(EvernoteAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
+
+def get_evernote_url():
+    client = EvernoteClient(consumer_key=settings.EVERNOTE_CONSUMER_KEY, consumer_secret=settings.EVERNOTE_CONSUMER_SECRET, sandbox=True)
+    request_token = client.get_request_token(settings.EVERNOTE_REDIRECT_URL)
+    return client.get_authorize_url(request_token)
 
 
 class AuthSuccess(TemplateView):

@@ -9,7 +9,7 @@ from apps.connection.views import CreateConnectionView, ListConnectorView, \
     SurveyMonkeyAuthSuccessCreateConnection, AJAXGetSurveyListView, InstagramAuthSuccessCreateConnection, \
     AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection, ShopifyAuthView, \
     ShopifyAuthSuccessCreateConnection, AJAXSMTPTestConnection, TestConnectionView, CreateConnectionSuccessView, \
-    HubspotAuthView, HubspotAuthSuccessCreateConnection
+    HubspotAuthView, HubspotAuthSuccessCreateConnection, EvernoteAuthView, EvernoteAuthSuccessCreateConnection
 
 from apps.gp.enum import GoogleAPI
 
@@ -66,6 +66,11 @@ urlpatterns = [
     url(r"^survey_monkey_auth/$", SurveyMonkeyAuthView.as_view(), name="survey_monkey_auth"),
     url(r"^survey_monkey_auth/success/$", SurveyMonkeyAuthSuccessCreateConnection.as_view(),
         name="survey_monkey_auth_success_create_connection"),
+
+    # evernote
+    url(r"^evernote_auth/$", EvernoteAuthView.as_view(), name="evernote_auth"),
+    url(r"^evernote_auth/success/$", EvernoteAuthSuccessCreateConnection.as_view(),
+        name="evernote_success_create_connection"),
 
     # shopify
     url(r"^shopify_auth/$", ShopifyAuthView.as_view(), name="shopify_auth"),
