@@ -133,11 +133,10 @@ class SugarCRMController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def get_target_fields(self, module, **kwargs):
-        return self.get_module_fields(module, **kwargs)
-
     def get_mapping_fields(self, **kwargs):
-        fields = self.get_module_fields(self._plug.plug_action_specification.all()[0].value, get_structure=True)
+        specification = self._plug.plug_action_specification.first()
+        module = specification.value
+        fields = self.get_module_fields(module, get_structure=True)
         return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields]
 
     def get_action_specification_options(self, action_specification_id):
@@ -453,7 +452,8 @@ class HubSpotController(BaseController):
         return self._token is not None
 
     def get_modules(self):
-        return [{'name': 'companies', 'id': 'companies'}, {'name': 'contacts', 'id': 'contacts'}, {'name': 'deals', 'id': 'deals'}]
+        return [{'name': 'companies', 'id': 'companies'}, {'name': 'contacts', 'id': 'contacts'},
+                {'name': 'deals', 'id': 'deals'}]
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
@@ -465,7 +465,7 @@ class HubSpotController(BaseController):
     def download_to_stored_data(self, connection_object, plug, ):
         module_id = self._plug.plug_action_specification.all()[0].value
         new_data = []
-        data=self.get_data(module_id)
+        data = self.get_data(module_id)
         for item in data:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
                                           object_id=item['id'])
@@ -491,25 +491,25 @@ class HubSpotController(BaseController):
         return False
 
     def get_data(self, module_id):
-        if (module_id=='contacts'):
+        if (module_id == 'contacts'):
             url = "https://api.hubapi.com/contacts/v1/lists/all/contacts/all"
-        if (module_id=='companies'):
+        if (module_id == 'companies'):
             url = "https://api.hubapi.com/companies/v2/companies/"
-        if (module_id=='deals'):
+        if (module_id == 'deals'):
             url = "https://api.hubapi.com/deals/v1/deal/paged?includeAssociations=true&limit=30&properties=dealname"
         headers = {'Authorization': 'Bearer {0}'.format(self._token), }
-        result=requests.get(url, headers=headers).json()[module_id]
-        data=[]
+        result = requests.get(url, headers=headers).json()[module_id]
+        data = []
         for i in result:
             item = {}
             if (module_id == 'contacts'):
-                item['id']=i['vid']
+                item['id'] = i['vid']
             if (module_id == 'companies'):
-                item['id']=i['companyId']
+                item['id'] = i['companyId']
             if (module_id == 'deals'):
                 item['id'] = i['dealId']
             for d in i["properties"]:
-                item[d]=i["properties"][d]['value']
+                item[d] = i["properties"][d]['value']
             data.append(item)
         return data
 
@@ -519,10 +519,10 @@ class HubSpotController(BaseController):
 
     def get_target_fields(self, **kwargs):
         module_id = self._plug.plug_action_specification.all()[0].value
-        url = "https://api.hubapi.com/properties/v1/"+module_id+"/properties"
+        url = "https://api.hubapi.com/properties/v1/" + module_id + "/properties"
         headers = {'Authorization': 'Bearer {0}'.format(self._token)}
         response = requests.get(url, headers=headers).json()
-        return [i for i in response if "label" in i and i['readOnlyValue']== False]
+        return [i for i in response if "label" in i and i['readOnlyValue'] == False]
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
@@ -540,17 +540,16 @@ class HubSpotController(BaseController):
         #         try:
 
 
-            #         self._log.info('Item: %s successfully sent.' % (int(response['#text'])), extra=extra)
-            #         obj_list.append(id)
-            #     except Exception as e:
-            #         print(e)
-            #         extra['status'] = 'f'
-            #         self._log.info('Item: %s failed to send.' % (int(response['#text'])), extra=extra)
-            # return obj_list
-        #raise ControllerError("There's no plug")
+        #         self._log.info('Item: %s successfully sent.' % (int(response['#text'])), extra=extra)
+        #         obj_list.append(id)
+        #     except Exception as e:
+        #         print(e)
+        #         extra['status'] = 'f'
+        #         self._log.info('Item: %s failed to send.' % (int(response['#text'])), extra=extra)
+        # return obj_list
+        # raise ControllerError("There's no plug")
 
-    def insert_data(self,fields):
+    def insert_data(self, fields):
         url = "https://api.hubapi.com/contacts/v1/contact/"
         headers = {'Authorization': 'Bearer {0}'.format(self._token)}
-        return {"properties":[{'property':i,'value':fields[i]}] for i in fields}
-
+        return {"properties": [{'property': i, 'value': fields[i]}] for i in fields}

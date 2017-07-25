@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from apps.plug.apps import APP_NAME as app_name
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Gear, Plug, PlugActionSpecification, Action, ActionSpecification, Connection
+from apps.gp.models import Gear, Plug, PlugActionSpecification, Action, ActionSpecification, Connection, StoredData
 from extra_views import ModelFormSetView
 import re
 
@@ -61,11 +61,12 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         controller_class = ConnectorEnum.get_controller(c)
         controller = controller_class(self.object.connection.related_connection, self.object)
         ping = controller.test_connection()
-        print("PING: %s" % ping)
         if ping:
             if self.object.is_source:
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
-                if c == ConnectorEnum.Bitbucket or c == ConnectorEnum.JIRA or c == ConnectorEnum.SurveyMonkey or c == ConnectorEnum.GoogleCalendar or c == ConnectorEnum.Instagram or c == ConnectorEnum.YouTube or c == ConnectorEnum.Shopify:
+                if c in [ConnectorEnum.Bitbucket, ConnectorEnum.JIRA, ConnectorEnum.SurveyMonkey,
+                         ConnectorEnum.Instagram, ConnectorEnum.YouTube, ConnectorEnum.Shopify,
+                         ConnectorEnum.GoogleCalendar]:
                     controller.create_webhook()
             elif self.object.is_target:
                 if c == ConnectorEnum.MailChimp:
@@ -83,7 +84,6 @@ class ActionListView(LoginRequiredMixin, ListView):
         Lists the Actions from a specific connector. Filters source or target actions as well.
 
         - Is used by the CreatePlugView in the wizard via AJAX.
-
 
         TODO
         - Revisar flujo y funcionalidad
@@ -127,12 +127,15 @@ class ActionSpecificationsListView(LoginRequiredMixin, ListView):
     def post(self, request, *args, **kwargs):
         if not request.is_ajax():
             return super(ActionSpecificationsListView, self).get(request, *args, **kwargs)
-        action = Action.objects.get(pk=self.kwargs['pk'])
-        kw = {'action_id': action.id}
+        action = Action.objects.get(pk=self.kwargs['action_id'])
+        kw = {'action_id': self.kwargs['action_id']}
         self.object_list = self.model.objects.filter(**kw)
         context = self.get_context_data()
         c = ConnectorEnum.get_connector(action.connector.id)
-        self.template_name = 'wizard/async/action_specification/' + c.name.lower() + '.html'
+        if c.name.lower() in ['facebook', ]:
+            self.template_name = 'wizard/async/action_specification/' + c.name.lower() + '.html'
+        else:
+            self.template_name = 'wizard/async/action_specification.html'
         return super(ActionSpecificationsListView, self).render_to_response(context)
 
 
@@ -176,6 +179,51 @@ class CreatePlugSpecificationsView(ModelFormSetView):
         return context
 
 
+class TestPlugView(TemplateView):
+    """
+
+    """
+    template_name = 'wizard/plug_test.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(TestPlugView, self).get_context_data()
+        p = Plug.objects.get(pk=self.kwargs.get('pk'))
+        if p.plug_type == 'source':
+            try:
+                sd_sample = StoredData.objects.filter(plug=p, connection=p.connection).order_by('-id')[0]
+                sd = StoredData.objects.filter(plug=p, connection=p.connection, object_id=sd_sample.object_id)
+                context['object_list'] = sd
+            except IndexError:
+                print("error")
+        elif p.plug_type == 'target':
+            c = ConnectorEnum.get_connector(p.connection.connector.id)
+            controller_class = ConnectorEnum.get_controller(c)
+            controller = controller_class(p.connection.related_connection, p)
+            ping = controller.test_connection()
+            if ping:
+                if c == ConnectorEnum.JIRA:
+                    target_fields = controller.get_target_fields()
+                else:
+                    target_fields = [field.name for field in controller.get_mapping_fields()]
+                context['object_list'] = target_fields
+        context['plug_type'] = p.plug_type
+        return context
+
+    def post(self, request, *args, **kwargs):
+        # Download data
+        p = Plug.objects.get(pk=self.kwargs.get('pk'))
+        c = ConnectorEnum.get_connector(p.connection.connector.id)
+        controller_class = ConnectorEnum.get_controller(c)
+        controller = controller_class(p.connection.related_connection, p)
+        if p.plug_type == 'source':
+            ping = controller.test_connection()
+            print("PING: %s" % ping)
+            if ping:
+                data_list = controller.download_to_stored_data(p.connection.related_connection, p)
+        context = self.get_context_data()
+        return super(TestPlugView, self).render_to_response(context)
+
+
 class UpdatePlugSpecificationsView(UpdateView):
     model = PlugActionSpecification
     template_name = '%s/specifications/update.html' % app_name
@@ -184,6 +232,9 @@ class UpdatePlugSpecificationsView(UpdateView):
 
 
 class PlugActionSpecificationOptionsView(LoginRequiredMixin, TemplateView):
+    """
+
+    """
     template_name = 'wizard/async/select_options.html'
 
     def post(self, request, *args, **kwargs):
@@ -195,9 +246,11 @@ class PlugActionSpecificationOptionsView(LoginRequiredMixin, TemplateView):
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class(connection.related_connection)
         ping = controller.test_connection()
+        kwargs.update(request.POST)
+        del kwargs['action_specification_id']
         if ping:
             field_list = controller.get_action_specification_options(action_specification_id, **kwargs)
         else:
-            field_list = list()
+            field_list = []
         context['object_list'] = field_list
         return super(PlugActionSpecificationOptionsView, self).render_to_response(context)

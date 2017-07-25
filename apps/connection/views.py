@@ -149,7 +149,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            if connector.name.lower() in ['googlesheets','evernote' ]:  # Creación con url de authorization.
+            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey', ]:  # Creación con url de authorization.
                 name = 'create_with_auth'
             elif connector.name.lower() == 'facebook':  # Especial para facebook
                 name = 'facebook/create'
@@ -163,7 +163,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            if connector.name.lower() in ['googlesheets','evernote' ]:  # Creación con url de authorization.
+            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey', ]:  # Creación con url de authorization.
                 name = 'create_with_auth'
             elif connector.name.lower() == 'facebook':  # Especial para facebook
                 name = 'facebook/create'
@@ -180,37 +180,37 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         context['connector_id'] = connector.value
         if connector == ConnectorEnum.GoogleSpreadSheets:
             flow = get_flow(GOOGLE_AUTH_URL)
-            context['authorizaton_url'] = flow.step1_get_authorize_url()
+            context['authorization_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'drive'
         elif connector == ConnectorEnum.GoogleForms:
             flow = get_flow(GOOGLE_FORMS_AUTH_URL)
-            context['authorizaton_url'] = flow.step1_get_authorize_url()
+            context['authorization_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'forms'
         elif connector == ConnectorEnum.GoogleContacts:
             flow = get_flow_google_contacts()
-            context['authorizaton_url'] = flow.step1_get_authorize_url()
+            context['authorization_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'contacts'
         elif connector == ConnectorEnum.GoogleCalendar:
             flow = get_flow(GOOGLE_CALENDAR_AUTH_URL, GOOGLE_CALENDAR_SCOPE)
-            context['authorizaton_url'] = flow.step1_get_authorize_url()
+            context['authorization_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'calendar'
         elif connector == ConnectorEnum.YouTube:
             flow = get_flow(GOOGLE_YOUTUBE_AUTH_URL, GOOGLE_YOUTUBE_SCOPE)
-            context['authorizaton_url'] = flow.step1_get_authorize_url()
+            context['authorization_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = 'youtube'
         elif connector == ConnectorEnum.Slack:
-            context['authorizaton_url'] = SLACK_PERMISSIONS_URL
+            context['authorization_url'] = SLACK_PERMISSIONS_URL
         elif connector == ConnectorEnum.Twitter:
             flow = get_twitter_auth()
-            context['authorizaton_url'] = flow.get_authorization_url()
+            context['authorization_url'] = flow.get_authorization_url()
             self.request.session['twitter_request_token'] = flow.request_token
         elif connector == ConnectorEnum.SurveyMonkey:
-            context['authorizaton_url'] = get_survey_monkey_url()
+            context['authorization_url'] = get_survey_monkey_url()
         elif connector == ConnectorEnum.Shopify:
-            context['authorizaton_url'] = get_shopify_url()
+            context['authorization_url'] = get_shopify_url()
         elif connector == ConnectorEnum.Instagram:
             flow = get_instagram_auth()
-            context['authorizaton_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
+            context['authorization_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
         elif connector == ConnectorEnum.HubSpot:
             context['authorizaton_url'] = get_hubspot_url()
         elif connector == ConnectorEnum.Evernote:

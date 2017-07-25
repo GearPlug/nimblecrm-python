@@ -138,6 +138,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         self.source_object_list = self.get_available_source_fields(source_plug)
         # Target fields
         self.form_field_list = self.get_target_field_list(target_plug)
+        return super(CreateGearMapView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)

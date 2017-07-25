@@ -10,7 +10,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
 from apps.gp.controllers.lead import GoogleFormsController, FacebookController, SurveyMonkeyController
-from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController#, HubspotController
+from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController  # , HubspotController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
 from apps.gp.controllers.im import SlackController
@@ -192,6 +192,7 @@ class ZohoCRMModuleList(LoginRequiredMixin, TemplateView):
         context['object_list'] = module_list
         return super(ZohoCRMModuleList, self).render_to_response(context)
 
+
 class ShopifyList(TemplateViewWithPost):
     template_name = 'wizard/async/select_options.html'
 
@@ -207,6 +208,7 @@ class ShopifyList(TemplateViewWithPost):
             object_list = []
         context['object_list'] = object_list
         return super(ShopifyList, self).render_to_response(context)
+
 
 class MailChimpListsList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
@@ -332,8 +334,9 @@ class SlackWebhookEvent(TemplateView):
                 plug__source_gear__is_active=True)
             if event['type'] == "message" and event['channel'] in [c.value for c in slack_channel_list]:
                 for plug_action_specification in slack_channel_list:
-                    self._slack_controller.create_connection(plug_action_specification.plug.connection.related_connection,
-                                                             plug_action_specification.plug)
+                    self._slack_controller.create_connection(
+                        plug_action_specification.plug.connection.related_connection,
+                        plug_action_specification.plug)
                     self._slack_controller.download_source_data(event=data)
         else:
             print("No callback event")
@@ -365,10 +368,12 @@ class SurveyMonkeyWebhookEvent(TemplateView):
         )
         for plug_action_specification in qs:
             print("plug")
-            self._surveymonkey_controller.create_connection(plug_action_specification.plug.connection.related_connection,
-                                                            plug_action_specification.plug)
+            self._surveymonkey_controller.create_connection(
+                plug_action_specification.plug.connection.related_connection,
+                plug_action_specification.plug)
             self._surveymonkey_controller.download_source_data(responses=responses)
         return JsonResponse({'hola': True})
+
 
 class ShopifyWebhookEvent(TemplateView):
     template_name = 'wizard/async/select_options.html'
@@ -393,26 +398,9 @@ class ShopifyWebhookEvent(TemplateView):
         for plug_action_specification in qs:
             print("plug")
             self._shopify_controller.create_connection(plug_action_specification.plug.connection.related_connection,
-                                                            plug_action_specification.plug)
+                                                       plug_action_specification.plug)
             self._shopify_controller.download_source_data(list=notifications)
         return JsonResponse({'hola': True})
-
-class BitbucketProjectList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = BitbucketController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            # El id es el mismo nombre del module
-            project_list = tuple({'id': p['uuid'], 'name': p['name']} for p in controller.get_repositories())
-        else:
-            project_list = []
-        context['object_list'] = project_list
-        return super(BitbucketProjectList, self).render_to_response(context)
 
 
 class JiraProjectList(LoginRequiredMixin, TemplateView):
@@ -431,56 +419,6 @@ class JiraProjectList(LoginRequiredMixin, TemplateView):
             project_list = []
         context['object_list'] = project_list
         return super(JiraProjectList, self).render_to_response(context)
-
-
-class TestPlugView(TemplateView):
-    template_name = 'wizard/plug_test.html'
-
-    def get_context_data(self, **kwargs):
-        context = super(TestPlugView, self).get_context_data()
-        p = Plug.objects.get(pk=self.kwargs.get('pk'))
-        print("Test")
-        if p.plug_type == 'source':
-            print("source")
-            try:
-                sd_sample = StoredData.objects.filter(plug=p, connection=p.connection).order_by('-id')[0]
-                sd = StoredData.objects.filter(plug=p, connection=p.connection, object_id=sd_sample.object_id)
-                context['object_list'] = sd
-                print("gg")
-            except IndexError:
-                print("error")
-        elif p.plug_type == 'target':
-            c = ConnectorEnum.get_connector(p.connection.connector.id)
-            controller_class = ConnectorEnum.get_controller(c)
-            controller = controller_class(p.connection.related_connection, p)
-            ping = controller.test_connection()
-            if ping:
-                if c == ConnectorEnum.MailChimp:
-                    target_fields = controller.get_target_fields(list_id=p.plug_action_specification.all()[0].value)
-                elif c == ConnectorEnum.SugarCRM:
-                    target_fields = controller.get_target_fields(p.plug_action_specification.all()[0].value)
-                elif c == ConnectorEnum.JIRA:
-                    target_fields = controller.get_target_fields()
-                else:
-                    target_fields = controller.get_target_fields()
-                context['object_list'] = target_fields
-        context['plug_type'] = p.plug_type
-        return context
-
-    def post(self, request, *args, **kwargs):
-        # Download data
-        p = Plug.objects.get(pk=self.kwargs.get('pk'))
-        c = ConnectorEnum.get_connector(p.connection.connector.id)
-        controller_class = ConnectorEnum.get_controller(c)
-        controller = controller_class(p.connection.related_connection, p)
-        if p.plug_type == 'source':
-            ping = controller.test_connection()
-            print("PING: %s" % ping)
-            if ping:
-                data_list = controller.download_to_stored_data(p.connection.related_connection, p)
-                print(data_list)
-        context = self.get_context_data()
-        return super(TestPlugView, self).render_to_response(context)
 
 
 class BitbucketWebhookEvent(TemplateView):
@@ -718,8 +656,9 @@ class GoogleCalendarWebhookEvent(TemplateView):
             plug__source_gear__is_active=True)
 
         for plug_action_specification in qs:
-            self._googlecalendar_controller.create_connection(plug_action_specification.plug.connection.related_connection,
-                                                              plug_action_specification.plug)
+            self._googlecalendar_controller.create_connection(
+                plug_action_specification.plug.connection.related_connection,
+                plug_action_specification.plug)
             events = self._googlecalendar_controller.get_events()
             self._googlecalendar_controller.download_source_data(events=events)
 
