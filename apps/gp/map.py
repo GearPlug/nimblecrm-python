@@ -13,7 +13,16 @@ class MapField(object):
     """
 
     def __init__(self, d, controller=None, **kwargs):
-        if controller == ConnectorEnum.SugarCRM:
+        if controller == ConnectorEnum.MySQL:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'null' in d:
+                if d['null'] is not True:
+                    self.required = True
+            self.field_type = 'text'
+            self.max_length = 200
+        elif controller == ConnectorEnum.SugarCRM:
             if 'name' in d:
                 self.name = d['name']
             if 'label' in d:
@@ -164,7 +173,7 @@ class MapField(object):
                 self.required = d['favorited']
             if 'type' in d:
                 self.field_type = d['type']
-            if  d['type']=='enumeration':
+            if d['type'] == 'enumeration':
                 self.choices = [(choice, choice) for choice in d['options']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'

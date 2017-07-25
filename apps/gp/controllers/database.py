@@ -1,6 +1,8 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
+from apps.gp.enum import ConnectorEnum
+from apps.gp.map import MapField
 
 from apps.gp.models import StoredData, ActionSpecification
 import MySQLdb
@@ -163,7 +165,8 @@ class MySQLController(BaseController):
         return self.describe_table(**kwargs)
 
     def get_mapping_fields(self, **kwargs):
-        return [item['name'] for item in self.describe_table() if item['is_primary'] is not True]
+        return [MapField(f, controller=ConnectorEnum.MySQL) for f in self.describe_table() if f['is_primary'] is not True]
+        # return [item['name'] for item in self.describe_table() if item['is_primary'] is not True]
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)

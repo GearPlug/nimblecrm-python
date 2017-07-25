@@ -189,7 +189,10 @@ class FacebookController(BaseController):
         r = requests.get('%s/v%s/%s' % (base_url, FACEBOOK_GRAPH_VERSION, url),
                          params=params)
         try:
-            return json.loads(r.text)['data']
+            if r.status_code in [200, 201, 202]:
+                return json.loads(r.text)['data']
+            else:
+                return []
         except KeyError:
             return r
         except Exception as e:
@@ -258,13 +261,13 @@ class FacebookController(BaseController):
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
-        print(kwargs)
         if action_specification.name.lower() == 'page':
             pages = self.get_pages(self._token)
             return tuple({'id': p['id'], 'name': p['name']} for p in pages)
         elif action_specification.name.lower() == 'form':
-            forms = self.get_forms(self._token, kwargs.get('page_id', ''))
-            print(forms.json())
+            page_id = kwargs.get('page_id', '')[0] if isinstance(kwargs.get('page_id', ''), list) else kwargs.get(
+                'page_id', '')
+            forms = self.get_forms(self._token, page_id)
             return tuple({'id': p['id'], 'name': p['name']} for p in forms)
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
@@ -314,7 +317,8 @@ class SurveyMonkeyController(BaseController):
             if not q.exists():
                 details = self.get_response_details(survey_id, response_id)
                 for value in details:
-                    if (value != "page_path" and value != "logic_path" and value != "metadata" and value != "custom_variables"):
+                    if (
+                                            value != "page_path" and value != "logic_path" and value != "metadata" and value != "custom_variables"):
                         new_data.append(StoredData(name=value, value=details[value], object_id=response_id,
                                                    connection=connection_object.connection, plug=plug))
         if new_data:
