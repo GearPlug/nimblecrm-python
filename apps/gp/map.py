@@ -13,7 +13,16 @@ class MapField(object):
     """
 
     def __init__(self, d, controller=None, **kwargs):
-        if controller == ConnectorEnum.SugarCRM:
+        if controller == ConnectorEnum.MySQL:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'null' in d:
+                if d['null'] is not True:
+                    self.required = True
+            self.field_type = 'text'
+            self.max_length = 200
+        elif controller == ConnectorEnum.SugarCRM:
             if 'name' in d:
                 self.name = d['name']
             if 'label' in d:
@@ -91,6 +100,22 @@ class MapField(object):
                 self.choices = [(choice, choice) for choice in d['values']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
+        elif controller == ConnectorEnum.ZohoCRM:
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'dv' in d:
+                self.name = d['dv']
+            if 'label' in d:
+                self.label = d['label']
+            if 'req' in d:
+                self.required = True if d['req'] == 'true' else False
+            if 'val' in d:
+                if isinstance(d['val'], list):
+                    self.choices = [(choice, choice) for choice in d['val']]
+                    self.choices.insert(0, ('', ''))
+                    self.field_type = 'choices'
+            if 'maxlength' in d:
+                self.max_length = int(d['maxlength'])
         elif controller == ConnectorEnum.GoogleCalendar:
             if 'name' in d:
                 self.name = d['name']
@@ -127,6 +152,31 @@ class MapField(object):
             if 'picklistValues' in d and d['picklistValues']:
                 self.choices = [(c['value'], c['label']) for c in d['picklistValues'] if c['active']]
                 self.choices.insert(0, ('', ''))
+        elif controller == ConnectorEnum.Shopify:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'values' in d:
+                self.choices = [(choice, choice) for choice in d['values']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
+        elif controller == ConnectorEnum.HubSpot:
+            if 'name' in d:
+                self.name = d['name']
+            if 'label' in d:
+                self.label = d['label']
+            if 'favorited' in d:
+                self.required = d['favorited']
+            if 'type' in d:
+                self.field_type = d['type']
+            if d['type'] == 'enumeration':
+                self.choices = [(choice, choice) for choice in d['options']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
         else:
             if 'name' in d:
                 self.name = d['name']

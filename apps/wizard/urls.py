@@ -1,15 +1,16 @@
 from django.conf.urls import url
-from apps.wizard.views import CreatePlugView, TestPlugView, \
-    ActionSpecificationsView, CreateGearMapView, ActionListView, MSSQLFieldList, \
-    GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, \
-    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, SlackWebhookEvent, \
-    BitbucketProjectList, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, GetResponseCampaignsList, \
-    AJAXGetSurveyListView, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
+
+from apps.wizard.views import MSSQLFieldList, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, \
+    MySQLFieldList, PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, \
+    SlackWebhookEvent, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, \
+    GetResponseCampaignsList, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
     GoogleCalendarWebhookEvent, AJAXGetSurveyListView, SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
-    YouTubeChannelsList, SalesforceSObjectList, SalesforceEventList, SalesforceWebhookEvent
+    YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent, SalesforceSObjectList, SalesforceEventList, SalesforceWebhookEvent
+
 
 from apps.connection.views import ListConnectionView, ListConnectorView, CreateConnectionView
-from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, DeleteGearView
+from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, DeleteGearView, CreateGearMapView
+from apps.plug.views import ActionListView, ActionSpecificationsListView, CreatePlugView, TestPlugView
 
 urlpatterns = [
 
@@ -30,7 +31,8 @@ urlpatterns = [
     # PLUG CREATE
     url(r'^plug/create/(?P<plug_type>(source|target)+)/$', CreatePlugView.as_view(), name='plug_create'),
     # PLUG ACTION LIST (AJAX)
-    url(r'^plug/action/(?P<pk>\d+)/specifications/$', ActionSpecificationsView.as_view(), name='action_specifications'),
+    url(r'^plug/action/(?P<pk>\d+)/specifications/$', ActionSpecificationsListView.as_view(),
+        name='action_specifications'),
     # PLUG ACTION SPECIFICATION LIST (AJAX)
     url(r'^plug/action/list/$', ActionListView.as_view(), name='action_list'),
     # PLUG TEST
@@ -58,7 +60,7 @@ urlpatterns = [
     url(r'async/slack/channel/list/', SlackChannelList.as_view(), name='async_slack_chanels'),
     url(r'slack/webhook/event/', SlackWebhookEvent.as_view(), name='slack_webhook_event'),
     # Bitbucket
-    url(r'async/bitbucket/field/list/', BitbucketProjectList.as_view(), name='async_bitbucket_projects'),
+    # url(r'async/bitbucket/field/list/', BitbucketProjectList.as_view(), name='async_bitbucket_projects'),
     url(r'bitbucket/webhook/event/', BitbucketWebhookEvent.as_view(), name='bitbucket_webhook_event'),
     # Jira
     url(r"async/jira/field/list/", JiraProjectList.as_view(), name='async_jira_projects'),
@@ -70,6 +72,11 @@ urlpatterns = [
     url(r"async/surveymonkey/survey/list/", AJAXGetSurveyListView.as_view(), name='async_surveymonkey_survey_list'),
     url(r'surveymonkey/webhook/event/(?P<plug_id>\d+)/', SurveyMonkeyWebhookEvent.as_view(),
         name='surveymonkey_webhook_event'),
+
+    # Shopify
+    url(r"async/shopify/topic/list/", ShopifyList.as_view(), name='async_shopify_topic_list'),
+    url(r'shopify/webhook/event/(?P<plug_id>\d+)/', ShopifyWebhookEvent.as_view(),
+        name='shopify_webhook_event'),
 
     # Instagram
     url(r'instagram/webhook/event/', InstagramWebhookEvent.as_view(), name='instagram_webhook_event'),

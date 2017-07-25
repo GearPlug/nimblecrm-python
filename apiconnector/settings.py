@@ -199,10 +199,8 @@ ACCOUNT_SIGNUP_REDIRECT_URL = '/dashboard/'
 
 # SETTINGS CENTRALIZADOS
 # Facebook
-FACEBOOK_APP_ID = '1731160853833926'
-# FACEBOOK_APP_ID = '1860382657578411'
-FACEBOOK_APP_SECRET = '0e6b58b4982c602374c13fb47c418805'
-# FACEBOOK_APP_SECRET = '3ce16acabb2efeda4336e4e5f9576d8b'
+FACEBOOK_APP_ID = '1860382657578411'
+FACEBOOK_APP_SECRET = '3ce16acabb2efeda4336e4e5f9576d8b'
 
 FACEBOOK_GRAPH_VERSION = '2.6'
 
@@ -215,13 +213,13 @@ EMAIL_HOST_PASSWORD = ''
 EMAIL_PORT = 587
 
 # Slack
-SLACK_CLIENT_ID = '129041278545.145241406374'
-SLACK_CLIENT_SECRET = 'f47642ba090d236c5f9e247cddf76809'
-SLACK_PERMISSIONS_URL = 'https://slack.com/oauth/authorize?client_id={0}&scope=read'.format(SLACK_CLIENT_ID)
+SLACK_CLIENT_ID = '129041278545.209366736883'
+SLACK_CLIENT_SECRET = '8a78615be489b8314702c0d67f159ddd'
+SLACK_PERMISSIONS_URL = 'https://slack.com/oauth/authorize?client_id={0}&scope=team:read,channels:read,chat:write:bot,im:history,im:read'.format(SLACK_CLIENT_ID)
 
-# Google Plus
-GOOGLE_CLIENT_ID = '292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com'
-GOOGLE_CLIENT_SECRET = 'eqcecSL7Ecp0hiMy84QFSzsD'
+# Google (Gustavo)
+GOOGLE_CLIENT_ID = '278354320502-6ptllif5k11cn8uskm8aotp6fqb2g7dr.apps.googleusercontent.com'
+GOOGLE_CLIENT_SECRET = 'LgJ2hrSVu_lmAJkJhwzgfiDG'
 
 # Twitter
 TWITTER_CLIENT_ID = 'D5ZJJmF11n9Sp8E9p7GRGhpiR'
@@ -251,3 +249,15 @@ SALESFORCE_ACCESS_TOKEN_URL = 'https://login.salesforce.com/services/oauth2/toke
 SALESFORCE_REDIRECT_URI = ''
 SALESFORCE_AUTHORIZE_URL = 'https://login.salesforce.com/services/oauth2/authorize'
 SALESFORCE_WEBHOOK_URI = ''
+
+#Shopify
+SHOPIFY_SHOP_URL="my-first-project-2017"
+SHOPIFY_API_KEY="8058ebd552b2ba23d9d1c6221b514fab"
+SHOPIFY_API_KEY_SECRET="d32f6b242ddaa2dd2b29bf3eb329a1c5"
+SHOPIFY_REDIRECT_URI="http://127.0.0.1:8000/connection/shopify_auth/"
+
+#Hubspot
+HUBSPOT_REDIRECT_URI="https://122eaa1d.ngrok.io/connection/hubspot_auth/"
+HUBSPOT_CLIENT_ID="633af850-f08a-42e5-a6e7-da65a177bcd5"
+HUBSPOT_CLIENT_SECRET="94e688b7-9390-4b59-a6df-151eac348e89"
+

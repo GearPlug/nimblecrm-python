@@ -8,6 +8,10 @@ import httplib2
 from oauth2client import client as GoogleClient
 from dateutil.parser import parse
 import pytz
+import requests
+from apiclient import discovery
+import json
+import uuid
 
 
 class GoogleSpreadSheetsController(BaseController):
@@ -36,7 +40,7 @@ class GoogleSpreadSheetsController(BaseController):
         files = None
         if credentials_json is not None:
             try:
-                for s in self._plug.plug_specification.all():
+                for s in self._plug.plug_action_specification.all():
                     if s.action_specification.name.lower() == 'spreadsheet':
                         self._spreadsheet_id = s.value
                     if s.action_specification.name.lower() == 'worksheet':
@@ -254,7 +258,7 @@ class GoogleCalendarController(BaseController):
                     data_list = []
         if self._plug is not None:
             for obj in data_list:
-                res = self.create_issue(self._plug.plug_specification.all()[0].value, obj)
+                res = self.create_issue(self._plug.plug_action_specification.all()[0].value, obj)
             extra = {'controller': 'googlecalendar'}
             return
         raise ControllerError("Incomplete.")
@@ -300,7 +304,7 @@ class GoogleCalendarController(BaseController):
 
     def create_webhook(self):
         url = 'https://www.googleapis.com/calendar/v3/calendars/{}/events/watch'.format(
-            self._plug.plug_specification.all()[0].value)
+            self._plug.plug_action_specification.all()[0].value)
 
         headers = {
             'Authorization': 'Bearer {}'.format(self._connection_object.credentials_json['access_token']),

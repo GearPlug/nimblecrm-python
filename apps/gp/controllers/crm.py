@@ -4,7 +4,7 @@ from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
-from apps.gp.models import StoredData
+from apps.gp.models import StoredData, ActionSpecification
 from simple_salesforce import Salesforce
 from simple_salesforce.login import SalesforceAuthenticationFailed
 from dateutil.parser import parse
@@ -12,8 +12,13 @@ from urllib.parse import urlparse
 import requests
 import sugarcrm
 import json
+import xmltodict
 import string
 import os
+from apps.gp.models import StoredData
+from apps.gp.map import MapField
+from apps.gp.enum import ConnectorEnum
+import xml.etree.ElementTree as ET
 
 
 class CustomSugarObject(sugarcrm.SugarObject):
@@ -53,15 +58,10 @@ class SugarCRMController(BaseController):
                     self._module = args[2]
                 except:
                     pass
-        elif not args and kwargs:
-            try:
-                self._user = kwargs.pop('connection_user')
-                self._password = kwargs.pop('connection_password')
-                self._url = kwargs.pop('url')
-            except Exception as e:
-                print("Error getting the SugarCRM attributes")
         if self._url is not None and self._user is not None and self._password is not None:
             self._session = sugarcrm.Session(self._url, self._user, self._password)
+
+    def test_connection(self):
         return self._session is not None and self._session.session_id is not None
 
     def get_available_modules(self):
@@ -85,7 +85,7 @@ class SugarCRMController(BaseController):
         return self._session.set_entries(obj_list)
 
     def download_to_stored_data(self, connection_object, plug, limit=29, order_by="date_entered DESC", **kwargs):
-        module = plug.plug_specification.all()[0].value  # Especificar que specification
+        module = plug.plug_action_specification.all()[0].value  # Especificar que specification
         data = self.get_entry_list(module, max_results=limit, order_by=order_by)
         new_data = []
         for item in data:
@@ -121,7 +121,7 @@ class SugarCRMController(BaseController):
                     data_list = []
         if self._plug is not None:
             obj_list = []
-            module_name = self._plug.plug_specification.all()[0].value
+            module_name = self._plug.plug_action_specification.all()[0].value
             extra = {'controller': 'sugarcrm'}
             for item in data_list:
                 try:
@@ -136,12 +136,19 @@ class SugarCRMController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def get_target_fields(self, module, **kwargs):
-        return self.get_module_fields(module, **kwargs)
-
     def get_mapping_fields(self, **kwargs):
-        fields = self.get_module_fields(self._plug.plug_specification.all()[0].value, get_structure=True)
+        specification = self._plug.plug_action_specification.first()
+        module = specification.value
+        fields = self.get_module_fields(module, get_structure=True)
         return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields]
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        if action_specification.name.lower() == 'module':
+            module_list = tuple({'id': m.module_key, 'name': m.module_key} for m in self.get_available_modules())
+            return module_list
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class ZohoCRMController(BaseController):
@@ -156,21 +163,16 @@ class ZohoCRMController(BaseController):
             if self._connection_object is not None:
                 try:
                     self._token = self._connection_object.token
-                    print(self._token)
                 except Exception as e:
                     print("Error getting zohocrm token")
                     print(e)
-        elif kwargs:
-            try:
-                self._token = kwargs.pop('token', None)
-            except Exception as e:
-                print("Error getting zohocrm token")
-                print(e)
+
+    def test_connection(self):
         if self._token is not None:
-            response = self.get_modules()['_content'].decode()
-            response = json.loads(response)
+            response = json.loads(self.get_modules()['_content'].decode())
             if "result" in response["response"]:
                 return self._token is not None
+        return False
 
     def get_modules(self):
         params = {'authtoken': self._token, 'scope': 'crmapi'}
@@ -178,7 +180,7 @@ class ZohoCRMController(BaseController):
         return requests.get(url, params).__dict__
 
     def download_to_stored_data(self, connection_object, plug, ):
-        module_id = self._plug.plug_specification.all()[0].value
+        module_id = self._plug.plug_action_specification.all()[0].value
         module_name = self.get_module_name(module_id)
         data = self.get_feeds(module_name)
         new_data = []
@@ -206,22 +208,34 @@ class ZohoCRMController(BaseController):
             return True
         return False
 
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if self._plug is not None:
+            obj_list = []
+            module_id = self._plug.plug_action_specification.all()[0].value
+            extra = {'controller': 'zohocrm'}
+            for item in data_list:
+                try:
+                    response = self.insert_records(item, module_id)
+                    self._log.info('Item: %s successfully sent.' % (int(response['#text'])), extra=extra)
+                    obj_list.append(id)
+                except Exception as e:
+                    print(e)
+                    extra['status'] = 'f'
+                    self._log.info('Item: %s failed to send.' % (int(response['#text'])), extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")
+
+    def get_target_fields(self, module, **kwargs):
+        return self.get_module_fields(module, **kwargs)
+
     def get_mapping_fields(self):
         fields = self.get_target_fields()
         return [MapField(f, controller=ConnectorEnum.ZohoCRM) for f in fields]
 
     def get_target_fields(self, **kwargs):
-        module_id = self._plug.plug_specification.all()[0].value
-        list = self.get_fields(module_id)
-        fields = []
-        for val in list:
-            if (type(val) == dict):
-                fields.append(val)
-            else:
-                for i in val:
-                    print(type(i))
-                    print(i)
-        print(fields)
+        module_id = self._plug.plug_action_specification.all()[0].value
+        fields = self.get_fields(module_id)
         return fields
 
     def get_fields(self, module_id):
@@ -237,7 +251,13 @@ class ZohoCRMController(BaseController):
         values = json.loads(values)
         if (module_name in values):
             values = values[module_name]['section']
-            return values
+            fields = []
+            for val in values:
+                if (type(val['FL']) == dict):
+                    fields.append(val['FL'])
+                else:
+                    for i in val['FL']: fields.append(i)
+            return fields
         else:
             print(response)
             print("no_values")
@@ -278,7 +298,6 @@ class ZohoCRMController(BaseController):
         response = json.loads(response)
         response = response['response']
         if ("result" in response):
-            print("result")
             response = response['result'][module_name]['row']
             modules = self.get_lists(response, module_name)
             return modules
@@ -299,6 +318,20 @@ class ZohoCRMController(BaseController):
         module_name = module_name.replace("-", " ")
         module_name = string.capwords(module_name)
         return module_name.replace(" ", "")
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        if action_specification.name.lower() == 'feed':
+            modules = self.get_modules()['_content'].decode()
+            modules = json.loads(modules)['response']['result']['row']
+            module_list = []
+            for m in modules:
+                if m['pl'] not in ['Feeds', 'Visits', 'Social', 'Documents', 'Quotes', 'Sales Orders',
+                                   'Purchase Orders']:
+                    module_list.append({'id': m['id'], 'name': m['pl']})
+            return tuple(module_list)
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class SalesforceController(BaseController):
@@ -540,3 +573,161 @@ class SalesforceController(BaseController):
             elif specification.action_specification.name == 'Event':
                 event = specification.value
         return sobject, event
+
+
+class HubSpotController(BaseController):
+    _token = None
+    _refresh_token = None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(HubSpotController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._token = self._connection_object.token
+                    self._refresh_token = self._connection_object.refresh_token
+
+                except Exception as e:
+                    print("Error getting the hubspot token")
+
+    def test_connection(self):
+        response = self.request()
+        if 'status' in response and response['status'] == "error":
+            self.get_refresh_token(self._refresh_token)
+        return self._token is not None
+
+    def get_modules(self):
+        return [{'name': 'companies', 'id': 'companies'}, {'name': 'contacts', 'id': 'contacts'},
+                {'name': 'deals', 'id': 'deals'}]
+
+    def get_action_specification_options(self, action_specification_id):
+        print("actions")
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'data':
+            return tuple({'name': o['name'], 'id': o['id']} for o in self.get_modules())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def download_to_stored_data(self, connection_object, plug, ):
+        module_id = self._plug.plug_action_specification.all()[0].value
+        new_data = []
+        data = self.get_data(module_id)
+        for item in data:
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                          object_id=item['id'])
+            if not q.exists():
+                for column in item:
+                    new_data.append(StoredData(name=column, value=item[column], object_id=item['id'],
+                                               connection=connection_object.connection, plug=plug))
+        if new_data:
+            field_count = len(data)
+            extra = {'controller': 'hubspot'}
+            for i, item in enumerate(new_data):
+                try:
+                    item.save()
+                    if (i + 1) % field_count == 0:
+                        extra['status'] = 's'
+                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                except:
+                    extra['status'] = 'f'
+                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+            return True
+        return False
+
+    def get_data(self, module_id):
+        if (module_id == 'contacts'):
+            url = "https://api.hubapi.com/contacts/v1/lists/all/contacts/all"
+        if (module_id == 'companies'):
+            url = "https://api.hubapi.com/companies/v2/companies/"
+        if (module_id == 'deals'):
+            url = "https://api.hubapi.com/deals/v1/deal/paged?includeAssociations=true&limit=30&properties=dealname"
+        headers = {'Authorization': 'Bearer {0}'.format(self._token), }
+        result = requests.get(url, headers=headers).json()[module_id]
+        data = []
+        for i in result:
+            item = {}
+            id = self.get_id(module_id, i)
+            item['id'] = id
+            for d in i["properties"]:
+                item[d] = i["properties"][d]['value']
+            data.append(item)
+        return data
+
+    def get_mapping_fields(self):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.HubSpot) for f in fields]
+
+    def get_target_fields(self, **kwargs):
+        module_id = self._plug.plug_action_specification.all()[0].value
+        url = "https://api.hubapi.com/properties/v1/" + module_id + "/properties"
+        headers = {'Authorization': 'Bearer {0}'.format(self._token)}
+        response = requests.get(url, headers=headers).json()
+        return [i for i in response if "label" in i and i['readOnlyValue'] == False]
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if self._plug is not None:
+            obj_list = []
+            module_id = self._plug.plug_action_specification.all()[0].value
+            extra = {'controller': 'hubspot'}
+            for item in data_list:
+                try:
+                    response = self.insert_data(item, module_id).json()
+                    id = self.get_id(module_id, response)
+                    self._log.info('Item: %s successfully sent.' % (id), extra=extra)
+                    obj_list.append(id)
+                except Exception as e:
+                    print(e)
+                    extra['status'] = 'f'
+                    self._log.info('Item: %s failed to send.' % (id), extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")
+
+    def insert_data(self, fields, module_id):
+        if (module_id == 'contacts'):
+            url = "https://api.hubapi.com/contacts/v1/contact/"
+            name = "property"
+        if (module_id == 'companies'):
+            url = "https://api.hubapi.com/companies/v2/companies/"
+            name = "name"
+        if (module_id == 'deals'):
+            url = "https://api.hubapi.com/deals/v1/deal"
+            name = "name"
+        headers = {'Authorization': 'Bearer {0}'.format(self._token)}
+        list = []
+        for i in fields:
+            write = {name: i, 'value': fields[i]}
+            list.append(write)
+        json = {"properties": list}
+        return requests.post(url, json=json, headers=headers)
+
+    def get_id(self, module_id, data):
+        if (module_id == 'contacts'):
+            id = data['vid']
+        if (module_id == 'companies'):
+            id = data['companyId']
+        if (module_id == 'deals'):
+            id = data['dealId']
+        return id
+
+    def get_refresh_token(self, refresh_token):
+        url = "https://api.hubapi.com/oauth/v1/token"
+        headers = {'Content-Type': 'application/x-www-form-urlencoded', 'charset': 'utf-8'}
+        data = {'grant_type': 'refresh_token', 'client_id': settings.HUBSPOT_CLIENT_ID,
+                'client_secret': settings.HUBSPOT_CLIENT_SECRET,
+                'redirect_uri': settings.HUBSPOT_REDIRECT_URI, 'refresh_token': self._refresh_token}
+        response = requests.post(url, headers=headers, data=data).json()
+        self._connection_object.token = response['access_token']
+        self._connection_object.refresh_token = response['refresh_token']
+        self._connection_object.save()
+        return None
+
+    def request(self):
+        url = "https://api.hubapi.com/contacts/v1/lists/all/contacts/all"
+        headers = {'Authorization': 'Bearer {0}'.format(self._token), }
+        return requests.get(url, headers=headers).json()

@@ -1,8 +1,10 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
+from apps.gp.enum import ConnectorEnum
+from apps.gp.map import MapField
 
-from apps.gp.models import StoredData
+from apps.gp.models import StoredData, ActionSpecification
 import MySQLdb
 import copy
 import psycopg2
@@ -27,33 +29,24 @@ class MySQLController(BaseController):
             super(MySQLController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
-                    host = self._connection_object.host
-                    port = self._connection_object.port
-                    user = self._connection_object.connection_user
-                    password = self._connection_object.connection_password
                     self._database = self._connection_object.database
                     self._table = self._connection_object.table
                 except Exception as e:
-                    pass
-                    # raise
-                    print("Error getting the MySQL attributes")
-        elif not args and kwargs:
+                    print("Error getting the MySQL attributes args")
+            if self._connection_object is None:
+                raise ControllerError('No connection.')
+            host = self._connection_object.host
+            port = self._connection_object.port
+            user = self._connection_object.connection_user
+            password = self._connection_object.connection_password
             try:
-                host = kwargs.pop('host')
-                port = kwargs.pop('port')
-                user = kwargs.pop('connection_user')
-                password = kwargs.pop('connection_password')
-                self._database = kwargs.pop('database')
-                self._table = kwargs.pop('table', None)
+                self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password,
+                                                   db=self._database)
+                self._cursor = self._connection.cursor()
             except Exception as e:
-                pass
-                # raise
-                print("Error getting the MySQL attributes")
-        try:
-            self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self._database)
-            self._cursor = self._connection.cursor()
-        except:
-            self._connection = None
+                self._connection = None
+
+    def test_connection(self):
         return self._connection is not None
 
     def describe_table(self):
@@ -63,6 +56,7 @@ class MySQLController(BaseController):
                 return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2], 'is_primary': item[3] == 'PRI'} for
                         item in self._cursor]
             except:
+                raise
                 print('Error describing table: %s')
         return []
 
@@ -78,9 +72,10 @@ class MySQLController(BaseController):
     def select_all(self, limit=50):
         if self._table is not None and self._database is not None and self._plug is not None:
             try:
-                order_by = self._plug.plug_specification.all()[0].value
+                order_by = self._plug.plug_action_specification.all()[0].value
             except:
                 order_by = None
+            print(order_by)
             select = 'SELECT * FROM `%s`.`%s`' % (self._database, self._table)
             if order_by is not None:
                 select += 'ORDER BY %s DESC ' % order_by
@@ -142,7 +137,7 @@ class MySQLController(BaseController):
         if is_first:
             if data_list:
                 try:
-                    data_list = [data_list[0]]
+                    data_list = [data_list[-1]]
                 except:
                     data_list = []
         if self._plug is not None:
@@ -170,7 +165,15 @@ class MySQLController(BaseController):
         return self.describe_table(**kwargs)
 
     def get_mapping_fields(self, **kwargs):
-        return [item['name'] for item in self.describe_table() if item['is_primary'] is not True]
+        return [MapField(f, controller=ConnectorEnum.MySQL) for f in self.describe_table() if f['is_primary'] is not True]
+        # return [item['name'] for item in self.describe_table() if item['is_primary'] is not True]
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'order by':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class PostgreSQLController(BaseController):
@@ -187,33 +190,23 @@ class PostgreSQLController(BaseController):
             super(PostgreSQLController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
-                    host = self._connection_object.host
-                    port = self._connection_object.port
-                    user = self._connection_object.connection_user
-                    password = self._connection_object.connection_password
                     self._database = self._connection_object.database
                     self._table = self._connection_object.table
                 except Exception as e:
-                    pass
-                    # raise
-                    print("Error getting the PostgreSQL attributes")
-        elif not args and kwargs:
-            try:
-                host = kwargs.pop('host')
-                port = kwargs.pop('port')
-                user = kwargs.pop('connection_user')
-                password = kwargs.pop('connection_password')
-                self._database = kwargs.pop('database')
-                self._table = kwargs.pop('table', None)
-            except Exception as e:
-                pass
-                # raise
-                print("Error getting the PostgreSQL attributes")
+                    print("Error getting the PostgreSQL attributes args")
+
+    def test_connection(self):
+        if self._connection_object is None:
+            raise ControllerError('No connection.')
+        host = self._connection_object.host
+        port = self._connection_object.port
+        user = self._connection_object.connection_user
+        password = self._connection_object.connection_password
         try:
             self._connection = psycopg2.connect(host=host, port=int(port), user=user, password=password,
                                                 database=self._database)
             self._cursor = self._connection.cursor()
-        except:
+        except Exception as e:
             self._connection = None
         return self._connection is not None
 
@@ -225,7 +218,7 @@ class PostgreSQLController(BaseController):
                     self._table.split('.'))
                 return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
                         item in self._cursor]
-            except:
+            except Exception as e:
                 print('Error describing table: %s')
         return []
 
@@ -307,7 +300,7 @@ class PostgreSQLController(BaseController):
         if is_first:
             if data_list:
                 try:
-                    data_list = [data_list[0]]
+                    data_list = [data_list[-1]]
                 except:
                     data_list = []
         if self._plug is not None:
@@ -318,6 +311,7 @@ class PostgreSQLController(BaseController):
                     insert = self._get_insert_statement(item)
                     self._cursor.execute(insert)
                     extra['status'] = 's'
+                    # Lastrowid not working.
                     self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
                     obj_list.append(self._cursor.lastrowid)
                 except Exception as e:
@@ -331,11 +325,18 @@ class PostgreSQLController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def get_target_fields(self, **kwargs):
-        return self.describe_table(**kwargs)
-
     def get_mapping_fields(self, **kwargs):
         return [item['name'] for item in self.describe_table() if item['name'] not in self.get_primary_keys()]
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'order by':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def get_target_fields(self, **kwargs):
+        return self.describe_table(**kwargs)
 
 
 class MSSQLController(BaseController):
@@ -352,33 +353,25 @@ class MSSQLController(BaseController):
             super(MSSQLController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
-                    host = self._connection_object.host
-                    port = self._connection_object.port
-                    user = self._connection_object.connection_user
-                    password = self._connection_object.connection_password
                     self._database = self._connection_object.database
                     self._table = self._connection_object.table
                 except Exception as e:
                     pass
                     # raise
                     print("Error getting the MSSQL attributes")
-        elif not args and kwargs:
-            try:
-                host = kwargs.pop('host')
-                port = kwargs.pop('port')
-                user = kwargs.pop('connection_user')
-                password = kwargs.pop('connection_password')
-                self._database = kwargs.pop('database')
-                self._table = kwargs.pop('table', None)
-            except Exception as e:
-                pass
-                # raise
-                print("Error getting the MSSQL attributes")
+
+    def test_connection(self):
+        if self._connection_object is None:
+            raise ControllerError('No connection.')
+        host = self._connection_object.host
+        port = self._connection_object.port
+        user = self._connection_object.connection_user
+        password = self._connection_object.connection_password
         try:
             self._connection = pymssql.connect(host=host, port=int(port), user=user, password=password,
                                                database=self._database)
             self._cursor = self._connection.cursor()
-        except:
+        except Exception as e:
             self._connection = None
         return self._connection is not None
 
@@ -472,7 +465,7 @@ class MSSQLController(BaseController):
         if is_first:
             if data_list:
                 try:
-                    data_list = [data_list[0]]
+                    data_list = [data_list[-1]]
                 except:
                     data_list = []
         if self._plug is not None:
@@ -496,8 +489,12 @@ class MSSQLController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def get_target_fields(self):
-        return self.describe_table()
-
     def get_mapping_fields(self, **kwargs):
         return [item['name'] for item in self.describe_table() if item['name'] not in self.get_primary_keys()]
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'order by':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")

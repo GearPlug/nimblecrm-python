@@ -1,0 +1,76 @@
+{#{% extends 'connection/create.html' %}#}
+{#{% load bootstrap_tags %}#}
+{##}
+{#{% block body_content %}#}
+{#    <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""#}
+{#          method="post" autocomplete="off">#}
+{#        {% csrf_token %}#}
+{#        {{ form|as_bootstrap }}#}
+{#        <button id="btnTestConnection">Test connection</button>#}
+{#        <div id="connectionTestResult"></div>#}
+{#        <button id="btnCreateConnection" disabled="disabled">Create connection</button>#}
+{#        {% if form.error %}#}
+{#            <div class="error">{{ form.error }}</div>#}
+{#        {% endif %}#}
+{#    </form>#}
+{#{% endblock %}#}
+{##}
+{#{% block scripts %}#}
+{#    {{ block.super }}#}
+{#    <script type="application/javascript">#}
+{#        $(document).ready(function () {#}
+{#            $('button#btnTestConnection').click(function () {#}
+{#                $('form#formCreateConnection').attr('action', "{% url 'connection:ajax_hubspot_test_connection' %}");#}
+{#                $('form#formCreateConnection').attr('is_ajax', true);#}
+{#                $('form#formCreateConnection').submit();#}
+{#                return false;#}
+{#            });#}
+{##}
+{#            $('button#btnCreateConnection').click(function () {#}
+{#                $('form#formCreateConnection').attr('action', "{% url 'connection:create' connector_id=34 %}");#}
+{#                $('form#formCreateConnection').attr('is_ajax', false);#}
+{#            });#}
+{##}
+{#            $('form#formCreateConnection').submit(function () {#}
+{#                console.log($(this).attr('is_ajax'));#}
+{#                if ($(this).attr('is_ajax') == true || $(this).attr('is_ajax') == 'true') {#}
+{#                    $.ajax({#}
+{#                        method: "POST",#}
+{#                        url: $(this).attr('action'),#}
+{#                        data: $('form#formCreateConnection').serialize(),#}
+{#                    }).done(function (response) {#}
+{#                        if (response.data) {#}
+{#                            $('button#btnCreateConnection').prop("disabled", false);#}
+{#                            $('div#connectionTestResult').html('Connection is valid.');#}
+{#                        }#}
+{#                    });#}
+{#                    return false;#}
+{#                }#}
+{#            })#}
+{#        });#}
+{##}
+{#    </script>#}
+{#{% endblock %}</script>#}
+
+{% extends 'connection/create.html' %}
+{% load bootstrap_tags %}
+
+{% block body_content %}
+    <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
+          method="post" autocomplete="off">
+        <input type="text" name="hub_id">
+        <a href="javascript:auth('{{ hubspot_auth_url }}')">HubSpot Auth</a>
+        {% csrf_token %}
+    </form>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        function auth(url) {
+            url = url.replace('1234', $('input[name=hub_id]').val());
+            this.location = url;
+        }
+    </script>
+{% endblock %}

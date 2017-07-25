@@ -1,25 +1,35 @@
 from django.conf.urls import url
-from apps.connection.views import CreateConnectionView, ListConnectorView, \
-    AJAXFacebookGetAvailableConnectionsView, AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
-    AJAXMySQLTestConnection, UpdateConnectionView, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
-    GoogleAuthView, AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, \
-    AJAXPostgreSQLTestConnection, AJAXMSSQLTestConnection, SlackAuthView, AuthSuccess, AJAXBitbucketTestConnection, \
+from apps.connection.views import CreateConnectionView, ListConnectorView, AJAXFacebookGetAvailableConnectionsView, \
+    AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
+    AJAXMySQLTestConnection, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, GoogleAuthView, \
+    AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, AJAXPostgreSQLTestConnection, \
+    AJAXMSSQLTestConnection, SlackAuthView, AuthSuccess, AJAXBitbucketTestConnection, \
     AJAXJiraTestConnection, AJAXGetResponseTestConnection, TwitterAuthView, TwitterAuthSuccessCreateConnection, \
-    SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, InstagramAuthView, \
-    SurveyMonkeyAuthSuccessCreateConnection, AJAXGetSurveyListView, InstagramAuthSuccessCreateConnection, \
-    AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection, SalesforceAuthView, \
-    SalesforceAuthSuccessCreateConnection
+    SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, InstagramAuthView, AJAXGetSurveyListView, \
+    InstagramAuthSuccessCreateConnection, SalesforceAuthView, SalesforceAuthSuccessCreateConnection, \
+    AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection, ShopifyAuthView, \
+    ShopifyAuthSuccessCreateConnection, AJAXSMTPTestConnection, TestConnectionView, CreateConnectionSuccessView, \
+    HubspotAuthView, HubspotAuthSuccessCreateConnection
+
 from apps.gp.enum import GoogleAPI
 
 urlpatterns = [
-    # CRUD?
+    # Create Connection
     url(r'create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create'),
-    url(r'update/(?P<connector_id>\d+)/(?P<pk>\d+)/$', UpdateConnectionView.as_view(), name='update'),
-    # url(r'delete/(?P<pk>\d+)/$', DeleteGearView.as_view(), name='delete'),
+    # Create Success
+    url(r'create/success/$', CreateConnectionSuccessView.as_view(), name='create_success'),
+    # Test Connection
+    url(r'^test/(?P<connector_id>\d+)/$', TestConnectionView.as_view(), name="test"),
+    # List Connectors
     url(r'list/connector/$', ListConnectorView.as_view(), name='list_connector'),
 
+    # Auth Callbacks
+    url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),
+    url(r'^auth-callback/google/', GoogleAuthView.as_view(), name="google_auth"),
+    url(r'^auth-callback/facebook/', GoogleAuthView.as_view(), name="facebook_auth"),
+
     # Google SpreadSheets
-    url(r"^google_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.SpreadSheets}, name="google_auth"),
+    url(r"^google_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.SpreadSheets}, name="google_auth_gss"),
     url(r"^google_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'api': GoogleAPI.SpreadSheets},
         name="google_auth_success_create_connection"),
 
@@ -43,6 +53,11 @@ urlpatterns = [
     url(r"^twitter_auth/success/$", TwitterAuthSuccessCreateConnection.as_view(),
         name="twitter_auth_success_create_connection"),
 
+    # Hubspot
+    url(r"^hubspot_auth/$", HubspotAuthView.as_view(), name="hubspot_auth"),
+    url(r"^hubspot_auth/success/$", HubspotAuthSuccessCreateConnection.as_view(),
+        name="hubspot_auth_success_create_connection"),
+
     # Instagram
     url(r"^instagram_auth/$", InstagramAuthView.as_view(), name="instagram_auth"),
     url(r"^instagram_auth/success/$", InstagramAuthSuccessCreateConnection.as_view(),
@@ -54,11 +69,16 @@ urlpatterns = [
         name="salesforce_auth_success_create_connection"),
 
     # surveymonkey
-    url(r"^survey_monkey_auth/$", SurveyMonkeyAuthView.as_view(), name="survey_monekey_auth"),
+    url(r"^survey_monkey_auth/$", SurveyMonkeyAuthView.as_view(), name="survey_monkey_auth"),
     url(r"^survey_monkey_auth/success/$", SurveyMonkeyAuthSuccessCreateConnection.as_view(),
         name="survey_monkey_auth_success_create_connection"),
+
+    # shopify
+    url(r"^shopify_auth/$", ShopifyAuthView.as_view(), name="shopify_auth"),
+    url(r"^shopify_auth/success/$", ShopifyAuthSuccessCreateConnection.as_view(),
+        name="shopify_auth_success_create_connection"),
+
     # Slack
-    url(r'^auth/slack/', SlackAuthView.as_view(), name="slack_auth"),
 
     # AuthSuccess
     url(r'^auth/success/$', AuthSuccess.as_view(), name="auth_sucess"),
@@ -72,8 +92,10 @@ urlpatterns = [
         name='ajax_update_facebook_get_leads'),
     url(r'ajax/mysql/test_connection/', AJAXMySQLTestConnection.as_view(),
         name='ajax_update_mysql_test_connection'),
+
     url(r'ajax/sugarcrm/test_connection/', AJAXSugarCRMTestConnection.as_view(),
         name='ajax_sugarcrm_test_connection'),
+
     url(r'ajax/mailchimp/test_connection/', AJAXMailChimpTestConnection.as_view(),
         name='ajax_mailchimp_test_connection'),
     url(r'ajax/postgresql/test_connection/', AJAXPostgreSQLTestConnection.as_view(),
@@ -92,5 +114,6 @@ urlpatterns = [
         name='ajax_update_sms_test_connection'),
     url(r'ajax/salesforce/test_connection/', AJAXSalesforceTestConnection.as_view(),
         name='ajax_update_salesforce_test_connection'),
-
+    url(r'ajax/smtp/test_connection/', AJAXSMTPTestConnection.as_view(),
+        name='ajax_update_smtp_test_connection'),
 ]

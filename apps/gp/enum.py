@@ -53,16 +53,20 @@ class ConnectorEnum(Enum):
         return obj
 
     def get_connector_data(connector):
-        connector = ConnectorEnum.get_connector(connector)
         return ConnectorEnum.get_model(connector), ConnectorEnum.get_fields(connector)
 
-    def get_connector(connector_id):
-        if isinstance(connector_id, ConnectorEnum):
-            connector_id = connector_id.value
-        connector_id = int(connector_id)
-        for field in ConnectorEnum:
-            if connector_id == int(field.value):
-                return field
+    def get_connector(connector_id=None, name=None):
+        if connector_id is not None:
+            if isinstance(connector_id, ConnectorEnum):
+                connector_id = connector_id.value
+            connector_id = int(connector_id)
+            for field in ConnectorEnum:
+                if connector_id == int(field.value):
+                    return field
+        elif name is not None and isinstance(name, str):
+            for field in ConnectorEnum:
+                if name.lower() == field.name.lower():
+                    return field
 
     def get_connector_list():
         return [field for field in ConnectorEnum]

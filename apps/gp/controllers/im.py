@@ -1,8 +1,7 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import StoredData, PlugSpecification
-
+from apps.gp.models import StoredData, PlugActionSpecification, ActionSpecification
 from slacker import Slacker
 from utils.nrsgateway import Client as SMSClient
 import json
@@ -24,9 +23,9 @@ class SlackController(BaseController):
                     self._slacker = Slacker(self._token)
                 except Exception as e:
                     print("Error getting the Slack Token")
-                    print(e)
-        elif kwargs:
-            print(kwargs)
+
+    def test_connection(self):
+        """todo"""
         return self._token is not None and self._slacker is not None
 
     def get_channel_list(self):
@@ -42,6 +41,8 @@ class SlackController(BaseController):
 
     def post_message_to_target(self, message='', target=''):
         try:
+            print(target)
+            print(message)
             self._slacker.chat.post_message(target, message)
             return True
         except Exception as e:
@@ -76,10 +77,10 @@ class SlackController(BaseController):
                     data_list = []
         if self._plug is not None:
             extra = {'controller': 'slack'}
-            for specification in self._plug.plug_specification.all():
+            for specification in self._plug.plug_action_specification.all():
                 try:
-                    target = PlugSpecification.objects.get(plug=self._plug,
-                                                           action_specification=specification.action_specification)
+                    target = PlugActionSpecification.objects.get(plug=self._plug,
+                                                                 action_specification=specification.action_specification)
                 except Exception as e:
                     raise
             for obj in data_list:
@@ -113,6 +114,14 @@ class SlackController(BaseController):
     def get_mapping_fields(self, **kwargs):
         return self.get_target_fields()
 
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'channel':
+            return tuple({'id': c['id'], 'name': c['name']} for c in self.get_channel_list())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+
 
 class SMSController(BaseController):
     client = None
@@ -129,11 +138,8 @@ class SMSController(BaseController):
                 except Exception as e:
                     print("Error getting the SMS attributes")
                     print(e)
-        elif kwargs:
-            user = kwargs['connection_user']
-            password = kwargs['connection_password']
-            self.client = SMSClient(user, password)
 
+    def test_connection(self):
         return True
 
     def get_target_fields(self, **kwargs):

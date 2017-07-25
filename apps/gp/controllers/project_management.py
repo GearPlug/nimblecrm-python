@@ -49,7 +49,7 @@ class JiraController(BaseController):
                     data_list = []
         if self._plug is not None:
             for obj in data_list:
-                res = self.create_issue(self._plug.plug_specification.all()[0].value, obj)
+                res = self.create_issue(self._plug.plug_action_specification.all()[0].value, obj)
             extra = {'controller': 'jira'}
             return
         raise ControllerError("Incomplete.")
@@ -95,7 +95,7 @@ class JiraController(BaseController):
 
     def create_webhook(self):
         url = '{}/rest/webhooks/1.0/webhook'.format(self._connection_object.host)
-        key = self.get_key(self._plug.plug_specification.all()[0].value)
+        key = self.get_key(self._plug.plug_action_specification.all()[0].value)
         body = {
             "name": "Gearplug Webhook",
             "url": "http://grplug.com/wizard/jira/webhook/event/",
@@ -124,7 +124,7 @@ class JiraController(BaseController):
 
     def get_users(self):
         payload = {
-            'project': self.get_key(self._plug.plug_specification.all()[0].value)
+            'project': self.get_key(self._plug.plug_action_specification.all()[0].value)
         }
 
         url = 'http://jira.grplug.com:8080/rest/api/2/user/assignable/search'
@@ -134,7 +134,7 @@ class JiraController(BaseController):
         return []
 
     def get_meta(self):
-        meta = self._connection.createmeta(projectIds=self._plug.plug_specification.all()[0].value,
+        meta = self._connection.createmeta(projectIds=self._plug.plug_action_specification.all()[0].value,
                                            issuetypeNames='Task', expand='projects.issuetypes.fields')
         exclude = ['attachment', 'project']
 
