@@ -25,7 +25,9 @@ from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
     GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection, GoogleCalendarConnection, \
-    YouTubeConnection, SMSConnection, ShopifyConnection, HubSpotConnection, MySQLConnection, EvernoteConnection
+    YouTubeConnection, SMSConnection, ShopifyConnection, HubSpotConnection, MySQLConnection, EvernoteConnection, \
+    SalesforceConnection
+
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
 from slacker import Slacker
@@ -149,7 +151,8 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey', ]:  # Creación con url de authorization.
+            if connector.name.lower() in ['googlesheets', 'slack',
+                                          'surveymonkey', ]:  # Creación con url de authorization.
                 name = 'create_with_auth'
             elif connector.name.lower() == 'facebook':  # Especial para facebook
                 name = 'facebook/create'
@@ -163,7 +166,8 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey', ]:  # Creación con url de authorization.
+            if connector.name.lower() in ['googlesheets', 'slack',
+                                          'surveymonkey', ]:  # Creación con url de authorization.
                 name = 'create_with_auth'
             elif connector.name.lower() == 'facebook':  # Especial para facebook
                 name = 'facebook/create'
@@ -210,14 +214,17 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             context['authorization_url'] = get_shopify_url()
         elif connector == ConnectorEnum.Instagram:
             flow = get_instagram_auth()
-            context['authorization_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
+            context['instagram_auth_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
+        elif connector == ConnectorEnum.Salesforce:
+            flow = get_salesforce_auth()
+            context['salesforce_auth_url'] = flow
         elif connector == ConnectorEnum.HubSpot:
             context['authorizaton_url'] = get_hubspot_url()
         elif connector == ConnectorEnum.Evernote:
             client = EvernoteClient(consumer_key=settings.EVERNOTE_CONSUMER_KEY,
                                     consumer_secret=settings.EVERNOTE_CONSUMER_SECRET, sandbox=True)
             request_token = client.get_request_token(settings.EVERNOTE_REDIRECT_URL)
-            self.request.session['oauth_secret_evernote']= request_token['oauth_token_secret']
+            self.request.session['oauth_secret_evernote'] = request_token['oauth_token_secret']
             context['authorization_url'] = client.get_authorize_url(request_token)
         return context
 
@@ -379,6 +386,49 @@ def get_instagram_auth():
                         redirect_uri=INSTAGRAM_AUTH_URL)
 
 
+class SalesforceAuthView(View):
+    def get(self, request, *args, **kwargs):
+        headers = {
+            'content-type': 'application/x-www-form-urlencoded'
+        }
+
+        data = {
+            'grant_type': 'authorization_code',
+            'redirect_uri': settings.SALESFORCE_REDIRECT_URI,
+            'code': request.GET['code'],
+            'client_id': settings.SALESFORCE_CLIENT_ID,
+            'client_secret': settings.SALESFORCE_CLIENT_SECRET
+        }
+
+        req = requests.post(settings.SALESFORCE_ACCESS_TOKEN_URL, data=data, headers=headers)
+        response = req.json()
+
+        request.session['salesforce_access_token'] = response['access_token']
+        return redirect(reverse('connection:salesforce_auth_success_create_connection'))
+
+
+class SalesforceAuthSuccessCreateConnection(TemplateView):
+    template_name = 'connection/instagram/success.html'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if 'salesforce_access_token' in request.session:
+                access_token = request.session.pop('salesforce_access_token')
+                c = Connection.objects.create(
+                    user=request.user, connector_id=ConnectorEnum.Salesforce.value)
+                n = int(SalesforceConnection.objects.filter(connection__user=request.user).count()) + 1
+                tc = SalesforceConnection.objects.create(
+                    connection=c, name="Salesforce Connection # %s" % n, token=access_token)
+        except Exception as e:
+            print("Error creating the Salesforce Connection.")
+        return super(SalesforceAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
+
+
+def get_salesforce_auth():
+    return 'https://login.salesforce.com/services/oauth2/authorize?response_type=code&client_id={}&redirect_uri={}'.format(
+        settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_REDIRECT_URI)
+
+
 class SlackAuthView(View):
     def get(self, request):
         code = request.GET.get('code', None)
@@ -500,9 +550,11 @@ class ShopifyAuthSuccessCreateConnection(TemplateView):
             print("Error creating Shopify Connection.")
         return super(ShopifyAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
+
 def get_shopify_url():
     scopes = "read_products, write_products, read_orders, read_customers, write_orders, write_customers"
     return "https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com/admin/oauth/authorize?client_id=" + settings.SHOPIFY_API_KEY + "&scope=" + scopes + "&redirect_uri=" + settings.SHOPIFY_REDIRECT_URI
+
 
 class HubspotAuthView(View):
     def get(self, request, *args, **kwargs):
@@ -544,17 +596,18 @@ class HubspotAuthSuccessCreateConnection(TemplateView):
 def get_hubspot_url():
     return "https://app.hubspot.com/oauth/1234/authorize?client_id=" + settings.HUBSPOT_CLIENT_ID + "&scope=contacts&redirect_uri=" + settings.HUBSPOT_REDIRECT_URI
 
-class EvernoteAuthView(View):
 
+class EvernoteAuthView(View):
     def get(self, request, *args, **kwargs):
         oauth_token = request.GET.get('oauth_token', '')
-        val=request.GET.get('oauth_verifier', '')
+        val = request.GET.get('oauth_verifier', '')
         oauth_secret = self.request.session['oauth_secret_evernote']
         client = EvernoteClient(consumer_key=settings.EVERNOTE_CONSUMER_KEY,
                                 consumer_secret=settings.EVERNOTE_CONSUMER_SECRET, sandbox=True)
         auth_token = client.get_access_token(oauth_token, oauth_secret, val)
         self.request.session['auth_token'] = auth_token
         return redirect(reverse('connection:evernote_success_create_connection'))
+
 
 class EvernoteAuthSuccessCreateConnection(TemplateView):
     template_name = 'connection/evernote/sucess.html'
@@ -572,8 +625,10 @@ class EvernoteAuthSuccessCreateConnection(TemplateView):
             print("Error creating Evernote Connection.")
         return super(EvernoteAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
+
 def get_evernote_url():
-    client = EvernoteClient(consumer_key=settings.EVERNOTE_CONSUMER_KEY, consumer_secret=settings.EVERNOTE_CONSUMER_SECRET, sandbox=True)
+    client = EvernoteClient(consumer_key=settings.EVERNOTE_CONSUMER_KEY,
+                            consumer_secret=settings.EVERNOTE_CONSUMER_SECRET, sandbox=True)
     request_token = client.get_request_token(settings.EVERNOTE_REDIRECT_URL)
     return client.get_authorize_url(request_token)
 

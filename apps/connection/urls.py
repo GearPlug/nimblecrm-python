@@ -1,12 +1,12 @@
 from django.conf.urls import url
-from apps.connection.views import CreateConnectionView, ListConnectorView, \
-    AJAXFacebookGetAvailableConnectionsView, AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
-    AJAXMySQLTestConnection, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, \
-    GoogleAuthView, AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, \
-    AJAXPostgreSQLTestConnection, AJAXMSSQLTestConnection, SlackAuthView, AuthSuccess, AJAXBitbucketTestConnection, \
+from apps.connection.views import CreateConnectionView, ListConnectorView, AJAXFacebookGetAvailableConnectionsView, \
+    AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
+    AJAXMySQLTestConnection, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, GoogleAuthView, \
+    AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, AJAXPostgreSQLTestConnection, \
+    AJAXMSSQLTestConnection, SlackAuthView, AuthSuccess, AJAXBitbucketTestConnection, \
     AJAXJiraTestConnection, AJAXGetResponseTestConnection, TwitterAuthView, TwitterAuthSuccessCreateConnection, \
-    SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, InstagramAuthView, \
-    SurveyMonkeyAuthSuccessCreateConnection, AJAXGetSurveyListView, InstagramAuthSuccessCreateConnection, \
+    SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, InstagramAuthView, AJAXGetSurveyListView, \
+    InstagramAuthSuccessCreateConnection, SalesforceAuthView, SalesforceAuthSuccessCreateConnection, \
     AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection, ShopifyAuthView, \
     ShopifyAuthSuccessCreateConnection, AJAXSMTPTestConnection, TestConnectionView, CreateConnectionSuccessView, \
     HubspotAuthView, HubspotAuthSuccessCreateConnection, EvernoteAuthView, EvernoteAuthSuccessCreateConnection
@@ -62,6 +62,11 @@ urlpatterns = [
     url(r"^instagram_auth/$", InstagramAuthView.as_view(), name="instagram_auth"),
     url(r"^instagram_auth/success/$", InstagramAuthSuccessCreateConnection.as_view(),
         name="instagram_auth_success_create_connection"),
+
+    # SalesForce
+    url(r"^salesforce_auth/$", SalesforceAuthView.as_view(), name="salesforce_auth"),
+    url(r"^salesforce_auth/success/$", SalesforceAuthSuccessCreateConnection.as_view(),
+        name="salesforce_auth_success_create_connection"),
 
     # surveymonkey
     url(r"^survey_monkey_auth/$", SurveyMonkeyAuthView.as_view(), name="survey_monkey_auth"),

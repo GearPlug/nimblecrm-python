@@ -1,3 +1,4 @@
+from django.conf import settings
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
@@ -7,11 +8,13 @@ from apps.gp.models import StoredData, ActionSpecification
 from simple_salesforce import Salesforce
 from simple_salesforce.login import SalesforceAuthenticationFailed
 from dateutil.parser import parse
+from urllib.parse import urlparse
 import requests
 import sugarcrm
 import json
 import xmltodict
 import string
+import os
 from apps.gp.models import StoredData
 from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
@@ -332,34 +335,31 @@ class ZohoCRMController(BaseController):
 
 
 class SalesforceController(BaseController):
+    token = None
     _client = None
 
     def __init__(self, *args, **kwargs):
         BaseController.__init__(self, *args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
-        user, password, token = None, None, None
         if args:
             super(SalesforceController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
-                    user = self._connection_object.connection_user
-                    password = self._connection_object.connection_password
-                    token = self._connection_object.token
+                    self.token = self._connection_object.token
                 except Exception as e:
                     print("Error getting salesforce attributes")
                     print(e)
         elif kwargs:
             try:
-                user = kwargs.pop('connection_user', None)
-                password = kwargs.pop('connection_password', None)
-                token = kwargs.pop('token', None)
+                self.token = kwargs.pop('token', None)
             except Exception as e:
                 print("Error getting salesforce attributes")
                 print(e)
-        if user is not None and password is not None and token is not None:
+        if self.token is not None:
             try:
-                self._client = Salesforce(username=user, password=password, security_token=token)
+                instance_url = self.get_instance_url()
+                self._client = Salesforce(instance_url=instance_url, session_id=self.token)
             except SalesforceAuthenticationFailed:
                 self._client = None
         return self._client is not None
@@ -380,6 +380,27 @@ class SalesforceController(BaseController):
             extra = {'controller': 'bitbucket'}
             return
         raise ControllerError("Incomplete.")
+
+    def download_to_stored_data(self, connection_object=None, plug=None, event=None, **kwargs):
+        if event is not None:
+            _items = []
+            # media es un objecto, se debe convertir a diccionario:
+            _dict = event.__dict__
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                          object_id=event.id)
+            if not q.exists():
+                for k, v in _dict.items():
+                    obj = StoredData(connection=connection_object.connection, plug=plug,
+                                     object_id=event.id, name=k, value=v or '')
+                    _items.append(obj)
+            extra = {}
+            for item in _items:
+                extra['status'] = 's'
+                extra = {'controller': 'salesforce'}
+                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                    item.object_id, item.plug.id, item.connection.id), extra=extra)
+                item.save()
+        return False
 
     def create(self, fields):
         birthdate = fields.pop('Birthdate', None)
@@ -424,12 +445,134 @@ class SalesforceController(BaseController):
         else:
             return self.get_lead_meta()
 
-    def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
-        if action_specification.action.connector == self._connector:
-            raise ControllerError('Not implemented yet.')
-        else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+    def user_info_url(self):
+        return 'https://login.salesforce.com/services/oauth2/userinfo'
+
+    def headers(self):
+        headers = {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + self.token
+        }
+        return headers
+
+    def user_info(self):
+        r = requests.get(self.user_info_url(), headers=self.headers())
+        return r.json()
+
+    def api_url(self, path):
+        r = self.user_info()
+        path2 = r['urls'].get(path, None)
+        if path2:
+            return path2.replace('{version}', '40.0')
+        return path2
+
+    def rest_url(self):
+        return self.api_url('rest')
+
+    def metadata_url(self):
+        return self.api_url('metadata')
+
+    def get_objects(self):
+        return self.rest_url()
+
+    def get_sobjects(self):
+        return requests.get(self.rest_url() + 'sobjects', headers=self.headers()).json()
+
+    def create_apex_class(self, name, body):
+        _dict = {
+            'ApiVersion': '40.0',
+            'Body': body,
+            'Name': name
+        }
+
+        return requests.post(self.rest_url() + 'tooling/sobjects/ApexClass', headers=self.headers(), json=_dict)
+
+    def create_apex_trigger(self, name, body, sobject):
+        _dict = {
+            'ApiVersion': '40.0',
+            'Body': body,
+            'Name': name,
+            'TableEnumOrId': sobject
+        }
+        return requests.post(self.rest_url() + 'tooling/sobjects/ApexTrigger', headers=self.headers(), json=_dict)
+
+    def get_apex_triggers(self):
+        params = {
+            'q': 'SELECT Name, Body from ApexTrigger'
+        }
+        return requests.get(self.rest_url() + 'tooling/query', headers=self.headers(), params=params).json()
+
+    def create_remote_site(self, name, url):
+        test = '<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><env:Header><urn:SessionHeader xmlns:urn="http://soap.sforce.com/2006/04/metadata"><urn:sessionId>{sessionId}</urn:sessionId></urn:SessionHeader></env:Header><env:Body><createMetadata xmlns="http://soap.sforce.com/2006/04/metadata"><metadata xsi:type="RemoteSiteSetting"><fullName>{name}</fullName><isActive>true</isActive><url>{url}</url></metadata></createMetadata></env:Body></env:Envelope>'.replace(
+            '{name}', name)
+        test = test.replace('{url}', url)
+        test = test.replace('{sessionId}', self.token)
+
+        headers = self.headers()
+        headers['SOAPAction'] = 'RemoteSiteSetting'
+        headers['Content-type'] = 'text/xml'
+
+        return requests.post(self.metadata_url(), headers=headers, data=test)
+
+    # tree = ET.parse('remote_site.xml')
+    # print(tree)
+    # print(ET.tostring(tree.getroot(), encoding='utf8', method='xml'))
+
+
+    # controlador
+
+    def cget_sobject(self):
+        _dict = self.get_sobjects()
+        return [o['name'] for o in _dict['sobjects'] if o['triggerable']]
+
+    def get_webhook(self):
+        _dict = self.get_apex_triggers()
+
+    def create_webhook(self):
+        body = None
+        with open(os.path.join(settings.BASE_DIR, 'files', 'Webhook.txt'), 'r') as file:
+            body = file.read()
+
+        apex_class = self.create_apex_class('Webhook', body)
+        print(apex_class.text)
+
+        remote_site_site = self.create_remote_site('GearPlug' + 'RemoteSiteSetting', settings.SALESFORCE_WEBHOOK_URI)
+        print(remote_site_site.text)
+
+        body = None
+        with open(os.path.join(settings.BASE_DIR, 'files', 'WebhookTrigger.txt'), 'r') as file:
+            body = file.read()
+
+        sobject, event = self.get_specifications_values()
+
+        body = body.replace('{name}', 'GearPlug')
+        body = body.replace('{sobject}', sobject)
+        body = body.replace('{events}', event)
+        body = body.replace('{url}', "'" + settings.SALESFORCE_WEBHOOK_URI + "'")
+
+        apex_trigger = self.create_apex_trigger('GearPlug', body, 'User')
+        print(apex_trigger.text)
+
+    def get_sobject_list(self):
+        return self.cget_sobject()
+
+    def get_event_list(self):
+        return ['before insert', 'before update', 'before delete', 'after insert', 'after update', 'after delete',
+                'after undelete']
+
+    def get_instance_url(self):
+        o = urlparse(self.api_url('profile'))
+        return o.scheme + '://' + o.netloc
+
+    def get_specifications_values(self):
+        sobject = None
+        event = None
+        for specification in self._plug.plug_specification.all():
+            if specification.action_specification.name == 'SObject':
+                sobject = specification.value
+            elif specification.action_specification.name == 'Event':
+                event = specification.value
+        return sobject, event
 
 
 class HubSpotController(BaseController):
@@ -445,10 +588,15 @@ class HubSpotController(BaseController):
             if self._connection_object is not None:
                 try:
                     self._token = self._connection_object.token
+                    self._refresh_token = self._connection_object.refresh_token
+
                 except Exception as e:
                     print("Error getting the hubspot token")
 
     def test_connection(self):
+        response = self.request()
+        if 'status' in response and response['status'] == "error":
+            self.get_refresh_token(self._refresh_token)
         return self._token is not None
 
     def get_modules(self):
@@ -456,6 +604,7 @@ class HubSpotController(BaseController):
                 {'name': 'deals', 'id': 'deals'}]
 
     def get_action_specification_options(self, action_specification_id):
+        print("actions")
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'data':
             return tuple({'name': o['name'], 'id': o['id']} for o in self.get_modules())
@@ -502,12 +651,8 @@ class HubSpotController(BaseController):
         data = []
         for i in result:
             item = {}
-            if (module_id == 'contacts'):
-                item['id'] = i['vid']
-            if (module_id == 'companies'):
-                item['id'] = i['companyId']
-            if (module_id == 'deals'):
-                item['id'] = i['dealId']
+            id = self.get_id(module_id, i)
+            item['id'] = id
             for d in i["properties"]:
                 item[d] = i["properties"][d]['value']
             data.append(item)
@@ -526,30 +671,63 @@ class HubSpotController(BaseController):
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
-        response = self.insert_data(data_list[0])
-        json = self.insert_data()
-        print("json")
-        print(json)
+        if self._plug is not None:
+            obj_list = []
+            module_id = self._plug.plug_action_specification.all()[0].value
+            extra = {'controller': 'hubspot'}
+            for item in data_list:
+                try:
+                    response = self.insert_data(item, module_id).json()
+                    id = self.get_id(module_id, response)
+                    self._log.info('Item: %s successfully sent.' % (id), extra=extra)
+                    obj_list.append(id)
+                except Exception as e:
+                    print(e)
+                    extra['status'] = 'f'
+                    self._log.info('Item: %s failed to send.' % (id), extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")
+
+    def insert_data(self, fields, module_id):
+        if (module_id == 'contacts'):
+            url = "https://api.hubapi.com/contacts/v1/contact/"
+            name = "property"
+        if (module_id == 'companies'):
+            url = "https://api.hubapi.com/companies/v2/companies/"
+            name = "name"
+        if (module_id == 'deals'):
+            url = "https://api.hubapi.com/deals/v1/deal"
+            name = "name"
+        headers = {'Authorization': 'Bearer {0}'.format(self._token)}
+        list = []
+        for i in fields:
+            write = {name: i, 'value': fields[i]}
+            list.append(write)
+        json = {"properties": list}
+        return requests.post(url, json=json, headers=headers)
+
+    def get_id(self, module_id, data):
+        if (module_id == 'contacts'):
+            id = data['vid']
+        if (module_id == 'companies'):
+            id = data['companyId']
+        if (module_id == 'deals'):
+            id = data['dealId']
+        return id
+
+    def get_refresh_token(self, refresh_token):
+        url = "https://api.hubapi.com/oauth/v1/token"
+        headers = {'Content-Type': 'application/x-www-form-urlencoded', 'charset': 'utf-8'}
+        data = {'grant_type': 'refresh_token', 'client_id': settings.HUBSPOT_CLIENT_ID,
+                'client_secret': settings.HUBSPOT_CLIENT_SECRET,
+                'redirect_uri': settings.HUBSPOT_REDIRECT_URI, 'refresh_token': self._refresh_token}
+        response = requests.post(url, headers=headers, data=data).json()
+        self._connection_object.token = response['access_token']
+        self._connection_object.refresh_token = response['refresh_token']
+        self._connection_object.save()
         return None
 
-        # if self._plug is not None:
-        #     obj_list = []
-        #     module_id = self._plug.plug_action_specification.all()[0].value
-        #     extra = {'controller': 'hubspot'}
-        #     for item in data_list:
-        #         try:
-
-
-        #         self._log.info('Item: %s successfully sent.' % (int(response['#text'])), extra=extra)
-        #         obj_list.append(id)
-        #     except Exception as e:
-        #         print(e)
-        #         extra['status'] = 'f'
-        #         self._log.info('Item: %s failed to send.' % (int(response['#text'])), extra=extra)
-        # return obj_list
-        # raise ControllerError("There's no plug")
-
-    def insert_data(self, fields):
-        url = "https://api.hubapi.com/contacts/v1/contact/"
-        headers = {'Authorization': 'Bearer {0}'.format(self._token)}
-        return {"properties": [{'property': i, 'value': fields[i]}] for i in fields}
+    def request(self):
+        url = "https://api.hubapi.com/contacts/v1/lists/all/contacts/all"
+        headers = {'Authorization': 'Bearer {0}'.format(self._token), }
+        return requests.get(url, headers=headers).json()

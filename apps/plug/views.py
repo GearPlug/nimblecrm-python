@@ -246,8 +246,7 @@ class PlugActionSpecificationOptionsView(LoginRequiredMixin, TemplateView):
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class(connection.related_connection)
         ping = controller.test_connection()
-        kwargs.update(request.POST)
-        del kwargs['action_specification_id']
+        kwargs.update({key:val} for key,val in request.POST.items() if key not in ['action_specification_id', 'connection_id'])
         if ping:
             field_list = controller.get_action_specification_options(action_specification_id, **kwargs)
         else:
