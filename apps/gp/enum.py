@@ -4,7 +4,7 @@ from apps.gp.controllers.utils import dynamic_import
 
 
 class ConnectorEnum(Enum):
-    Facebook = 1, 'lead'
+    FacebookLeads = 1, 'lead'
     MySQL = 2, 'database'
     SugarCRM = 3, 'crm'
     MailChimp = 4, 'email_marketing'

@@ -3,7 +3,7 @@ from django.contrib import admin
 from apps.gp.model_fields import JSONField
 from apps.user.models import User
 
-connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
+connections = ['connection_facebookleads', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
                'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql', 'connection_slack',
                'connection_bitbucket', 'connection_jira', 'connection_googleforms', 'connection_googlecontacts',
                'connection_getresponse', 'connection_twitter', 'connection_surveymonkey', 'connection_getresponse',
@@ -115,7 +115,7 @@ class JiraConnection(models.Model):
         return self.name
 
 
-class FacebookConnection(models.Model):
+class FacebookLeadsConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_facebook')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
