@@ -151,8 +151,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            if connector.name.lower() in ['googlesheets', 'slack',
-                                          'surveymonkey', ]:  # Creación con url de authorization.
+            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey','evernote']:  # Creación con url de authorization.
                 name = 'create_with_auth'
             elif connector.name.lower() == 'facebook':  # Especial para facebook
                 name = 'facebook/create'
@@ -166,8 +165,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            if connector.name.lower() in ['googlesheets', 'slack',
-                                          'surveymonkey', ]:  # Creación con url de authorization.
+            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey','evernote']:  # Creación con url de authorization.
                 name = 'create_with_auth'
             elif connector.name.lower() == 'facebook':  # Especial para facebook
                 name = 'facebook/create'

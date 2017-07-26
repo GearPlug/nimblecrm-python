@@ -393,7 +393,13 @@ class EvernoteController(BaseController):
                     print("Error getting the Evernote token")
 
     def test_connection(self):
-        return self._token is not None
+        client=EvernoteClient(self._token)
+        try:
+            client.get_note_store()
+            return self._token is not None
+        except Exception as e:
+            return self._token is None
+
 
     def download_to_stored_data(self, connection_object, plug, list=None):
         print("source from evernote")
@@ -443,3 +449,33 @@ class EvernoteController(BaseController):
     def get_mapping_fields(self, **kwargs):
         fields = self.get_target_fields()
         return [MapField(f, controller=ConnectorEnum.Evernote) for f in fields]
+
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if self._plug is not None:
+            obj_list = []
+            extra = {'controller': 'evernote'}
+            for item in data_list:
+                    note = self.create_note(item)
+                    print("note")
+                    print(note)
+                    if note.guid :
+                        extra['status'] = 's'
+                        self._log.info('Item: %s successfully sent.' % (note.guid), extra=extra)
+                        obj_list.append(note.guid)
+                    else:
+                        extra['status'] = 'f'
+                        self._log.info('Item: failed to send.', extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")
+
+    def create_note(self,data):
+        client = EvernoteClient(token=self._token)
+        c=data['content']
+        noteStore = client.get_note_store()
+        note = Types.Note()
+        note.title = data['title']
+        note.content = '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'
+        note.content +='<en-note>'+c+'</en-note>'
+        return noteStore.createNote(note)
