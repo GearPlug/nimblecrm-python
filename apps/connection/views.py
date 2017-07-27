@@ -250,7 +250,6 @@ class TestConnectionView(LoginRequiredMixin, View):
             connection_object = connection_model(**connection_params)
             controller_class = ConnectorEnum.get_controller(connector)
             controller = controller_class(connection_object)
-        print(controller)
         return JsonResponse({'data': controller.test_connection(), 'connection_test': controller.test_connection()})
 
 
