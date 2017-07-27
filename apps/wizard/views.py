@@ -9,7 +9,7 @@ from django.template import loader
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
-from apps.gp.controllers.lead import GoogleFormsController, FacebookController, SurveyMonkeyController
+from apps.gp.controllers.lead import GoogleFormsController, FacebookLeadsController, SurveyMonkeyController
 from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController, SalesforceController  # , HubspotController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
@@ -320,7 +320,7 @@ class FacebookPageList(LoginRequiredMixin, TemplateView):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
         connection = Connection.objects.get(pk=connection_id)
-        controller = FacebookController()
+        controller = FacebookLeadsController()
         ping = controller.create_connection(connection.related_connection)
         if ping:
             token = connection.related_connection.token
@@ -340,7 +340,7 @@ class FacebookFormList(LoginRequiredMixin, TemplateView):
         connection_id = request.POST.get('connection_id', None)
         page_id = request.POST.get('page_id', None)
         connection = Connection.objects.get(pk=connection_id)
-        controller = FacebookController()
+        controller = FacebookLeadsController()
         ping = controller.create_connection(connection.related_connection)
         if ping:
             token = connection.related_connection.token

@@ -4,7 +4,6 @@ from apps.gp.model_fields import JSONField
 from apps.user.models import User
 from apps.gp.enum import ConnectorEnum
 
-
 connections = ['connection_{0}'.format(connector.name.lower()) for connector in
                ConnectorEnum.get_connector_list()]
 
@@ -117,9 +116,9 @@ class JiraConnection(models.Model):
         return self.name
 
 
-class FacebookConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_facebook')
+class FacebookLeadsConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_facebook')
+
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
 
@@ -549,7 +548,7 @@ class ProcessedData():
     connection = models.ForeignKey(Connection)
     connector = models.ForeignKey(Connector)
     process_type = models.CharField('process type', max_length=20, choices=(
-    ('source', 'Source'), ('target', 'target')))
+        ('source', 'Source'), ('target', 'target')))
     created = models.DateTimeField('created', auto_now_add=True)
 
 

@@ -130,7 +130,7 @@ class GoogleFormsController(BaseController):
         return self.get_worksheet_first_row(**kwargs)
 
 
-class FacebookController(BaseController):
+class FacebookLeadsController(BaseController):
     _app_id = FACEBOOK_APP_ID
     _app_secret = FACEBOOK_APP_SECRET
     _base_graph_url = 'https://graph.facebook.com'
@@ -139,11 +139,11 @@ class FacebookController(BaseController):
     _form = None
 
     def __init__(self, *args):
-        super(FacebookController, self).__init__(*args)
+        super(FacebookLeadsController, self).__init__(*args)
 
     def create_connection(self, *args, **kwargs):
         if args:
-            super(FacebookController, self).create_connection(*args)
+            super(FacebookLeadsController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
                     self._token = self._connection_object.token

@@ -137,7 +137,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             c = Connection.objects.create(user=self.request.user, connector_id=self.kwargs['connector_id'])
             form.instance.connection = c
             if connector == ConnectorEnum.Facebook:  # Extender token de facebook antes de guardar.
-                facebook_controller = FacebookController()
+                facebook_controller = FacebookLeadsController()
                 form.instance.token = facebook_controller.extend_token(self.request.POST.get('token', ''))
             elif connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleContacts,
                                ConnectorEnum.GoogleForms, ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube]:
@@ -263,7 +263,6 @@ class TestConnectionView(LoginRequiredMixin, View):
             connection_object = connection_model(**connection_params)
             controller_class = ConnectorEnum.get_controller(connector)
             controller = controller_class(connection_object)
-        print(controller)
         return JsonResponse({'data': controller.test_connection(), 'connection_test': controller.test_connection()})
 
 

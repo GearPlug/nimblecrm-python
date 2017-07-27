@@ -6,7 +6,7 @@ from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
-from apps.gp.controllers.lead import GoogleFormsController, FacebookController
+from apps.gp.controllers.lead import GoogleFormsController, FacebookLeadsController
 from apps.gp.controllers.crm import SugarCRMController, SalesforceController
 from apps.gp.controllers.crm import SugarCRMController
 from apps.gp.controllers.email import SMTPController

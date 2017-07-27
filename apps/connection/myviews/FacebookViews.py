@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.views.generic import TemplateView
 
-from apps.gp.controllers.lead import FacebookController
+from apps.gp.controllers.lead import FacebookLeadsController
 from apps.gp.views import TemplateViewWithPost
 
 
@@ -9,7 +9,7 @@ from apps.gp.views import TemplateViewWithPost
 class AJAXFacebookBaseView(TemplateViewWithPost):
     template_name = 'connection/facebook/ajax_facebook_select.html'
     has_objects = False
-    fbc = FacebookController()
+    fbc = FacebookLeadsController()
 
     def get_context_data(self, *args, **kwargs):
         context = super(AJAXFacebookBaseView, self).get_context_data(**kwargs)
