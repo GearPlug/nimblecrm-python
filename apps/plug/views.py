@@ -66,7 +66,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
                 if c in [ConnectorEnum.Bitbucket, ConnectorEnum.JIRA, ConnectorEnum.SurveyMonkey,
                          ConnectorEnum.Instagram, ConnectorEnum.YouTube, ConnectorEnum.Shopify,
-                         ConnectorEnum.GoogleCalendar]:
+                         ConnectorEnum.GoogleCalendar, ConnectorEnum.Asana]:
                     controller.create_webhook()
             elif self.object.is_target:
                 if c == ConnectorEnum.MailChimp:

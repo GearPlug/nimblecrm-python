@@ -9,7 +9,8 @@ from apps.connection.views import CreateConnectionView, ListConnectorView, AJAXF
     InstagramAuthSuccessCreateConnection, SalesforceAuthView, SalesforceAuthSuccessCreateConnection, \
     AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection, ShopifyAuthView, \
     ShopifyAuthSuccessCreateConnection, AJAXSMTPTestConnection, TestConnectionView, CreateConnectionSuccessView, \
-    HubspotAuthView, HubspotAuthSuccessCreateConnection, EvernoteAuthView, EvernoteAuthSuccessCreateConnection
+    HubspotAuthView, HubspotAuthSuccessCreateConnection, EvernoteAuthView, EvernoteAuthSuccessCreateConnection, \
+    AsanaAuthView, CreateAuthorizatedConnectionView
 
 from apps.gp.enum import GoogleAPI
 
@@ -27,6 +28,11 @@ urlpatterns = [
     url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),
     url(r'^auth-callback/google/', GoogleAuthView.as_view(), name="google_auth"),
     url(r'^auth-callback/facebook/', GoogleAuthView.as_view(), name="facebook_auth"),
+    url(r'^auth-callback/asana/', AsanaAuthView.as_view(), name="asana_auth"),
+
+
+    # Create Authorizated Connection
+    url(r'^create/authorizated/', CreateAuthorizatedConnectionView.as_view(), name="create_authorizated_connection"),
 
     # Google SpreadSheets
     url(r"^google_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.SpreadSheets}, name="google_auth_gss"),

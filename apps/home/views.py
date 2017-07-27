@@ -60,3 +60,6 @@ class IncomingWebhook(View):
             else:
                 print("No callback event")
             return JsonResponse({'slack': True})
+        elif connector == ConnectorEnum.Asana:
+            pass
+

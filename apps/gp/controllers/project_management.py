@@ -2,12 +2,15 @@ from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import StoredData
+from apps.gp.models import StoredData, ActionSpecification
 from apps.gp.map import MapField
+from django.urls import reverse
 
+from django.conf import settings
 import requests
 from base64 import b64encode
 from jira import JIRA
+import time
 
 
 class JiraController(BaseController):
@@ -159,3 +162,133 @@ class JiraController(BaseController):
     def get_mapping_fields(self, **kwargs):
         fields = self.jirac.get_meta()
         return [MapField(f, controller=ConnectorEnum.JIRA) for f in fields]
+
+class AsanaController(BaseController):
+    _token = None
+    _refresh_token = None
+    _token_expiration_timestamp = None
+    __refresh_url = 'https://app.asana.com/-/oauth_token'
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(AsanaController, self).create_connection(*args)
+            if self._connection_object is not None:
+                self._token = self._connection_object.token
+                self._refresh_token = self._connection_object.refresh_token
+                self._token_expiration_timestamp = self._connection_object.token_expiration_timestamp
+
+    def test_connection(self):
+        if self.is_token_expired():
+            self.refresh_token()
+
+        information = self.get_user_information()
+        print(information)
+        return information is not None
+
+    def is_token_expired(self):
+        print(float(self._token_expiration_timestamp), time.time(), float(self._token_expiration_timestamp) < time.time())
+        return float(self._token_expiration_timestamp) < time.time()
+
+    def refresh_token(self):
+        try:
+            # Data para la peticion de nuevo token
+            data_refresh_token = [
+                ('grant_type', 'refresh_token'),
+                ('client_id', settings.ASANA_CLIENT_ID),
+                ('client_secret', settings.ASANA_CLIENT_SECRET),
+                ('refresh_token', self._refresh_token),
+                ('redirect_uri', settings.ASANA_REDIRECT_URL),
+            ]
+            new_token = requests.post(self.__refresh_url, data=data_refresh_token).json()
+            self._connection_object.token = new_token['access_token']
+            self._connection_object.save()
+            self._token = self._connection_object.token
+
+        except Exception as e:
+            new_token = None
+        print(new_token)
+        return new_token['access_token']
+
+    def get_user_information(self):
+        # Headers para Request de usuario principal
+        if self.is_token_expired():
+            self.refresh_token()
+        headers_1 = {
+            'Authorization': 'Bearer {0}'.format(self._token),
+        }
+        # Request para obtener datos de usuario creador de la tarea
+        r = requests.get('https://app.asana.com/api/1.0/users/me',
+                         headers=headers_1)
+        try:
+            response = r.json()
+            print('user info')
+            print(response)
+            return response['data']
+        except Exception as e:
+            print(e)
+        return None
+
+    def get_workspaces(self):
+        try:
+            print('workspaces')
+            return self.get_user_information()['workspaces']
+        except Exception as e:
+            print(e)
+            return []
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'workspace':
+            return tuple({'id': w['id'], 'name': w['name']} for w in self.get_workspaces())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def create_webhook(self):
+        if self.is_token_expired():
+            self.refresh_token()
+        action = self._plug.action.name
+        if action == 'read created task':
+            print('webhook if')
+            workspace = self._plug.plug_action_specification.get(action_specification__name = 'workspace')
+            print(workspace.value)
+            headers = {
+                'Authorization': 'Bearer {}'.format(self._token)
+            }
+            id_webhook = 2
+            url_base = 'http://26677b10.ngrok.io'
+            url_path = reverse('home:webhook', kwargs={'connector':'asana', 'webhook_id':id_webhook})
+            print('url --> ', url_base+url_path)
+
+            data = [
+                ('resource', workspace.value),
+                ('target', url_base+url_path),
+            ]
+
+            r = requests.post('https://app.asana.com/api/1.0/webhooks',
+                              headers=headers,
+                              data=data)
+            print(r.json())
+            # return r.json()
+        raise Exception('feo')
+
+
+
+        #
+        # workspace = int(request.POST['workspaces'])
+        #
+        # # Headers del post para Asana server
+
+        #
+        # # Id del webhook a crear, control internet.
+        # id_webhook = random.randint(1, 100)
+        #
+        # # data o payload contenida en el post a Asana server
+
+        #
+        # # request a Asana server
+
+        # return render(request, 'create_webhook.html',
+        #               {'created_webhook': r.json()})
+
+    def download_to_stored_data(self, connection_object=None, plug=None, task=None, **kwargs):
+        pass
