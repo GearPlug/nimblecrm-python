@@ -45,7 +45,8 @@ class ConnectorEnum(Enum):
     GitLab = 39, 'repository'
     Shopify = 40, 'ecomerce'
     Dropbox = 41, ''
-    Asana = 42, 'project_management'
+    Magento = 42, 'crm'
+    Asana = 43, 'project_management'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
