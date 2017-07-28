@@ -47,6 +47,7 @@ class ConnectorEnum(Enum):
     Dropbox = 41, ''
     Magento = 42, 'crm'
     Asana = 43, 'project_management'
+    Mandrill = 44, 'email_marketing'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)

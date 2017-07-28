@@ -204,6 +204,15 @@ class MailChimpConnection(models.Model):
         return self.name
 
 
+class MandrillConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mandrill')
+    name = models.CharField('name', max_length=200)
+    api_key = models.CharField('api key', max_length=200)
+
+    def __str__(self):
+        return self.name
+
+
 class GetResponseConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
                                       related_name='connection_getresponse')

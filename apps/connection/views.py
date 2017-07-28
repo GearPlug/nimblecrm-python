@@ -20,6 +20,7 @@ from apps.connection.myviews.SurveyMonkeyViews import *
 from apps.connection.myviews.SMSViews import *
 from apps.connection.myviews.SalesforceViews import *
 from apps.connection.myviews.SMTPViews import *
+from apps.connection.myviews.MandrillViews import *
 from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI
