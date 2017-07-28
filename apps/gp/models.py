@@ -424,6 +424,15 @@ class AsanaConnection(models.Model):
         return self.name
 
 
+class MercadoLibreConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mercadolibre')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
     name = models.CharField('name', max_length=120)
@@ -451,10 +460,8 @@ class Plug(models.Model):
 
 
 class PlugActionSpecification(models.Model):
-    plug = models.ForeignKey(Plug, on_delete=models.CASCADE,
-                             related_name='plug_action_specification', )
-    action_specification = models.ForeignKey(ActionSpecification,
-                                             on_delete=models.CASCADE,
+    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='plug_action_specification', )
+    action_specification = models.ForeignKey(ActionSpecification, on_delete=models.CASCADE,
                                              related_name='action_specification')
     value = models.CharField('value', max_length=1000)
 

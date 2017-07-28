@@ -10,7 +10,9 @@ from apps.connection.views import CreateConnectionView, ListConnectorView, AJAXF
     AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection, ShopifyAuthView, \
     ShopifyAuthSuccessCreateConnection, AJAXSMTPTestConnection, TestConnectionView, CreateConnectionSuccessView, \
     HubspotAuthView, HubspotAuthSuccessCreateConnection, EvernoteAuthView, EvernoteAuthSuccessCreateConnection, \
-    AsanaAuthView, AJAXMandrillTestConnection, CreateAuthorizatedConnectionView
+    AsanaAuthView, AJAXMandrillTestConnection, CreateAuthorizatedConnectionView, MercadoLibreAuthView, \
+    MercadoLibreAuthSuccessCreateConnection
+
 from apps.gp.enum import GoogleAPI
 
 urlpatterns = [
@@ -88,6 +90,11 @@ urlpatterns = [
         name="shopify_auth_success_create_connection"),
 
     # Slack
+
+    # MercadoLibre
+    url(r"^mercadolibre_auth/$", MercadoLibreAuthView.as_view(), name="mercadolibre_auth"),
+    url(r"^mercadolibre_auth/success/$", MercadoLibreAuthSuccessCreateConnection.as_view(),
+        name="mercadolibre_auth_success_create_connection"),
 
     # AuthSuccess
     url(r'^auth/success/$', AuthSuccess.as_view(), name="auth_sucess"),

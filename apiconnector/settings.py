@@ -266,8 +266,15 @@ EVERNOTE_CONSUMER_KEY="ltorres-6238"
 EVERNOTE_CONSUMER_SECRET="a4673a77baca5424"
 EVERNOTE_REDIRECT_URL="http://127.0.0.1:8000/connection/evernote_auth/"
 
+
 # Asana
 ASANA_CLIENT_ID = '385400269218379'
 ASANA_CLIENT_SECRET = 'b06634b490e0408d8f575e38a2d7e7f3'
 ASANA_REDIRECT_URL = 'https://26677b10.ngrok.io/connection/auth-callback/asana/'
 ASANA_WEBHOOK_URL = ''
+
+# Mercadolibre
+MERCADOLIBRE_CLIENT_ID='x'
+MERCADOLIBRE_CLIENT_SECRET='x'
+MERCADOLIBRE_REDIRECT_URL='https://111914fc.ngrok.io/connection/mercadolibre_auth/'
+
