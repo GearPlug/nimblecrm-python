@@ -157,10 +157,10 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
 
             # Creación con url de authorization. Como OAuth (Trabajan con token en su mayoria.)
-            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey','evernote', 'asana']:
+            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey', 'evernote', 'asana']:
                 name = 'create_with_auth'
-            elif connector.name.lower() == 'facebook':  # Especial para facebook
-                name = 'facebook/create'
+            elif connector.name.lower() in ['facebook', 'hubspot']:  # Especial
+                name = '{0}/create'.format(connector.name.lower())
             else:  # Sin autorization. Creación por formulario.
                 name = 'create'
             self.template_name = '%s/%s.html' % (app_name, name)
@@ -171,10 +171,11 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey','evernote','asana']:  # Creación con url de authorization.
+            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey', 'evernote',
+                                          'asana']:  # Creación con url de authorization.
                 name = 'create_with_auth'
-            elif connector.name.lower() == 'facebook':  # Especial para facebook
-                name = 'facebook/create'
+            elif connector.name.lower() in ['facebook', 'hubspot']:  # Especial
+                name = '{0}/create'.format(connector.name.lower())
             else:  # Sin autorizacion. Creación por formulario.
                 name = 'create'
             self.template_name = '%s/%s.html' % (app_name, name)
@@ -235,7 +236,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                                   redirect_uri=settings.ASANA_REDIRECT_URL)
             authorization_url, state = oauth.authorization_url(
                 'https://app.asana.com/-/oauth_authorize?response_type=code&client_id={0}&redirect_uri={1}&state=1234'
-            .format(settings.ASANA_CLIENT_ID, settings.ASANA_REDIRECT_URL))
+                    .format(settings.ASANA_CLIENT_ID, settings.ASANA_REDIRECT_URL))
             context['authorization_url'] = authorization_url
         return context
 
@@ -243,7 +244,6 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
 class CreateConnectionSuccessView(LoginRequiredMixin, TemplateView):
     template_name = 'connection/create_connection_success.html'
     login_url = '/account/login/'
-
 
 
 class TestConnectionView(LoginRequiredMixin, View):
@@ -595,7 +595,7 @@ class HubspotAuthSuccessCreateConnection(TemplateView):
         try:
             if 'hubspot_token' and 'refresh_token' in request.session:
                 access_token = request.session.pop('hubspot_token')
-                refresh_token= request.session.pop('refresh_token')
+                refresh_token = request.session.pop('refresh_token')
                 c = Connection.objects.create(user=request.user, connector_id=ConnectorEnum.HubSpot.value)
                 n = int(HubSpotConnection.objects.filter(connection__user=request.user).count()) + 1
                 tc = HubSpotConnection.objects.create(
@@ -649,7 +649,9 @@ class AsanaAuthView(View):
                                   client_secret=settings.ASANA_CLIENT_SECRET,
                                   code=code,
                                   )
-        self.request.session['connection_data'] = {'token':token['access_token'], 'refresh_token':token['refresh_token'], 'token_expiration_timestamp':token['expires_at']}
+        self.request.session['connection_data'] = {'token': token['access_token'],
+                                                   'refresh_token': token['refresh_token'],
+                                                   'token_expiration_timestamp': token['expires_at']}
         self.request.session['connector_name'] = ConnectorEnum.Asana.name
         return redirect(reverse('connection:create_authorizated_connection'))
 
@@ -677,7 +679,6 @@ class CreateAuthorizatedConnectionView(View):
             obj = connector_model.objects.create(**data)
             print(obj)
             return redirect(reverse('connection:create_success'))
-
 
 
 def get_evernote_url():
