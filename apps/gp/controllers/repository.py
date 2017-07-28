@@ -1,7 +1,7 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import StoredData
+from apps.gp.models import StoredData, ActionSpecification
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 import requests
@@ -22,19 +22,21 @@ class BitbucketController(BaseController):
             if self._connection_object is not None:
                 user = self._connection_object.connection_user
                 password = self._connection_object.connection_password
-        elif kwargs:
-            user = kwargs.pop('connection_user', None)
-            password = kwargs.pop('connection_password', None)
-        else:
-            user = password = None
         try:
             self._connection = Bitbucket(user, password)
-            privileges = self._connection.get_privileges()[0]
         except Exception as e:
             print("Error getting the Bitbucket attributes")
             self._connection = None
-            privileges = False
-        return privileges
+
+    def test_connection(self):
+        try:
+            print("con ",self._connection)
+            print("con obj ",self._connection_object)
+            print("user ", self._connection_object.connection_user)
+            privileges = self._connection.get_privileges()[0]
+        except Exception as e:
+            privileges = None
+        return privileges is not None
 
     def download_to_stored_data(self, connection_object=None, plug=None, issue=None, **kwargs):
         if issue is not None:
@@ -97,6 +99,8 @@ class BitbucketController(BaseController):
         return False
 
     def get_repositories(self):
+        print("con ",self._connection_object)
+        print("user ", self._connection_object.connection_user)
         url = '/2.0/repositories/{}'.format(self._connection_object.connection_user)
         r = self._request(url)
         return sorted(r['values'], key=lambda i: i['name']) if r else []
@@ -120,7 +124,7 @@ class BitbucketController(BaseController):
         return r['values'] if r else []
 
     def _get_repository(self, get_id):
-        for specification in self._plug.plug_specification.all():
+        for specification in self._plug.plug_action_specification.all():
             if specification.action_specification.name == ('repository_id' if get_id else 'repository_name'):
                 return specification.value
 
@@ -210,3 +214,15 @@ class BitbucketController(BaseController):
     def get_mapping_fields(self, **kwargs):
         fields = self.get_meta()
         return [MapField(f, controller=ConnectorEnum.Bitbucket) for f in fields]
+
+    def get_action_specification_options(self, action_specification_id):
+        print(action_specification_id)
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        print(action_specification.name.lower())
+        if action_specification.name.lower() in ['repository_id', 'repository_name']:
+            print("ifff")
+            tup = tuple({'id': p['uuid'], 'name': p['name']} for p in self.get_repositories())
+            print(tup)
+            return tup
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")

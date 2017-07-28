@@ -143,7 +143,7 @@ class SlackController(BaseController):
                     data_list = []
         if self._plug is not None:
             extra = {'controller': 'slack'}
-            for specification in self._plug.plug_specification.all():
+            for specification in self._plug.plug_action_specification.all():
                 try:
                     target = PlugActionSpecification.objects.get(plug=self._plug,
                                                                  action_specification=specification.action_specification)
@@ -249,7 +249,7 @@ class GoogleCalendarController(BaseController):
 
     def create_webhook(self):
         url = 'https://www.googleapis.com/calendar/v3/calendars/{}/events/watch'.format(
-            self._plug.plug_specification.all()[0].value)
+            self._plug.plug_action_specification.all()[0].value)
 
         headers = {
             'Authorization': 'Bearer {}'.format(self._connection_object.credentials_json['access_token']),
@@ -319,7 +319,7 @@ class JiraController(BaseController):
                     data_list = []
         if self._plug is not None:
             for obj in data_list:
-                res = self.create_issue(self._plug.plug_specification.all()[0].value, obj)
+                res = self.create_issue(self._plug.plug_action_specification.all()[0].value, obj)
             extra = {'controller': 'jira'}
             return
         raise ControllerError("Incomplete.")
@@ -365,7 +365,7 @@ class JiraController(BaseController):
 
     def create_webhook(self):
         url = '{}/rest/webhooks/1.0/webhook'.format(self._connection_object.host)
-        key = self.get_key(self._plug.plug_specification.all()[0].value)
+        key = self.get_key(self._plug.plug_action_specification.all()[0].value)
         body = {
             "name": "Gearplug Webhook",
             "url": "http://grplug.com/wizard/jira/webhook/event/",
@@ -394,7 +394,7 @@ class JiraController(BaseController):
 
     def get_users(self):
         payload = {
-            'project': self.get_key(self._plug.plug_specification.all()[0].value)
+            'project': self.get_key(self._plug.plug_action_specification.all()[0].value)
         }
 
         url = 'http://jira.grplug.com:8080/rest/api/2/user/assignable/search'
@@ -404,7 +404,7 @@ class JiraController(BaseController):
         return []
 
     def get_meta(self):
-        meta = self._connection.createmeta(projectIds=self._plug.plug_specification.all()[0].value,
+        meta = self._connection.createmeta(projectIds=self._plug.plug_action_specification.all()[0].value,
                                            issuetypeNames='Task', expand='projects.issuetypes.fields')
         exclude = ['attachment', 'project']
 
@@ -784,7 +784,7 @@ class GoogleSpreadSheetsController(BaseController):
         files = None
         if credentials_json is not None:
             try:
-                for s in self._plug.plug_specification.all():
+                for s in self._plug.plug_action_specification.all():
                     if s.action_specification.name.lower() == 'spreadsheet':
                         self._spreadsheet_id = s.value
                     if s.action_specification.name.lower() == 'worksheet':
@@ -972,7 +972,7 @@ class GetResponseController(BaseController):
                     data_list = []
         if self._plug is not None:
             status = None
-            for specification in self._plug.plug_specification.all():
+            for specification in self._plug.plug_action_specification.all():
                 if specification.action_specification.action.name == 'subscribe':
                     status = 'subscribed'
                 elif specification.action_specification.action.name == 'unsubscribe':
@@ -980,7 +980,7 @@ class GetResponseController(BaseController):
             extra = {'controller': 'getresponse'}
             for obj in data_list:
                 if status == 'subscribed':
-                    res = self.subscribe_contact(self._plug.plug_specification.all()[0].value, obj)
+                    res = self.subscribe_contact(self._plug.plug_action_specification.all()[0].value, obj)
                 else:
                     res = self.unsubscribe_contact(obj)
             return
@@ -1083,7 +1083,7 @@ class GoogleFormsController(BaseController):
         files = None
         if credentials_json is not None:
             try:
-                for s in self._plug.plug_specification.all():
+                for s in self._plug.plug_action_specification.all():
                     if s.action_specification.name.lower() == 'form':
                         self._spreadsheet_id = s.value
             except:
@@ -1285,7 +1285,7 @@ class BitbucketController(BaseController):
         return r['values'] if r else []
 
     def _get_repository(self, get_id):
-        for specification in self._plug.plug_specification.all():
+        for specification in self._plug.plug_action_specification.all():
             if specification.action_specification.name == ('repository_id' if get_id else 'repository_name'):
                 return specification.value
 
@@ -1436,14 +1436,14 @@ class MailChimpController(BaseController):
         if self._plug is not None:
             status = None
             _list = None
-            for specification in self._plug.plug_specification.all():
+            for specification in self._plug.plug_action_specification.all():
                 if specification.action_specification.action.name == 'subscribe':
                     status = 'subscribed'
                 elif specification.action_specification.action.name == 'unsubscribe':
                     status = 'unsubscribed'
-                    _list = self.get_all_members(self._plug.plug_specification.all()[0].value)
+                    _list = self.get_all_members(self._plug.plug_action_specification.all()[0].value)
 
-            list_id = self._plug.plug_specification.all()[0].value
+            list_id = self._plug.plug_action_specification.all()[0].value
             for obj in data_list:
                 d = {'email_address': obj.pop('email_address'), 'status': status,
                      'merge_fields': {key: obj[key] for key in obj.keys()}}
@@ -1508,13 +1508,13 @@ class FacebookController(BaseController):
                 print("Error getting the Facebook token")
         try:
             if self._plug is not None:
-                for s in self._plug.plug_specification.all():
+                for s in self._plug.plug_action_specification.all():
                     if s.action_specification.name.lower() == 'page':
                         self._page = s.value
                     if s.action_specification.name.lower() == 'form':
                         self._form = s.value
                         # else:
-                        #     print("There is no Plug asigned to the FacebookController")
+                        #     print("There is no Plug asigned to the FacebookLeadsController")
         except:
             print("Error asignando los specifications")
 
@@ -1681,7 +1681,7 @@ class MySQLController(BaseController):
     def select_all(self, limit=50):
         if self._table is not None and self._database is not None and self._plug is not None:
             try:
-                order_by = self._plug.plug_specification.all()[0].value
+                order_by = self._plug.plug_action_specification.all()[0].value
             except:
                 order_by = None
             select = 'SELECT * FROM `%s`.`%s`' % (self._database, self._table)
@@ -1843,7 +1843,7 @@ class PostgreSQLController(BaseController):
     def select_all(self, limit=50):
         if self._table is not None and self._database is not None and self._plug is not None:
             try:
-                order_by = self._plug.plug_specification.all()[0].value
+                order_by = self._plug.plug_action_specification.all()[0].value
             except:
                 order_by = None
             select = 'SELECT * FROM %s ' % self._table
@@ -2005,7 +2005,7 @@ class MSSQLController(BaseController):
     def select_all(self, limit=50):
         if self._table is not None and self._database is not None and self._plug is not None:
             try:
-                order_by = self._plug.plug_specification.all()[0].value
+                order_by = self._plug.plug_action_specification.all()[0].value
             except:
                 order_by = None
             select = 'SELECT * FROM %s ' % self._table
@@ -2166,7 +2166,7 @@ class SugarCRMController(BaseController):
         return self._session.set_entries(obj_list)
 
     def download_to_stored_data(self, connection_object, plug, limit=29, order_by="date_entered DESC", **kwargs):
-        module = plug.plug_specification.all()[0].value  # Especificar que specification
+        module = plug.plug_action_specification.all()[0].value  # Especificar que specification
         data = self.get_entry_list(module, max_results=limit, order_by=order_by)
         new_data = []
         for item in data:
@@ -2202,7 +2202,7 @@ class SugarCRMController(BaseController):
                     data_list = []
         if self._plug is not None:
             obj_list = []
-            module_name = self._plug.plug_specification.all()[0].value
+            module_name = self._plug.plug_action_specification.all()[0].value
             extra = {'controller': 'sugarcrm'}
             for item in data_list:
                 try:

@@ -17,6 +17,7 @@
             {% endif %}
         </form>
     </div>
+    <div id="fb-root"></div>
 {% endblock %}
 
 {% block scripts %}
@@ -24,6 +25,7 @@
     <script type="application/javascript">
         function fbLogin() {
             FB.login(function (response) {
+                console.log(response)
                 if (response.authResponse) {
                     window.location.reload(false);
                 }
@@ -31,43 +33,42 @@
         }
 
         function statusChangeCallback(response) {
+            console.log(response)
             if (response.status === 'connected') {
                 user_access_token = response.authResponse.accessToken;
-                $('h3#status').html('Token obtenido, proceda a guardar la conexion.' + user_access_token);
+                $('h3#status').html('Has autorizado a nuestra apliación!');
+                $('#btnLogin').hide();
             } else if (response.status === 'not_authorized') {
                 $('#btnLogin').show();
             } else {
                 $('#btnLogin').show();
             }
         }
-
         $(document).ready(function () {
-            (function (d, s, id) {
-                var js, fjs = d.getElementsByTagName(s)[0];
-                if (d.getElementById(id)) return;
-                js = d.createElement(s);
-                js.id = id;
-                js.src = "//connect.facebook.net/en_US/sdk.js";
-                fjs.parentNode.insertBefore(js, fjs);
-            }(document, 'script', 'facebook-jssdk'));
-
-            window.fbAsyncInit = function () {
-                FB.init({
-                    appId: '1731160853833926',
-                    cookie: true,  // enable cookies to allow the server to access
-                    // the session
-                    xfbml: true,  // parse social plugins on this page
-                    version: 'v2.6' // use graph api version 2.5
-                });
-                FB.getLoginStatus(function (response) {
-                    statusChangeCallback(response);
-                });
-            }
+            {% with app_id='1860382657578411' %}
+                window.fbAsyncInit = function () {
+                    FB.init({
+                        appId: '{{ app_id }}',
+                        xfbml: true,
+                        version: 'v2.10'
+                    });
+                    FB.getLoginStatus(function (response) {
+                        statusChangeCallback(response);
+                    });
+                };
+                (function (d, s, id) {
+                    var js, fjs = d.getElementsByTagName(s)[0];
+                    if (d.getElementById(id)) return;
+                    js = d.createElement(s);
+                    js.id = id;
+                    js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.10&appId={{ app_id }}";
+                    fjs.parentNode.insertBefore(js, fjs);
+                }(document, 'script', 'facebook-jssdk'));
+            {% endwith %}
 
             $('button#btnLogin').click(function () {
                 fbLogin();
             });
-
 
             $('button#btnCreateConnection').click(function () {
                 $('form#formCreateConnection').find('input#id_name').val('Facebook Connection');
@@ -77,19 +78,18 @@
 
             $('form#formCreateConnection').submit(function () {
                 var url = $(this).attr('action');
-                console.log('url:' + url);
                 $.ajax({
                     method: "POST",
                     url: url,
                     data: $(this).serialize(),
                 }).done(function (response) {
                     if (response.data) {
-                        console.log('reload')
                         location.reload();
                     }
                 });
                 return false;
             })
+
         })
     </script>
 {% endblock %}

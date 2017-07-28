@@ -9,8 +9,8 @@ from django.template import loader
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
-from apps.gp.controllers.lead import GoogleFormsController, FacebookController, SurveyMonkeyController
-from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController#, HubspotController
+from apps.gp.controllers.lead import GoogleFormsController, FacebookLeadsController, SurveyMonkeyController
+from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController, SalesforceController  # , HubspotController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
 from apps.gp.controllers.im import SlackController
@@ -40,6 +40,73 @@ paypalrestsdk.configure({
 mcc = MailChimpController()
 gsc = GoogleSpreadSheetsController()
 gfc = GoogleFormsController()
+
+
+class SalesforceSObjectList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = SalesforceController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            sobjects = tuple({'id': a, 'name': a} for a in controller.get_sobject_list())
+        else:
+            sobjects = list()
+        context['object_list'] = sobjects
+        return super(SalesforceSObjectList, self).render_to_response(context)
+
+
+class SalesforceEventList(LoginRequiredMixin, TemplateView):
+    template_name = 'wizard/async/select_options.html'
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        connection_id = request.POST.get('connection_id', None)
+        connection = Connection.objects.get(pk=connection_id)
+        controller = SalesforceController()
+        ping = controller.create_connection(connection.related_connection)
+        if ping:
+            events = tuple({'id': a, 'name': a} for a in controller.get_event_list())
+        else:
+            events = list()
+        context['object_list'] = events
+        return super(SalesforceEventList, self).render_to_response(context)
+
+
+class SalesforceWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _instagram_controller = SalesforceController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(SalesforceWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body.decode('utf-8'))
+
+        import pprint
+        print(request.META)
+        pprint.pprint(data)
+        # TODO Esperar que los webhooks puedan ser dinámicos
+        # print(data)
+        # if data[0]['changed_aspect'] != 'media':
+        #     return JsonResponse({'hola': True})
+        # media_id = data[0]['data']['media_id']
+        # object_id = data[0]['object_id']
+        # qs = PlugSpecification.objects.filter(
+        #     action_specification__action__action_type='source',
+        #     action_specification__action__connector__name__iexact="instagram",
+        #     value=object_id,
+        #     plug__source_gear__is_active=True)
+        # for plug_specification in qs:
+        #     self._instagram_controller.create_connection(plug_specification.plug.connection.related_connection,
+        #                                                  plug_specification.plug)
+        #     media = self._instagram_controller.get_media(media_id)
+        #     self._instagram_controller.download_source_data(media=media)
+        return JsonResponse({'hola': True})
 
 
 class GoogleDriveSheetList(LoginRequiredMixin, TemplateView):
@@ -192,6 +259,7 @@ class ZohoCRMModuleList(LoginRequiredMixin, TemplateView):
         context['object_list'] = module_list
         return super(ZohoCRMModuleList, self).render_to_response(context)
 
+
 class ShopifyList(TemplateViewWithPost):
     template_name = 'wizard/async/select_options.html'
 
@@ -207,6 +275,7 @@ class ShopifyList(TemplateViewWithPost):
             object_list = []
         context['object_list'] = object_list
         return super(ShopifyList, self).render_to_response(context)
+
 
 class MailChimpListsList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
@@ -251,7 +320,7 @@ class FacebookPageList(LoginRequiredMixin, TemplateView):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
         connection = Connection.objects.get(pk=connection_id)
-        controller = FacebookController()
+        controller = FacebookLeadsController()
         ping = controller.create_connection(connection.related_connection)
         if ping:
             token = connection.related_connection.token
@@ -271,7 +340,7 @@ class FacebookFormList(LoginRequiredMixin, TemplateView):
         connection_id = request.POST.get('connection_id', None)
         page_id = request.POST.get('page_id', None)
         connection = Connection.objects.get(pk=connection_id)
-        controller = FacebookController()
+        controller = FacebookLeadsController()
         ping = controller.create_connection(connection.related_connection)
         if ping:
             token = connection.related_connection.token
@@ -331,9 +400,10 @@ class SlackWebhookEvent(TemplateView):
                 action_specification__action__connector__name__iexact="slack",
                 plug__source_gear__is_active=True)
             if event['type'] == "message" and event['channel'] in [c.value for c in slack_channel_list]:
-                for plug_specification in slack_channel_list:
-                    self._slack_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                             plug_specification.plug)
+                for plug_action_specification in slack_channel_list:
+                    self._slack_controller.create_connection(
+                        plug_action_specification.plug.connection.related_connection,
+                        plug_action_specification.plug)
                     self._slack_controller.download_source_data(event=data)
         else:
             print("No callback event")
@@ -363,12 +433,14 @@ class SurveyMonkeyWebhookEvent(TemplateView):
             action_specification__action__connector__name__iexact="SurveyMonkey",
             value=data['resources']['survey_id']
         )
-        for plug_specification in qs:
+        for plug_action_specification in qs:
             print("plug")
-            self._surveymonkey_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                            plug_specification.plug)
+            self._surveymonkey_controller.create_connection(
+                plug_action_specification.plug.connection.related_connection,
+                plug_action_specification.plug)
             self._surveymonkey_controller.download_source_data(responses=responses)
         return JsonResponse({'hola': True})
+
 
 class ShopifyWebhookEvent(TemplateView):
     template_name = 'wizard/async/select_options.html'
@@ -390,29 +462,12 @@ class ShopifyWebhookEvent(TemplateView):
             action_specification__action__connector__name__iexact="Shopify",
             plug__source_gear__is_active=True
         )
-        for plug_specification in qs:
+        for plug_action_specification in qs:
             print("plug")
-            self._shopify_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                            plug_specification.plug)
+            self._shopify_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                       plug_action_specification.plug)
             self._shopify_controller.download_source_data(list=notifications)
         return JsonResponse({'hola': True})
-
-class BitbucketProjectList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = BitbucketController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            # El id es el mismo nombre del module
-            project_list = tuple({'id': p['uuid'], 'name': p['name']} for p in controller.get_repositories())
-        else:
-            project_list = []
-        context['object_list'] = project_list
-        return super(BitbucketProjectList, self).render_to_response(context)
 
 
 class JiraProjectList(LoginRequiredMixin, TemplateView):
@@ -433,56 +488,6 @@ class JiraProjectList(LoginRequiredMixin, TemplateView):
         return super(JiraProjectList, self).render_to_response(context)
 
 
-class TestPlugView(TemplateView):
-    template_name = 'wizard/plug_test.html'
-
-    def get_context_data(self, **kwargs):
-        context = super(TestPlugView, self).get_context_data()
-        p = Plug.objects.get(pk=self.kwargs.get('pk'))
-        print("Test")
-        if p.plug_type == 'source':
-            print("source")
-            try:
-                sd_sample = StoredData.objects.filter(plug=p, connection=p.connection).order_by('-id')[0]
-                sd = StoredData.objects.filter(plug=p, connection=p.connection, object_id=sd_sample.object_id)
-                context['object_list'] = sd
-                print("gg")
-            except IndexError:
-                print("error")
-        elif p.plug_type == 'target':
-            c = ConnectorEnum.get_connector(p.connection.connector.id)
-            controller_class = ConnectorEnum.get_controller(c)
-            controller = controller_class(p.connection.related_connection, p)
-            ping = controller.test_connection()
-            if ping:
-                if c == ConnectorEnum.MailChimp:
-                    target_fields = controller.get_target_fields(list_id=p.plug_specification.all()[0].value)
-                elif c == ConnectorEnum.SugarCRM:
-                    target_fields = controller.get_target_fields(p.plug_specification.all()[0].value)
-                elif c == ConnectorEnum.JIRA:
-                    target_fields = controller.get_target_fields()
-                else:
-                    target_fields = controller.get_target_fields()
-                context['object_list'] = target_fields
-        context['plug_type'] = p.plug_type
-        return context
-
-    def post(self, request, *args, **kwargs):
-        # Download data
-        p = Plug.objects.get(pk=self.kwargs.get('pk'))
-        c = ConnectorEnum.get_connector(p.connection.connector.id)
-        controller_class = ConnectorEnum.get_controller(c)
-        controller = controller_class(p.connection.related_connection, p)
-        if p.plug_type == 'source':
-            ping = controller.test_connection()
-            print("PING: %s" % ping)
-            if ping:
-                data_list = controller.download_to_stored_data(p.connection.related_connection, p)
-                print(data_list)
-        context = self.get_context_data()
-        return super(TestPlugView, self).render_to_response(context)
-
-
 class BitbucketWebhookEvent(TemplateView):
     template_name = 'wizard/async/select_options.html'
     _bitbucket_controller = BitbucketController()
@@ -501,9 +506,9 @@ class BitbucketWebhookEvent(TemplateView):
             action_specification__action__action_type='source',
             action_specification__action__connector__name__iexact="bitbucket",
             plug__source_gear__is_active=True)
-        for plug_specification in qs:
-            self._bitbucket_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                         plug_specification.plug)
+        for plug_action_specification in qs:
+            self._bitbucket_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                         plug_action_specification.plug)
             self._bitbucket_controller.download_source_data(issue=issue)
         return JsonResponse({'hola': True})
 
@@ -554,9 +559,9 @@ class InstagramWebhookEvent(TemplateView):
             action_specification__action__connector__name__iexact="instagram",
             value=object_id,
             plug__source_gear__is_active=True)
-        for plug_specification in qs:
-            self._instagram_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                         plug_specification.plug)
+        for plug_action_specification in qs:
+            self._instagram_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                         plug_action_specification.plug)
             media = self._instagram_controller.get_media(media_id)
             self._instagram_controller.download_source_data(media=media)
         return JsonResponse({'hola': True})
@@ -633,9 +638,9 @@ class YouTubeWebhookEvent(TemplateView):
             value=channel_id,
             plug__source_gear__is_active=True)
 
-        for plug_specification in qs:
-            self._youtube_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                       plug_specification.plug)
+        for plug_action_specification in qs:
+            self._youtube_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                       plug_action_specification.plug)
             video = self._youtube_controller.get_video(video_id)
             self._youtube_controller.download_source_data(video=video)
         return JsonResponse({'hola': True})
@@ -677,9 +682,9 @@ class JiraWebhookEvent(TemplateView):
             action_specification__action__connector__name__iexact="jira",
             value=issue['fields']['project']['id'],
             plug__source_gear__is_active=True)
-        for plug_specification in qs:
-            self._jira_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                    plug_specification.plug)
+        for plug_action_specification in qs:
+            self._jira_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                    plug_action_specification.plug)
             self._jira_controller.download_source_data(issue=issue)
         return JsonResponse({'hola': True})
 
@@ -717,9 +722,10 @@ class GoogleCalendarWebhookEvent(TemplateView):
             plug__connection=google_push_webhook.connection,
             plug__source_gear__is_active=True)
 
-        for plug_specification in qs:
-            self._googlecalendar_controller.create_connection(plug_specification.plug.connection.related_connection,
-                                                              plug_specification.plug)
+        for plug_action_specification in qs:
+            self._googlecalendar_controller.create_connection(
+                plug_action_specification.plug.connection.related_connection,
+                plug_action_specification.plug)
             events = self._googlecalendar_controller.get_events()
             self._googlecalendar_controller.download_source_data(events=events)
 

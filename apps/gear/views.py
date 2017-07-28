@@ -6,7 +6,7 @@ from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
-from apps.gp.controllers.lead import GoogleFormsController, FacebookController
+from apps.gp.controllers.lead import GoogleFormsController, FacebookLeadsController
 from apps.gp.controllers.crm import SugarCRMController, SalesforceController
 from apps.gp.controllers.crm import SugarCRMController
 from apps.gp.controllers.email import SMTPController
@@ -112,7 +112,7 @@ class DeleteGearView(DeleteView):
     success_url = reverse_lazy('%s:list' % app_name)
 
 
-class CreateGearMapView2(FormView, LoginRequiredMixin):
+class CreateGearMapView(FormView, LoginRequiredMixin):
     """
     Creates a Map for the selected gear.
 
@@ -138,87 +138,6 @@ class CreateGearMapView2(FormView, LoginRequiredMixin):
         self.source_object_list = self.get_available_source_fields(source_plug)
         # Target fields
         self.form_field_list = self.get_target_field_list(target_plug)
-
-    def post(self, request, *args, **kwargs):
-        gear_id = kwargs.pop('gear_id', 0)
-        gear = Gear.objects.filter(pk=gear_id).select_related('source', 'target').get(pk=gear_id)
-        target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
-            pk=gear.target.id)
-        self.form_field_list = self.get_target_field_list(target_plug)
-        return super(CreateGearMapView, self).post(request, *args, **kwargs)
-
-    def form_valid(self, form, *args, **kwargs):
-        map = GearMap.objects.create(gear_id=self.kwargs['gear_id'], is_active=True)
-        map.gear.is_active = True
-        map.gear.save()
-        map_data = []
-        for field in form:
-            map_data.append(
-                GearMapData(gear_map=map, target_name=field.name, source_value=form.cleaned_data[field.name]))
-        GearMapData.objects.bulk_create(map_data)
-        return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
-
-    def form_invalid(self, form, *args, **kwargs):
-        return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(CreateGearMapView, self).get_context_data(**kwargs)
-        context['source_object_list'] = self.source_object_list
-        return context
-
-    def get_form(self, *args, **kwargs):
-        form_class = self.get_form_class()
-        return form_class(extra=self.form_field_list, **self.get_form_kwargs())
-
-    def get_available_source_fields(self, plug):
-        c = ConnectorEnum.get_connector(plug.connection.connector.id)
-        if c == ConnectorEnum.GoogleContacts:
-            self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
-            return ['%%%%%s%%%%' % field for field in self.google_contacts_controller.get_contact_fields()]
-        return ['%%%%%s%%%%' % item['name'] for item in self.get_source_data_list(plug, plug.connection)]
-
-    def get_target_field_list(self, plug):
-        c = ConnectorEnum.get_connector(plug.connection.connector.id)
-        controller_class = ConnectorEnum.get_controller(c)
-        related = plug.connection.related_connection
-        controller = controller_class(related, plug)
-        try:
-            return controller.get_mapping_fields()
-        except Exception as e:
-            return []
-
-
-class CreateGearMapView(FormView):
-    template_name = 'gear/map/create.html'
-    form_class = MapForm
-    form_field_list = []
-    source_object_list = []
-    success_url = reverse_lazy('%s:list' % app_name)
-    scrmc = SugarCRMController()
-    gsc = GoogleSpreadSheetsController()
-    slack_controller = SlackController()
-    jirac = JiraController()
-    bitbucketc = BitbucketController()
-    google_contacts_controller = GoogleContactsController()
-    getresponsec = GetResponseController()
-    twitterc = TwitterController()
-    gcc = GoogleCalendarController()
-    youtubec = YouTubeController()
-    smsc = SMSController()
-    sfc = SalesforceController()
-    smtpc = SMTPController()
-
-    def get(self, request, *args, **kwargs):
-        gear_id = kwargs.pop('gear_id', 0)
-        gear = Gear.objects.filter(pk=gear_id).select_related('source', 'target').get(pk=gear_id)
-        source_plug = Plug.objects.filter(pk=gear.source.id).select_related('connection__connector').get(
-            pk=gear.source.id)
-        target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
-            pk=gear.target.id)
-        self.source_object_list = self.get_available_source_fields(source_plug)
-        self.form_field_list = self.get_target_field_list(target_plug)
-        # print(self.source_object_list)
-        # print(self.form_field_list)
         return super(CreateGearMapView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -257,20 +176,20 @@ class CreateGearMapView(FormView):
         if c == ConnectorEnum.GoogleContacts:
             self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
             return ['%%%%%s%%%%' % field for field in self.google_contacts_controller.get_contact_fields()]
-        return ['%%%%%s%%%%' % item['name'] for item in self.get_source_data_list(plug, plug.connection)]
+        return ['%%%%%s%%%%' % item['name'] for item in StoredData.objects.filter(plug=plug, connection=plug.connection).values('name').distinct()]
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
         controller_class = ConnectorEnum.get_controller(c)
-        try:
-            controller = controller_class(plug.connection.related_connection, plug)
-            return controller.get_mapping_fields()
-        except Exception as e:
-            raise
+        related = plug.connection.related_connection
+        controller = controller_class(related, plug)
+        if controller.test_connection():
+            try:
+                return controller.get_mapping_fields()
+            except Exception as e:
+                return []
+        else:
             return []
-
-    def get_source_data_list(self, plug, connection):
-        return StoredData.objects.filter(plug=plug, connection=connection).values('name').distinct()
 
 
 class GearMapGetSourceData(TemplateViewWithPost):

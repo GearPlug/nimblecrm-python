@@ -1,6 +1,8 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
+from apps.gp.enum import ConnectorEnum
+from apps.gp.map import MapField
 
 from apps.gp.models import StoredData, ActionSpecification
 import MySQLdb
@@ -38,7 +40,8 @@ class MySQLController(BaseController):
             user = self._connection_object.connection_user
             password = self._connection_object.connection_password
             try:
-                self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self._database)
+                self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password,
+                                                   db=self._database)
                 self._cursor = self._connection.cursor()
             except Exception as e:
                 self._connection = None
@@ -69,9 +72,10 @@ class MySQLController(BaseController):
     def select_all(self, limit=50):
         if self._table is not None and self._database is not None and self._plug is not None:
             try:
-                order_by = self._plug.plug_specification.all()[0].value
+                order_by = self._plug.plug_action_specification.all()[0].value
             except:
                 order_by = None
+            print(order_by)
             select = 'SELECT * FROM `%s`.`%s`' % (self._database, self._table)
             if order_by is not None:
                 select += 'ORDER BY %s DESC ' % order_by
@@ -133,7 +137,7 @@ class MySQLController(BaseController):
         if is_first:
             if data_list:
                 try:
-                    data_list = [data_list[0]]
+                    data_list = [data_list[-1]]
                 except:
                     data_list = []
         if self._plug is not None:
@@ -161,10 +165,10 @@ class MySQLController(BaseController):
         return self.describe_table(**kwargs)
 
     def get_mapping_fields(self, **kwargs):
-        return [item['name'] for item in self.describe_table() if item['is_primary'] is not True]
+        return [MapField(f, controller=ConnectorEnum.MySQL) for f in self.describe_table() if f['is_primary'] is not True]
+        # return [item['name'] for item in self.describe_table() if item['is_primary'] is not True]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'order by':
             return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
@@ -214,7 +218,7 @@ class PostgreSQLController(BaseController):
                     self._table.split('.'))
                 return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for
                         item in self._cursor]
-            except:
+            except Exception as e:
                 print('Error describing table: %s')
         return []
 
@@ -296,7 +300,7 @@ class PostgreSQLController(BaseController):
         if is_first:
             if data_list:
                 try:
-                    data_list = [data_list[0]]
+                    data_list = [data_list[-1]]
                 except:
                     data_list = []
         if self._plug is not None:
@@ -307,6 +311,7 @@ class PostgreSQLController(BaseController):
                     insert = self._get_insert_statement(item)
                     self._cursor.execute(insert)
                     extra['status'] = 's'
+                    # Lastrowid not working.
                     self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
                     obj_list.append(self._cursor.lastrowid)
                 except Exception as e:
@@ -329,6 +334,9 @@ class PostgreSQLController(BaseController):
             return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def get_target_fields(self, **kwargs):
+        return self.describe_table(**kwargs)
 
 
 class MSSQLController(BaseController):
@@ -457,7 +465,7 @@ class MSSQLController(BaseController):
         if is_first:
             if data_list:
                 try:
-                    data_list = [data_list[0]]
+                    data_list = [data_list[-1]]
                 except:
                     data_list = []
         if self._plug is not None:

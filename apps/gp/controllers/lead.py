@@ -39,7 +39,7 @@ class GoogleFormsController(BaseController):
         files = None
         if credentials_json is not None:
             try:
-                for s in self._plug.plug_specification.all():
+                for s in self._plug.plug_action_specification.all():
                     if s.action_specification.name.lower() == 'form':
                         self._spreadsheet_id = s.value
             except:
@@ -130,7 +130,7 @@ class GoogleFormsController(BaseController):
         return self.get_worksheet_first_row(**kwargs)
 
 
-class FacebookController(BaseController):
+class FacebookLeadsController(BaseController):
     _app_id = FACEBOOK_APP_ID
     _app_secret = FACEBOOK_APP_SECRET
     _base_graph_url = 'https://graph.facebook.com'
@@ -139,11 +139,11 @@ class FacebookController(BaseController):
     _form = None
 
     def __init__(self, *args):
-        super(FacebookController, self).__init__(*args)
+        super(FacebookLeadsController, self).__init__(*args)
 
     def create_connection(self, *args, **kwargs):
         if args:
-            super(FacebookController, self).create_connection(*args)
+            super(FacebookLeadsController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
                     self._token = self._connection_object.token
@@ -151,8 +151,8 @@ class FacebookController(BaseController):
                     print("Error getting the Facebook token")
         try:
             if self._plug is not None:
-                # self._page = self._plug.plug_specification.all().get(action_specification__name__iexact='page')
-                for s in self._plug.plug_specification.all():
+                # self._page = self._plug.plug_action_specification.all().get(action_specification__name__iexact='page')
+                for s in self._plug.plug_action_specification.all():
                     if s.action_specification.name.lower() == 'page':
                         self._page = s.value
                     if s.action_specification.name.lower() == 'form':
@@ -189,7 +189,10 @@ class FacebookController(BaseController):
         r = requests.get('%s/v%s/%s' % (base_url, FACEBOOK_GRAPH_VERSION, url),
                          params=params)
         try:
-            return json.loads(r.text)['data']
+            if r.status_code in [200, 201, 202]:
+                return json.loads(r.text)['data']
+            else:
+                return []
         except KeyError:
             return r
         except Exception as e:
@@ -257,12 +260,14 @@ class FacebookController(BaseController):
         return False
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'page':
             pages = self.get_pages(self._token)
             return tuple({'id': p['id'], 'name': p['name']} for p in pages)
         elif action_specification.name.lower() == 'form':
-            forms = self.get_forms(self._token, kwargs.get('page_id', ''))
+            page_id = kwargs.get('page_id', '')[0] if isinstance(kwargs.get('page_id', ''), list) else kwargs.get(
+                'page_id', '')
+            forms = self.get_forms(self._token, page_id)
             return tuple({'id': p['id'], 'name': p['name']} for p in forms)
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
@@ -304,7 +309,7 @@ class SurveyMonkeyController(BaseController):
         if responses == None:
             responses = self.get_responses().__dict__["_content"].decode()
             responses = json.loads(responses)["data"]
-        survey_id = self._plug.plug_specification.all()[0].value
+        survey_id = self._plug.plug_action_specification.all()[0].value
         new_data = []
         for item in responses:
             response_id = item["id"]
@@ -312,7 +317,8 @@ class SurveyMonkeyController(BaseController):
             if not q.exists():
                 details = self.get_response_details(survey_id, response_id)
                 for value in details:
-                    if (value != "page_path" and value != "logic_path" and value != "metadata" and value != "custom_variables"):
+                    if (
+                                            value != "page_path" and value != "logic_path" and value != "metadata" and value != "custom_variables"):
                         new_data.append(StoredData(name=value, value=details[value], object_id=response_id,
                                                    connection=connection_object.connection, plug=plug))
         if new_data:
@@ -339,7 +345,7 @@ class SurveyMonkeyController(BaseController):
         return s.get(url)
 
     def get_responses(self):
-        survey_id = self._plug.plug_specification.all()[0].value
+        survey_id = self._plug.plug_action_specification.all()[0].value
         s = requests.session()
         s.headers.update({
             "Authorization": "Bearer %s" % self._token,
@@ -369,9 +375,9 @@ class SurveyMonkeyController(BaseController):
         return list
 
     def create_webhook(self):
-        survey_id = self._plug.plug_specification.all()[0].value
+        survey_id = self._plug.plug_action_specification.all()[0].value
         survey_id = str(survey_id)
-        plug_id = self._plug.plug_specification.all()[0].id
+        plug_id = self._plug.plug_action_specification.all()[0].id
         print("plug_id")
         print(plug_id)
         redirect_uri = "https://l.grplug.com/wizard/surveymonkey/webhook/event/%s/" % (plug_id)
