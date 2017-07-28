@@ -3,10 +3,11 @@ from apps.gp.controllers.exception import ControllerError
 import shopify
 from django.conf import settings
 import re
-from apps.gp.models import StoredData
+from apps.gp.models import StoredData, ActionSpecification
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.controllers.utils import get_dict_with_source_data
+from meli_client import meli
 
 
 class EbayController(BaseController):
@@ -14,7 +15,40 @@ class EbayController(BaseController):
 
 
 class MercadoLibreController(BaseController):
-    pass
+    _token = None
+    _client = None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+        self._client = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(MercadoLibreController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._token = self._connection_object.token
+                except Exception as e:
+                    print("Error getting the mercadolibre token")
+
+    def test_connection(self):
+        print(self._plug.plug_action_specification.all()[0].value)
+        return self.get_me() is not None
+
+    def get_me(self):
+        params = {'access_token': self._token}
+        return self._client.get(path="/users/me", params=params).json()
+
+    def get_sites(self):
+        params = {'access_token': self._token}
+        return self._client.get(path="/sites", params=params).json()
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'site':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.get_sites())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class AmazonSellerCentralController(BaseController):

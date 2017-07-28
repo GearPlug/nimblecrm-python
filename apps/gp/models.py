@@ -10,7 +10,8 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
                'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram',
                'connection_getresponse', 'connection_getresponse', 'connection_twitter', 'connection_surveymonkey',
                'connection_zohocrm', 'connection_wunderlist', 'connection_sms', 'connection_youtube', 'connection_smtp',
-               'connection_salesforce', 'connection_shopify', 'connection_hubspotcrm', 'connection_evernote']
+               'connection_salesforce', 'connection_shopify', 'connection_hubspotcrm', 'connection_evernote',
+               'connection_mercadolibre']
 
 
 class Category(models.Model):
@@ -293,6 +294,7 @@ class SlackConnection(models.Model):
     def __str__(self):
         return self.name
 
+
 class EvernoteConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_evernote')
     name = models.CharField('name', max_length=200)
@@ -339,6 +341,7 @@ class ZohoCRMConnection(models.Model):
     def __str__(self):
         return self.name
 
+
 class HubSpotConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_hubspotcrm')
     token = models.CharField('token', max_length=300)
@@ -347,6 +350,7 @@ class HubSpotConnection(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class SMSConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_sms')
@@ -379,6 +383,15 @@ class SMTPConnection(models.Model):
         return self.name
 
 
+class MercadoLibreConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mercadolibre')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
     name = models.CharField('name', max_length=120)
@@ -403,7 +416,7 @@ class Plug(models.Model):
 
 
 class PlugActionSpecification(models.Model):
-    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='plug_action_specification',)
+    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='plug_action_specification', )
     action_specification = models.ForeignKey(ActionSpecification, on_delete=models.CASCADE,
                                              related_name='action_specification')
     value = models.CharField('value', max_length=1000)

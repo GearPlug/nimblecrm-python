@@ -20,13 +20,14 @@ from apps.connection.myviews.SurveyMonkeyViews import *
 from apps.connection.myviews.SMSViews import *
 from apps.connection.myviews.SalesforceViews import *
 from apps.connection.myviews.SMTPViews import *
+from apps.connection.myviews.MercadoLibreViews import *
 from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
     GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection, GoogleCalendarConnection, \
     YouTubeConnection, SMSConnection, ShopifyConnection, HubSpotConnection, MySQLConnection, EvernoteConnection, \
-    SalesforceConnection
+    SalesforceConnection, MercadoLibreConnection
 
 from oauth2client import client
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
@@ -37,6 +38,7 @@ import requests
 from evernote.api.client import EvernoteClient
 import evernote.edam.type.ttypes as Types
 from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
+from meli_client import meli
 
 GOOGLE_DRIVE_SCOPE = ''
 GOOGLE_AUTH_URL = 'http://localhost:8000/connection/google_auth/'
@@ -151,7 +153,8 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey','evernote']:  # Creación con url de authorization.
+            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey', 'evernote',
+                                          'mercadolibre']:  # Creación con url de authorization.
                 name = 'create_with_auth'
             elif connector.name.lower() == 'facebook':  # Especial para facebook
                 name = 'facebook/create'
@@ -165,7 +168,8 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey','evernote']:  # Creación con url de authorization.
+            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey',
+                                          'evernote']:  # Creación con url de authorization.
                 name = 'create_with_auth'
             elif connector.name.lower() == 'facebook':  # Especial para facebook
                 name = 'facebook/create'
@@ -224,6 +228,9 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             request_token = client.get_request_token(settings.EVERNOTE_REDIRECT_URL)
             self.request.session['oauth_secret_evernote'] = request_token['oauth_token_secret']
             context['authorization_url'] = client.get_authorize_url(request_token)
+        elif connector == ConnectorEnum.MercadoLibre:
+            flow = get_mercadolibre_auth()
+            context['authorization_url'] = flow
         return context
 
 
@@ -252,6 +259,30 @@ class TestConnectionView(LoginRequiredMixin, View):
             controller = controller_class(connection_object)
         print(controller)
         return JsonResponse({'data': controller.test_connection(), 'connection_test': controller.test_connection()})
+
+
+class MercadoLibreAuthView(View):
+    def get(self, request, *args, **kwargs):
+        code = request.GET['code']
+        token = get_mercadolibre_auth(code)
+        request.session['mercadolibre_code'] = token
+        return redirect(reverse('connection:mercadolibre_auth_success_create_connection'))
+
+
+class MercadoLibreAuthSuccessCreateConnection(TemplateView):
+    template_name = 'connection/mercadolibre/success.html'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if 'mercadolibre_code' in request.session:
+                access_token = request.session.pop('mercadolibre_code')
+                c = Connection.objects.create(user=request.user, connector_id=ConnectorEnum.MercadoLibre.value)
+                n = int(MercadoLibreConnection.objects.filter(connection__user=request.user).count()) + 1
+                mlc = MercadoLibreConnection.objects.create(connection=c, name="MercadoLibre Connection # %s" % n,
+                                                            token=access_token)
+        except Exception as e:
+            print("Error creating the MercadoLibre Connection.")
+        return super(MercadoLibreAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
 
 class GoogleAuthView(View):
@@ -382,6 +413,14 @@ class InstagramAuthSuccessCreateConnection(TemplateView):
 def get_instagram_auth():
     return InstagramAPI(client_id=settings.INSTAGRAM_CLIENT_ID, client_secret=settings.INSTAGRAM_CLIENT_SECRET,
                         redirect_uri=INSTAGRAM_AUTH_URL)
+
+
+def get_mercadolibre_auth(code=None):
+    meli_obj = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
+    if code:
+        return meli_obj.authorize(code=code, redirect_URI=settings.MERCADOLIBRE_REDIRECT_URL)
+    else:
+        return meli_obj.auth_url(redirect_URI=settings.MERCADOLIBRE_REDIRECT_URL)
 
 
 class SalesforceAuthView(View):
