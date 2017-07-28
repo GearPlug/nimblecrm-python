@@ -4,14 +4,16 @@
 {% block body_content %}
     <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
           method="post" autocomplete="off">
-        <a href="javascript:auth('{{ salesforce_auth_url }}')">Salesforce Auth</a>
+        <a href="javascript:auth('{{ shopify_auth_url }}')">Evernote Auth</a>
         {% csrf_token %}
     </form>
+    {{ request.session.shopify_auth_token }}
 {% endblock %}
 
 
 {% block scripts %}
     {{ block.super }}
+
     <script type="application/javascript">
         function auth(url) {
             var thisIsAnObject = {foo: 'bar'};

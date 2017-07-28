@@ -4,7 +4,7 @@ from apps.gp.controllers.utils import dynamic_import
 
 
 class ConnectorEnum(Enum):
-    Facebook = 1, 'lead'
+    FacebookLeads = 1, 'lead'
     MySQL = 2, 'database'
     SugarCRM = 3, 'crm'
     MailChimp = 4, 'email_marketing'
@@ -45,7 +45,9 @@ class ConnectorEnum(Enum):
     GitLab = 39, 'repository'
     Shopify = 40, 'ecomerce'
     Dropbox = 41, ''
-    Mandrill = 42, 'email_marketing'
+    Magento = 42, 'crm'
+    Asana = 43, 'project_management'
+    Mandrill = 44, 'email_marketing'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
@@ -56,13 +58,18 @@ class ConnectorEnum(Enum):
     def get_connector_data(connector):
         return ConnectorEnum.get_model(connector), ConnectorEnum.get_fields(connector)
 
-    def get_connector(connector_id):
-        if isinstance(connector_id, ConnectorEnum):
-            connector_id = connector_id.value
-        connector_id = int(connector_id)
-        for field in ConnectorEnum:
-            if connector_id == int(field.value):
-                return field
+    def get_connector(connector_id=None, name=None):
+        if connector_id is not None:
+            if isinstance(connector_id, ConnectorEnum):
+                connector_id = connector_id.value
+            connector_id = int(connector_id)
+            for field in ConnectorEnum:
+                if connector_id == int(field.value):
+                    return field
+        elif name is not None and isinstance(name, str):
+            for field in ConnectorEnum:
+                if name.lower() == field.name.lower():
+                    return field
 
     def get_connector_list():
         return [field for field in ConnectorEnum]

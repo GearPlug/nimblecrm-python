@@ -41,8 +41,8 @@
             {% elif request.session.target_connection_id %}
                 $('select#id_connection').val({{ request.session.target_connection_id }});
             {% endif %}
-            var url_actions = "{% url 'wizard:action_list' %}";
-            $.ajax({method: "POST", url: url_actions, data: {type: '{{ plug_type }}', }})
+            var url_actions = "{% url 'plug:action_list' %}";
+            $.ajax({method: "POST", url: url_actions, data: {type: '{{ plug_type }}',}})
                 .done(function (response) {
                     var actions = response;
                     var selectList = document.createElement("select");
@@ -58,7 +58,7 @@
 
             $(document).on('change', '#action_list_selector', function () {
                 var value = $(this).val();
-                var url_specifications = "{% url 'wizard:action_specifications' pk=123 %}".replace(/123/, value.toString());
+                var url_specifications = "{% url 'plug:action_specification_list' action_id=123 %}".replace(/123/, value.toString());
                 if (value != '') {
                     $.ajax({method: "POST", url: url_specifications, data: {pk: value}})
                         .done(function (response) {

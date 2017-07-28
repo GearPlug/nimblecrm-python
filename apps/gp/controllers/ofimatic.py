@@ -12,7 +12,11 @@ import requests
 from apiclient import discovery
 import json
 import uuid
-
+from evernote.api.client import EvernoteClient
+import evernote.edam.type.ttypes as Types
+from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
+from evernote.edam.type.ttypes import NoteSortOrder
+import re
 
 class GoogleSpreadSheetsController(BaseController):
     _credential = None
@@ -371,3 +375,107 @@ class GoogleCalendarController(BaseController):
     def get_mapping_fields(self, **kwargs):
         fields = self.get_meta()
         return [MapField(f, controller=ConnectorEnum.GoogleCalendar) for f in fields]
+
+class EvernoteController(BaseController):
+    _token = None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(EvernoteController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._token = self._connection_object.token
+                except Exception as e:
+                    print("Error getting the Evernote token")
+
+    def test_connection(self):
+        client=EvernoteClient(self._token)
+        try:
+            client.get_note_store()
+            return self._token is not None
+        except Exception as e:
+            return self._token is None
+
+
+    def download_to_stored_data(self, connection_object, plug, list=None):
+        print("source from evernote")
+        notes= self.get_notes(self._token)
+        print("notes")
+        print(notes)
+        new_data= []
+        for item in notes:
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                          object_id=item['id'])
+            if not q.exists():
+                for column in item:
+                    new_data.append(StoredData(name=column, value=item[column], object_id=item['id'],
+                                               connection=connection_object.connection, plug=plug))
+        extra = {}
+        for item in new_data:
+            extra['status'] = 's'
+            extra = {'controller': 'evernote'}
+            self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                item.object_id, item.plug.id, item.connection.id), extra=extra)
+            item.save()
+        return False
+
+    def get_notes(self, token):
+        print("get_notes")
+        authToken = token
+        print("token")
+        print(authToken)
+        client = EvernoteClient(token=token)
+        noteStore = client.get_note_store()
+        filter = NoteFilter()
+        filter.ascending = False
+        spec = NotesMetadataResultSpec()
+        spec.includeTitle = True
+        ourNoteList = noteStore.findNotesMetadata(token, filter, 0, 100, spec)
+        list=[]
+        for note in ourNoteList.notes:
+            wholenote = noteStore.getNote(authToken, note.guid, True, True, True, True)
+            m = re.findall('<en-note[^>]*>(.*?)<\/en-note>', str(wholenote))
+            note={'title':note.title, 'id': note.guid, 'content': m[0]}
+            list.append(note)
+        return list
+
+    def get_target_fields(self, **kwargs):
+        return [{'name':'title','type':'varchar','required':True},{'name':'content','type':'varchar', 'required':True}]
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.Evernote) for f in fields]
+
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if self._plug is not None:
+            obj_list = []
+            extra = {'controller': 'evernote'}
+            for item in data_list:
+                    note = self.create_note(item)
+                    print("note")
+                    print(note)
+                    if note.guid :
+                        extra['status'] = 's'
+                        self._log.info('Item: %s successfully sent.' % (note.guid), extra=extra)
+                        obj_list.append(note.guid)
+                    else:
+                        extra['status'] = 'f'
+                        self._log.info('Item: failed to send.', extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")
+
+    def create_note(self,data):
+        client = EvernoteClient(token=self._token)
+        c=data['content']
+        noteStore = client.get_note_store()
+        note = Types.Note()
+        note.title = data['title']
+        note.content = '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'
+        note.content +='<en-note>'+c+'</en-note>'
+        return noteStore.createNote(note)

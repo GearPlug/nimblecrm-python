@@ -13,7 +13,16 @@ class MapField(object):
     """
 
     def __init__(self, d, controller=None, **kwargs):
-        if controller == ConnectorEnum.SugarCRM:
+        if controller == ConnectorEnum.MySQL:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'null' in d:
+                if d['null'] is not True:
+                    self.required = True
+            self.field_type = 'text'
+            self.max_length = 200
+        elif controller == ConnectorEnum.SugarCRM:
             if 'name' in d:
                 self.name = d['name']
             if 'label' in d:
@@ -160,11 +169,11 @@ class MapField(object):
                 self.name = d['name']
             if 'label' in d:
                 self.label = d['label']
-            if 'favorited' in d:
-                self.required = d['favorited']
+            if  d['name']=="dealname" or d['name']=="name" or d['name']=="firstname":
+                self.required = d['name']
             if 'type' in d:
                 self.field_type = d['type']
-            if  d['type']=='enumeration':
+            if d['type'] == 'enumeration':
                 self.choices = [(choice, choice) for choice in d['options']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
@@ -180,6 +189,14 @@ class MapField(object):
                 self.choices = [(choice, choice) for choice in d['values']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
+        elif controller == ConnectorEnum.Evernote:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
         else:
             if 'name' in d:
                 self.name = d['name']
