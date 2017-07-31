@@ -6,7 +6,7 @@ from apps.wizard.views import MSSQLFieldList, GoogleDriveSheetList, GoogleSheets
     GetResponseCampaignsList, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
     GoogleCalendarWebhookEvent, AJAXGetSurveyListView, SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
     YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent, SalesforceSObjectList, SalesforceEventList, \
-    SalesforceWebhookEvent, MercadoLibreSiteList
+    SalesforceWebhookEvent
 
 from apps.connection.views import ListConnectionView, ListConnectorView, CreateConnectionView
 from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, DeleteGearView, CreateGearMapView
@@ -99,7 +99,4 @@ urlpatterns = [
     url(r"async/salesforce/sobjects/list/", SalesforceSObjectList.as_view(), name='async_salesforce_sobjects'),
     url(r"async/salesforce/event/list/", SalesforceEventList.as_view(), name='async_salesforce_events'),
     url(r"salesforce/webhook/event/", SalesforceWebhookEvent.as_view(), name='async_salesforce_events'),
-
-    # MercadoLibre
-    url("async/mercadolibre/site/list/", MercadoLibreSiteList.as_view(), name='async_mercadolibre_sites'),
 ]

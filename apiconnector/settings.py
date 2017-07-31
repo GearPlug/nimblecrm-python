@@ -274,7 +274,7 @@ ASANA_REDIRECT_URL = 'https://26677b10.ngrok.io/connection/auth-callback/asana/'
 ASANA_WEBHOOK_URL = ''
 
 # Mercadolibre
-MERCADOLIBRE_CLIENT_ID='x'
-MERCADOLIBRE_CLIENT_SECRET='x'
-MERCADOLIBRE_REDIRECT_URL='https://111914fc.ngrok.io/connection/mercadolibre_auth/'
+MERCADOLIBRE_CLIENT_ID=''
+MERCADOLIBRE_CLIENT_SECRET=''
+MERCADOLIBRE_REDIRECT_URL='https://9d25c5df.ngrok.io/connection/mercadolibre_auth/'
 

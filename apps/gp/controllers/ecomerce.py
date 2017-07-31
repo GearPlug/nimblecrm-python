@@ -16,11 +16,11 @@ class EbayController(BaseController):
 
 class MercadoLibreController(BaseController):
     _token = None
+    _site = None
     _client = None
 
     def __init__(self, *args, **kwargs):
         BaseController.__init__(self, *args, **kwargs)
-        self._client = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
 
     def create_connection(self, *args, **kwargs):
         if args:
@@ -28,12 +28,100 @@ class MercadoLibreController(BaseController):
             if self._connection_object is not None:
                 try:
                     self._token = self._connection_object.token
+                    self._site = self._connection_object.site
+                    self._client = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID,
+                                             client_secret=settings.MERCADOLIBRE_CLIENT_SECRET, site_id=self._site)
                 except Exception as e:
                     print("Error getting the mercadolibre token")
 
     def test_connection(self):
-        print(self._plug.plug_action_specification.all()[0].value)
         return self.get_me() is not None
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            extra = {'controller': 'mercadolibre'}
+            for obj in data_list:
+                res = self.list_product(obj)
+            return
+        raise ControllerError("Incomplete.")
+
+    def list_product(self, obj):
+        params = {'access_token': self._token}
+        result = self._client.post(path="/items", body=obj, params=params)
+        print(result.json())
+        return result
+
+    def get_target_fields(self, **kwargs):
+        return self.get_fields()
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_fields()
+        return [MapField(f, controller=ConnectorEnum.MercadoLibre) for f in fields]
+
+    def get_fields(self):
+        return [
+            {
+                'name': 'title',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'category_id',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'price',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'currency_id',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'available_quantity',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'buying_mode',
+                'required': False,
+                'type': 'coices',
+                'values': ['buy_it_now']
+            }, {
+                'name': 'listing_type_id',
+                'required': False,
+                'type': 'choices',
+                'values': [l['id'] for l in self.get_listing_types()]
+            }, {
+                'name': 'condition',
+                'required': False,
+                'type': 'choices',
+                'values': ['new', 'used', 'not_specified']
+            }, {
+                'name': 'description',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'video_id',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'warranty',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'pictures',
+                'required': False,
+                'type': 'text'
+            },
+
+        ]
 
     def get_me(self):
         params = {'access_token': self._token}
@@ -43,12 +131,14 @@ class MercadoLibreController(BaseController):
         params = {'access_token': self._token}
         return self._client.get(path="/sites", params=params).json()
 
-    def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
-        if action_specification.name.lower() == 'site':
-            return tuple({'id': c['name'], 'name': c['name']} for c in self.get_sites())
-        else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+    def get_categories(self):
+        # No se está utilizando porque no hay forma de saber cuales categorías son "hojas"
+        params = {'access_token': self._token}
+        return self._client.get(path="/sites/{}/categories".format(self._site), params=params).json()
+
+    def get_listing_types(self):
+        params = {'access_token': self._token}
+        return self._client.get(path="/sites/{}/listing_types".format(self._site), params=params).json()
 
 
 class AmazonSellerCentralController(BaseController):
@@ -232,4 +322,3 @@ class ShopifyController(BaseController):
                     find = True
             if find is False: values[i['name']] = ""
         return values
-

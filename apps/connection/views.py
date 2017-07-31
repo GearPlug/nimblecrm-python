@@ -158,9 +158,9 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
             # Creación con url de authorization como OAuth (Trabajan con token en su mayoria.)
-            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey', 'evernote', 'asana','mercadolibre']:
+            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey', 'evernote', 'asana']:
                 name = 'create_with_auth'
-            elif connector.name.lower() in ['facebook', 'hubspot']:  # Especial
+            elif connector.name.lower() in ['facebook', 'hubspot', 'mercadolibre']:  # Especial
                 name = '{0}/create'.format(connector.name.lower())
             else:  # Sin autorization. Creación por formulario.
                 name = 'create'
@@ -173,9 +173,9 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
             # Creación con url de authorization como OAuth (Trabajan con token en su mayoria.)
-            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey', 'evernote', 'asana', 'mercadolibre']:
+            if connector.name.lower() in ['googlesheets', 'slack', 'surveymonkey', 'evernote', 'asana']:
                 name = 'create_with_auth'
-            elif connector.name.lower() in ['facebook', 'hubspot']:  # Especial
+            elif connector.name.lower() in ['facebook', 'hubspot', 'mercadolibre']:  # Especial
                 name = '{0}/create'.format(connector.name.lower())
             else:  # Sin autorization. Creación por formulario.
                 name = 'create'
@@ -242,6 +242,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         elif connector == ConnectorEnum.MercadoLibre:
             flow = get_mercadolibre_auth()
             context['authorization_url'] = flow
+            context['sites'] = MercadoLibreConnection.SITES
         return context
 
 
@@ -279,19 +280,27 @@ class MercadoLibreAuthView(View):
         return redirect(reverse('connection:mercadolibre_auth_success_create_connection'))
 
 
+class AjaxMercadoLibrePostSiteView(View):
+    def post(self, request, *args, **kwargs):
+        request.session['mercadolibre_site'] = request.POST.get('site_id', None)
+        return JsonResponse({'success': True})
+
+
 class MercadoLibreAuthSuccessCreateConnection(TemplateView):
     template_name = 'connection/mercadolibre/success.html'
 
     def get(self, request, *args, **kwargs):
         try:
-            if 'mercadolibre_code' in request.session:
+            if 'mercadolibre_code' in request.session and 'mercadolibre_site' in request.session:
                 access_token = request.session.pop('mercadolibre_code')
+                site_id = request.session.pop('mercadolibre_site')
                 c = Connection.objects.create(user=request.user, connector_id=ConnectorEnum.MercadoLibre.value)
                 n = int(MercadoLibreConnection.objects.filter(connection__user=request.user).count()) + 1
                 mlc = MercadoLibreConnection.objects.create(connection=c, name="MercadoLibre Connection # %s" % n,
-                                                            token=access_token)
+                                                            token=access_token, site=site_id)
         except Exception as e:
             print("Error creating the MercadoLibre Connection.")
+            raise
         return super(MercadoLibreAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
 
 

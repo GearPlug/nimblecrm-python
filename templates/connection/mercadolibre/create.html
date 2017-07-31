@@ -4,7 +4,12 @@
 {% block body_content %}
     <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
           method="post" autocomplete="off">
-        <a href="javascript:auth('{{ mercadolibre_auth_url }}')">Mercadolibre Auth</a>
+        <select id="site_id" name="site_id">
+            {% for site in sites %}
+                <option id="{{ site.0 }}">{{ site.1 }}</option>
+            {% endfor %}
+        </select>
+        <a href="javascript:auth('{{ authorization_url }}')">MercadoLibre Auth</a>
         {% csrf_token %}
     </form>
 {% endblock %}
@@ -23,5 +28,16 @@
                 window.location.reload();
             }, 100);
         }
+
+        $("#site_id").change(function () {
+            var url = "{% url 'connection:ajax_mercadolibre_post_site' %}";
+            $.ajax({
+                method: "POST",
+                url: url,
+                data: {site_id: $(this).find('option:selected').attr('id')}
+            }).done(function (response) {
+                console.log('POSTed')
+            });
+        });
     </script>
 {% endblock %}

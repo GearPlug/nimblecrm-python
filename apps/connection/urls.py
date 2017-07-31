@@ -11,7 +11,7 @@ from apps.connection.views import CreateConnectionView, ListConnectorView, AJAXF
     ShopifyAuthSuccessCreateConnection, AJAXSMTPTestConnection, TestConnectionView, CreateConnectionSuccessView, \
     HubspotAuthView, HubspotAuthSuccessCreateConnection, EvernoteAuthView, EvernoteAuthSuccessCreateConnection, \
     AsanaAuthView, AJAXMandrillTestConnection, CreateAuthorizatedConnectionView, MercadoLibreAuthView, \
-    MercadoLibreAuthSuccessCreateConnection
+    MercadoLibreAuthSuccessCreateConnection, AjaxMercadoLibrePostSiteView
 
 from apps.gp.enum import GoogleAPI
 
@@ -95,6 +95,8 @@ urlpatterns = [
     url(r"^mercadolibre_auth/$", MercadoLibreAuthView.as_view(), name="mercadolibre_auth"),
     url(r"^mercadolibre_auth/success/$", MercadoLibreAuthSuccessCreateConnection.as_view(),
         name="mercadolibre_auth_success_create_connection"),
+    url(r"^ajax/mercadolibre/post/site/$", AjaxMercadoLibrePostSiteView.as_view(),
+        name="ajax_mercadolibre_post_site"),
 
     # AuthSuccess
     url(r'^auth/success/$', AuthSuccess.as_view(), name="auth_sucess"),

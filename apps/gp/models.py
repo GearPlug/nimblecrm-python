@@ -425,9 +425,13 @@ class AsanaConnection(models.Model):
 
 
 class MercadoLibreConnection(models.Model):
+    SITES = (('MLA', 'Argentina'), ('MLB', 'Brazil'), ('MCO', 'Colombia'), ('MCR', 'Costa Rica'), ('MEC', 'Ecuador'),
+             ('MLC', 'Chile'), ('MLM', 'Mexico'), ('MLU', 'Uruguay'), ('MLV', 'Venezuela'), ('MPA', 'Panama'),
+             ('MPE', 'Peru'), ('MPT', 'Portugal'), ('MRD', 'Republica Dominicana'))
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mercadolibre')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
+    site = models.CharField(max_length=3, choices=SITES)
 
     def __str__(self):
         return self.name
