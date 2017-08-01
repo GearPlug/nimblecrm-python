@@ -10,7 +10,8 @@ connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm',
                'connection_twitter', 'connection_surveymonkey', 'connection_googlecalendar', 'connection_instagram',
                'connection_getresponse', 'connection_getresponse', 'connection_twitter', 'connection_surveymonkey',
                'connection_zohocrm', 'connection_wunderlist', 'connection_sms', 'connection_youtube', 'connection_smtp',
-               'connection_salesforce', 'connection_shopify', 'connection_hubspotcrm', 'connection_evernote']
+               'connection_salesforce', 'connection_shopify', 'connection_hubspotcrm', 'connection_evernote',
+               'connection_magento']
 
 
 class Category(models.Model):
@@ -174,6 +175,16 @@ class MSSQLConnection(models.Model):
     def __str__(self):
         return self.name
 
+class MagentoConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_magento')
+    name = models.CharField('name', max_length=200)
+    host = models.CharField('host', max_length=200)
+    port = models.CharField('port', max_length=7)
+    connection_user = models.CharField('user', max_length=60)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
 
 class SugarCRMConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_sugarcrm')

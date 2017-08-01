@@ -177,6 +177,19 @@ class MapField(object):
                 self.choices = [(choice, choice) for choice in d['options']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
+        elif controller == ConnectorEnum.Magento:
+            if 'name' in d:
+                self.name = d['name']
+            if 'label' in d:
+                self.label = d['label']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'choices' in d:
+                self.choices = [(choice, choice) for choice in d['choices']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
         elif controller == ConnectorEnum.Evernote:
             if 'name' in d:
                 self.name = d['name']

@@ -7,7 +7,10 @@ from apps.gp.models import StoredData
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.controllers.utils import get_dict_with_source_data
-
+from magento import MagentoAPI
+from apps.gp.models import StoredData, ActionSpecification, Action
+import json
+import ast
 
 class EbayController(BaseController):
     pass
@@ -198,4 +201,180 @@ class ShopifyController(BaseController):
                     find = True
             if find is False: values[i['name']] = ""
         return values
+
+class MagentoController(BaseController):
+    _connection = None
+    _host = None
+    _port = None
+    _connection_user = None
+    _connection_password = None
+
+    def __init__(self, *args, **kwargs):
+        super(MagentoController, self).__init__(*args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(MagentoController, self).create_connection(*args)
+            if self._connection_object is not None:
+                host = self._connection_object.host
+                port = self._connection_object.port
+                user = self._connection_object.connection_user
+                password = self._connection_object.connection_password
+                try:
+                    self._connection = MagentoAPI(host=host, port=port, api_user=user, api_key=password)
+                except Exception as e:
+                    print("Error create connection Magento")
+                    print(e)
+                    self._connection is None
+
+    def test_connection(self):
+        return self._connection is not None
+
+    def get_options(self):
+        return [{'name': 'orders', 'id': 'orders'}, {'name': 'products', 'id': 'products'},
+                {'name': 'customers', 'id': 'customers'}]
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        type=Action.objects.get(pk=action_specification.action_id)
+        options=[]
+        if action_specification.name.lower() == 'field':
+            for o in self.get_options():
+                if (type.action_type=="target" and o['id']=="orders"):
+                    pass
+                else:
+                    options.append({'name': o['name'], 'id': o['id']})
+            return tuple(options)
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def download_to_stored_data(self, connection_object, plug):
+        if plug is None:
+            plug = self._plug
+        field_id = self._plug.plug_action_specification.all()[0].value
+        magento=self._connection
+
+        if (field_id == "orders"):
+            details = magento.sales_order.list()
+        elif (field_id == "products"):
+            details = magento.catalog_product.list()
+        elif (field_id == "customers"):
+            details = magento.customer.list()
+
+        new_data = []
+        for detail in details:
+            id = int(self.get_id(detail,field_id))
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id)
+            if not q.exists():
+                for k,v in detail.items():
+                    if v is None: v=''
+                    new_data.append(StoredData(name=k, value=v, object_id=id,
+                                               connection=connection_object.connection, plug=plug))
+        if new_data:
+            extra = {'controller': 'magento'}
+            for item in new_data:
+                try:
+                    self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                        item.object_id, item.plug.id, item.connection.id), extra=extra)
+                    item.save()
+                except:
+                    extra['status'] = 'f'
+                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+        return True
+
+    def get_id(self,item, field_id):
+        if (field_id == "orders"):
+            id = item['order_id']
+        elif (field_id == "products"):
+            id = item['product_id']
+        elif (field_id == "customers"):
+            id = item['customer_id']
+        return id
+
+    def get_target_fields(self, **kwargs):
+        return self.get_fields()
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_fields()
+        return [MapField(f, controller=ConnectorEnum.Magento) for f in fields]
+
+    def get_fields(self):
+        topic_id = self._plug.plug_action_specification.all()[0].value
+        if (topic_id == 'customers'):
+            group=self._connection.customer_group.list()
+            return [{"name": "email", "required": True, "type": "varchar", "label": "Email"},
+                    {"name": "firstname", "required": True, "type": "varchar", "label": "First Name"},
+                    {"name": "lastname", "required": True, "type": "varchar", "label": "Last Name"},
+                    {"name": "group_id", "required": True, "type": "int", "label" : "Group", "choices": group},
+                    {"name": "prefix", "required": False, "type": "varchar", "label" : "Prefix"},
+                    {"name": "suffix", "required": False, "type": "varchar", "label" : "Suffix"},
+                    {"name": "dob", "required": False, "type": "varchar", "label" : "Date Of Birth"},
+                    {"name": "taxvat", "required": False, "type": "varchar", "label" : "Tax/VAT Number"},
+                    {"name": "gender", "required": False, "type": "int", "label" : "Gender",
+                     "choices": [{'id':1, "name": "Male"}, {"id":2, "name": "Female"}]},
+                    {"name": "middlename", "required": False, "type": "varchar", "label": "Middle Name/Initial"},
+                    ]
+        if (topic_id == 'products'):
+            type=self._connection.catalog_product_type.list()
+            attribute = self._connection.catalog_product_attribute_set.list()
+            return [{"name": "product_type", "required": True, "type": 'varchar', "label":"Product Type","choices":type},
+                    {"name": "attribute_set_id", "required": True, "type": 'varchar', "label": "Attribute Set",
+                     "choices": attribute},
+                    {"name": "sku", "required": True, "type": 'varchar', "label": "SKU"},
+                    {"name": "name", "required": True, "type": 'varchar', "label": "Name"},
+                    {"name": "description", "required": False, "type": "varchar", "label": "Description"},
+                    {"name": "short_description", "required": False, "type": "varchar", "label": "Short Description"},
+                    {"name": "weight", "required": False, "type": "varchar", "label": "Weight"},
+                    {"name": "url_key", "required": False, "type": "varchar", "label": "URL Key"},
+                    {"name": "price", "required": False, "type": "varchar", "label": "Price"},
+                    {"name": "special_price", "required": False, "type": "varchar", "label": "Special Price"},
+                    {"name": "special_from_date", "required": False, "type": "varchar", "label": "Special Price From Date"},
+                    {"name": "special_to_date", "required": False, "type": "varchar", "label": "Special Price To Date"},
+                    ]
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if self._plug is not None:
+            obj_list = []
+            field_id = self._plug.plug_action_specification.all()[0].value
+            extra = {'controller': 'magento'}
+            for item in data_list:
+                try:
+                    if (field_id == "customers"):
+                        response=self.create_customer(item)
+                    if (field_id == "products"):
+                        response = self.create_product(item)
+                    extra['status'] = 's'
+                    self._log.info('Item: %s successfully sent.' % (int(response)), extra=extra)
+                    obj_list.append(int(response))
+                except Exception as e:
+                    print(e)
+                    extra['status'] = 'f'
+                    self._log.info('Item: failed to send.', extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")
+
+    def create_customer(self, item):
+        customer={i:item[i] for i in item}
+        data=item["group_id"]
+        data= ast.literal_eval(data)
+        customer["group_id"] = int(data["customer_group_id"])
+        data = item["gender"]
+        data = ast.literal_eval(data)
+        customer["gender"] = int(data["id"])
+        return self._connection.customer.create(customer)
+
+    def create_product(self, item):
+        product={i:item[i] for i in item}
+        data = product.pop('product_type', None)
+        data = ast.literal_eval(data)
+        type=data["type"]
+        data = product.pop('attribute_set_id', None)
+        data = ast.literal_eval(data)
+        attribute = data["set_id"]
+        sku=product.pop('sku',None)
+        return self._connection.catalog_product.create(type,attribute,sku,product)
+
+
 
