@@ -4,7 +4,7 @@ from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
-from apps.gp.models import StoredData, ActionSpecification
+from apps.gp.models import StoredData, ActionSpecification, HubSpotConnection
 from simple_salesforce import Salesforce
 from simple_salesforce.login import SalesforceAuthenticationFailed
 from dateutil.parser import parse
@@ -19,6 +19,7 @@ from apps.gp.models import StoredData
 from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 import xml.etree.ElementTree as ET
+from django.conf import settings
 
 
 class CustomSugarObject(sugarcrm.SugarObject):
@@ -589,11 +590,11 @@ class HubSpotController(BaseController):
                 try:
                     self._token = self._connection_object.token
                     self._refresh_token = self._connection_object.refresh_token
-
                 except Exception as e:
                     print("Error getting the hubspot token")
 
     def test_connection(self):
+
         response = self.request()
         if 'status' in response and response['status'] == "error":
             self.get_refresh_token(self._refresh_token)

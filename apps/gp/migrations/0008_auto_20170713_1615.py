@@ -7,7 +7,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('gp', '0007_auto_20170706_1606'),
     ]
@@ -16,16 +15,19 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='gear',
             name='source',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='gear_source', to='gp.Plug'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='gear_source',
+                                    to='gp.Plug'),
         ),
         migrations.AlterField(
             model_name='gear',
             name='target',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='gear_target', to='gp.Plug'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='gear_target',
+                                    to='gp.Plug'),
         ),
         migrations.AlterField(
             model_name='plugactionspecification',
             name='plug',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='plug_action_specification', to='gp.Plug'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                    related_name='plug_action_specification', to='gp.Plug'),
         ),
     ]

@@ -4,7 +4,7 @@ from apps.gp.controllers.utils import dynamic_import
 
 
 class ConnectorEnum(Enum):
-    Facebook = 1, 'lead'
+    FacebookLeads = 1, 'lead'
     MySQL = 2, 'database'
     SugarCRM = 3, 'crm'
     MailChimp = 4, 'email_marketing'
@@ -45,7 +45,9 @@ class ConnectorEnum(Enum):
     GitLab = 39, 'repository'
     Shopify = 40, 'ecomerce'
     Dropbox = 41, ''
-    Magento= 42, 'ecomerce'
+    Magento = 42, 'ecomerce'
+    Asana = 43, 'project_management'
+    Mandrill = 44, 'email_marketing'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)

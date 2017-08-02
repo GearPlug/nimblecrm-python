@@ -1514,7 +1514,7 @@ class FacebookController(BaseController):
                     if s.action_specification.name.lower() == 'form':
                         self._form = s.value
                         # else:
-                        #     print("There is no Plug asigned to the FacebookController")
+                        #     print("There is no Plug asigned to the FacebookLeadsController")
         except:
             print("Error asignando los specifications")
 

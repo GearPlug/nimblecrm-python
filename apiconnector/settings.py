@@ -257,7 +257,7 @@ SHOPIFY_API_KEY_SECRET="d32f6b242ddaa2dd2b29bf3eb329a1c5"
 SHOPIFY_REDIRECT_URI="http://127.0.0.1:8000/connection/shopify_auth/"
 
 #Hubspot
-HUBSPOT_REDIRECT_URI="https://122eaa1d.ngrok.io/connection/hubspot_auth/"
+HUBSPOT_REDIRECT_URI="https://87b30496.ngrok.io/connection/hubspot_auth/"
 HUBSPOT_CLIENT_ID="633af850-f08a-42e5-a6e7-da65a177bcd5"
 HUBSPOT_CLIENT_SECRET="94e688b7-9390-4b59-a6df-151eac348e89"
 
@@ -265,3 +265,9 @@ HUBSPOT_CLIENT_SECRET="94e688b7-9390-4b59-a6df-151eac348e89"
 EVERNOTE_CONSUMER_KEY="ltorres-6238"
 EVERNOTE_CONSUMER_SECRET="a4673a77baca5424"
 EVERNOTE_REDIRECT_URL="http://127.0.0.1:8000/connection/evernote_auth/"
+
+# Asana
+ASANA_CLIENT_ID = '385400269218379'
+ASANA_CLIENT_SECRET = 'b06634b490e0408d8f575e38a2d7e7f3'
+ASANA_REDIRECT_URL = 'https://26677b10.ngrok.io/connection/auth-callback/asana/'
+ASANA_WEBHOOK_URL = ''
