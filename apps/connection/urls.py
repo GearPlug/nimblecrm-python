@@ -1,16 +1,11 @@
 from django.conf.urls import url
-from apps.connection.views import CreateConnectionView, ListConnectorView, AJAXFacebookGetAvailableConnectionsView, \
-    AJAXFacebookGetAvailableFormsView, AJAXFacebookGetAvailableLeadsView, \
-    AJAXMySQLTestConnection, AJAXSugarCRMTestConnection, AJAXMailChimpTestConnection, GoogleAuthView, \
-    AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, AJAXPostgreSQLTestConnection, \
-    AJAXMSSQLTestConnection, SlackAuthView, AuthSuccess, AJAXBitbucketTestConnection, \
-    AJAXJiraTestConnection, AJAXGetResponseTestConnection, TwitterAuthView, TwitterAuthSuccessCreateConnection, \
-    SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, InstagramAuthView, AJAXGetSurveyListView, \
-    InstagramAuthSuccessCreateConnection, SalesforceAuthView, SalesforceAuthSuccessCreateConnection, \
-    AJAXZohoCRMTestConnection, AJAXSMSTestConnection, AJAXSalesforceTestConnection, ShopifyAuthView, \
-    ShopifyAuthSuccessCreateConnection, AJAXSMTPTestConnection, TestConnectionView, CreateConnectionSuccessView, \
-    HubspotAuthView, HubspotAuthSuccessCreateConnection, EvernoteAuthView, EvernoteAuthSuccessCreateConnection, \
-    AsanaAuthView, AJAXMandrillTestConnection, CreateAuthorizatedConnectionView, MercadoLibreAuthView, \
+from apps.connection.views import CreateConnectionView, ListConnectorView, GoogleAuthView, \
+    AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, SlackAuthView, AuthSuccess, TwitterAuthView, \
+    TwitterAuthSuccessCreateConnection, SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, \
+    InstagramAuthView, AJAXGetSurveyListView, InstagramAuthSuccessCreateConnection, SalesforceAuthView, \
+    SalesforceAuthSuccessCreateConnection, ShopifyAuthView, ShopifyAuthSuccessCreateConnection, TestConnectionView, \
+    CreateConnectionSuccessView, HubspotAuthView, HubspotAuthSuccessCreateConnection, EvernoteAuthView, \
+    EvernoteAuthSuccessCreateConnection, AsanaAuthView, CreateAuthorizatedConnectionView, MercadoLibreAuthView, \
     MercadoLibreAuthSuccessCreateConnection, AjaxMercadoLibrePostSiteView
 
 from apps.gp.enum import GoogleAPI
@@ -100,40 +95,4 @@ urlpatterns = [
 
     # AuthSuccess
     url(r'^auth/success/$', AuthSuccess.as_view(), name="auth_sucess"),
-
-    # AJAX
-    url(r'ajax/facebook/get/connections/', AJAXFacebookGetAvailableConnectionsView.as_view(),
-        name='ajax_update_facebook_get_connections'),
-    url(r'ajax/facebook/get/forms/', AJAXFacebookGetAvailableFormsView.as_view(),
-        name='ajax_update_facebook_get_forms'),
-    url(r'ajax/facebook/get/leads/', AJAXFacebookGetAvailableLeadsView.as_view(),
-        name='ajax_update_facebook_get_leads'),
-    url(r'ajax/mysql/test_connection/', AJAXMySQLTestConnection.as_view(),
-        name='ajax_update_mysql_test_connection'),
-
-    url(r'ajax/sugarcrm/test_connection/', AJAXSugarCRMTestConnection.as_view(),
-        name='ajax_sugarcrm_test_connection'),
-
-    url(r'ajax/mailchimp/test_connection/', AJAXMailChimpTestConnection.as_view(),
-        name='ajax_mailchimp_test_connection'),
-    url(r'ajax/mandrill/test_connection/', AJAXMandrillTestConnection.as_view(),
-        name='ajax_mandrill_test_connection'),
-    url(r'ajax/postgresql/test_connection/', AJAXPostgreSQLTestConnection.as_view(),
-        name='ajax_update_postgresql_test_connection'),
-    url(r'ajax/mssql/test_connection/', AJAXMSSQLTestConnection.as_view(),
-        name='ajax_update_mssql_test_connection'),
-    url(r'ajax/bitbucket/test_connection/', AJAXBitbucketTestConnection.as_view(),
-        name='ajax_update_bitbucket_test_connection'),
-    url(r'ajax/jira/test_connection/', AJAXJiraTestConnection.as_view(),
-        name='ajax_update_jira_test_connection'),
-    url(r'ajax/getresponse/test_connection/', AJAXGetResponseTestConnection.as_view(),
-        name='ajax_update_getresponse_test_connection'),
-    url(r'ajax/zohocrm/test_connection/', AJAXZohoCRMTestConnection.as_view(),
-        name='ajax_zohocrm_test_connection'),
-    url(r'ajax/sms/test_connection/', AJAXSMSTestConnection.as_view(),
-        name='ajax_update_sms_test_connection'),
-    url(r'ajax/salesforce/test_connection/', AJAXSalesforceTestConnection.as_view(),
-        name='ajax_update_salesforce_test_connection'),
-    url(r'ajax/smtp/test_connection/', AJAXSMTPTestConnection.as_view(),
-        name='ajax_update_smtp_test_connection'),
 ]

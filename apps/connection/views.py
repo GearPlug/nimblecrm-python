@@ -7,23 +7,7 @@ from django.views.generic import CreateView, UpdateView, DeleteView, ListView, V
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect, HttpResponse
 from apps.connection.apps import APP_NAME as app_name
-from apps.connection.myviews.FacebookViews import *
-from apps.connection.myviews.MySQLViews import *
-from apps.connection.myviews.SugarCRMViews import *
-from apps.connection.myviews.PostgreSQLViews import *
-from apps.connection.myviews.MSSQLViews import *
-from apps.connection.myviews.MagentoViews import *
-from apps.connection.myviews.BitbucketViews import *
-from apps.connection.myviews.JiraViews import *
-from apps.connection.myviews.ZohoCRMViews import *
-from apps.connection.myviews.GetResponseViews import *
 from apps.connection.myviews.SurveyMonkeyViews import *
-from apps.connection.myviews.SMSViews import *
-from apps.connection.myviews.SalesforceViews import *
-from apps.connection.myviews.SMTPViews import *
-from apps.connection.myviews.MandrillViews import *
-from apps.connection.myviews.MercadoLibreViews import *
-from apps.connection.myviews.MailChimpViews import *
 from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
