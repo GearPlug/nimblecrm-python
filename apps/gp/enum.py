@@ -45,7 +45,7 @@ class ConnectorEnum(Enum):
     GitLab = 39, 'repository'
     Shopify = 40, 'ecomerce'
     Dropbox = 41, ''
-    Magento = 42, 'crm'
+    Magento = 42, 'ecomerce'
     Asana = 43, 'project_management'
     Mandrill = 44, 'email_marketing'
 

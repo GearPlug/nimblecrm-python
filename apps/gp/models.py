@@ -181,6 +181,18 @@ class MSSQLConnection(models.Model):
         return self.name
 
 
+class MagentoConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_magento')
+    name = models.CharField('name', max_length=200)
+    host = models.CharField('host', max_length=200)
+    port = models.CharField('port', max_length=7)
+    connection_user = models.CharField('user', max_length=60)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
+
+
 class SugarCRMConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
                                       related_name='connection_sugarcrm')
@@ -539,7 +551,6 @@ class Webhook(models.Model):
     is_active = models.BooleanField('is active', default=False)
     is_deleted = models.BooleanField('is deleted', default=False)
     expiration = models.CharField('expiration', max_length=200, null=True, default=None)
-
 
     def __str__(self):
         return '%s webhook of %s' % (self.name, self.plug)
