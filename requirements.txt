@@ -23,7 +23,7 @@ django-user-accounts==2.0.1
 django-uwsgi==0.1.6
 django-widget-tweaks==1.4.1
 djangorestframework==3.6.2
-docopt==0.6.2
+docopt==0.4.0
 facebook-sdk==2.0.0
 getresponse==0.1
 google-api-python-client==1.6.2
@@ -33,6 +33,7 @@ instagram==1.3.3
 jira==1.0.10
 kombu==4.0.2
 mailchimp3==2.0.11
+mandrill==1.0.57
 mysqlclient==1.3.10
 oauth2==1.9.0.post1
 oauth2client==4.0.0
@@ -44,6 +45,7 @@ pbr==3.0.0
 Pillow==4.1.1
 pkg-resources==0.0.0
 psycopg2==2.7.1
+pyactiveresource==2.1.2
 pyasn1==0.2.3
 pyasn1-modules==0.0.8
 pycparser==2.17
@@ -51,15 +53,19 @@ pymssql==2.1.3
 pyOpenSSL==17.0.0
 pyparsing==2.2.0
 python-dateutil==2.6.0
+python-magento==1.0.3
 python-memcached==1.58
 python-openid==2.2.5
 pytz==2017.2
+PyYAML==3.12
 redis==2.10.5
 requests==2.13.0
 requests-oauthlib==0.8.0
 requests-toolbelt==0.7.1
 rsa==3.4.2
 sh==1.12.13
+ShopifyAPI==2.5.0
+simple-salesforce==0.72.2
 simplejson==3.10.0
 six==1.10.0
 slacker==0.9.42
@@ -69,7 +75,7 @@ tweepy==3.5.0
 uritemplate==3.0.0
 uWSGI==2.0.15
 vine==1.1.3
-xmljson==0.1.8
+xmldict==0.4.1
 xmltodict==0.11.0
 git+git://github.com/ingmferrer/python-sdk.git
 git+git://github.com/gustav0/sugarcrm.git
