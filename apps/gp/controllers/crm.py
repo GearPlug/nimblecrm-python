@@ -86,9 +86,12 @@ class SugarCRMController(BaseController):
         return self._session.set_entries(obj_list)
 
     def download_to_stored_data(self, connection_object, plug, limit=29, order_by="date_entered DESC", **kwargs):
-        module = plug.plug_action_specification.all()[0].value  # Especificar que specification
+        print("descargando mierda")
+        module = plug.plug_action_specification.get(action_specification__name="module").value  # Especificar que specification
+        print("module", module)
         data = self.get_entry_list(module, max_results=limit, order_by=order_by)
         new_data = []
+        print('data', data)
         for item in data:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item.id)
             if not q.exists():
@@ -144,7 +147,7 @@ class SugarCRMController(BaseController):
         return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'module':
             module_list = tuple({'id': m.module_key, 'name': m.module_key} for m in self.get_available_modules())
             return module_list

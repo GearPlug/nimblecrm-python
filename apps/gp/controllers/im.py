@@ -2,6 +2,8 @@ from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.models import StoredData, PlugActionSpecification, ActionSpecification
+from apps.gp.map import MapField
+from apps.gp.enum import ConnectorEnum
 from slacker import Slacker
 from utils.nrsgateway import Client as SMSClient
 import json
@@ -64,7 +66,7 @@ class SlackController(BaseController):
             return False
 
     def get_target_fields(self, **kwargs):
-        return ['message']
+        return [{'name': 'message'}]
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
@@ -112,7 +114,7 @@ class SlackController(BaseController):
         return False
 
     def get_mapping_fields(self, **kwargs):
-        return self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.Slack) for f in self.get_target_fields()]
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
@@ -120,7 +122,6 @@ class SlackController(BaseController):
             return tuple({'id': c['id'], 'name': c['name']} for c in self.get_channel_list())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
-
 
 
 class SMSController(BaseController):

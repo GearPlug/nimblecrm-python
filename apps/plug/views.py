@@ -194,17 +194,23 @@ class TestPlugView(TemplateView):
                 sd = StoredData.objects.filter(plug=p, connection=p.connection, object_id=sd_sample.object_id)
                 context['object_list'] = sd
             except IndexError:
-                print("error")
+                try:
+                    c = ConnectorEnum.get_connector(p.connection.connector.id)
+                    controller_class = ConnectorEnum.get_controller(c)
+                    controller = controller_class(p.connection.related_connection, p)
+                    ping = controller.test_connection()
+                    if ping:
+                        controller.download_to_stored_data(p.connection.related_connection, p)
+                except Exception as e:
+                    raise
+                    print("error")
         elif p.plug_type == 'target':
             c = ConnectorEnum.get_connector(p.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(c)
             controller = controller_class(p.connection.related_connection, p)
             ping = controller.test_connection()
             if ping:
-                if c == ConnectorEnum.JIRA:
-                    target_fields = controller.get_target_fields()
-                else:
-                    target_fields = [field.name for field in controller.get_mapping_fields()]
+                target_fields = [field.name for field in controller.get_mapping_fields()]
                 context['object_list'] = target_fields
         context['plug_type'] = p.plug_type
         return context

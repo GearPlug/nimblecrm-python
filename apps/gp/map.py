@@ -230,6 +230,11 @@ class MapField(object):
                 self.required = d['required']
             if 'type' in d:
                 self.field_type = d['type']
+        elif controller == ConnectorEnum.Slack:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            self.field_type = 'text'
         else:
             if 'name' in d:
                 self.name = d['name']
@@ -243,7 +248,6 @@ class MapField(object):
                                     for choice in d['options']]
                     self.choices.insert(0, ('', ''))
             self.required = False
-
 
     @property
     def attrs(self):
