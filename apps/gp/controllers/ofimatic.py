@@ -400,7 +400,6 @@ class EvernoteController(BaseController):
         except Exception as e:
             return self._token is None
 
-
     def download_to_stored_data(self, connection_object, plug, list=None):
         print("source from evernote")
         notes= self.get_notes(self._token)
@@ -449,7 +448,6 @@ class EvernoteController(BaseController):
     def get_mapping_fields(self, **kwargs):
         fields = self.get_target_fields()
         return [MapField(f, controller=ConnectorEnum.Evernote) for f in fields]
-
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)

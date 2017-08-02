@@ -3,7 +3,7 @@
         <div class="specification" id="speicification-container-{{ o.id }}">
             {{ o.name }}:
             <select data-name="{{ o.name|slugify|lower }}" data-id="{{ o.id }}" name="specification-{{ o.id }}"
-                    class="specification_select">
+                    class="specification_select" is-loaded="false">
                 <option>---------</option>
             </select>
         </div><br>
@@ -15,10 +15,10 @@
 {#    {{ block.super }}#}
     <script type="application/javascript">
         $(document).ready(function () {
-            var load_options = true;
             $(document).on('click', 'select.specification_select', function () {
                 var select = $(this);
-                if (load_options == true) {
+                var is_loaded = $(select).attr('is-loaded');
+                if (is_loaded == false || is_loaded == 'false') {
                     var url = "{% url 'plug:action_specification_options' %}";
                     $.ajax({
                         method: "POST",
@@ -29,7 +29,7 @@
                         }
                     }).done(function (response) {
                         $(select).html(response).trigger('change');
-                        load_options = false;
+                        $(select).attr('is-loaded', true);
                     });
                 }
             });

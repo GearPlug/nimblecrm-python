@@ -519,7 +519,8 @@ class Webhook(models.Model):
     created = models.DateTimeField('created', auto_now_add=True)
     is_active = models.BooleanField('is active', default=False)
     is_deleted = models.BooleanField('is deleted', default=False)
-    expiration = models.CharField('expiration', max_length=200)
+    expiration = models.CharField('expiration', max_length=200, null=True, default=None)
+
 
     def __str__(self):
         return '%s webhook of %s' % (self.name, self.plug)
