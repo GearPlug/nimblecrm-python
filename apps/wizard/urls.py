@@ -5,8 +5,8 @@ from apps.wizard.views import MSSQLFieldList, GoogleDriveSheetList, GoogleSheets
     SlackWebhookEvent, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, \
     GetResponseCampaignsList, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
     GoogleCalendarWebhookEvent, AJAXGetSurveyListView, SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
-    YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent, SalesforceSObjectList, SalesforceEventList, SalesforceWebhookEvent
-
+    YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent, SalesforceSObjectList, SalesforceEventList, \
+    SalesforceWebhookEvent
 
 from apps.connection.views import ListConnectionView, ListConnectorView, CreateConnectionView
 from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, DeleteGearView, CreateGearMapView

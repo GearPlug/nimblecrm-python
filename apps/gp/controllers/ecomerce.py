@@ -3,21 +3,145 @@ from apps.gp.controllers.exception import ControllerError
 import shopify
 from django.conf import settings
 import re
-from apps.gp.models import StoredData
+from apps.gp.models import StoredData, ActionSpecification, Action
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.controllers.utils import get_dict_with_source_data
 from magento import MagentoAPI
-from apps.gp.models import StoredData, ActionSpecification, Action
 import json
 import ast
+from meli_client import meli
+
 
 class EbayController(BaseController):
     pass
 
 
 class MercadoLibreController(BaseController):
-    pass
+    _token = None
+    _site = None
+    _client = None
+
+    def __init__(self, *args, **kwargs):
+        BaseController.__init__(self, *args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(MercadoLibreController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._token = self._connection_object.token
+                    self._site = self._connection_object.site
+                    self._client = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID,
+                                             client_secret=settings.MERCADOLIBRE_CLIENT_SECRET, site_id=self._site)
+                except Exception as e:
+                    print("Error getting the mercadolibre token")
+
+    def test_connection(self):
+        return self.get_me() is not None
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        obj_list = []
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            extra = {'controller': 'mercadolibre'}
+            for obj in data_list:
+                res = self.list_product(obj)
+            return
+        raise ControllerError("Incomplete.")
+
+    def list_product(self, obj):
+        params = {'access_token': self._token}
+        result = self._client.post(path="/items", body=obj, params=params)
+        print(result.json())
+        return result
+
+    def get_target_fields(self, **kwargs):
+        return self.get_fields()
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_fields()
+        return [MapField(f, controller=ConnectorEnum.MercadoLibre) for f in fields]
+
+    def get_fields(self):
+        return [
+            {
+                'name': 'title',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'category_id',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'price',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'currency_id',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'available_quantity',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'buying_mode',
+                'required': False,
+                'type': 'coices',
+                'values': ['buy_it_now']
+            }, {
+                'name': 'listing_type_id',
+                'required': False,
+                'type': 'choices',
+                'values': [l['id'] for l in self.get_listing_types()]
+            }, {
+                'name': 'condition',
+                'required': False,
+                'type': 'choices',
+                'values': ['new', 'used', 'not_specified']
+            }, {
+                'name': 'description',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'video_id',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'warranty',
+                'required': False,
+                'type': 'text'
+            }, {
+                'name': 'pictures',
+                'required': False,
+                'type': 'text'
+            },
+
+        ]
+
+    def get_me(self):
+        params = {'access_token': self._token}
+        return self._client.get(path="/users/me", params=params).json()
+
+    def get_sites(self):
+        params = {'access_token': self._token}
+        return self._client.get(path="/sites", params=params).json()
+
+    def get_categories(self):
+        # No se está utilizando porque no hay forma de saber cuales categorías son "hojas"
+        params = {'access_token': self._token}
+        return self._client.get(path="/sites/{}/categories".format(self._site), params=params).json()
+
+    def get_listing_types(self):
+        params = {'access_token': self._token}
+        return self._client.get(path="/sites/{}/listing_types".format(self._site), params=params).json()
 
 
 class AmazonSellerCentralController(BaseController):
@@ -202,6 +326,7 @@ class ShopifyController(BaseController):
             if find is False: values[i['name']] = ""
         return values
 
+
 class MagentoController(BaseController):
     _connection = None
     _host = None
@@ -236,11 +361,11 @@ class MagentoController(BaseController):
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
-        type=Action.objects.get(pk=action_specification.action_id)
-        options=[]
+        type = Action.objects.get(pk=action_specification.action_id)
+        options = []
         if action_specification.name.lower() == 'field':
             for o in self.get_options():
-                if (type.action_type=="target" and o['id']=="orders"):
+                if (type.action_type == "target" and o['id'] == "orders"):
                     pass
                 else:
                     options.append({'name': o['name'], 'id': o['id']})
@@ -252,7 +377,7 @@ class MagentoController(BaseController):
         if plug is None:
             plug = self._plug
         field_id = self._plug.plug_action_specification.all()[0].value
-        magento=self._connection
+        magento = self._connection
 
         if (field_id == "orders"):
             details = magento.sales_order.list()
@@ -263,11 +388,11 @@ class MagentoController(BaseController):
 
         new_data = []
         for detail in details:
-            id = int(self.get_id(detail,field_id))
+            id = int(self.get_id(detail, field_id))
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id)
             if not q.exists():
-                for k,v in detail.items():
-                    if v is None: v=''
+                for k, v in detail.items():
+                    if v is None: v = ''
                     new_data.append(StoredData(name=k, value=v, object_id=id,
                                                connection=connection_object.connection, plug=plug))
         if new_data:
@@ -283,7 +408,7 @@ class MagentoController(BaseController):
                         item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
         return True
 
-    def get_id(self,item, field_id):
+    def get_id(self, item, field_id):
         if (field_id == "orders"):
             id = item['order_id']
         elif (field_id == "products"):
@@ -302,36 +427,37 @@ class MagentoController(BaseController):
     def get_fields(self):
         topic_id = self._plug.plug_action_specification.all()[0].value
         if (topic_id == 'customers'):
-            group=self._connection.customer_group.list()
+            group = self._connection.customer_group.list()
             return [{"name": "email", "required": True, "type": "varchar", "label": "Email"},
                     {"name": "firstname", "required": True, "type": "varchar", "label": "First Name"},
                     {"name": "lastname", "required": True, "type": "varchar", "label": "Last Name"},
-                    {"name": "group_id", "required": True, "type": "int", "label" : "Group", "choices": group},
-                    {"name": "prefix", "required": False, "type": "varchar", "label" : "Prefix"},
-                    {"name": "suffix", "required": False, "type": "varchar", "label" : "Suffix"},
-                    {"name": "dob", "required": False, "type": "varchar", "label" : "Date Of Birth"},
-                    {"name": "taxvat", "required": False, "type": "varchar", "label" : "Tax/VAT Number"},
-                    {"name": "gender", "required": False, "type": "int", "label" : "Gender",
-                     "choices": [{'id':1, "name": "Male"}, {"id":2, "name": "Female"}]},
+                    {"name": "group_id", "required": True, "type": "int", "label": "Group", "choices": group},
+                    {"name": "prefix", "required": False, "type": "varchar", "label": "Prefix"},
+                    {"name": "suffix", "required": False, "type": "varchar", "label": "Suffix"},
+                    {"name": "dob", "required": False, "type": "varchar", "label": "Date Of Birth"},
+                    {"name": "taxvat", "required": False, "type": "varchar", "label": "Tax/VAT Number"},
+                    {"name": "gender", "required": False, "type": "int", "label": "Gender",
+                     "choices": [{'id': 1, "name": "Male"}, {"id": 2, "name": "Female"}]},
                     {"name": "middlename", "required": False, "type": "varchar", "label": "Middle Name/Initial"},
                     ]
         if (topic_id == 'products'):
-            type=self._connection.catalog_product_type.list()
+            type = self._connection.catalog_product_type.list()
             attribute = self._connection.catalog_product_attribute_set.list()
-            return [{"name": "product_type", "required": True, "type": 'varchar', "label":"Product Type","choices":type},
-                    {"name": "attribute_set_id", "required": True, "type": 'varchar', "label": "Attribute Set",
-                     "choices": attribute},
-                    {"name": "sku", "required": True, "type": 'varchar', "label": "SKU"},
-                    {"name": "name", "required": True, "type": 'varchar', "label": "Name"},
-                    {"name": "description", "required": False, "type": "varchar", "label": "Description"},
-                    {"name": "short_description", "required": False, "type": "varchar", "label": "Short Description"},
-                    {"name": "weight", "required": False, "type": "varchar", "label": "Weight"},
-                    {"name": "url_key", "required": False, "type": "varchar", "label": "URL Key"},
-                    {"name": "price", "required": False, "type": "varchar", "label": "Price"},
-                    {"name": "special_price", "required": False, "type": "varchar", "label": "Special Price"},
-                    {"name": "special_from_date", "required": False, "type": "varchar", "label": "Special Price From Date"},
-                    {"name": "special_to_date", "required": False, "type": "varchar", "label": "Special Price To Date"},
-                    ]
+            return [
+                {"name": "product_type", "required": True, "type": 'varchar', "label": "Product Type", "choices": type},
+                {"name": "attribute_set_id", "required": True, "type": 'varchar', "label": "Attribute Set",
+                 "choices": attribute},
+                {"name": "sku", "required": True, "type": 'varchar', "label": "SKU"},
+                {"name": "name", "required": True, "type": 'varchar', "label": "Name"},
+                {"name": "description", "required": False, "type": "varchar", "label": "Description"},
+                {"name": "short_description", "required": False, "type": "varchar", "label": "Short Description"},
+                {"name": "weight", "required": False, "type": "varchar", "label": "Weight"},
+                {"name": "url_key", "required": False, "type": "varchar", "label": "URL Key"},
+                {"name": "price", "required": False, "type": "varchar", "label": "Price"},
+                {"name": "special_price", "required": False, "type": "varchar", "label": "Special Price"},
+                {"name": "special_from_date", "required": False, "type": "varchar", "label": "Special Price From Date"},
+                {"name": "special_to_date", "required": False, "type": "varchar", "label": "Special Price To Date"},
+            ]
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
@@ -342,7 +468,7 @@ class MagentoController(BaseController):
             for item in data_list:
                 try:
                     if (field_id == "customers"):
-                        response=self.create_customer(item)
+                        response = self.create_customer(item)
                     if (field_id == "products"):
                         response = self.create_product(item)
                     extra['status'] = 's'
@@ -356,9 +482,9 @@ class MagentoController(BaseController):
         raise ControllerError("There's no plug")
 
     def create_customer(self, item):
-        customer={i:item[i] for i in item}
-        data=item["group_id"]
-        data= ast.literal_eval(data)
+        customer = {i: item[i] for i in item}
+        data = item["group_id"]
+        data = ast.literal_eval(data)
         customer["group_id"] = int(data["customer_group_id"])
         data = item["gender"]
         data = ast.literal_eval(data)
@@ -366,15 +492,12 @@ class MagentoController(BaseController):
         return self._connection.customer.create(customer)
 
     def create_product(self, item):
-        product={i:item[i] for i in item}
+        product = {i: item[i] for i in item}
         data = product.pop('product_type', None)
         data = ast.literal_eval(data)
-        type=data["type"]
+        type = data["type"]
         data = product.pop('attribute_set_id', None)
         data = ast.literal_eval(data)
         attribute = data["set_id"]
-        sku=product.pop('sku',None)
-        return self._connection.catalog_product.create(type,attribute,sku,product)
-
-
-
+        sku = product.pop('sku', None)
+        return self._connection.catalog_product.create(type, attribute, sku, product)

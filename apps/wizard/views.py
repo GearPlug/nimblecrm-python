@@ -15,7 +15,7 @@ from apps.gp.controllers.email_marketing import MailChimpController, GetResponse
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
 from apps.gp.controllers.im import SlackController
 from apps.gp.controllers.social import TwitterController, InstagramController, YouTubeController
-from apps.gp.controllers.ecomerce import ShopifyController
+from apps.gp.controllers.ecomerce import ShopifyController, MercadoLibreController
 from apps.gp.controllers.project_management import JiraController
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum

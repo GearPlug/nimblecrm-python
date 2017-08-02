@@ -1,0 +1,25 @@
+{% extends 'wizard/async/action_specification.html' %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            var load_site = false;
+
+            $(document).on('click', 'select[data-name=site]', function () {
+                var select = $(this);
+                if (load_site == true) {
+                    var url = "{% url 'wizard:async_mercadolibre_sites' %}";
+                    $.ajax({
+                        method: "POST",
+                        url: url,
+                        data: {connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %}}
+                    }).done(function (response) {
+                        $(select).html(response);
+                        load_site = false;
+                    });
+                }
+            });
+        })
+    </script>
+{% endblock %}
