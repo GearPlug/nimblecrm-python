@@ -169,12 +169,24 @@ class MapField(object):
                 self.name = d['name']
             if 'label' in d:
                 self.label = d['label']
-            if 'favorited' in d:
-                self.required = d['favorited']
+            if  d['name']=="dealname" or d['name']=="name" or d['name']=="firstname":
+                self.required = d['name']
             if 'type' in d:
                 self.field_type = d['type']
             if d['type'] == 'enumeration':
                 self.choices = [(choice, choice) for choice in d['options']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
+        elif controller == ConnectorEnum.Mandrill:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'values' in d and d['values']:
+                self.choices = [(choice, choice) for choice in d['values']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
         elif controller == ConnectorEnum.Evernote:
