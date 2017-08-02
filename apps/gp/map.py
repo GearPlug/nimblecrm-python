@@ -209,6 +209,14 @@ class MapField(object):
                 self.required = d['required']
             if 'type' in d:
                 self.field_type = d['type']
+        elif controller == ConnectorEnum.Asana:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
         else:
             if 'name' in d:
                 self.name = d['name']
@@ -222,6 +230,7 @@ class MapField(object):
                                     for choice in d['options']]
                     self.choices.insert(0, ('', ''))
             self.required = False
+
 
     @property
     def attrs(self):
