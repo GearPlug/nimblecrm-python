@@ -129,6 +129,9 @@ class GoogleFormsController(BaseController):
     def get_target_fields(self, **kwargs):
         return self.get_worksheet_first_row(**kwargs)
 
+    def get_action_specification_options(self, action_specification_id, **kwargs):
+        raise ControllerError("This connector has no specifications.")
+
 
 class FacebookLeadsController(BaseController):
     _app_id = FACEBOOK_APP_ID
@@ -399,3 +402,10 @@ class SurveyMonkeyController(BaseController):
             print("Se creo el webhook survey monkey")
             return True
         return False
+
+    def get_action_specification_options(self, action_specification_id, **kwargs):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'read a survey':
+            return [{'name': o['title'], 'id': o['id']} for o in self.smc.get_survey_list()]
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")

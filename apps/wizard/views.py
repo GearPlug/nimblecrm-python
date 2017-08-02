@@ -9,13 +9,13 @@ from django.template import loader
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
-from apps.gp.controllers.lead import GoogleFormsController, FacebookLeadsController, SurveyMonkeyController
+from apps.gp.controllers.lead import FacebookLeadsController, SurveyMonkeyController
 from apps.gp.controllers.crm import SugarCRMController, ZohoCRMController, SalesforceController  # , HubspotController
 from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
 from apps.gp.controllers.im import SlackController
-from apps.gp.controllers.social import TwitterController, InstagramController, YouTubeController
-from apps.gp.controllers.ecomerce import ShopifyController, MercadoLibreController
+from apps.gp.controllers.social import InstagramController, YouTubeController
+from apps.gp.controllers.ecomerce import ShopifyController
 from apps.gp.controllers.project_management import JiraController
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
@@ -30,16 +30,13 @@ import re
 import paypalrestsdk
 import xmltodict
 import json
-from apps.connection.myviews.SurveyMonkeyViews import AJAXGetSurveyListView
+
+# from apps.connection.myviews.SurveyMonkeyViews import AJAXGetSurveyListView
 
 paypalrestsdk.configure({
     "mode": "sandbox",  # sandbox or live
     "client_id": "XXXXXXXXXXX",
     "client_secret": "YYYYYYYYYY"})
-
-mcc = MailChimpController()
-gsc = GoogleSpreadSheetsController()
-gfc = GoogleFormsController()
 
 
 class SalesforceSObjectList(LoginRequiredMixin, TemplateView):

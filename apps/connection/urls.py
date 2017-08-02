@@ -1,12 +1,12 @@
 from django.conf.urls import url
 from apps.connection.views import CreateConnectionView, ListConnectorView, GoogleAuthView, \
-    AjaxGoogleSpreadSheetTestConnection, GoogleAuthSuccessCreateConnection, SlackAuthView, AuthSuccess, TwitterAuthView, \
+    GoogleAuthSuccessCreateConnection, SlackAuthView, AuthSuccess, TwitterAuthView, \
     TwitterAuthSuccessCreateConnection, SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, \
-    InstagramAuthView, AJAXGetSurveyListView, InstagramAuthSuccessCreateConnection, SalesforceAuthView, \
+    InstagramAuthView, InstagramAuthSuccessCreateConnection, SalesforceAuthView, \
     SalesforceAuthSuccessCreateConnection, ShopifyAuthView, ShopifyAuthSuccessCreateConnection, TestConnectionView, \
     CreateConnectionSuccessView, HubspotAuthView, HubspotAuthSuccessCreateConnection, EvernoteAuthView, \
     EvernoteAuthSuccessCreateConnection, AsanaAuthView, CreateAuthorizatedConnectionView, MercadoLibreAuthView, \
-    MercadoLibreAuthSuccessCreateConnection, AjaxMercadoLibrePostSiteView
+    MercadoLibreAuthSuccessCreateConnection, AjaxMercadoLibrePostSiteView #,AJAXGetSurveyListView
 
 from apps.gp.enum import GoogleAPI
 

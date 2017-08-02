@@ -1,20 +1,18 @@
 import tweepy
+import httplib2
 from instagram.client import InstagramAPI
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView, View
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView, View, TemplateView
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect, HttpResponse
 from apps.connection.apps import APP_NAME as app_name
-from apps.connection.myviews.SurveyMonkeyViews import *
-from apps.connection.myviews.GoogleSpreadSheetViews import *
 from apps.gp.enum import ConnectorEnum, GoogleAPI
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
     GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection, GoogleCalendarConnection, \
     YouTubeConnection, SMSConnection, ShopifyConnection, HubSpotConnection, MySQLConnection, EvernoteConnection, \
     SalesforceConnection, MercadoLibreConnection
-
 from oauth2client import client
 from requests_oauthlib import OAuth2Session
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
@@ -746,3 +744,7 @@ def get_flow_google_contacts():
                            client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
                            scope='https://www.google.com/m8/feeds/',
                            redirect_uri='http://localhost:8000/connection/google_auth/')
+
+def get_authorization(request):
+    credentials = client.OAuth2Credentials.from_json(request.session['google_credentials'])
+    return credentials.authorize(httplib2.Http())
