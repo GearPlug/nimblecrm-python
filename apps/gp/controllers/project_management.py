@@ -184,6 +184,30 @@ class AsanaController(BaseController):
     _token_expiration_timestamp = None
     __refresh_url = 'https://app.asana.com/-/oauth_token'
 
+    # # Codigo para traer proyectos por workspace en especifico
+    # def proj_from_wp():
+    #     headers = {
+    #         'Authorization': 'Bearer {0}'.format(
+    #             'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpemF0aW9uIjozODU0ODgxMjc0OTgxOTAsInNjb3BlIjoiZGVmYXVsdCIsImlhdCI6MTUwMTcwNzQ3NSwiZXhwIjoxNTAxNzExMDc1fQ.SDq4AF7I7miM5LbjOo1u9sDkQcYQkTNlnXt8K73VN34'),
+    #     }
+    #     # Request para obtener datos de usuario creador de la tarea
+    #     resp_user_info = requests.get('https://app.asana.com/api/1.0/users/me',
+    #                                   headers=headers)
+    #
+    #     # Request para obtener proyectos de los workspaces del usuario.
+    #     params_proj = {('archived', 'false')}
+    #     proj_list = {}
+    #     for ws in resp_user_info.json()['data']['workspaces']:
+    #         resp_user_wp = requests.get(
+    #             'https://app.asana.com/api/1.0/workspaces/' + str(
+    #                 ws['id']) + '/projects', headers=headers,
+    #             params=params_proj)
+    #         try:
+    #             proj_list = {ws['id']: resp_user_wp.json()['data'][0]}
+    #         except Exception as e:
+    #             print('NO PROJECT IN WORKSPACE ', ws['id'])
+    #     print(proj_list)
+
     def create_connection(self, *args, **kwargs):
         if args:
             super(AsanaController, self).create_connection(*args)
@@ -214,10 +238,7 @@ class AsanaController(BaseController):
             ]
             new_token = requests.post(self.__refresh_url,
                                       data=data_refresh_token).json()
-            # print(new_token)
-            # print('time', time.time(), type(time.time()))
-            # print('current ts', self._connection_object.token_expiration_timestamp, type(self._connection_object.token_expiration_timestamp))
-            # print('3600 //',datetime.timedelta(seconds=float(new_token['expires_in'])).seconds, type(datetime.timedelta(seconds=float(new_token['expires_in'])).seconds))
+            print('3600 //',datetime.timedelta(seconds=float(new_token['expires_in'])).seconds, type(datetime.timedelta(seconds=float(new_token['expires_in'])).seconds))
             self._connection_object.token = new_token['access_token']
             print('old_stamp',
                   self._connection_object.token_expiration_timestamp)
@@ -258,6 +279,11 @@ class AsanaController(BaseController):
             return []
 
     def get_projects(self, workspace=None):
+        # Diccionario de proyectos, manejo interno del metodo
+        p_dict = {}
+
+        # Lista de diccionario/s, esta lista es la que sera enviada a
+        # get_action_specification_options.
         projects_list = []
         for ws in self.get_user_information()['workspaces']:
             headers_list_proj = {
@@ -271,9 +297,17 @@ class AsanaController(BaseController):
             r_list_proj = requests.get(aa_url, headers=headers_list_proj,
                                        params=params_proj)
             temp_data_3 = r_list_proj.json()
-            for i in temp_data_3['data']:
-                projects_list.append(i)
-
+            # for i in temp_data_3['data']:
+            #     p_dict.append(i)
+            try:
+                # p_dict = {ws['id'] : r_list_proj.json()['data'][0]}
+                p_dict = {'id': r_list_proj.json()['data'][0]['id'],
+                                 'name': r_list_proj.json()['data'][0]['name']}
+            except Exception as e:
+                print('NO PROJECTS IN THIS WORKSPACE: ',ws['name'])
+            print(p_dict)
+        projects_list.append(p_dict)
+        print(projects_list)
         return (projects_list)
 
     def get_action_specification_options(self, action_specification_id):
