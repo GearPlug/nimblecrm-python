@@ -56,7 +56,9 @@ class JIRAController(BaseController):
 
     def download_to_stored_data(self, connection_object=None, plug=None,
                                 issue=None, **kwargs):
+        print("DOWNLOAD JIRA")
         if issue is not None:
+            print("DOWNLOAD JIRA EN IF")
             issue_key = issue['key']
             _items = []
             q = StoredData.objects.filter(
@@ -99,12 +101,13 @@ class JIRAController(BaseController):
         return self._connection.create_issue(fields=fields)
 
     def create_webhook(self):
+        print("creando hook!")
         url = '{}/rest/webhooks/1.0/webhook'.format(
             self._connection_object.host)
         key = self.get_key(self._plug.plug_action_specification.all()[0].value)
         body = {
             "name": "Gearplug Webhook",
-            "url": "http://grplug.com/wizard/jira/webhook/event/",
+            "url": "http://g.grplug.com/webhook/jira/0/",
             "events": [
                 "jira:issue_created",
             ],
@@ -112,6 +115,8 @@ class JIRAController(BaseController):
             "excludeIssueDetails": False
         }
         r = requests.post(url, headers=self._get_header(), json=body)
+        print(r.status_code)
+        print(r.json())
         if r.status_code == 201:
             return True
         return False
@@ -147,9 +152,11 @@ class JIRAController(BaseController):
             issuetypeNames='Task', expand='projects.issuetypes.fields')
         exclude = ['attachment', 'project']
         users = self.get_users()
+
         def f(d, v):
             d.update({'id': v})
             return d
+
         _dict = [f(v, k) for k, v in
                  meta['projects'][0]['issuetypes'][0]['fields'].items() if
                  k not in exclude]

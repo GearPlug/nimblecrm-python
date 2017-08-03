@@ -77,18 +77,13 @@ class IncomingWebhook(View):
             decoded_events = json.loads(request.body.decode("utf-8"))
             events = decoded_events['events']
             controller_class = ConnectorEnum.get_controller(connector)
-            print(len(events))
-            update_events = []
             for event in events:
                 if event['type'] == 'task' and event['action'] == 'added':
-                    print(event['type'], event['action'], event['parent'])
-                    # print(event)
                     project_list = PlugActionSpecification.objects.filter(
                         action_specification__action__action_type='source',
                         action_specification__action__connector__name__iexact='asana',
                         action_specification__name__iexact='project',
                         value=event['parent'])
-                    print('projects', project_list)
                     for project in project_list:
                         controller = controller_class(
                             project.plug.connection.related_connection,
@@ -96,9 +91,21 @@ class IncomingWebhook(View):
                         ping = controller.test_connection()
                         if ping:
                             controller.download_source_data(event=event)
-            #     else:
-            #         print('*** Evento Creado, Ninguna Tarea hasta ahora. ***')
-            # print(decoded_events)
-
-            # controller = controller_class()
-            return response
+        elif connector == ConnectorEnum.JIRA:
+            response = HttpResponse(status=200)
+            data = json.loads(request.body.decode('utf-8'))
+            issue = data['issue']
+            project_list = PlugActionSpecification.objects.filter(
+                action_specification__action__action_type='source',
+                action_specification__action__connector__name__iexact="jira",
+                action_specification__name__iexact='project_id',
+                value=issue['fields']['project']['id'], )
+            controller_class = ConnectorEnum.get_controller(connector)
+            for project in project_list:
+                controller = controller_class(
+                    project.plug.connection.related_connection,
+                    project.plug)
+                ping = controller.test_connection()
+                if ping:
+                    controller.download_source_data(issue=issue)
+        return response
