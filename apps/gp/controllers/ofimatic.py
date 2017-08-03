@@ -1,7 +1,7 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import StoredData, GooglePushWebhook
+from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 import httplib2
@@ -18,6 +18,7 @@ from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
 from evernote.edam.type.ttypes import NoteSortOrder
 import re
 
+
 class GoogleSpreadSheetsController(BaseController):
     _credential = None
     _spreadsheet_id = None
@@ -27,41 +28,38 @@ class GoogleSpreadSheetsController(BaseController):
         BaseController.__init__(self, *args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
+        credentials_json = None
         if args:
             super(GoogleSpreadSheetsController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
                     credentials_json = self._connection_object.credentials_json
+                    if self._plug is not None:
+                        try:
+                            self._spreadsheet_id = self._plug.plug_action_specification.get(
+                                action_specification__name__iexact='spreadsheet').value
+                            self._worksheet_name = self._plug.plug_action_specification.get(
+                                action_specification__name__iexact='worksheet').value
+                        except Exception as e:
+                            print("Error asignando los specifications GoogleSpreadSheets 2")
                 except Exception as e:
                     print("Error getting the GoogleSpreadSheets attributes 1")
                     print(e)
                     credentials_json = None
-        elif not args and kwargs:
-            if 'credentials_json' in kwargs:
-                credentials_json = kwargs.pop('credentials_json')
-        else:
-            credentials_json = None
+        #
         files = None
         if credentials_json is not None:
-            try:
-                for s in self._plug.plug_action_specification.all():
-                    if s.action_specification.name.lower() == 'spreadsheet':
-                        self._spreadsheet_id = s.value
-                    if s.action_specification.name.lower() == 'worksheet':
-                        self._worksheet_name = s.value
-            except:
-                print("Error asignando los specifications 1")
-            try:
-                _json = json.dumps(credentials_json)
-                self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
-                self._refresh_token()
-                http_auth = self._credential.authorize(httplib2.Http())
-                drive_service = discovery.build('drive', 'v3', http=http_auth)
-                files = drive_service.files().list().execute()
-            except Exception as e:
-                print("Error getting the GoogleSpreadSheets attributes 2")
-                self._credential = None
-                files = None
+            self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
+
+    def test_connection(self):
+        try:
+            self._refresh_token()
+            http_auth = self._credential.authorize(httplib2.Http())
+            drive_service = discovery.build('drive', 'v3', http=http_auth)
+            files = drive_service.files().list().execute()
+        except Exception as e:
+            print("Error Test connection GoogleSpreadSheets")
+            files = None
         return files is not None
 
     def _upate_connection_object_credentials(self):
@@ -192,6 +190,17 @@ class GoogleSpreadSheetsController(BaseController):
 
     def get_mapping_fields(self, **kwargs):
         return self.get_worksheet_first_row()
+
+    def get_action_specification_options(self, action_specification_id, **kwargs):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        print("GSS->",action_specification.name, kwargs)
+        if action_specification.name.lower() == 'spreadsheet':
+            return tuple({'id': p['id'], 'name': p['name']} for p in self.get_sheet_list())
+        elif action_specification.name.lower() == 'worksheet':
+
+            return tuple({'id': p['title'], 'name': p['title']} for p in self.get_worksheet_list(**kwargs))
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class GoogleCalendarController(BaseController):
@@ -376,12 +385,12 @@ class GoogleCalendarController(BaseController):
         fields = self.get_meta()
         return [MapField(f, controller=ConnectorEnum.GoogleCalendar) for f in fields]
 
+
 class EvernoteController(BaseController):
     _token = None
 
     def __init__(self, *args, **kwargs):
         BaseController.__init__(self, *args, **kwargs)
-
 
     def create_connection(self, *args, **kwargs):
         if args:
@@ -393,7 +402,7 @@ class EvernoteController(BaseController):
                     print("Error getting the Evernote token")
 
     def test_connection(self):
-        client=EvernoteClient(self._token)
+        client = EvernoteClient(self._token)
         try:
             client.get_note_store()
             return self._token is not None
@@ -402,10 +411,10 @@ class EvernoteController(BaseController):
 
     def download_to_stored_data(self, connection_object, plug, list=None):
         print("source from evernote")
-        notes= self.get_notes(self._token)
+        notes = self.get_notes(self._token)
         print("notes")
         print(notes)
-        new_data= []
+        new_data = []
         for item in notes:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
                                           object_id=item['id'])
@@ -434,16 +443,17 @@ class EvernoteController(BaseController):
         spec = NotesMetadataResultSpec()
         spec.includeTitle = True
         ourNoteList = noteStore.findNotesMetadata(token, filter, 0, 100, spec)
-        list=[]
+        list = []
         for note in ourNoteList.notes:
             wholenote = noteStore.getNote(authToken, note.guid, True, True, True, True)
             m = re.findall('<en-note[^>]*>(.*?)<\/en-note>', str(wholenote))
-            note={'title':note.title, 'id': note.guid, 'content': m[0]}
+            note = {'title': note.title, 'id': note.guid, 'content': m[0]}
             list.append(note)
         return list
 
     def get_target_fields(self, **kwargs):
-        return [{'name':'title','type':'varchar','required':True},{'name':'content','type':'varchar', 'required':True}]
+        return [{'name': 'title', 'type': 'varchar', 'required': True},
+                {'name': 'content', 'type': 'varchar', 'required': True}]
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_target_fields()
@@ -455,25 +465,25 @@ class EvernoteController(BaseController):
             obj_list = []
             extra = {'controller': 'evernote'}
             for item in data_list:
-                    note = self.create_note(item)
-                    print("note")
-                    print(note)
-                    if note.guid :
-                        extra['status'] = 's'
-                        self._log.info('Item: %s successfully sent.' % (note.guid), extra=extra)
-                        obj_list.append(note.guid)
-                    else:
-                        extra['status'] = 'f'
-                        self._log.info('Item: failed to send.', extra=extra)
+                note = self.create_note(item)
+                print("note")
+                print(note)
+                if note.guid:
+                    extra['status'] = 's'
+                    self._log.info('Item: %s successfully sent.' % (note.guid), extra=extra)
+                    obj_list.append(note.guid)
+                else:
+                    extra['status'] = 'f'
+                    self._log.info('Item: failed to send.', extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
 
-    def create_note(self,data):
+    def create_note(self, data):
         client = EvernoteClient(token=self._token)
-        c=data['content']
+        c = data['content']
         noteStore = client.get_note_store()
         note = Types.Note()
         note.title = data['title']
         note.content = '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'
-        note.content +='<en-note>'+c+'</en-note>'
+        note.content += '<en-note>' + c + '</en-note>'
         return noteStore.createNote(note)

@@ -220,6 +220,7 @@ SLACK_PERMISSIONS_URL = 'https://slack.com/oauth/authorize?client_id={0}&scope=t
 # Google (Gustavo)
 GOOGLE_CLIENT_ID = '278354320502-6ptllif5k11cn8uskm8aotp6fqb2g7dr.apps.googleusercontent.com'
 GOOGLE_CLIENT_SECRET = 'LgJ2hrSVu_lmAJkJhwzgfiDG'
+GOOGLE_AUTH_CALLBACK_URL = 'http://g.grplug.com/connection/auth-callback/google/'
 
 # Twitter
 TWITTER_CLIENT_ID = 'D5ZJJmF11n9Sp8E9p7GRGhpiR'

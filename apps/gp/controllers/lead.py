@@ -22,39 +22,44 @@ class GoogleFormsController(BaseController):
         BaseController.__init__(self, *args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
+        credentials_json = None
         if args:
             super(GoogleFormsController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
                     credentials_json = self._connection_object.credentials_json
+                    if self._plug is not None:
+                        try:
+                            self._spreadsheet_id = self._plug.plug_action_specification.get(
+                                action_specification__name__iexact='form').value
+                        except Exception as e:
+                            print("Error asignando los specifications GoogleForms 2")
                 except Exception as e:
                     print("Error getting the GoogleForms attributes 1")
                     print(e)
                     credentials_json = None
-        elif not args and kwargs:
-            if 'credentials_json' in kwargs:
-                credentials_json = kwargs.pop('credentials_json')
-        else:
-            credentials_json = None
-        files = None
         if credentials_json is not None:
-            try:
-                for s in self._plug.plug_action_specification.all():
-                    if s.action_specification.name.lower() == 'form':
-                        self._spreadsheet_id = s.value
-            except:
-                print("Error asignando los specifications 2")
-            try:
-                _json = json.dumps(credentials_json)
-                self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
-                http_auth = self._credential.authorize(httplib2.Http())
-                drive_service = discovery.build('drive', 'v3', http=http_auth)
-                files = drive_service.files().list().execute()
-            except Exception as e:
-                print("Error getting the GoogleForms attributes 2")
-                self._credential = None
-                files = None
+            self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
+
+    def test_connection(self):
+        try:
+            self._refresh_token()
+            http_auth = self._credential.authorize(httplib2.Http())
+            drive_service = discovery.build('drive', 'v3', http=http_auth)
+            files = drive_service.files().list().execute()
+        except Exception as e:
+            print("Error Test connection GoogleForms")
+            files = None
         return files is not None
+
+    def _upate_connection_object_credentials(self):
+        self._connection_object.credentials_json = self._credential.to_json()
+        self._connection_object.save()
+
+    def _refresh_token(self, token=''):
+        if self._credential.access_token_expired:
+            self._credential.refresh(httplib2.Http())
+            self._upate_connection_object_credentials()
 
     def download_to_stored_data(self, connection_object, plug, *args, **kwargs):
         if plug is None:
@@ -130,7 +135,11 @@ class GoogleFormsController(BaseController):
         return self.get_worksheet_first_row(**kwargs)
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
-        raise ControllerError("This connector has no specifications.")
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'form':
+            return tuple({'id': p['id'], 'name': p['name']} for p in self.get_sheet_list())  # TODO SOLO CARGAR FORMS
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class FacebookLeadsController(BaseController):
@@ -151,6 +160,7 @@ class FacebookLeadsController(BaseController):
                 try:
                     self._token = self._connection_object.token
                 except Exception as e:
+                    raise
                     print("Error getting the Facebook token")
         try:
             if self._plug is not None:
@@ -169,6 +179,7 @@ class FacebookLeadsController(BaseController):
             if 'id' in object_list:
                 return True
         except Exception as e:
+            raise
             return False
         return False
 

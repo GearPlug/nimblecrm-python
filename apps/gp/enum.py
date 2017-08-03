@@ -87,15 +87,20 @@ class ConnectorEnum(Enum):
                               suffix='Controller')
 
 
-class GoogleAPI(Enum):
-    SpreadSheets = 1, 'https://www.googleapis.com/auth/drive'
-    Forms = 2, 'https://www.googleapis.com/auth/drive'
-    Calendar = 3, 'https://www.googleapis.com/auth/calendar'
-    YouTube = 4, 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload'
-    Contacts = 5, 'https://www.google.com/m8/feeds/'
+class GoogleAPIEnum(Enum):
+    GoogleSpreadSheets = 1, 'https://www.googleapis.com/auth/drive'
+    GoogleForms = 2, 'https://www.googleapis.com/auth/drive'
+    GoogleCalendar = 3, 'https://www.googleapis.com/auth/calendar'
+    Youtube = 4, 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload'
+    GoogleContacts = 5, 'https://www.google.com/m8/feeds/'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
         obj._value_ = args[0]
         obj.scope = args[1]
         return obj
+
+    def get_api(name=None):
+        for field in GoogleAPIEnum:
+            if name.lower() == field.name.lower():
+                return field

@@ -237,13 +237,13 @@ class MailChimpController(BaseController):
                 m['email_address'] == l['email_address']]
 
     def get_mapping_fields(self, **kwargs):
-        specification = self._plug.plug_action_specification.first()
-        if specification.action_specification.name.lower() == 'list':
-            list_id = specification.value
-            mfl = [MapField(f, controller=ConnectorEnum.MailChimp) for f in self.get_list_merge_fields(list_id)]
-            mfl.append(MapField({'tag': 'email_address', 'name': 'Email', 'required': True, 'type': 'email',
-                                 'options': {'size': 100}}, controller=ConnectorEnum.MailChimp))
-            return mfl
+        list = self._plug.plug_action_specification.get(action_specification__name__iexact='list')
+        list_id = list.value
+        print("LIST ID->>", list_id)
+        mfl = [MapField(f, controller=ConnectorEnum.MailChimp) for f in self.get_list_merge_fields(list_id)]
+        mfl.append(MapField({'tag': 'email_address', 'name': 'Email', 'required': True, 'type': 'email',
+                             'options': {'size': 100}}, controller=ConnectorEnum.MailChimp))
+        return mfl
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)

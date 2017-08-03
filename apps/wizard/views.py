@@ -16,7 +16,7 @@ from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCal
 from apps.gp.controllers.im import SlackController
 from apps.gp.controllers.social import InstagramController, YouTubeController
 from apps.gp.controllers.ecomerce import ShopifyController
-from apps.gp.controllers.project_management import JiraController
+from apps.gp.controllers.project_management import JIRAController
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Connector, Connection, Action, Gear, Plug, ActionSpecification, PlugActionSpecification, \
@@ -474,7 +474,7 @@ class JiraProjectList(LoginRequiredMixin, TemplateView):
         context = self.get_context_data()
         connection_id = request.POST.get('connection_id', None)
         connection = Connection.objects.get(pk=connection_id)
-        controller = JiraController()
+        controller = JIRAController()
         ping = controller.create_connection(connection.related_connection)
         if ping:
             # El id es el mismo nombre del module
@@ -662,7 +662,7 @@ class YouTubeChannelsList(LoginRequiredMixin, TemplateView):
 
 class JiraWebhookEvent(TemplateView):
     template_name = 'wizard/async/select_options.html'
-    _jira_controller = JiraController()
+    _jira_controller = JIRAController()
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):

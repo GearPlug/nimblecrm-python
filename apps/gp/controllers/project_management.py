@@ -15,7 +15,7 @@ import datetime
 import json
 
 
-class JiraController(BaseController):
+class JIRAController(BaseController):
     _connection = None
 
     def __init__(self, *args, **kwargs):
@@ -23,24 +23,18 @@ class JiraController(BaseController):
 
     def create_connection(self, *args, **kwargs):
         if args:
-            super(JiraController, self).create_connection(*args)
+            super(JIRAController, self).create_connection(*args)
             if self._connection_object is not None:
-                host = self._connection_object.host
-                user = self._connection_object.connection_user
-                password = self._connection_object.connection_password
-        elif kwargs:
-            host = kwargs.pop('host', None)
-            user = kwargs.pop('connection_user', None)
-            password = kwargs.pop('connection_password', None)
-        else:
-            host, user, password = None, None, None
-        if host and user and password:
-            try:
-                self._connection = JIRA(host, basic_auth=(user, password))
-            except Exception as e:
-                print("Error getting the Jira attributes")
-                print(e)
-                self._connection = None
+                try:
+                    host = self._connection_object.host
+                    user = self._connection_object.connection_user
+                    password = self._connection_object.connection_password
+                    if host and user and password:
+                        self._connection = JIRA(host, basic_auth=(user, password))
+                except Exception as e:
+                    self._connection = None
+
+    def test_connection(self):
         return self._connection is not None
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
@@ -140,7 +134,6 @@ class JiraController(BaseController):
             'project': self.get_key(
                 self._plug.plug_action_specification.all()[0].value)
         }
-
         url = 'http://jira.grplug.com:8080/rest/api/2/user/assignable/search'
         r = requests.get(url, headers=self._get_header(), params=payload)
         if r.status_code == requests.codes.ok:
@@ -153,21 +146,16 @@ class JiraController(BaseController):
             projectIds=self._plug.plug_action_specification.all()[0].value,
             issuetypeNames='Task', expand='projects.issuetypes.fields')
         exclude = ['attachment', 'project']
-
         users = self.get_users()
-
         def f(d, v):
             d.update({'id': v})
             return d
-
         _dict = [f(v, k) for k, v in
                  meta['projects'][0]['issuetypes'][0]['fields'].items() if
                  k not in exclude]
-
         for d in _dict:
             if d['id'] == 'reporter' or d['id'] == 'assignee':
                 d['allowedValues'] = users
-
         return sorted(_dict, key=lambda i: i['name'])
 
     def get_target_fields(self, **kwargs):
@@ -176,6 +164,16 @@ class JiraController(BaseController):
     def get_mapping_fields(self, **kwargs):
         fields = self.jirac.get_meta()
         return [MapField(f, controller=ConnectorEnum.JIRA) for f in fields]
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
+        if action_specification.name.lower() == 'project_id':
+            return tuple(
+                {'id': p.id, 'name': p.name} for p in self.get_projects())
+        else:
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
 
 
 class AsanaController(BaseController):
@@ -434,7 +432,7 @@ class AsanaController(BaseController):
             extra = {'controller': 'Asana'}
             for item in data_list:
                 task = self.create_task(**item)
-                if task.status_code in  [200,201]:
+                if task.status_code in [200, 201]:
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (task.json()['data']['name']),
                                    extra=extra)

@@ -1,14 +1,14 @@
 from django.conf.urls import url
 from apps.connection.views import CreateConnectionView, ListConnectorView, GoogleAuthView, \
-    GoogleAuthSuccessCreateConnection, SlackAuthView, AuthSuccess, TwitterAuthView, \
+    GoogleAuthSuccessView, SlackAuthView, AuthSuccess, TwitterAuthView, \
     TwitterAuthSuccessCreateConnection, SurveyMonkeyAuthView, SurveyMonkeyAuthSuccessCreateConnection, \
     InstagramAuthView, InstagramAuthSuccessCreateConnection, SalesforceAuthView, \
     SalesforceAuthSuccessCreateConnection, ShopifyAuthView, ShopifyAuthSuccessCreateConnection, TestConnectionView, \
     CreateConnectionSuccessView, HubspotAuthView, HubspotAuthSuccessCreateConnection, EvernoteAuthView, \
-    EvernoteAuthSuccessCreateConnection, AsanaAuthView, CreateAuthorizatedConnectionView, MercadoLibreAuthView, \
+    EvernoteAuthSuccessCreateConnection, AsanaAuthView, CreateTokenAuthorizedConnectionView, MercadoLibreAuthView, \
     MercadoLibreAuthSuccessCreateConnection, AjaxMercadoLibrePostSiteView #,AJAXGetSurveyListView
 
-from apps.gp.enum import GoogleAPI
+from apps.gp.enum import GoogleAPIEnum
 
 urlpatterns = [
     # Create Connection
@@ -26,28 +26,13 @@ urlpatterns = [
     url(r'^auth-callback/facebook/', GoogleAuthView.as_view(), name="facebook_auth"),
     url(r'^auth-callback/asana/', AsanaAuthView.as_view(), name="asana_auth"),
 
+    # Auth Success
+    url(r'^auth/google/success/$', GoogleAuthSuccessView.as_view(),
+        {'api': GoogleAPIEnum.GoogleSpreadSheets},
+        name='google_auth_success'),
+
     # Create Authorizated Connection
-    url(r'^create/authorizated/', CreateAuthorizatedConnectionView.as_view(), name="create_authorizated_connection"),
-
-    # Google SpreadSheets
-    url(r"^google_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.SpreadSheets}, name="google_auth_gss"),
-    url(r"^google_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'api': GoogleAPI.SpreadSheets},
-        name="google_auth_success_create_connection"),
-
-    # Google Forms
-    url(r"^google_forms_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.Forms}, name="google_forms_auth"),
-    url(r"^google_forms_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'api': GoogleAPI.Forms},
-        name="google_forms_auth_success_create_connection"),
-
-    # Google Calendar
-    url(r"^google_calendar_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.Calendar}, name="google_calendar_auth"),
-    url(r"^google_calendar_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'api': GoogleAPI.Calendar},
-        name="google_calendar_auth_success_create_connection"),
-
-    # Google YouTube
-    url(r"^google_youtube_auth/$", GoogleAuthView.as_view(), {'api': GoogleAPI.YouTube}, name="google_youtube_auth"),
-    url(r"^google_youtube_auth/success/$", GoogleAuthSuccessCreateConnection.as_view(), {'api': GoogleAPI.YouTube},
-        name="google_youtube_auth_success_create_connection"),
+    url(r'^create/authorizated/', CreateTokenAuthorizedConnectionView.as_view(), name="create_token_authorized_connection"),
 
     # Twitter
     url(r"^twitter_auth/$", TwitterAuthView.as_view(), name="twitter_auth"),

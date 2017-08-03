@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse
 from django.http import JsonResponse
 from django.shortcuts import redirect, HttpResponse
 from apps.connection.apps import APP_NAME as app_name
-from apps.gp.enum import ConnectorEnum, GoogleAPI
+from apps.gp.enum import ConnectorEnum, GoogleAPIEnum
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
     GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection, GoogleCalendarConnection, \
     YouTubeConnection, SMSConnection, ShopifyConnection, HubSpotConnection, MySQLConnection, EvernoteConnection, \
@@ -25,31 +25,6 @@ from evernote.api.client import EvernoteClient
 import evernote.edam.type.ttypes as Types
 from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
 from meli_client import meli
-
-
-GOOGLE_DRIVE_SCOPE = ''
-GOOGLE_AUTH_URL = 'http://g.grplug.com/connection/auth-callback/google/'
-GOOGLE_AUTH_REDIRECT_URL = 'connection:google_auth_success_create_connection'
-
-GOOGLE_FORMS_SCOPE = ''
-GOOGLE_FORMS_AUTH_URL = 'http://g.grplug.com/connection/auth-callback/google/'
-GOOGLE_FORMS_AUTH_REDIRECT_URL = 'connection:google_forms_auth_success_create_connection'
-
-GOOGLE_CONTACTS_SCOPE = 'https://www.google.com/m8/feeds/'
-GOOGLE_CONTACTS_AUTH_URL = GOOGLE_AUTH_URL
-GOOGLE_CONTACTS_AUTH_REDIRECT_URL = GOOGLE_AUTH_REDIRECT_URL
-
-INSTAGRAM_SCOPE = ['basic']
-INSTAGRAM_AUTH_URL = 'http://m.gearplug.com/connection/instagram_auth/'
-INSTAGRAM_AUTH_REDIRECT_URL = 'connection:instagram_auth_success_create_connection'
-
-GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar'
-GOOGLE_CALENDAR_AUTH_URL = 'http://g.grplug.com/connection/auth-callback/google/'
-GOOGLE_CALENDAR_AUTH_REDIRECT_URL = 'connection:google_calendar_auth_success_create_connection'
-
-GOOGLE_YOUTUBE_SCOPE = 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload'
-GOOGLE_YOUTUBE_AUTH_URL = 'https://m.grplug.com/connection/google_youtube_auth/'
-GOOGLE_YOUTUBE_AUTH_REDIRECT_URL = 'connection:google_youtube_auth_success_create_connection'
 
 
 class ListConnectorView(LoginRequiredMixin, ListView):
@@ -120,13 +95,17 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('%s:create_success' % app_name)
 
     def form_valid(self, form, *args, **kwargs):
+        print(self.request.POST)
+
         connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
         if self.kwargs['connector_id'] is not None:
             c = Connection.objects.create(user=self.request.user, connector_id=self.kwargs['connector_id'])
             form.instance.connection = c
             if connector == ConnectorEnum.FacebookLeads:  # Extender token de facebook antes de guardar.
-                facebook_controller = ConnectorEnum.get_controller(connector)
-                form.instance.token = facebook_controller.extend_token(self.request.POST.get('token', ''))
+                controller_class = ConnectorEnum.get_controller(connector)
+                controller = controller_class()
+                token = self.request.POST.get('token', '')
+                form.instance.token = controller.extend_token(token)
             elif connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleContacts,
                                ConnectorEnum.GoogleForms, ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube]:
                 # Guardar credenciales de google en el formulario (deben venir en la sessión).
@@ -143,11 +122,10 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
             # Creación con url de authorization como OAuth (Trabajan con token en su mayoria.)
-            print(connector)
             if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms,
-                                          ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
-                                          ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
-                                          ConnectorEnum.Asana]:
+                             ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
+                             ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
+                             ConnectorEnum.Asana]:
                 name = 'create_with_auth'
             elif connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot,
                                ConnectorEnum.MercadoLibre]:
@@ -164,9 +142,9 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
             # Creación con url de authorization como OAuth (Trabajan con token en su mayoria.)
             if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms,
-                                          ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
-                                          ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
-                                          ConnectorEnum.Asana]:
+                             ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
+                             ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
+                             ConnectorEnum.Asana]:
                 name = 'create_with_auth'
             elif connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot,
                                ConnectorEnum.MercadoLibre]:  # Especial
@@ -182,26 +160,12 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         context['connection'] = connector.name
         context['connector_name'] = connector.name
         context['connector_id'] = connector.value
-        if connector == ConnectorEnum.GoogleSpreadSheets:
-            flow = get_flow(GOOGLE_AUTH_URL)
+        if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms, ConnectorEnum.GoogleContacts,
+                         ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube]:
+            api = GoogleAPIEnum.get_api(connector.name)
+            flow = get_flow(settings.GOOGLE_AUTH_CALLBACK_URL, scope=api.scope)
             context['authorization_url'] = flow.step1_get_authorize_url()
-            self.request.session['google_connection_type'] = 'drive'
-        elif connector == ConnectorEnum.GoogleForms:
-            flow = get_flow(GOOGLE_FORMS_AUTH_URL)
-            context['authorization_url'] = flow.step1_get_authorize_url()
-            self.request.session['google_connection_type'] = 'forms'
-        elif connector == ConnectorEnum.GoogleContacts:
-            flow = get_flow_google_contacts()
-            context['authorization_url'] = flow.step1_get_authorize_url()
-            self.request.session['google_connection_type'] = 'contacts'
-        elif connector == ConnectorEnum.GoogleCalendar:
-            flow = get_flow(GOOGLE_CALENDAR_AUTH_URL, GOOGLE_CALENDAR_SCOPE)
-            context['authorization_url'] = flow.step1_get_authorize_url()
-            self.request.session['google_connection_type'] = 'calendar'
-        elif connector == ConnectorEnum.YouTube:
-            flow = get_flow(GOOGLE_YOUTUBE_AUTH_URL, GOOGLE_YOUTUBE_SCOPE)
-            context['authorization_url'] = flow.step1_get_authorize_url()
-            self.request.session['google_connection_type'] = 'youtube'
+            self.request.session['google_connection_type'] = api.name.lower()
         elif connector == ConnectorEnum.Slack:
             context['authorization_url'] = SLACK_PERMISSIONS_URL
         elif connector == ConnectorEnum.Twitter:
@@ -241,6 +205,9 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
 
 
 class CreateConnectionSuccessView(LoginRequiredMixin, TemplateView):
+    """
+    template para cerrar la vnetana al terminar el auth??
+    """
     template_name = 'connection/create_connection_success.html'
     login_url = '/account/login/'
 
@@ -251,6 +218,7 @@ class TestConnectionView(LoginRequiredMixin, View):
     """
 
     def post(self, request, **kwargs):
+        print(request.POST)
         connector = ConnectorEnum.get_connector(kwargs['connector_id'])
         if 'connection_id' in request.POST:
             connection_object = Connection.objects.get(pk=request.POST['connection_id']).related_connection
@@ -300,65 +268,39 @@ class MercadoLibreAuthSuccessCreateConnection(TemplateView):
 
 class GoogleAuthView(View):
     def get(self, request, *args, **kwargs):
-        code = request.GET['code']
         try:
-            credentials = get_flow(GOOGLE_AUTH_URL).step2_exchange(code)
-            request.session['google_credentials'] = credentials.to_json()
-            return redirect(reverse(GOOGLE_AUTH_REDIRECT_URL))
+            code = request.GET['code']
+            if 'google_connection_type' in request.session:
+                api = GoogleAPIEnum.get_api(request.session['google_connection_type'])
+                credentials = get_flow(settings.GOOGLE_AUTH_CALLBACK_URL, scope=api.scope).step2_exchange(code)
+                request.session['google_credentials'] = credentials.to_json()
+            return redirect(reverse('connection:google_auth_success'))
         except Exception as e:
-            if kwargs['api'] == GoogleAPI.Forms:
-                credentials = get_flow(GOOGLE_FORMS_AUTH_URL).step2_exchange(code)
-                request.session['google_credentials'] = credentials.to_json()
-                return redirect(reverse(GOOGLE_FORMS_AUTH_REDIRECT_URL))
-            elif kwargs['api'] == GoogleAPI.SpreadSheets:
-                credentials = get_flow(GOOGLE_AUTH_URL).step2_exchange(code)
-                request.session['google_credentials'] = credentials.to_json()
-                return redirect(reverse(GOOGLE_AUTH_REDIRECT_URL))
-            elif kwargs['api'] == GoogleAPI.Calendar:
-                credentials = get_flow(GOOGLE_CALENDAR_AUTH_URL, GOOGLE_CALENDAR_SCOPE).step2_exchange(code)
-                request.session['google_credentials'] = credentials.to_json()
-                return redirect(reverse(GOOGLE_CALENDAR_AUTH_REDIRECT_URL))
-            elif kwargs['api'] == GoogleAPI.YouTube:
-                credentials = get_flow(GOOGLE_YOUTUBE_AUTH_URL, GOOGLE_YOUTUBE_SCOPE).step2_exchange(code)
-                request.session['google_credentials'] = credentials.to_json()
-                return redirect(reverse(GOOGLE_YOUTUBE_AUTH_REDIRECT_URL))
+            raise
+            print("error con credenciales de gogle")
 
 
-class GoogleAuthSuccessCreateConnection(TemplateView):
+class GoogleAuthSuccessView(TemplateView):
+    """
+    Auth generico para google
+    """
     template_name = 'connection/googlespreadsheets/success.html'
 
     def get(self, request, *args, **kwargs):
-        print('auth success')
         try:
-            if 'google_credentials' in request.session:
+            if 'google_credentials' in request.session and 'google_connection_type' in request.session:
                 credentials = request.session.pop('google_credentials')
-                if kwargs['api'] == GoogleAPI.Forms:
-                    c = Connection.objects.create(
-                        user=request.user, connector_id=ConnectorEnum.GoogleForms.value)
-                    n = int(GoogleFormsConnection.objects.filter(connection__user=request.user).count()) + 1
-                    gssc = GoogleFormsConnection.objects.create(
-                        connection=c, name="GoogleForms Connection # %s" % n, credentials_json=credentials)
-                elif kwargs['api'] == GoogleAPI.SpreadSheets:
-                    c = Connection.objects.create(
-                        user=request.user, connector_id=ConnectorEnum.GoogleSpreadSheets.value)
-                    n = int(GoogleSpreadSheetsConnection.objects.filter(connection__user=request.user).count()) + 1
-                    gssc = GoogleSpreadSheetsConnection.objects.create(
-                        connection=c, name="GoogleSheets Connection # %s" % n, credentials_json=credentials)
-                elif kwargs['api'] == GoogleAPI.Calendar:
-                    c = Connection.objects.create(
-                        user=request.user, connector_id=ConnectorEnum.GoogleCalendar.value)
-                    n = int(GoogleCalendarConnection.objects.filter(connection__user=request.user).count()) + 1
-                    gssc = GoogleCalendarConnection.objects.create(
-                        connection=c, name="GoogleCalendar Connection # %s" % n, credentials_json=credentials)
-                elif kwargs['api'] == GoogleAPI.YouTube:
-                    c = Connection.objects.create(
-                        user=request.user, connector_id=ConnectorEnum.YouTube.value)
-                    n = int(YouTubeConnection.objects.filter(connection__user=request.user).count()) + 1
-                    gssc = YouTubeConnection.objects.create(
-                        connection=c, name="YouTube Connection # %s" % n, credentials_json=credentials)
+                connector = ConnectorEnum.get_connector(name=request.session['google_connection_type'])
+                connector_model = ConnectorEnum.get_model(connector)
+                connection = Connection.objects.create(user=request.user, connector_id=connector.value)
+                n = int(connector_model.objects.filter(connection__user=request.user).count()) + 1
+                connection2 = connector_model.objects.create(connection=connection,
+                                                             name="{0} Connection # {1}".format(connector.name, n),
+                                                             credentials_json=credentials)
+                print("Google connection-> ", connection2)
         except Exception as e:
             raise
-        return super(GoogleAuthSuccessCreateConnection, self).get(request, *args, **kwargs)
+        return super(GoogleAuthSuccessView, self).get(request, *args, **kwargs)
 
 
 class TwitterAuthView(View):
@@ -700,7 +642,7 @@ class AsanaAuthView(View):
         return redirect(reverse('connection:create_authorizated_connection'))
 
 
-class CreateAuthorizatedConnectionView(View):
+class CreateTokenAuthorizedConnectionView(View):
     def get(self, request, **kwargs):
         if 'authorization_token' in self.request.session:
             data = self.request.session['connection_data']
@@ -713,7 +655,6 @@ class CreateAuthorizatedConnectionView(View):
             connector_model = ConnectorEnum.get_model(connector)
             print(connector)
             print(connector_model)
-
             c = Connection.objects.create(user=request.user, connector_id=connector.value)
             n = int(connector_model.objects.filter(
                 connection__user=request.user).count()) + 1
