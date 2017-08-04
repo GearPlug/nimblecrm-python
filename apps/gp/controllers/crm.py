@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
@@ -15,7 +16,7 @@ import json
 import xmltodict
 import string
 import os
-from apps.gp.models import StoredData
+from apps.gp.models import StoredData, Webhook
 from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 import xml.etree.ElementTree as ET
@@ -87,7 +88,8 @@ class SugarCRMController(BaseController):
 
     def download_to_stored_data(self, connection_object, plug, limit=29, order_by="date_entered DESC", **kwargs):
         print("descargando mierda")
-        module = plug.plug_action_specification.get(action_specification__name="module").value  # Especificar que specification
+        module = plug.plug_action_specification.get(
+            action_specification__name="module").value  # Especificar que specification
         print("module", module)
         data = self.get_entry_list(module, max_results=limit, order_by=order_by)
         new_data = []
@@ -354,12 +356,8 @@ class SalesforceController(BaseController):
                 except Exception as e:
                     print("Error getting salesforce attributes")
                     print(e)
-        elif kwargs:
-            try:
-                self.token = kwargs.pop('token', None)
-            except Exception as e:
-                print("Error getting salesforce attributes")
-                print(e)
+
+    def test_connection(self):
         if self.token is not None:
             try:
                 instance_url = self.get_instance_url()
@@ -388,14 +386,14 @@ class SalesforceController(BaseController):
     def download_to_stored_data(self, connection_object=None, plug=None, event=None, **kwargs):
         if event is not None:
             _items = []
-            # media es un objecto, se debe convertir a diccionario:
-            _dict = event.__dict__
+            # Todo verificar que este ID siempre existe independiente del action
+            event_id = event['new'][0]['Id']
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                          object_id=event.id)
+                                          object_id=event_id)
             if not q.exists():
-                for k, v in _dict.items():
+                for k, v in event.items():
                     obj = StoredData(connection=connection_object.connection, plug=plug,
-                                     object_id=event.id, name=k, value=v or '')
+                                     object_id=event_id, name=k, value=v or '')
                     _items.append(obj)
             extra = {}
             for item in _items:
@@ -533,29 +531,62 @@ class SalesforceController(BaseController):
         _dict = self.get_apex_triggers()
 
     def create_webhook(self):
-        body = None
-        with open(os.path.join(settings.BASE_DIR, 'files', 'Webhook.txt'), 'r') as file:
-            body = file.read()
+        action = self._plug.action.name
+        if action == 'new event':
+            sobject = self._plug.plug_action_specification.get(
+                action_specification__name='sobject')
+            event = self._plug.plug_action_specification.get(
+                action_specification__name='event')
+            # Creacion de Webhook
+            webhook = Webhook.objects.create(name='salesforce', plug=self._plug,
+                                             url='', expiration='')
+            # Verificar ngrok para determinar url_base
+            url_base = 'https://9963f73a.ngrok.io'
+            url_path = reverse('home:webhook', kwargs={'connector': 'salesforce',
+                                                       'webhook_id': webhook.id})
+            url = url_base + url_path
 
-        apex_class = self.create_apex_class('Webhook', body)
-        print(apex_class.text)
+            with open(os.path.join(settings.BASE_DIR, 'files', 'Webhook.txt'), 'r') as file:
+                body = file.read()
 
-        remote_site_site = self.create_remote_site('GearPlug' + 'RemoteSiteSetting', settings.SALESFORCE_WEBHOOK_URI)
-        print(remote_site_site.text)
+            apex_class = self.create_apex_class('Webhook', body)
+            if apex_class.status_code != 201:
+                return
 
-        body = None
-        with open(os.path.join(settings.BASE_DIR, 'files', 'WebhookTrigger.txt'), 'r') as file:
-            body = file.read()
+            remote_site_site = self.create_remote_site('GearPlug' + 'RemoteSiteSetting{}'.format(webhook.id), url)
+            if remote_site_site.status_code != 200:
+                return
 
-        sobject, event = self.get_specifications_values()
+            with open(os.path.join(settings.BASE_DIR, 'files', 'WebhookTrigger.txt'), 'r') as file:
+                body = file.read()
 
-        body = body.replace('{name}', 'GearPlug')
-        body = body.replace('{sobject}', sobject)
-        body = body.replace('{events}', event)
-        body = body.replace('{url}', "'" + settings.SALESFORCE_WEBHOOK_URI + "'")
+            body = body.replace('{name}', 'GearPlug')
+            body = body.replace('{sobject}', sobject.value)
+            body = body.replace('{events}', event.value)
+            body = body.replace('{url}', "'" + url + "'")
 
-        apex_trigger = self.create_apex_trigger('GearPlug', body, 'User')
-        print(apex_trigger.text)
+            apex_trigger = self.create_apex_trigger('GearPlug', body, 'User')
+            if apex_trigger.status_code == 201:
+                webhook.url = url_base + url_path
+                webhook.generated_id = apex_trigger.json()['id']
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            else:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
+            return True
+        return False
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() in ['sobject']:
+            tup = tuple({'id': p, 'name': p} for p in self.get_sobject_list())
+            return tup
+        if action_specification.name.lower() in ['event']:
+            tup = tuple({'id': p, 'name': p} for p in self.get_event_list())
+            return tup
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
     def get_sobject_list(self):
         return self.cget_sobject()
@@ -597,7 +628,6 @@ class HubSpotController(BaseController):
                     print("Error getting the hubspot token")
 
     def test_connection(self):
-
         response = self.request()
         if 'status' in response and response['status'] == "error":
             self.get_refresh_token(self._refresh_token)

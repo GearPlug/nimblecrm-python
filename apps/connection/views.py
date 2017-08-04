@@ -147,7 +147,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms,
                                           ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
                                           ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
-                                          ConnectorEnum.Asana]:
+                                          ConnectorEnum.Asana, ConnectorEnum.Salesforce]:
                 name = 'create_with_auth'
             elif connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot,
                                ConnectorEnum.MercadoLibre]:
@@ -217,7 +217,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             context['authorizaton_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
         elif connector == ConnectorEnum.Salesforce:
             flow = get_salesforce_auth()
-            context['authorizaton_url'] = flow
+            context['authorization_url'] = flow
         elif connector == ConnectorEnum.HubSpot:
             context['authorizaton_url'] = get_hubspot_url()
         elif connector == ConnectorEnum.Evernote:

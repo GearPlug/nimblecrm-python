@@ -73,39 +73,6 @@ class SalesforceEventList(LoginRequiredMixin, TemplateView):
         return super(SalesforceEventList, self).render_to_response(context)
 
 
-class SalesforceWebhookEvent(TemplateView):
-    template_name = 'wizard/async/select_options.html'
-    _instagram_controller = SalesforceController()
-
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(SalesforceWebhookEvent, self).dispatch(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        data = json.loads(request.body.decode('utf-8'))
-
-        import pprint
-        print(request.META)
-        pprint.pprint(data)
-        # TODO Esperar que los webhooks puedan ser dinámicos
-        # print(data)
-        # if data[0]['changed_aspect'] != 'media':
-        #     return JsonResponse({'hola': True})
-        # media_id = data[0]['data']['media_id']
-        # object_id = data[0]['object_id']
-        # qs = PlugSpecification.objects.filter(
-        #     action_specification__action__action_type='source',
-        #     action_specification__action__connector__name__iexact="instagram",
-        #     value=object_id,
-        #     plug__source_gear__is_active=True)
-        # for plug_specification in qs:
-        #     self._instagram_controller.create_connection(plug_specification.plug.connection.related_connection,
-        #                                                  plug_specification.plug)
-        #     media = self._instagram_controller.get_media(media_id)
-        #     self._instagram_controller.download_source_data(media=media)
-        return JsonResponse({'hola': True})
-
-
 class GoogleDriveSheetList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
 

@@ -4,7 +4,7 @@
 {% block body_content %}
     <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
           method="post" autocomplete="off">
-        <a href="javascript:auth('{{ salesforce_auth_url }}')">Salesforce Auth</a>
+        <a href="javascript:auth('{{ authorization_url }}')">Salesforce Auth</a>
         {% csrf_token %}
     </form>
 {% endblock %}

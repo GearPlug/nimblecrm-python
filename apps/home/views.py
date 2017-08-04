@@ -96,9 +96,25 @@ class IncomingWebhook(View):
                         ping = controller.test_connection()
                         if ping:
                             controller.download_source_data(event=event)
-            #     else:
+            # else:
             #         print('*** Evento Creado, Ninguna Tarea hasta ahora. ***')
             # print(decoded_events)
 
             # controller = controller_class()
+            return response
+
+        elif connector == ConnectorEnum.Salesforce:
+            response = HttpResponse(status=200)
+            event = json.loads(request.body.decode("utf-8"))
+            controller_class = ConnectorEnum.get_controller(connector)
+            specification = PlugActionSpecification.objects.filter(
+                action_specification__action__action_type='source',
+                action_specification__action__connector__name__iexact='salesforce',
+                plug__webhook__id=kwargs['webhook_id']).first()
+            controller = controller_class(
+                specification.plug.connection.related_connection,
+                specification.plug)
+            ping = controller.test_connection()
+            if ping:
+                controller.download_source_data(event=event)
             return response
