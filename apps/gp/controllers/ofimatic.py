@@ -189,7 +189,8 @@ class GoogleSpreadSheetsController(BaseController):
         return self.get_worksheet_first_row(**kwargs)
 
     def get_mapping_fields(self, **kwargs):
-        return self.get_worksheet_first_row()
+        fields=self.get_worksheet_first_row()
+        return [MapField({"name":f}, controller=ConnectorEnum.GoogleSpreadSheets) for f in fields]
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
