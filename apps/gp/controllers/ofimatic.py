@@ -463,10 +463,7 @@ class EvernoteController(BaseController):
         return False
 
     def get_notes(self, token):
-        print("get_notes")
         authToken = token
-        print("token")
-        print(authToken)
         client = EvernoteClient(token=token)
         noteStore = client.get_note_store()
         filter = NoteFilter()
@@ -497,8 +494,6 @@ class EvernoteController(BaseController):
             extra = {'controller': 'evernote'}
             for item in data_list:
                 note = self.create_note(item)
-                print("note")
-                print(note)
                 if note.guid:
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (note.guid), extra=extra)

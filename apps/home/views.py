@@ -120,6 +120,13 @@ class IncomingWebhook(View):
                 events = controller.get_events()
                 controller.download_source_data(events=events)
                 response.status_code = 200
-            return response
+        elif connector == ConnectorEnum.Gmail:
+            webhook_id = kwargs.pop('webhook_id', None)
+            print(webhook_id)
+            print(request.GET)
+            print(request.POST)
+            print(request.body)
+            response.status_code=200
+        return response
 
 
