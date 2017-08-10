@@ -1,7 +1,7 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification
+from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification, Webhook
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 import httplib2
@@ -189,7 +189,8 @@ class GoogleSpreadSheetsController(BaseController):
         return self.get_worksheet_first_row(**kwargs)
 
     def get_mapping_fields(self, **kwargs):
-        return self.get_worksheet_first_row()
+        fields=self.get_worksheet_first_row()
+        return [MapField({"name":f}, controller=ConnectorEnum.GoogleSpreadSheets) for f in fields]
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
@@ -220,26 +221,40 @@ class GoogleCalendarController(BaseController):
                     print("Error getting the GoogleCalendar attributes 1")
                     print(e)
                     credentials_json = None
-        elif not args and kwargs:
-            if 'credentials_json' in kwargs:
-                credentials_json = kwargs.pop('credentials_json')
         else:
             credentials_json = None
-        calendars = None
+
         if credentials_json is not None:
             try:
-                _json = json.dumps(credentials_json)
-                self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
+                self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
                 http_auth = self._credential.authorize(httplib2.Http())
                 self._connection = discovery.build('calendar', 'v3', http=http_auth)
-                calendar_list = self._connection.calendarList().list().execute()
-                calendars = calendar_list['items']
             except Exception as e:
                 print("Error getting the GoogleCalendar attributes 2")
                 print(e)
                 self._credential = None
                 calendars = None
+
+    def test_connection(self):
+        calendars = None
+        try:
+            self._refresh_token()
+            calendar_list = self._connection.calendarList().list().execute()
+            calendars = calendar_list['items']
+        except Exception as e:
+            # raise
+            print("Error Test connection GoogleCalendar")
+            calendars = None
         return calendars is not None
+
+    def _upate_connection_object_credentials(self):
+        self._connection_object.credentials_json = self._credential.to_json()
+        self._connection_object.save()
+
+    def _refresh_token(self):
+        if self._credential.access_token_expired:
+            self._credential.refresh(httplib2.Http())
+            self._upate_connection_object_credentials()
 
     def download_to_stored_data(self, connection_object=None, plug=None, events=None, **kwargs):
         if events is not None:
@@ -318,30 +333,38 @@ class GoogleCalendarController(BaseController):
     def create_webhook(self):
         url = 'https://www.googleapis.com/calendar/v3/calendars/{}/events/watch'.format(
             self._plug.plug_action_specification.all()[0].value)
-
+        webhook = Webhook.objects.create(name='googlecalendar', plug=self._plug, url='')
         headers = {
             'Authorization': 'Bearer {}'.format(self._connection_object.credentials_json['access_token']),
             'Content-Type': 'application/json'
         }
 
         body = {
-            "id": str(uuid.uuid4()),
+            "id": webhook.id,
             "type": "web_hook",
-            "address": "https://m.grplug.com/wizard/google/calendar/webhook/event/"
+            "address": "https://g.grplug.com/webhook/googlecalendar/{0}/".format(webhook.id),
         }
-
         r = requests.post(url, headers=headers, json=body)
-        if r.status_code == 200:
+        if r.status_code in [200,201]:
             data = r.json()
-            GooglePushWebhook.objects.create(connection=self._connection_object.connection, channel_id=data['id'],
-                                             resource_id=data['resourceId'], expiration=data['expiration'])
+            # GooglePushWebhook.objects.create(connection=self._connection_object.connection, channel_id=data['id'],
+            #                                  resource_id=data['resourceId'], expiration=data['expiration'])
+            webhook.url = "https://g.grplug.com/webhook/googlecalendar/{0}/".format(webhook.id)
+            webhook.generated_id = data['resourceId']
+            webhook.is_active = True
+            webhook.expiration = data['expiration']
+            webhook.save(update_fields=['url', 'generated_id', 'is_active', 'expiration'])
+        else:
+            webhook.is_deleted = True
+            webhook.save(update_fields=['is_deleted', ])
             return True
         return False
 
-    def get_events(self):
+    def get_events(self, limit=10):
+        calendar_id = self._plug.plug_action_specification.get(action_specification__name__iexact='calendar').value
         eventsResult = self._connection.events().list(
-            calendarId='primary', maxResults=10, singleEvents=True,
-            orderBy='startTime').execute()
+            calendarId=calendar_id, maxResults=limit, singleEvents=True,
+            orderBy='updated').execute()
         return eventsResult.get('items', None)
 
     def get_meta(self):
@@ -384,6 +407,14 @@ class GoogleCalendarController(BaseController):
     def get_mapping_fields(self, **kwargs):
         fields = self.get_meta()
         return [MapField(f, controller=ConnectorEnum.GoogleCalendar) for f in fields]
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        calendar_list = self._connection.calendarList().list().execute()
+        if action_specification.name.lower() == "calendar":
+            return tuple({"name": c["summary"], "id": c["id"]} for c in calendar_list['items'])
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class EvernoteController(BaseController):
@@ -432,10 +463,7 @@ class EvernoteController(BaseController):
         return False
 
     def get_notes(self, token):
-        print("get_notes")
         authToken = token
-        print("token")
-        print(authToken)
         client = EvernoteClient(token=token)
         noteStore = client.get_note_store()
         filter = NoteFilter()
@@ -466,8 +494,6 @@ class EvernoteController(BaseController):
             extra = {'controller': 'evernote'}
             for item in data_list:
                 note = self.create_note(item)
-                print("note")
-                print(note)
                 if note.guid:
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (note.guid), extra=extra)

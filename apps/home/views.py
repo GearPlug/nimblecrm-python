@@ -6,7 +6,7 @@ from django.utils.decorators import method_decorator
 from django.http import JsonResponse, HttpResponse
 import json
 from apps.user.views import LoginView
-from apps.gp.models import PlugActionSpecification
+from apps.gp.models import PlugActionSpecification, Webhook
 from apps.gp.enum import ConnectorEnum
 
 
@@ -39,6 +39,8 @@ class IncomingWebhook(View):
         return super(IncomingWebhook, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        response = HttpResponse(status=500)
+
         # print('post')
         connector_name = self.kwargs['connector'].lower()
         connector = ConnectorEnum.get_connector(name=connector_name)
@@ -69,7 +71,6 @@ class IncomingWebhook(View):
 
         # ASANA
         elif connector == ConnectorEnum.Asana:
-            response = HttpResponse(status=200)
             if 'HTTP_X_HOOK_SECRET' in request.META:
                 response['X-Hook-Secret'] = request.META[
                     'HTTP_X_HOOK_SECRET']
@@ -91,8 +92,8 @@ class IncomingWebhook(View):
                         ping = controller.test_connection()
                         if ping:
                             controller.download_source_data(event=event)
+            response.status_code = 200
         elif connector == ConnectorEnum.JIRA:
-            response = HttpResponse(status=200)
             data = json.loads(request.body.decode('utf-8'))
             issue = data['issue']
             project_list = PlugActionSpecification.objects.filter(
@@ -108,4 +109,24 @@ class IncomingWebhook(View):
                 ping = controller.test_connection()
                 if ping:
                     controller.download_source_data(issue=issue)
+            response.status_code = 200
+        elif connector == ConnectorEnum.GoogleCalendar:
+            webhook_id = kwargs.pop('webhook_id', None)
+            w = Webhook.objects.get(pk=webhook_id)
+            controller_class = ConnectorEnum.get_controller(connector)
+            controller = controller_class(w.plug.connection.related_connection, w.plug)
+            ping = controller.test_connection()
+            if ping:
+                events = controller.get_events()
+                controller.download_source_data(events=events)
+                response.status_code = 200
+        elif connector == ConnectorEnum.Gmail:
+            webhook_id = kwargs.pop('webhook_id', None)
+            print(webhook_id)
+            print(request.GET)
+            print(request.POST)
+            print(request.body)
+            response.status_code=200
         return response
+
+

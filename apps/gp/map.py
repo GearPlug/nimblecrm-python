@@ -128,6 +128,11 @@ class MapField(object):
                 self.choices = [(choice, choice) for choice in d['values']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
+        elif controller == ConnectorEnum.GoogleSpreadSheets:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+                self.field_type = "text"
         elif controller == ConnectorEnum.YouTube:
             if 'name' in d:
                 self.name = d['name']
@@ -215,6 +220,14 @@ class MapField(object):
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
         elif controller == ConnectorEnum.Evernote:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
+        elif controller == ConnectorEnum.Twitter:
             if 'name' in d:
                 self.name = d['name']
                 self.label = d['name']

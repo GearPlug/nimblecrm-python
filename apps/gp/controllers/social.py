@@ -46,6 +46,9 @@ class TwitterController(BaseController):
             me = api.me()
         return me is not None
 
+    def test_connection(self):
+        return self._token is not None
+
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
         if is_first:
@@ -95,8 +98,8 @@ class TwitterController(BaseController):
         }]
 
     def get_mapping_fields(self, **kwargs):
-        fields = self.get_target_fields()
-        return fields
+        fields=self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.Twitter) for f in fields]
 
 
 class InstagramController(BaseController):
