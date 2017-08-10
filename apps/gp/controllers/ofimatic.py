@@ -1,18 +1,21 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification
+from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification, Webhook
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 import httplib2
 from oauth2client import client as GoogleClient
 from dateutil.parser import parse
+from django.conf import settings
+from django.urls import reverse
 import pytz
 import requests
 from apiclient import discovery
 import json
 import uuid
 from evernote.api.client import EvernoteClient
+import wunderpy2
 import evernote.edam.type.ttypes as Types
 from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
 from evernote.edam.type.ttypes import NoteSortOrder
@@ -41,7 +44,8 @@ class GoogleSpreadSheetsController(BaseController):
                             self._worksheet_name = self._plug.plug_action_specification.get(
                                 action_specification__name__iexact='worksheet').value
                         except Exception as e:
-                            print("Error asignando los specifications GoogleSpreadSheets 2")
+                            print(
+                                "Error asignando los specifications GoogleSpreadSheets 2")
                 except Exception as e:
                     print("Error getting the GoogleSpreadSheets attributes 1")
                     print(e)
@@ -49,7 +53,8 @@ class GoogleSpreadSheetsController(BaseController):
         #
         files = None
         if credentials_json is not None:
-            self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
+            self._credential = GoogleClient.OAuth2Credentials.from_json(
+                json.dumps(credentials_json))
 
     def test_connection(self):
         try:
@@ -79,7 +84,8 @@ class GoogleSpreadSheetsController(BaseController):
         sheet_values = self.get_worksheet_values()
         new_data = []
         for idx, item in enumerate(sheet_values[1:]):
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=idx + 1)
+            q = StoredData.objects.filter(
+                connection=connection_object.connection, plug=plug, object_id=idx + 1)
             if not q.exists():
                 for idx2, cell in enumerate(item):
                     new_data.append(StoredData(name=sheet_values[0][idx2], value=cell, object_id=idx + 1,
@@ -178,7 +184,8 @@ class GoogleSpreadSheetsController(BaseController):
         body = {
             'values': [row]
         }
-        _range = "{0}!A{1}:{2}{1}".format(self._worksheet_name, idx, self.colnum_string(len(row)))
+        _range = "{0}!A{1}:{2}{1}".format(
+            self._worksheet_name, idx, self.colnum_string(len(row)))
         res = sheets_service.spreadsheets().values().update(
             spreadsheetId=self._spreadsheet_id,
             range=_range, valueInputOption='RAW',
@@ -192,15 +199,17 @@ class GoogleSpreadSheetsController(BaseController):
         return self.get_worksheet_first_row()
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
-        print("GSS->",action_specification.name, kwargs)
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
+        print("GSS->", action_specification.name, kwargs)
         if action_specification.name.lower() == 'spreadsheet':
             return tuple({'id': p['id'], 'name': p['name']} for p in self.get_sheet_list())
         elif action_specification.name.lower() == 'worksheet':
 
             return tuple({'id': p['title'], 'name': p['title']} for p in self.get_worksheet_list(**kwargs))
         else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
 
 
 class GoogleCalendarController(BaseController):
@@ -229,9 +238,11 @@ class GoogleCalendarController(BaseController):
         if credentials_json is not None:
             try:
                 _json = json.dumps(credentials_json)
-                self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
+                self._credential = GoogleClient.OAuth2Credentials.from_json(
+                    _json)
                 http_auth = self._credential.authorize(httplib2.Http())
-                self._connection = discovery.build('calendar', 'v3', http=http_auth)
+                self._connection = discovery.build(
+                    'calendar', 'v3', http=http_auth)
                 calendar_list = self._connection.calendarList().list().execute()
                 calendars = calendar_list['items']
             except Exception as e:
@@ -271,7 +282,8 @@ class GoogleCalendarController(BaseController):
                     data_list = []
         if self._plug is not None:
             for obj in data_list:
-                res = self.create_issue(self._plug.plug_action_specification.all()[0].value, obj)
+                res = self.create_issue(
+                    self._plug.plug_action_specification.all()[0].value, obj)
             extra = {'controller': 'googlecalendar'}
             return
         raise ControllerError("Incomplete.")
@@ -280,9 +292,11 @@ class GoogleCalendarController(BaseController):
         if 'start_dateTime' in event:
             start_datetime = event.pop('start_dateTime')
             if 'start' not in event:
-                event['start'] = {'dateTime': self._parse_datetime(start_datetime)}
+                event['start'] = {
+                    'dateTime': self._parse_datetime(start_datetime)}
             else:
-                event['start']['dateTime'] = self._parse_datetime(start_datetime)
+                event['start']['dateTime'] = self._parse_datetime(
+                    start_datetime)
         if 'start_timeZone' in event:
             start_timezone = event.pop('start_timeZone')
             if 'start' not in event:
@@ -445,7 +459,8 @@ class EvernoteController(BaseController):
         ourNoteList = noteStore.findNotesMetadata(token, filter, 0, 100, spec)
         list = []
         for note in ourNoteList.notes:
-            wholenote = noteStore.getNote(authToken, note.guid, True, True, True, True)
+            wholenote = noteStore.getNote(
+                authToken, note.guid, True, True, True, True)
             m = re.findall('<en-note[^>]*>(.*?)<\/en-note>', str(wholenote))
             note = {'title': note.title, 'id': note.guid, 'content': m[0]}
             list.append(note)
@@ -470,7 +485,8 @@ class EvernoteController(BaseController):
                 print(note)
                 if note.guid:
                     extra['status'] = 's'
-                    self._log.info('Item: %s successfully sent.' % (note.guid), extra=extra)
+                    self._log.info('Item: %s successfully sent.' %
+                                   (note.guid), extra=extra)
                     obj_list.append(note.guid)
                 else:
                     extra['status'] = 'f'
@@ -487,3 +503,190 @@ class EvernoteController(BaseController):
         note.content = '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'
         note.content += '<en-note>' + c + '</en-note>'
         return noteStore.createNote(note)
+
+
+class WunderListController(BaseController):
+    _token = None
+    _api = wunderpy2.WunderApi()
+    _client = None
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(WunderListController, self).create_connection(*args)
+            if self._connection_object is not None:
+                self._token = self._connection_object.token
+
+    def test_connection(self):
+        self._client = self._api.get_client(
+            self._token, settings.WUNDERLIST_CLIENT_ID)
+        try:
+            a = self.get_lists()
+            return self._token is not None
+        except Exception as e:
+            return self._token is None
+        return True
+
+    def get_lists(self):
+        response = self._client.authenticated_request(
+            self._client.api.Endpoints.LISTS)
+        a = response.json()
+        return a
+
+    def get_task(self, id):
+        headers = {
+            'X-Access-Token': self._token,
+            'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
+        }
+        response = requests.get('http://a.wunderlist.com/api/v1/tasks/{0}'.format(str(id)),
+                                headers=headers)
+        return response.json()
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
+        if action_specification.name.lower() == 'new task':
+            return tuple(
+                {'name': p['title'], 'id': p['id']} for p in self.get_lists())
+        elif action_specification.name.lower() == 'task list':
+            # Para esto necesitamos las listas de tareas, para que
+            # el usuario seleccione de que lista quiere leer
+            # las tareas completadas.
+            return tuple(
+                {'id': l['id'], 'name': l['title']} for l in
+                self.get_lists())
+        else:
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
+
+    def create_webhook(self):
+        action = self._plug.action.name
+        if action == 'completed task':
+            list_id = self._plug.plug_action_specification.get(
+                action_specification__name='task list')
+            webhook = Webhook.objects.create(
+                name='wunderlist', plug=self._plug, url='')
+            url_base = 'https://d6e42ab0.ngrok.io'
+            url_path = reverse('home:webhook', kwargs={'connector': 'wunderlist',
+                                                       'webhook_id': webhook.id})
+
+            headers = {
+                'X-Access-Token': self._token,
+                'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
+            }
+            body_data = {
+                'list_id': int(list_id.value),
+                'url': 'https://d6e42ab0.ngrok.io/webhook/wunderlist/1/',
+                'processor_type': 'generic',
+                'configuration': ''
+            }
+            response = requests.post(
+                'http://a.wunderlist.com/api/v1/webhooks', headers=headers, data=body_data)
+            print(response.status_code)
+            if response.status_code == 201:
+                webhook.generated_id = response.json()['id']
+                webhook.url = response.json()['url']
+                webhook.is_active = True
+                webhook.save(update_fields=[
+                             'url', 'generated_id', 'is_active'])
+                print('Webhook Creado con exito: ', response.json())
+            else:
+                print('*** Error Creando WebHook ***')
+
+        return True
+
+    def list_webhooks(self):
+        action = self._plug.action.name
+        if action == 'completed task':
+            list_id = self._plug.plug_action_specification.get(
+                action_specification__name='task list')
+
+            headers = {
+                'X-Access-Token': self._token,
+                'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
+            }
+            body_data = {
+                'list_id': int(list_id.value),
+            }
+            response = requests.get(
+                'http://a.wunderlist.com/api/v1/webhooks', headers=headers, data=body_data)
+            print('*******************')
+            print('LISTA DE WEBHOOKS:', response.json())
+            return(response.json())
+
+    # Metodo de borrado de webhooks, utilizacion manual.
+    def delete_webhook(self):
+        webhook_list = self.list_webhooks()
+        if len(webhook_list) > 0:
+            for wh in webhook_list:
+                print(wh)
+                print(type(wh))
+                headers = {
+                    'X-Access-Token': self._token,
+                    'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
+                }
+                # El valor revision queda un poco confuso, la documentacion lo define como
+                # un valor proveniente de la entidad que se desea actualizar, el valor
+                # no se encuentra en el response que se recibe cuando se crea el webhook
+                # pero utilizando el integer 0 se recibe en el response el status code
+                # 204, que segun la documentacion indica que el proceso de borrado se
+                # completo con exito.
+                body_data = {
+                    'revision': 0,
+                }
+                response = requests.delete('http://a.wunderlist.com/api/v1/webhooks/{0}'.format(str(wh['id'])),
+                                           headers=headers, data=body_data)
+                try:
+                    print(response)
+                    print(response.status_code)
+                    print(response.json())
+                    print(response.text)
+                except Exception as e:
+                    print(e)
+                    pass
+        else:
+            print('NO HAY WEBHOOKS CREADOS EN ESTE MOMENTO.')
+
+    def download_to_stored_data(self, connection_object=None, plug=None,
+                                task=None, **kwargs):
+        if task is not None:
+            task_id = task['subject']['id']
+            q = StoredData.objects.filter(
+                connection=connection_object.connection, plug=plug,
+                object_id=task_id)
+            task_stored_data = []
+            if not q.exists():
+                task_data = self.get_task(task_id)
+                for k, v in task_data.items():
+                    if type(v) not in [list, dict]:
+                        task_stored_data.append(
+                            StoredData(connection=connection_object.connection,
+                                       plug=plug, object_id=task_id,
+                                       name=k, value=v or ''))
+                # print('Lo que se esta guardando: ', task_stored_data)
+                # # for key, value in task_data['memberships'][0].items():
+                # #     for k, v in value.items():
+                # #         task_stored_data.append(
+                # #             StoredData(connection=connection_object.connection,
+                # #                        plug=plug, object_id=event_resource,
+                # #                        name='{0}_{1}'.format(key, k),
+                # #                        value=v or ''))
+            extra = {}
+            for task in task_stored_data:
+                try:
+                    extra['status'] = 's'
+                    extra = {'controller': 'wunderlist'}
+                    task.save()
+                    self._log.info(
+                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            task.object_id, task.plug.id,
+                            task.connection.id),
+                        extra=extra)
+                except Exception as e:
+                    extra['status'] = 'f'
+                    self._log.info(
+                        'Item ID: %s, Connection: %s, Plug: %s failed.' % (
+                            task.object_id, task.plug.id,
+                            task.connection.id),
+                        extra=extra)
+            return True
+        return False

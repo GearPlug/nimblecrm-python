@@ -188,12 +188,17 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'staticfiles'),
 ]
 
-AUTHENTICATION_BACKENDS = ['account.auth_backends.EmailAuthenticationBackend', ]
+AUTHENTICATION_BACKENDS = [
+    'account.auth_backends.EmailAuthenticationBackend', ]
 
 # account app
 ACCOUNT_EMAIL_UNIQUE = True
 ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = True
-ACCOUNT_USER_DISPLAY = lambda user: user.email
+
+
+def ACCOUNT_USER_DISPLAY(user): return user.email
+
+
 ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/'
 ACCOUNT_SIGNUP_REDIRECT_URL = '/dashboard/'
 
@@ -215,7 +220,8 @@ EMAIL_PORT = 587
 # Slack
 SLACK_CLIENT_ID = '129041278545.209366736883'
 SLACK_CLIENT_SECRET = '8a78615be489b8314702c0d67f159ddd'
-SLACK_PERMISSIONS_URL = 'https://slack.com/oauth/authorize?client_id={0}&scope=team:read,channels:read,chat:write:bot,im:history,im:read'.format(SLACK_CLIENT_ID)
+SLACK_PERMISSIONS_URL = 'https://slack.com/oauth/authorize?client_id={0}&scope=team:read,channels:read,chat:write:bot,im:history,im:read'.format(
+    SLACK_CLIENT_ID)
 
 # Google (Gustavo)
 GOOGLE_CLIENT_ID = '278354320502-6ptllif5k11cn8uskm8aotp6fqb2g7dr.apps.googleusercontent.com'
@@ -251,21 +257,21 @@ SALESFORCE_REDIRECT_URI = ''
 SALESFORCE_AUTHORIZE_URL = 'https://login.salesforce.com/services/oauth2/authorize'
 SALESFORCE_WEBHOOK_URI = ''
 
-#Shopify
-SHOPIFY_SHOP_URL="my-first-project-2017"
-SHOPIFY_API_KEY="8058ebd552b2ba23d9d1c6221b514fab"
-SHOPIFY_API_KEY_SECRET="d32f6b242ddaa2dd2b29bf3eb329a1c5"
-SHOPIFY_REDIRECT_URI="http://127.0.0.1:8000/connection/shopify_auth/"
+# Shopify
+SHOPIFY_SHOP_URL = "my-first-project-2017"
+SHOPIFY_API_KEY = "8058ebd552b2ba23d9d1c6221b514fab"
+SHOPIFY_API_KEY_SECRET = "d32f6b242ddaa2dd2b29bf3eb329a1c5"
+SHOPIFY_REDIRECT_URI = "http://127.0.0.1:8000/connection/shopify_auth/"
 
-#Hubspot
-HUBSPOT_REDIRECT_URI="https://87b30496.ngrok.io/connection/hubspot_auth/"
-HUBSPOT_CLIENT_ID="633af850-f08a-42e5-a6e7-da65a177bcd5"
-HUBSPOT_CLIENT_SECRET="94e688b7-9390-4b59-a6df-151eac348e89"
+# Hubspot
+HUBSPOT_REDIRECT_URI = "https://87b30496.ngrok.io/connection/hubspot_auth/"
+HUBSPOT_CLIENT_ID = "633af850-f08a-42e5-a6e7-da65a177bcd5"
+HUBSPOT_CLIENT_SECRET = "94e688b7-9390-4b59-a6df-151eac348e89"
 
-#Evernote
-EVERNOTE_CONSUMER_KEY="ltorres-6238"
-EVERNOTE_CONSUMER_SECRET="a4673a77baca5424"
-EVERNOTE_REDIRECT_URL="http://127.0.0.1:8000/connection/evernote_auth/"
+# Evernote
+EVERNOTE_CONSUMER_KEY = "ltorres-6238"
+EVERNOTE_CONSUMER_SECRET = "a4673a77baca5424"
+EVERNOTE_REDIRECT_URL = "http://127.0.0.1:8000/connection/evernote_auth/"
 
 
 # Asana
@@ -275,7 +281,11 @@ ASANA_REDIRECT_URL = 'https://26677b10.ngrok.io/connection/auth-callback/asana/'
 ASANA_WEBHOOK_URL = ''
 
 # Mercadolibre
-MERCADOLIBRE_CLIENT_ID=''
-MERCADOLIBRE_CLIENT_SECRET=''
-MERCADOLIBRE_REDIRECT_URL='https://9d25c5df.ngrok.io/connection/mercadolibre_auth/'
+MERCADOLIBRE_CLIENT_ID = ''
+MERCADOLIBRE_CLIENT_SECRET = ''
+MERCADOLIBRE_REDIRECT_URL = 'https://9d25c5df.ngrok.io/connection/mercadolibre_auth/'
 
+# Wunderlist
+WUNDERLIST_CLIENT_ID = 'c68a87efca8b22d50fee'
+WUNDERLIST_CLIENT_SECRET = '8a60113066eb052463be8e1d7414edb8a2f57d2f4cd118b82fb201820c8c'
+WUNDERLIST_REDIRECT_URL = 'https://d6e42ab0.ngrok.io/connection/auth-callback/wunderlist/'
