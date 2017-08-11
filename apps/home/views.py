@@ -38,10 +38,19 @@ class IncomingWebhook(View):
         # print('dispatch')
         return super(IncomingWebhook, self).dispatch(request, *args, **kwargs)
 
+    def head(self,request,*args, **kwargs):
+        print('head')
+        response = HttpResponse(status=500)
+        connector_name = self.kwargs['connector'].lower()
+        connector = ConnectorEnum.get_connector(name=connector_name)
+        if connector == ConnectorEnum.SurveyMonkey:
+            response.status_code = 200
+            return response
+
     def post(self, request, *args, **kwargs):
         force_update = request.POST.get('force_update', False)
         response = HttpResponse(status=500)
-        connector_name = kwargs['connector'].lower()
+        connector_name = self.kwargs['connector'].lower()
         connector = ConnectorEnum.get_connector(name=connector_name)
         # SLACK
         response = HttpResponse(status=200)
@@ -126,6 +135,28 @@ class IncomingWebhook(View):
             print(request.POST)
             print(request.body)
             response.status_code=200
+        elif connector == ConnectorEnum.SurveyMonkey:
+            responses = []
+            data = request.body.decode('utf-8')
+            data = json.loads(data)
+            survey = {'id': data['object_id']}
+            responses.append(survey)
+            qs = PlugActionSpecification.objects.filter(
+                action_specification__action__action_type='source',
+                action_specification__action__connector__name__iexact="SurveyMonkey",
+                value=data['resources']['survey_id']
+            )
+            response.status_code = 200
+            for plug_action_specification in qs:
+                controller_class = ConnectorEnum.get_controller(connector)
+                controller=controller_class(
+                    plug_action_specification.plug.connection.related_connection,
+                    plug_action_specification.plug)
+                ping=controller.test_connection
+                if ping:
+                    controller.download_source_data(responses=responses)
+                else:
+                    print("No callback event")
         return response
 
 
