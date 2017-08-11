@@ -1,7 +1,7 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification, Webhook
+from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification, Webhook, PlugActionSpecification
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 import httplib2
@@ -541,13 +541,57 @@ class WunderListController(BaseController):
                                 headers=headers)
         return response.json()
 
+    def create_task(self, **kwargs):
+        list_id = int(kwargs['parents'])
+        title = str(kwargs['title'])
+        print(list_id)
+        print(title)
+
+        data = {'list_id': list_id, 'title': title}
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain', 'X-Access-Token': self._token, 'X-Client-ID': settings.WUNDERLIST_CLIENT_ID}
+
+        response = requests.post('http://a.wunderlist.com/api/v1/tasks', data = json.dumps(data), headers=headers)
+        print(response.status_code)
+        print(response.text)
+        return response
+
+    def update_task(self):
+        
+        data = {'list_id': list_id, 'title': title}
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain', 'X-Access-Token': self._token, 'X-Client-ID': settings.WUNDERLIST_CLIENT_ID}
+
+        response = requests.post('http://a.wunderlist.com/api/v1/tasks', data = json.dumps(data), headers=headers)
+        print(response.status_code)
+        print(response.text)
+        return response
+        pass
+
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
-        if action_specification.name.lower() == 'new task':
-            return tuple(
-                {'name': p['title'], 'id': p['id']} for p in self.get_lists())
-        elif action_specification.name.lower() == 'task list':
+        # if action_specification.name.lower() == 'task':
+        #     # task_list_id = action_specification_id
+        #     task_list_values = PlugActionSpecification.objects.filter(
+        #          action_specification__action__action_type='target',
+        #          action_specification__action__connector__name__iexact="wunderlist",
+        #          action_specification__name__iexact='list')
+        #     print('List Id for Task: ', task_list_values.value('value'))
+        #     task_list_id = ''
+        #     headers = {
+        #         'X-Access-Token': self._token,
+        #         'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
+        #     }
+        #     params = {'list_id': task_list_id}
+        #     response = requests.get('http://a.wunderlist.com/api/v1/tasks', headers=headers, data=params)
+        #     try:
+        #         print('Task of this list: ', response.text)
+        #         print('Task of this list: ', response.json)
+        #         print('Task of this list: ', response.body)
+        #     except Exception as e:
+        #         print('CLomo tu te llama yo no se')
+        #     return tuple(
+        #         {'name': p['title'], 'id': p['id']} for p in self.get_lists())
+        elif action_specification.name.lower() == 'list':
             # Para esto necesitamos las listas de tareas, para que
             # el usuario seleccione de que lista quiere leer
             # las tareas completadas.
@@ -648,6 +692,7 @@ class WunderListController(BaseController):
 
     def download_to_stored_data(self, connection_object=None, plug=None,
                                 task=None, **kwargs):
+        print('Download To Stored Data')
         if task is not None:
             task_id = task['subject']['id']
             q = StoredData.objects.filter(
@@ -656,22 +701,16 @@ class WunderListController(BaseController):
             task_stored_data = []
             if not q.exists():
                 task_data = self.get_task(task_id)
+                print('task data: ', task_data)
                 for k, v in task_data.items():
                     if type(v) not in [list, dict]:
                         task_stored_data.append(
                             StoredData(connection=connection_object.connection,
                                        plug=plug, object_id=task_id,
                                        name=k, value=v or ''))
-                # print('Lo que se esta guardando: ', task_stored_data)
-                # # for key, value in task_data['memberships'][0].items():
-                # #     for k, v in value.items():
-                # #         task_stored_data.append(
-                # #             StoredData(connection=connection_object.connection,
-                # #                        plug=plug, object_id=event_resource,
-                # #                        name='{0}_{1}'.format(key, k),
-                # #                        value=v or ''))
             extra = {}
             for task in task_stored_data:
+                print('task stored data: ', task_stored_data)
                 try:
                     extra['status'] = 's'
                     extra = {'controller': 'wunderlist'}
@@ -681,6 +720,8 @@ class WunderListController(BaseController):
                             task.object_id, task.plug.id,
                             task.connection.id),
                         extra=extra)
+                    print('Extra: ', extra)
+                    print('Task:', task)
                 except Exception as e:
                     extra['status'] = 'f'
                     self._log.info(
@@ -690,3 +731,37 @@ class WunderListController(BaseController):
                         extra=extra)
             return True
         return False
+
+    def get_target_fields(self, **kwargs):
+        print('Target Fields')
+        return [{'name': 'title', 'type': 'text', 'required': True},
+                {'name': 'completed', 'type': 'text', 'required': True},
+                {'name': 'completed_by_id', 'type': 'int', 'required': False},
+                {'name': 'completed_at', 'type': 'text', 'required': False},
+                {'name': 'created_at', 'type': 'text', 'required': True},
+                {'name': 'parents', 'type': 'int', 'required': True}
+                ]
+
+    def get_mapping_fields(self, **kwargs):
+        print('Mapping Fields')
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.WunderList) for f in fields]
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        print('Sending Stored Data')
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if self._plug is not None:
+            obj_list = []
+            extra = {'controller': 'WunderList'}
+            for item in data_list:
+                task = self.create_task(**item)
+                if task.status_code in [200, 201]:
+                    extra['status'] = 's'
+                    self._log.info('Item: %s successfully sent.' % (task.json()['data']['name']),
+                                   extra=extra)
+                    obj_list.append(task)
+                else:
+                    extra['status'] = 'f'
+                    self._log.info('Item: failed to send.', extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")

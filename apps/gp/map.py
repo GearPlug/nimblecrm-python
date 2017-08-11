@@ -150,7 +150,8 @@ class MapField(object):
             if 'type' in d:
                 self.field_type = d['type']
             if 'picklistValues' in d and d['picklistValues']:
-                self.choices = [(c['value'], c['label']) for c in d['picklistValues'] if c['active']]
+                self.choices = [(c['value'], c['label'])
+                                for c in d['picklistValues'] if c['active']]
                 self.choices.insert(0, ('', ''))
         elif controller == ConnectorEnum.Shopify:
             if 'name' in d:
@@ -234,6 +235,15 @@ class MapField(object):
             if 'name' in d:
                 self.name = d['name']
                 self.label = d['name']
+            self.field_type = 'text'
+        elif controller == ConnectorEnum.WunderList:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
             self.field_type = 'text'
         else:
             if 'name' in d:

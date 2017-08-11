@@ -111,18 +111,15 @@ class IncomingWebhook(View):
                     controller.download_source_data(issue=issue)
         # WUNDERLIST
         elif connector == ConnectorEnum.WunderList:
-            print("hola luis")
             response = HttpResponse(status=200)
             controller_class = ConnectorEnum.get_controller(connector)
             task = json.loads(request.body.decode("utf-8"))
-            # for k, v in task.items():
-            #     print(k,v)
             if 'operation' in task:
                 id_list = task['subject']['parents'][0]['id']
-                kwargs = {'action_specification__action__action_type':'source',
-                        'action_specification__action__connector__name__iexact':'wunderlist',
-                        'action_specification__name__iexact':'list',
-                        'value':task['subject']['parents'][0]['id']}
+                kwargs = {'action_specification__action__action_type': 'source',
+                          'action_specification__action__connector__name__iexact': 'wunderlist',
+                          'action_specification__name__iexact': 'list',
+                          'value': task['subject']['parents'][0]['id']}
                 if task['operation'] == 'create':
                     kwargs['action_specification__action__name__iexact'] = 'new task'
                     print('se creo una tarea')
@@ -132,13 +129,15 @@ class IncomingWebhook(View):
                         kwargs['action_specification__action__name__iexact'] = 'completed task'
                 #
                 try:
-                    specification_list = PlugActionSpecification.objects.filter(**kwargs)
+                    specification_list = PlugActionSpecification.objects.filter(
+                        **kwargs)
                     print(len(specification_list))
                 except Exception as e:
                     print(e)
                     specification_list = []
                 for s in specification_list:
-                    controller = controller_class(s.plug.connection.related_connection, s.plug)
+                    controller = controller_class(
+                        s.plug.connection.related_connection, s.plug)
                     ping = controller.test_connection()
                     if ping:
                         controller.download_source_data(task=task)
