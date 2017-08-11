@@ -63,7 +63,6 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         ping = controller.test_connection()
         if ping:
             if self.object.is_source:
-                print("SOURCE!")
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
                 if c in [ConnectorEnum.Bitbucket, ConnectorEnum.JIRA, ConnectorEnum.SurveyMonkey,
                          ConnectorEnum.Instagram, ConnectorEnum.YouTube, ConnectorEnum.Shopify,

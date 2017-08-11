@@ -660,32 +660,6 @@ class YouTubeChannelsList(LoginRequiredMixin, TemplateView):
         return super(YouTubeChannelsList, self).render_to_response(context)
 
 
-class JiraWebhookEvent(TemplateView):
-    template_name = 'wizard/async/select_options.html'
-    _jira_controller = JIRAController()
-
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(JiraWebhookEvent, self).dispatch(request, *args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        return super(JiraWebhookEvent, self).get(request)
-
-    def post(self, request, *args, **kwargs):
-        data = json.loads(request.body.decode('utf-8'))
-        issue = data['issue']
-        qs = PlugActionSpecification.objects.filter(
-            action_specification__action__action_type='source',
-            action_specification__action__connector__name__iexact="jira",
-            value=issue['fields']['project']['id'],
-            plug__source_gear__is_active=True)
-        for plug_action_specification in qs:
-            self._jira_controller.create_connection(plug_action_specification.plug.connection.related_connection,
-                                                    plug_action_specification.plug)
-            self._jira_controller.download_source_data(issue=issue)
-        return JsonResponse({'hola': True})
-
-
 class GoogleCalendarWebhookEvent(TemplateView):
     template_name = 'wizard/async/select_options.html'
     _googlecalendar_controller = GoogleCalendarController()
