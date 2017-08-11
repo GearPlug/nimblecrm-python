@@ -8,6 +8,7 @@ import json
 from apps.user.views import LoginView
 from apps.gp.models import PlugActionSpecification
 from apps.gp.enum import ConnectorEnum
+from urllib.parse import unquote
 
 
 class DashBoardView(LoginRequiredMixin, TemplateView):
@@ -37,6 +38,13 @@ class IncomingWebhook(View):
     def dispatch(self, request, *args, **kwargs):
         # print('dispatch')
         return super(IncomingWebhook, self).dispatch(request, *args, **kwargs)
+
+    def head(self, request, *args, **kwargs):
+        connector_name = self.kwargs['connector'].lower()
+        connector = ConnectorEnum.get_connector(name=connector_name)
+        if connector == ConnectorEnum.Mandrill:
+            response = HttpResponse(status=200)
+            return response
 
     def post(self, request, *args, **kwargs):
         # print('post')
@@ -117,4 +125,27 @@ class IncomingWebhook(View):
             ping = controller.test_connection()
             if ping:
                 controller.download_source_data(event=event)
+            return response
+
+        elif connector == ConnectorEnum.Mandrill:
+            response = HttpResponse(status=200)
+            decoded = request.body.decode("utf-8")
+            _list = json.loads(unquote(decoded[len('mandrill_events='):]))
+            controller_class = ConnectorEnum.get_controller(connector)
+            specification = PlugActionSpecification.objects.filter(
+                action_specification__action__action_type='source',
+                action_specification__action__connector__name__iexact='mandrill',
+                plug__webhook__id=kwargs['webhook_id']).first()
+            controller = controller_class(
+                specification.plug.connection.related_connection,
+                specification.plug)
+            ping = controller.test_connection()
+            if ping:
+                for event in _list:
+                    controller.download_source_data(event=event)
+            return response
+        elif connector == ConnectorEnum.MercadoLibre:
+            response = HttpResponse(status=200)
+            decoded = json.loads(request.body.decode("utf-8"))
+            print(decoded)
             return response

@@ -242,13 +242,12 @@ INSTAGRAM_CLIENT_SECRET = 'yyyyyyyyy'
 YOUTUBE_API_KEY = 'XXXXXXXXXXXX'
 
 # SalesForce
-SALESFORCE_CLIENT_ID = ''
-SALESFORCE_CLIENT_SECRET = ''
+SALESFORCE_CLIENT_ID = '3MVG9CEn_O3jvv0w0NDdh1QNjan9zEmgVh3F6Mxsuyq4NUo.InTWMLG4ayz5mlCxTw7eWvlKR.PmtOdTladnW'
+SALESFORCE_CLIENT_SECRET = '1338285709176181412'
 SALESFORCE_REQUEST_TOKEN_URL = 'https://login.salesforce.com/services/oauth2/token'
 SALESFORCE_ACCESS_TOKEN_URL = 'https://login.salesforce.com/services/oauth2/token'
-SALESFORCE_REDIRECT_URI = ''
+SALESFORCE_REDIRECT_URI = 'https://9963f73a.ngrok.io/connection/salesforce_auth/'
 SALESFORCE_AUTHORIZE_URL = 'https://login.salesforce.com/services/oauth2/authorize'
-SALESFORCE_WEBHOOK_URI = ''
 
 #Shopify
 SHOPIFY_SHOP_URL="my-first-project-2017"
@@ -274,7 +273,7 @@ ASANA_REDIRECT_URL = 'https://26677b10.ngrok.io/connection/auth-callback/asana/'
 ASANA_WEBHOOK_URL = ''
 
 # Mercadolibre
-MERCADOLIBRE_CLIENT_ID=''
-MERCADOLIBRE_CLIENT_SECRET=''
-MERCADOLIBRE_REDIRECT_URL='https://9d25c5df.ngrok.io/connection/mercadolibre_auth/'
+MERCADOLIBRE_CLIENT_ID='1063986061828245'
+MERCADOLIBRE_CLIENT_SECRET='MyDv8rmoWjJneTgkxEhp3QRONbUp3CPV'
+MERCADOLIBRE_REDIRECT_URL='https://e33de05d.ngrok.io/connection/mercadolibre_auth/'
 

@@ -516,13 +516,6 @@ class SalesforceController(BaseController):
 
         return requests.post(self.metadata_url(), headers=headers, data=test)
 
-    # tree = ET.parse('remote_site.xml')
-    # print(tree)
-    # print(ET.tostring(tree.getroot(), encoding='utf8', method='xml'))
-
-
-    # controlador
-
     def cget_sobject(self):
         _dict = self.get_sobjects()
         return [o['name'] for o in _dict['sobjects'] if o['triggerable']]
@@ -549,18 +542,27 @@ class SalesforceController(BaseController):
             with open(os.path.join(settings.BASE_DIR, 'files', 'Webhook.txt'), 'r') as file:
                 body = file.read()
 
-            apex_class = self.create_apex_class('Webhook', body)
-            if apex_class.status_code != 201:
-                return
+            response1 = self.create_apex_class('Webhook', body)
+            print(response1.json())
+            print(response1.status_code)
+            if response1.status_code != 201:
+                response = response1.json()
+                # Si el APEX Class ya existe (es duplicado), continuamos, si es otro error, paramos
+                print(response[0]['errorCode'])
+                print(response[0]['errorCode'] != 'DUPLICATE_VALUE')
+                if 'errorCode' in response[0] and response[0]['errorCode'] == 'DUPLICATE_VALUE':
+                    pass
+                else:
+                    return False
 
-            remote_site_site = self.create_remote_site('GearPlug' + 'RemoteSiteSetting{}'.format(webhook.id), url)
-            if remote_site_site.status_code != 200:
-                return
+            response2 = self.create_remote_site('GearPlug' + 'RemoteSiteSetting{}'.format(webhook.id), url)
+            if response2.status_code != 200:
+                return False
 
             with open(os.path.join(settings.BASE_DIR, 'files', 'WebhookTrigger.txt'), 'r') as file:
                 body = file.read()
 
-            body = body.replace('{name}', 'GearPlug')
+            body = body.replace('{name}', 'GearPlug{}'.format(webhook.id))
             body = body.replace('{sobject}', sobject.value)
             body = body.replace('{events}', event.value)
             body = body.replace('{url}', "'" + url + "'")
