@@ -125,7 +125,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms,
                              ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
                              ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
-                             ConnectorEnum.Asana]:
+                             ConnectorEnum.Asana, ConnectorEnum.Twitter]:
                 name = 'create_with_auth'
             elif connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot,
                                ConnectorEnum.MercadoLibre]:
@@ -144,7 +144,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms,
                              ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
                              ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
-                             ConnectorEnum.Asana]:
+                             ConnectorEnum.Asana, ConnectorEnum.Twitter]:
                 name = 'create_with_auth'
             elif connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot,
                                ConnectorEnum.MercadoLibre]:  # Especial

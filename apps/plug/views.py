@@ -69,9 +69,6 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
                          ConnectorEnum.GoogleCalendar, ConnectorEnum.Asana]:
                     print("WEBHOOK!!")
                     controller.create_webhook()
-            elif self.object.is_target:
-                if c == ConnectorEnum.MailChimp:
-                    controller.get_target_fields(list_id=specification_list[0]['value'])
         self.request.session['source_connection_id'] = None
         self.request.session['target_connection_id'] = None
         return HttpResponseRedirect(self.get_success_url())
