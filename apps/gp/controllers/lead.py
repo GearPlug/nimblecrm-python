@@ -1,6 +1,6 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
-from apps.gp.models import StoredData, ActionSpecification
+from apps.gp.models import StoredData, ActionSpecification, Webhook
 from apiconnector.settings import FACEBOOK_APP_SECRET, FACEBOOK_APP_ID, FACEBOOK_GRAPH_VERSION
 import facebook
 import hashlib
@@ -310,6 +310,15 @@ class SurveyMonkeyController(BaseController):
             self._client = surveymonty.Client(self._token)
         return self._token is not None and self._client is not None
 
+    def test_connection(self):
+        try:
+            self._client = surveymonty.Client(self._token)
+            return self._token is not None
+        except Exception as e:
+            print("error survey monkey test connection")
+            print(e)
+            return None
+
     def get_survey_list(self):
         lista = self._client.get_surveys()
         return lista['data']
@@ -389,34 +398,47 @@ class SurveyMonkeyController(BaseController):
         return list
 
     def create_webhook(self):
-        survey_id = self._plug.plug_action_specification.all()[0].value
-        survey_id = str(survey_id)
-        plug_id = self._plug.plug_action_specification.all()[0].id
-        print("plug_id")
-        print(plug_id)
-        redirect_uri = "https://l.grplug.com/wizard/surveymonkey/webhook/event/%s/" % (plug_id)
-        s = requests.session()
-        s.headers.update({
-            "Authorization": "Bearer %s" % self._token,
-            "Content-Type": "application/json"
-        })
-        payload = {
-            "name": "Webhook_prueba",
-            "event_type": "response_completed",
-            "object_type": "survey",
-            "object_ids": [survey_id],
-            "subscription_url": redirect_uri
-        }
-        url = "https://api.surveymonkey.net/v3/webhooks"
-        r = s.post(url, json=payload)
-        if r.status_code == 201:
-            print("Se creo el webhook survey monkey")
+        action=self._plug.action.name
+        if action == "read a survey":
+            survey_id = self._plug.plug_action_specification.all()[0].value
+            survey_id = str(survey_id)
+            webhook = Webhook.objects.create(name='surveymonkey', plug=self._plug,
+                                             url='')
+            plug_id = self._plug.plug_action_specification.all()[0].id
+            redirect_uri = "https://g.grplug.com/webhook/surveymonkey/%s/" % webhook.id
+            s = requests.session()
+            s.headers.update({
+                "Authorization": "Bearer %s" % self._token,
+                "Content-Type": "application/json"
+            })
+            payload = {
+                "name": "Webhook_prueba",
+                "event_type": "response_completed",
+                "object_type": "survey",
+                "object_ids": [survey_id],
+                "subscription_url": redirect_uri
+            }
+            url = "https://api.surveymonkey.net/v3/webhooks"
+            r = s.post(url, json=payload)
+            print("response")
+            print(r.text)
+            if r.status_code == 201:
+                webhook.url=redirect_uri
+                webhook.generated_id=r.json()["id"]
+                print("id")
+                print(webhook.generated_id)
+                webhook.is_active=True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+                print("Se creo el webhook survey monkey")
+            else:
+                webhook.is_deleted= True
+                webhook.save(update_fields=['is_deleted',])
             return True
         return False
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
-        if action_specification.name.lower() == 'read a survey':
-            return [{'name': o['title'], 'id': o['id']} for o in self.smc.get_survey_list()]
+        if action_specification.name.lower() == 'survey':
+            return [{'name': o['title'], 'id': o['id']} for o in self.get_survey_list()]
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")

@@ -372,7 +372,7 @@ class InstagramAuthSuccessCreateConnection(TemplateView):
 
 def get_instagram_auth():
     return InstagramAPI(client_id=settings.INSTAGRAM_CLIENT_ID, client_secret=settings.INSTAGRAM_CLIENT_SECRET,
-                        redirect_uri=INSTAGRAM_AUTH_URL)
+                        redirect_uri=settings.INSTAGRAM_AUTH_URL)
 
 
 def get_mercadolibre_auth(code=None):
