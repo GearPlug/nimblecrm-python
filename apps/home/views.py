@@ -157,9 +157,8 @@ class IncomingWebhook(View):
             )
             for plug_action_specification in qs:
                 controller_class = ConnectorEnum.get_controller(connector)
-                controller = controller_class(
-                    plug_action_specification.plug.connection.related_connection,
-                    plug_action_specification.plug)
+                controller = controller_class(plug_action_specification.plug.connection.related_connection,
+                                              plug_action_specification.plug)
                 ping = controller.test_connection
                 if ping:
                     controller.download_source_data(responses=responses)

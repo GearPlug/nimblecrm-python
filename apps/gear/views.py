@@ -154,8 +154,9 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         map.gear.save()
         map_data = []
         for field in form:
-            map_data.append(
-                GearMapData(gear_map=map, target_name=field.name, source_value=form.cleaned_data[field.name]))
+            if form.cleaned_data[field.name]:
+                map_data.append(
+                    GearMapData(gear_map=map, target_name=field.name, source_value=form.cleaned_data[field.name]))
         GearMapData.objects.bulk_create(map_data)
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
@@ -175,8 +176,8 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
         if c == ConnectorEnum.GoogleContacts:
             self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
-            return ['%%%%%s%%%%' % field for field in self.google_contacts_controller.get_contact_fields()]
-        return ['%%%%%s%%%%' % item['name'] for item in StoredData.objects.filter(plug=plug, connection=plug.connection).values('name').distinct()]
+            return ['%%{0}%%'.format(field) for field in self.google_contacts_controller.get_contact_fields()]
+        return ['%%{0}%%'.format(item['name']) for item in StoredData.objects.filter(plug=plug, connection=plug.connection).values('name').distinct()]
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)

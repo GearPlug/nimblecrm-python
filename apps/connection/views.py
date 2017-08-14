@@ -124,9 +124,10 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-            if connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot, ConnectorEnum.MercadoLibre]:
+            # Creación con url de authorization como OAuth (Trabajan con token en su mayoria.)
+            if connector.connection_type == 'special':
                 name = '{0}/create'.format(connector.name.lower())
-            elif connector.has_auth:
+            elif connector.connection_type == 'authorization':
                 name = 'create_with_auth'
             else:
                 name = 'create'
@@ -141,15 +142,11 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             self.model, self.fields = ConnectorEnum.get_connector_data(
                 connector)
             # Creación con url de authorization como OAuth (Trabajan con token en su mayoria.)
-            if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms,
-                             ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
-                             ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
-                             ConnectorEnum.Asana, ConnectorEnum.Twitter, ConnectorEnum.Instagram]:
-                name = 'create_with_auth'
-            elif connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot,
-                               ConnectorEnum.MercadoLibre]:  # Especial
+            if connector.connection_type == 'special':
                 name = '{0}/create'.format(connector.name.lower())
-            else:  # Sin autorization. Creación por formulario.
+            elif connector.connection_type == 'authorization':
+                name = 'create_with_auth'
+            else:
                 name = 'create'
             self.template_name = '%s/%s.html' % (app_name, name)
         return super(CreateConnectionView, self).post(*args, **kwargs)
