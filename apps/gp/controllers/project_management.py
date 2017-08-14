@@ -107,7 +107,7 @@ class JIRAController(BaseController):
         key = self.get_key(self._plug.plug_action_specification.all()[0].value)
         body = {
             "name": "Gearplug Webhook",
-            "url": "http://g.grplug.com/webhook/jira/0/",
+            "url": "%s/webhook/jira/0/" %settings.CURRENT_HOST,
             "events": [
                 "jira:issue_created",
             ],
@@ -304,7 +304,7 @@ class AsanaController(BaseController):
             webhook = Webhook.objects.create(name='asana', plug=self._plug,
                                              url='')
             # Verificar ngrok para determinar url_base
-            url_base = 'https://93ed276a.ngrok.io'
+            url_base = settings.CURRENT_HOST
             url_path = reverse('home:webhook', kwargs={'connector': 'asana',
                                                        'webhook_id': webhook.id})
             headers = {
