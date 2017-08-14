@@ -606,7 +606,6 @@ class YouTubeChannelsList(LoginRequiredMixin, TemplateView):
         return super(YouTubeChannelsList, self).render_to_response(context)
 
 
-<<<<<<< HEAD
 class GoogleCalendarWebhookEvent(TemplateView):
     template_name = 'wizard/async/select_options.html'
     _googlecalendar_controller = GoogleCalendarController()
@@ -650,7 +649,6 @@ class GoogleCalendarWebhookEvent(TemplateView):
         return JsonResponse({'hola': True})
 
 
-=======
 class JiraWebhookEvent(TemplateView):
     template_name = 'wizard/async/select_options.html'
     _jira_controller = JIRAController()
@@ -676,7 +674,7 @@ class JiraWebhookEvent(TemplateView):
             self._jira_controller.download_source_data(issue=issue)
         return JsonResponse({'hola': True})
 
->>>>>>> c9b95a9b8b54031ef24761ba70d420444ff6914c
+
 def get_authorization(plug_id):
     plug = Plug.objects.get(pk=plug_id)
     _json = json.dumps(plug.connection.related_connection.credentials_json)
