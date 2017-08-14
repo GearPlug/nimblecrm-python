@@ -12,7 +12,7 @@ from apiclient import discovery
 from datetime import time
 from oauth2client import client as GoogleClient
 import surveymonty
-
+from django.conf import settings
 
 class GoogleFormsController(BaseController):
     _credential = None
@@ -405,7 +405,7 @@ class SurveyMonkeyController(BaseController):
             webhook = Webhook.objects.create(name='surveymonkey', plug=self._plug,
                                              url='')
             plug_id = self._plug.plug_action_specification.all()[0].id
-            redirect_uri = "https://g.grplug.com/webhook/surveymonkey/%s/" % webhook.id
+            redirect_uri = "%s/webhook/surveymonkey/%s/" % settings.CURRENT_HOST, webhook.id
             s = requests.session()
             s.headers.update({
                 "Authorization": "Bearer %s" % self._token,

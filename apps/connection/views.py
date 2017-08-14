@@ -747,7 +747,7 @@ def get_flow(redirect_to, scope='https://www.googleapis.com/auth/drive'):
         scope=scope, redirect_uri=redirect_to)
 
 
-def get_flow_google(client_id, client_secret, scope=None, redirect_uri='http://g.grplug.com/connection/google_auth/'):
+def get_flow_google(client_id, client_secret, scope=None, redirect_uri='%s/connection/google_auth/' %settings.CURRENT_HOST):
     return client.OAuth2WebServerFlow(client_id=client_id, client_secret=client_secret, scope=scope,
                                       redirect_uri=redirect_uri)
 
@@ -756,14 +756,14 @@ def get_flow_google_spreadsheets():
     return get_flow_google(client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
                            client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
                            scope='https://www.googleapis.com/auth/drive',
-                           redirect_uri='http://g.grplug.com/connection/auth-callback/google/')
+                           redirect_uri='%s/connection/auth-callback/google/' %settings.CURRENT_HOST)
 
 
 def get_flow_google_contacts():
     return get_flow_google(client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
                            client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
                            scope='https://www.google.com/m8/feeds/',
-                           redirect_uri='http://g.grplug.com/connection/auth-callback/google/')
+                           redirect_uri='%s/connection/auth-callback/google/' %settings.CURRENT_HOST)
 
 
 def get_authorization(request):
