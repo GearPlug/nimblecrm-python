@@ -431,29 +431,29 @@ class JiraProjectList(LoginRequiredMixin, TemplateView):
         return super(JiraProjectList, self).render_to_response(context)
 
 
-class BitbucketWebhookEvent(TemplateView):
-    template_name = 'wizard/async/select_options.html'
-    _bitbucket_controller = BitbucketController()
-
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(BitbucketWebhookEvent, self).dispatch(request, *args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        return super(BitbucketWebhookEvent, self).get(request)
-
-    def post(self, request, *args, **kwargs):
-        data = json.loads(request.body.decode('utf-8'))
-        issue = data['issue']
-        qs = PlugActionSpecification.objects.filter(
-            action_specification__action__action_type='source',
-            action_specification__action__connector__name__iexact="bitbucket",
-            plug__source_gear__is_active=True)
-        for plug_action_specification in qs:
-            self._bitbucket_controller.create_connection(plug_action_specification.plug.connection.related_connection,
-                                                         plug_action_specification.plug)
-            self._bitbucket_controller.download_source_data(issue=issue)
-        return JsonResponse({'hola': True})
+# class BitbucketWebhookEvent(TemplateView):
+#     template_name = 'wizard/async/select_options.html'
+#     _bitbucket_controller = BitbucketController()
+#
+#     @method_decorator(csrf_exempt)
+#     def dispatch(self, request, *args, **kwargs):
+#         return super(BitbucketWebhookEvent, self).dispatch(request, *args, **kwargs)
+#
+#     def get(self, request, *args, **kwargs):
+#         return super(BitbucketWebhookEvent, self).get(request)
+#
+#     def post(self, request, *args, **kwargs):
+#         data = json.loads(request.body.decode('utf-8'))
+#         issue = data['issue']
+#         qs = PlugActionSpecification.objects.filter(
+#             action_specification__action__action_type='source',
+#             action_specification__action__connector__name__iexact="bitbucket",
+#             plug__source_gear__is_active=True)
+#         for plug_action_specification in qs:
+#             self._bitbucket_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+#                                                          plug_action_specification.plug)
+#             self._bitbucket_controller.download_source_data(issue=issue)
+#         return JsonResponse({'hola': True})
 
 
 class InstagramAccountsList(LoginRequiredMixin, TemplateView):
@@ -512,7 +512,6 @@ class InstagramWebhookEvent(TemplateView):
 
 class PaypalWebhookEvent(TemplateView):
     template_name = 'wizard/async/select_options.html'
-    _bitbucket_controller = BitbucketController()
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
@@ -531,25 +530,11 @@ class PaypalWebhookEvent(TemplateView):
         event_body = request.body.decode('utf-8')
         response = WebhookEvent.verify(
             transmission_id, timestamp, webhook_id, event_body, cert_url, actual_signature, auth_algo)
-        print(response)
-        # Devuelve True si es válido
-        # if not response:
-        #     return JsonResponse({'hola': True})
         webhook_event_json = json.loads(request.body.decode('utf-8'))
         webhook_event = WebhookEvent(webhook_event_json)
         event_resource = webhook_event.get_resource()
-        print(event_resource, type(event_resource))
-
-        print(event_resource.parent_payment)
-
-        # payment = paypalrestsdk.Payment.find(event_resource.parent_payment)
-        # print(payment)
-
         payment_history = paypalrestsdk.Payment.all({"count": 100})
-        print(payment_history.payments)
-
         sale = Sale.find(event_resource.parent_payment)
-        print(sale)
         return JsonResponse({'hola': True})
 
 

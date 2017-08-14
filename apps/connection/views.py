@@ -364,19 +364,15 @@ def get_twitter_auth():
 
 
 class InstagramAuthView(View):
-    print("auth")
-
     def get(self, request, *args, **kwargs):
         flow = get_instagram_auth()
         access_token = flow.exchange_code_for_access_token(request.GET['code'])
-        print(access_token[0])
         request.session['instagram_access_token'] = access_token[0]
         return redirect(reverse('connection:instagram_auth_success_create_connection'))
 
 
 class InstagramAuthSuccessCreateConnection(TemplateView):
     template_name = 'connection/instagram/success.html'
-    print("sucess")
 
     def get(self, request, *args, **kwargs):
         try:
@@ -747,7 +743,8 @@ def get_flow(redirect_to, scope='https://www.googleapis.com/auth/drive'):
         scope=scope, redirect_uri=redirect_to)
 
 
-def get_flow_google(client_id, client_secret, scope=None, redirect_uri='%s/connection/google_auth/' %settings.CURRENT_HOST):
+def get_flow_google(client_id, client_secret, scope=None,
+                    redirect_uri='%s/connection/google_auth/' % settings.CURRENT_HOST):
     return client.OAuth2WebServerFlow(client_id=client_id, client_secret=client_secret, scope=scope,
                                       redirect_uri=redirect_uri)
 
@@ -756,14 +753,14 @@ def get_flow_google_spreadsheets():
     return get_flow_google(client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
                            client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
                            scope='https://www.googleapis.com/auth/drive',
-                           redirect_uri='%s/connection/auth-callback/google/' %settings.CURRENT_HOST)
+                           redirect_uri='%s/connection/auth-callback/google/' % settings.CURRENT_HOST)
 
 
 def get_flow_google_contacts():
     return get_flow_google(client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
                            client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
                            scope='https://www.google.com/m8/feeds/',
-                           redirect_uri='%s/connection/auth-callback/google/' %settings.CURRENT_HOST)
+                           redirect_uri='%s/connection/auth-callback/google/' % settings.CURRENT_HOST)
 
 
 def get_authorization(request):

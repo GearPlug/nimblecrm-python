@@ -2,7 +2,7 @@ from django.conf.urls import url
 
 from apps.wizard.views import MSSQLFieldList, SugarCRMModuleList, \
     MySQLFieldList, PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, \
-    SlackWebhookEvent, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, \
+    SlackWebhookEvent, JiraWebhookEvent, JiraProjectList, \
     GetResponseCampaignsList, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, \
     SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
     YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent, SalesforceSObjectList, SalesforceEventList, \
@@ -56,9 +56,6 @@ urlpatterns = [
     # Slack
     url(r'async/slack/channel/list/', SlackChannelList.as_view(), name='async_slack_chanels'),
     url(r'slack/webhook/event/', SlackWebhookEvent.as_view(), name='slack_webhook_event'),
-    # Bitbucket
-    # url(r'async/bitbucket/field/list/', BitbucketProjectList.as_view(), name='async_bitbucket_projects'),
-    url(r'bitbucket/webhook/event/', BitbucketWebhookEvent.as_view(), name='bitbucket_webhook_event'),
     # Jira
     url(r"async/jira/field/list/", JiraProjectList.as_view(), name='async_jira_projects'),
     url(r'jira/webhook/event/', JiraWebhookEvent.as_view(), name='jira_webhook_event'),

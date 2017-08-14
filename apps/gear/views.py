@@ -5,20 +5,6 @@ from django.http.response import JsonResponse
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from django.contrib.auth.mixins import LoginRequiredMixin
-from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
-from apps.gp.controllers.lead import GoogleFormsController, FacebookLeadsController
-from apps.gp.controllers.crm import SugarCRMController, SalesforceController
-from apps.gp.controllers.crm import SugarCRMController
-from apps.gp.controllers.email import SMTPController
-from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
-from apps.gp.controllers.directory import GoogleContactsController
-from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
-from apps.gp.controllers.im import SlackController
-from apps.gp.controllers.social import TwitterController, YouTubeController
-from apps.gp.controllers.im import SlackController, SMSController
-from apps.gp.controllers.social import TwitterController
-from apps.gp.controllers.project_management import JIRAController
-from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
