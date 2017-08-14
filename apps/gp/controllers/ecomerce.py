@@ -223,7 +223,7 @@ class ShopifyController(BaseController):
         shopify.ShopifyResource.activate_session(session)
         new_webhook = shopify.Webhook()
         new_webhook.topic = topic_id + "/create"
-        new_webhook.address = "https://l.grplug.com/wizard/shopify/webhook/event/%s/" % (plug_id)
+        new_webhook.address = "%s/wizard/shopify/webhook/event/%s/" % (settings.CURRENT_HOST,plug_id)
         new_webhook.format = "json"
         success = new_webhook.save()
         if success == True:
