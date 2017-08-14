@@ -4,36 +4,36 @@ from apps.gp.controllers.utils import dynamic_import
 
 
 class ConnectorEnum(Enum):
-    FacebookLeads = 1, 'lead'
-    MySQL = 2, 'database'
-    SugarCRM = 3, 'crm'
-    MailChimp = 4, 'email_marketing'
-    GoogleSpreadSheets = 5, 'ofimatic'
-    PostgreSQL = 6, 'database'
-    MSSQL = 7, 'database'
-    Slack = 8, 'im'
-    JIRA = 9, 'project_management'
-    Bitbucket = 10, 'repository'
-    GoogleForms = 11, 'lead'
-    Twitter = 12, 'social'
+    FacebookLeads = 1, 'lead', True
+    MySQL = 2, 'database', False
+    SugarCRM = 3, 'crm', False
+    MailChimp = 4, 'email_marketing', False
+    GoogleSpreadSheets = 5, 'ofimatic', True
+    PostgreSQL = 6, 'database', False
+    MSSQL = 7, 'database', False
+    Slack = 8, 'im', True
+    JIRA = 9, 'project_management', False
+    Bitbucket = 10, 'repository', False
+    GoogleForms = 11, 'lead', True
+    Twitter = 12, 'social', True
     GetResponse = 13, 'email_marketing'
-    GoogleContacts = 14, 'directory'
-    SurveyMonkey = 15, 'lead'
-    GoogleCalendar = 16, 'ofimatic'
+    GoogleContacts = 14, 'directory', True
+    SurveyMonkey = 15, 'lead', True
+    GoogleCalendar = 16, 'ofimatic', True
     MercadoLibre = 17, 'ecomerce'
     AmazonSellerCentral = 18, 'ecomerce'
     PayU = 19, 'ecomerce'
-    Gmail = 20, 'email'
+    Gmail = 20, 'email', True
     Ebay = 21, 'ecomerce'
     WooComerce = 22, 'ecomerce'
-    Instagram = 23, 'social'
-    YouTube = 24, 'social'
+    Instagram = 23, 'social', True
+    YouTube = 24, 'social', True
     Vimeo = 25, 'social'
     ZohoCRM = 26, 'crm'
-    WunderList = 27, 'ofimatic'
+    WunderList = 27, 'ofimatic', True
     SMS = 28, 'im'
     SMTP = 29, 'email'
-    Evernote = 30, 'ofimatic'
+    Evernote = 30, 'ofimatic', True
     Salesforce = 31, 'crm'
     Vtiger = 32, 'crm'
     ProsperWorks = 33, 'crm'
@@ -44,15 +44,19 @@ class ConnectorEnum(Enum):
     AgileCRM = 38, 'crm'
     GitLab = 39, 'repository'
     Shopify = 40, 'ecomerce'
-    Dropbox = 41, ''
+    Dropbox = 41, '', True
     Magento = 42, 'ecomerce'
-    Asana = 43, 'project_management'
+    Asana = 43, 'project_management', True
     Mandrill = 44, 'email_marketing'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
         obj._value_ = args[0]
         obj.category = args[1]
+        try:
+            obj.has_auth = args[2]
+        except:
+            obj.has_auth = False
         return obj
 
     def get_connector_data(connector):
