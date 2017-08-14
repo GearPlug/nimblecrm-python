@@ -3,7 +3,8 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'nd65g3a23c!y%+a_%+v)!trnjh%c=gh(zg5!gsn*qo&b6*nsbb'
 DEBUG = True
-ALLOWED_HOSTS = ['*', ]
+CURRENT_HOST = "https://g.grplug.com/"
+ALLOWED_HOSTS = [CURRENT_HOST, '*', ]
 CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
 
@@ -226,7 +227,7 @@ SLACK_PERMISSIONS_URL = 'https://slack.com/oauth/authorize?client_id={0}&scope=t
 # Google (Gustavo)
 GOOGLE_CLIENT_ID = '278354320502-6ptllif5k11cn8uskm8aotp6fqb2g7dr.apps.googleusercontent.com'
 GOOGLE_CLIENT_SECRET = 'LgJ2hrSVu_lmAJkJhwzgfiDG'
-GOOGLE_AUTH_CALLBACK_URL = 'http://g.grplug.com/connection/auth-callback/google/'
+GOOGLE_AUTH_CALLBACK_URL = '{0}/connection/auth-callback/google/'.format(CURRENT_HOST)
 
 # Twitter
 TWITTER_CLIENT_ID = '72ceIxo0vh6IUvPEzRLwU63dK'
@@ -235,7 +236,7 @@ TWITTER_CLIENT_SECRET = 'oRpX6077A1spuOl36JVgupAwhF2ZuYmfL9Dk1WB3OxqkCNtw0N'
 # SurveyMonkey
 SURVEYMONKEY_CLIENT_ID = "aSrDRChrQjqy--JCMHiPDw"
 SURVEYMONKEY_CLIENT_SECRET = "99572991333427996854184255528563883257"
-SURVEYMONKEY_REDIRECT_URI = "https://g.grplug.com/connection/survey_monkey_auth/"
+SURVEYMONKEY_REDIRECT_URI = "{0}/connection/survey_monkey_auth/".format(CURRENT_HOST)
 SURVEYMONKEY_API_BASE = "https://api.surveymonkey.net"
 SURVEYMONKEY_AUTH_CODE_ENDPOINT = "/oauth/authorize"
 SURVEYMONKEY_ACCESS_TOKEN_ENDPOINT = "/oauth/token"
@@ -243,7 +244,7 @@ SURVEYMONKEY_ACCESS_TOKEN_ENDPOINT = "/oauth/token"
 # Instagram
 INSTAGRAM_CLIENT_ID = '17e2105451294cd6a372233f25e2c6ec'
 INSTAGRAM_CLIENT_SECRET = '6f8a7fb1ac0c4cada3c01d88561d35f6'
-INSTAGRAM_AUTH_URL='https://g.grplug.com/connection/instagram_auth/'
+INSTAGRAM_AUTH_URL = '{0}/connection/instagram_auth/'.format(CURRENT_HOST)
 INSTAGRAM_SCOPE = ['basic']
 INSTAGRAM_AUTH_REDIRECT_URL = 'connection:instagram_auth_success_create_connection'
 
@@ -263,10 +264,10 @@ SALESFORCE_WEBHOOK_URI = ''
 SHOPIFY_SHOP_URL = "my-first-project-2017"
 SHOPIFY_API_KEY = "8058ebd552b2ba23d9d1c6221b514fab"
 SHOPIFY_API_KEY_SECRET = "d32f6b242ddaa2dd2b29bf3eb329a1c5"
-SHOPIFY_REDIRECT_URI = "http://127.0.0.1:8000/connection/shopify_auth/"
+SHOPIFY_REDIRECT_URI = "{0}/connection/shopify_auth/".format(CURRENT_HOST)
 
 # Hubspot
-HUBSPOT_REDIRECT_URI = "https://87b30496.ngrok.io/connection/hubspot_auth/"
+HUBSPOT_REDIRECT_URI = "{0}/connection/hubspot_auth/".format(CURRENT_HOST)
 HUBSPOT_CLIENT_ID = "633af850-f08a-42e5-a6e7-da65a177bcd5"
 HUBSPOT_CLIENT_SECRET = "94e688b7-9390-4b59-a6df-151eac348e89"
 
@@ -275,17 +276,32 @@ EVERNOTE_CONSUMER_KEY = "ltorres-6238"
 EVERNOTE_CONSUMER_SECRET = "a4673a77baca5424"
 EVERNOTE_REDIRECT_URL = "http://127.0.0.1:8000/connection/evernote_auth/"
 
+# Shopify
+SHOPIFY_SHOP_URL = "my-first-project-2017"
+SHOPIFY_API_KEY = "8058ebd552b2ba23d9d1c6221b514fab"
+SHOPIFY_API_KEY_SECRET = "d32f6b242ddaa2dd2b29bf3eb329a1c5"
+SHOPIFY_REDIRECT_URI = "{0}/connection/shopify_auth/".format(CURRENT_HOST)
+
+# Hubspot
+HUBSPOT_REDIRECT_URI = "{0}/connection/hubspot_auth/".format(CURRENT_HOST)
+HUBSPOT_CLIENT_ID = "633af850-f08a-42e5-a6e7-da65a177bcd5"
+HUBSPOT_CLIENT_SECRET = "94e688b7-9390-4b59-a6df-151eac348e89"
+
+# Evernote
+EVERNOTE_CONSUMER_KEY = "ltorres-6238"
+EVERNOTE_CONSUMER_SECRET = "a4673a77baca5424"
+EVERNOTE_REDIRECT_URL = "{0}/connection/evernote_auth/".format(CURRENT_HOST)
 
 # Asana
 ASANA_CLIENT_ID = '385400269218379'
 ASANA_CLIENT_SECRET = 'b06634b490e0408d8f575e38a2d7e7f3'
-ASANA_REDIRECT_URL = 'https://26677b10.ngrok.io/connection/auth-callback/asana/'
+ASANA_REDIRECT_URL = '{0}/connection/auth-callback/asana/'.format(CURRENT_HOST)
 ASANA_WEBHOOK_URL = ''
 
 # Mercadolibre
 MERCADOLIBRE_CLIENT_ID = ''
 MERCADOLIBRE_CLIENT_SECRET = ''
-MERCADOLIBRE_REDIRECT_URL = 'https://9d25c5df.ngrok.io/connection/mercadolibre_auth/'
+MERCADOLIBRE_REDIRECT_URL = '{0}/connection/mercadolibre_auth/'.format(CURRENT_HOST)
 
 # Wunderlist
 WUNDERLIST_CLIENT_ID = 'c68a87efca8b22d50fee'

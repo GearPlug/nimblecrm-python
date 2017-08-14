@@ -41,7 +41,7 @@ def get_flow():
         client_id='292458000851-9q394cs5t0ekqpfsodm284ve6ifpd7fd.apps.googleusercontent.com',
         client_secret='eqcecSL7Ecp0hiMy84QFSzsD',
         scope='https://www.googleapis.com/auth/drive',
-        redirect_uri='http://localhost:8000/account/google_auth/')
+        redirect_uri='%s/account/google_auth/' %settings.CURRENT_HOST)
 
 
 class ConnectionsView(View):

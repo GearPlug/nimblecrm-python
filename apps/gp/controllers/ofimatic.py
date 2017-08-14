@@ -19,6 +19,7 @@ import wunderpy2
 import evernote.edam.type.ttypes as Types
 from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
 from evernote.edam.type.ttypes import NoteSortOrder
+from django.conf import settings
 import re
 
 
@@ -350,14 +351,14 @@ class GoogleCalendarController(BaseController):
         body = {
             "id": webhook.id,
             "type": "web_hook",
-            "address": "https://g.grplug.com/webhook/googlecalendar/{0}/".format(webhook.id),
+            "address": "{0}/webhook/googlecalendar/{1}/".format(settings.CURRENT_HOST,webhook.id),
         }
         r = requests.post(url, headers=headers, json=body)
         if r.status_code in [200, 201]:
             data = r.json()
             # GooglePushWebhook.objects.create(connection=self._connection_object.connection, channel_id=data['id'],
             #                                  resource_id=data['resourceId'], expiration=data['expiration'])
-            webhook.url = "https://g.grplug.com/webhook/googlecalendar/{0}/".format(webhook.id)
+            webhook.url = "{0}/webhook/googlecalendar/{1}/".format(settings.CURRENT_HOST,webhook.id)
             webhook.generated_id = data['resourceId']
             webhook.is_active = True
             webhook.expiration = data['expiration']
