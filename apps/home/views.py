@@ -52,31 +52,18 @@ class IncomingWebhook(View):
         response = HttpResponse(status=500)
         connector_name = self.kwargs['connector'].lower()
         connector = ConnectorEnum.get_connector(name=connector_name)
+        controller_class = ConnectorEnum.get_controller(connector)
+        controller = controller_class()
         # SLACK
         response = HttpResponse(status=200)
+        try:
+            body = json.loads(request.body.decode('utf-8'))
+        except Exception as e:
+            print(e)
+            body = None
         if connector == ConnectorEnum.Slack:
-            data = json.loads(request.body.decode('utf-8'))
-            if 'challenge' in data.keys():
-                return JsonResponse({'challenge': data['challenge']})
-            elif 'type' in data.keys() and data['type'] == 'event_callback':
-                event = data['event']
-                if event['type'] == "message":
-                    query_params = {'action_specification__action__action_type': 'source',
-                                    'action_specification__action__connector__name__iexact': 'slack',
-                                    'value': event['channel'], }
-                    if force_update is not True:
-                        query_params['plug__gear_source__is_active'] = True
-
-                    query_params['plug__gear_source__is_active'] = False
-                    query_params['']
-                    channel_list = PlugActionSpecification.objects.filter(**query_params)
-                    controller_class = ConnectorEnum.get_controller(connector)
-                    for channel in channel_list:
-                        controller = controller_class(channel.plug.connection.related_connection, channel.plug)
-                        controller.download_source_data(event=data)
-            else:
-                print("No callback event")
-            return JsonResponse({'slack': True})
+            response = controller.do_webhook_process(body=body, post=request.POST, get=request.GET)
+            return response
         # ASANA
         elif connector == ConnectorEnum.Asana:
             if 'HTTP_X_HOOK_SECRET' in request.META:
