@@ -38,7 +38,7 @@ class IncomingWebhook(View):
         # print('dispatch')
         return super(IncomingWebhook, self).dispatch(request, *args, **kwargs)
 
-    def head(self,request,*args, **kwargs):
+    def head(self, request, *args, **kwargs):
         print('head')
         response = HttpResponse(status=500)
         connector_name = self.kwargs['connector'].lower()
@@ -117,11 +117,7 @@ class IncomingWebhook(View):
                 response.status_code = 200
         elif connector == ConnectorEnum.Gmail:
             webhook_id = kwargs.pop('webhook_id', None)
-            print(webhook_id)
-            print(request.GET)
-            print(request.POST)
-            print(request.body)
-            response.status_code=200
+            response.status_code = 200
         elif connector == ConnectorEnum.SurveyMonkey:
             responses = []
             data = request.body.decode('utf-8')
@@ -136,14 +132,11 @@ class IncomingWebhook(View):
             response.status_code = 200
             for plug_action_specification in qs:
                 controller_class = ConnectorEnum.get_controller(connector)
-                controller=controller_class(
-                    plug_action_specification.plug.connection.related_connection,
-                    plug_action_specification.plug)
-                ping=controller.test_connection
+                controller = controller_class(plug_action_specification.plug.connection.related_connection,
+                                              plug_action_specification.plug)
+                ping = controller.test_connection
                 if ping:
                     controller.download_source_data(responses=responses)
                 else:
                     print("No callback event")
         return response
-
-

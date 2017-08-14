@@ -4,36 +4,36 @@ from apps.gp.controllers.utils import dynamic_import
 
 
 class ConnectorEnum(Enum):
-    FacebookLeads = 1, 'lead', True
-    MySQL = 2, 'database', False
-    SugarCRM = 3, 'crm', False
-    MailChimp = 4, 'email_marketing', False
-    GoogleSpreadSheets = 5, 'ofimatic', True
-    PostgreSQL = 6, 'database', False
-    MSSQL = 7, 'database', False
-    Slack = 8, 'im', True
-    JIRA = 9, 'project_management', False
-    Bitbucket = 10, 'repository', False
-    GoogleForms = 11, 'lead', True
-    Twitter = 12, 'social', True
+    FacebookLeads = 1, 'lead', 'special'
+    MySQL = 2, 'database', 'form'
+    SugarCRM = 3, 'crm', 'form'
+    MailChimp = 4, 'email_marketing', 'form'
+    GoogleSpreadSheets = 5, 'ofimatic', 'authorization'
+    PostgreSQL = 6, 'database', 'form'
+    MSSQL = 7, 'database', 'form'
+    Slack = 8, 'im', 'authorization'
+    JIRA = 9, 'project_management', 'form'
+    Bitbucket = 10, 'repository', 'form'
+    GoogleForms = 11, 'lead', 'authorization'
+    Twitter = 12, 'social', 'authorization'
     GetResponse = 13, 'email_marketing'
-    GoogleContacts = 14, 'directory', True
-    SurveyMonkey = 15, 'lead', True
-    GoogleCalendar = 16, 'ofimatic', True
+    GoogleContacts = 14, 'directory', 'authorization'
+    SurveyMonkey = 15, 'lead', 'authorization'
+    GoogleCalendar = 16, 'ofimatic', 'authorization'
     MercadoLibre = 17, 'ecomerce'
     AmazonSellerCentral = 18, 'ecomerce'
     PayU = 19, 'ecomerce'
-    Gmail = 20, 'email', True
+    Gmail = 20, 'email', 'authorization'
     Ebay = 21, 'ecomerce'
     WooComerce = 22, 'ecomerce'
-    Instagram = 23, 'social', True
-    YouTube = 24, 'social', True
+    Instagram = 23, 'social', 'authorization'
+    YouTube = 24, 'social', 'authorization'
     Vimeo = 25, 'social'
     ZohoCRM = 26, 'crm'
-    WunderList = 27, 'ofimatic', True
+    WunderList = 27, 'ofimatic', 'authorization'
     SMS = 28, 'im'
     SMTP = 29, 'email'
-    Evernote = 30, 'ofimatic', True
+    Evernote = 30, 'ofimatic', 'authorization'
     Salesforce = 31, 'crm'
     Vtiger = 32, 'crm'
     ProsperWorks = 33, 'crm'
@@ -46,7 +46,7 @@ class ConnectorEnum(Enum):
     Shopify = 40, 'ecomerce'
     Dropbox = 41, '', True
     Magento = 42, 'ecomerce'
-    Asana = 43, 'project_management', True
+    Asana = 43, 'project_management', 'authorization'
     Mandrill = 44, 'email_marketing'
 
     def __new__(cls, *args, **kwargs):
@@ -54,9 +54,9 @@ class ConnectorEnum(Enum):
         obj._value_ = args[0]
         obj.category = args[1]
         try:
-            obj.has_auth = args[2]
+            obj.connection_type = args[2]
         except:
-            obj.has_auth = False
+            obj.connection_type = 'form'
         return obj
 
     def get_connector_data(connector):
