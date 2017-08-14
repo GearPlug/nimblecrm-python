@@ -125,7 +125,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms,
                              ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
                              ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
-                             ConnectorEnum.Asana, ConnectorEnum.Twitter]:
+                             ConnectorEnum.Asana, ConnectorEnum.Twitter, ConnectorEnum.Instagram]:
                 name = 'create_with_auth'
             elif connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot,
                                ConnectorEnum.MercadoLibre]:
@@ -144,7 +144,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms,
                              ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
                              ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
-                             ConnectorEnum.Asana, ConnectorEnum.Twitter]:
+                             ConnectorEnum.Asana, ConnectorEnum.Twitter, ConnectorEnum.Instagram]:
                 name = 'create_with_auth'
             elif connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot,
                                ConnectorEnum.MercadoLibre]:  # Especial
@@ -160,6 +160,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         context['connection'] = connector.name
         context['connector_name'] = connector.name
         context['connector_id'] = connector.value
+        print("conector",connector)
         if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms, ConnectorEnum.GoogleContacts,
                          ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube]:
             api = GoogleAPIEnum.get_api(connector.name)
@@ -177,8 +178,13 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         elif connector == ConnectorEnum.Shopify:
             context['authorization_url'] = get_shopify_url()
         elif connector == ConnectorEnum.Instagram:
+            print(1)
             flow = get_instagram_auth()
-            context['authorizaton_url'] = flow.get_authorize_login_url(scope=INSTAGRAM_SCOPE)
+            print("flow")
+            print(flow)
+            context['authorizaton_url'] = flow.get_authorize_login_url(scope=settings.INSTAGRAM_SCOPE)
+            print("auth url")
+            print(context['authorizaton_url'])
         elif connector == ConnectorEnum.Salesforce:
             flow = get_salesforce_auth()
             context['authorizaton_url'] = flow
@@ -339,6 +345,7 @@ def get_twitter_auth():
 
 
 class InstagramAuthView(View):
+    print("auth")
     def get(self, request, *args, **kwargs):
         flow = get_instagram_auth()
         access_token = flow.exchange_code_for_access_token(request.GET['code'])
@@ -349,11 +356,13 @@ class InstagramAuthView(View):
 
 class InstagramAuthSuccessCreateConnection(TemplateView):
     template_name = 'connection/instagram/success.html'
+    print("sucess")
 
     def get(self, request, *args, **kwargs):
         try:
             if 'instagram_access_token' in request.session:
                 access_token = request.session.pop('instagram_access_token')
+                print("credenciales")
                 print(access_token)
                 print(request.user)
                 print(ConnectorEnum.Instagram.value)
