@@ -38,7 +38,7 @@ class IncomingWebhook(View):
         # print('dispatch')
         return super(IncomingWebhook, self).dispatch(request, *args, **kwargs)
 
-    def head(self,request,*args, **kwargs):
+    def head(self, request, *args, **kwargs):
         print('head')
         response = HttpResponse(status=500)
         connector_name = self.kwargs['connector'].lower()
@@ -61,7 +61,7 @@ class IncomingWebhook(View):
         except Exception as e:
             print(e)
             body = None
-        if connector == ConnectorEnum.Slack:
+        if connector in [ConnectorEnum.Slack, ]:
             response = controller.do_webhook_process(body=body, post=request.POST, get=request.GET)
             return response
         # ASANA
@@ -105,6 +105,32 @@ class IncomingWebhook(View):
                 if ping:
                     controller.download_source_data(issue=issue)
             response.status_code = 200
+        elif connector == ConnectorEnum.WunderList:
+            response = HttpResponse(status=200)
+            controller_class = ConnectorEnum.get_controller(connector)
+            task = json.loads(request.body.decode("utf-8"))
+            if 'operation' in task:
+                kwargs = {'action_specification__action__action_type': 'source',
+                          'action_specification__action__connector__name__iexact': 'wunderlist',
+                          'action_specification__name__iexact': 'list',
+                          'value': task['subject']['parents'][0]['id']}
+                if task['operation'] == 'create':
+                    kwargs['action_specification__action__name__iexact'] = 'new task'
+                    print('se creo una tarea')
+                elif task['operation'] == 'update':
+                    if 'completed' in task['data'] and task['data']['completed'] == True:
+                        print('se completo una tarea')
+                        kwargs['action_specification__action__name__iexact'] = 'completed task'
+                try:
+                    specification_list = PlugActionSpecification.objects.filter(**kwargs)
+                except Exception as e:
+                    specification_list = []
+                for s in specification_list:
+                    controller = controller_class(
+                        s.plug.connection.related_connection, s.plug)
+                    ping = controller.test_connection()
+                    if ping:
+                        controller.download_source_data(task=task)
         elif connector == ConnectorEnum.GoogleCalendar:
             webhook_id = kwargs.pop('webhook_id', None)
             w = Webhook.objects.get(pk=webhook_id)
@@ -117,11 +143,7 @@ class IncomingWebhook(View):
                 response.status_code = 200
         elif connector == ConnectorEnum.Gmail:
             webhook_id = kwargs.pop('webhook_id', None)
-            print(webhook_id)
-            print(request.GET)
-            print(request.POST)
-            print(request.body)
-            response.status_code=200
+            response.status_code = 200
         elif connector == ConnectorEnum.SurveyMonkey:
             responses = []
             data = request.body.decode('utf-8')
@@ -133,17 +155,13 @@ class IncomingWebhook(View):
                 action_specification__action__connector__name__iexact="SurveyMonkey",
                 value=data['resources']['survey_id']
             )
-            response.status_code = 200
             for plug_action_specification in qs:
                 controller_class = ConnectorEnum.get_controller(connector)
-                controller=controller_class(
+                controller = controller_class(
                     plug_action_specification.plug.connection.related_connection,
                     plug_action_specification.plug)
-                ping=controller.test_connection
+                ping = controller.test_connection
                 if ping:
                     controller.download_source_data(responses=responses)
-                else:
-                    print("No callback event")
+            response.status_code = 200
         return response
-
-

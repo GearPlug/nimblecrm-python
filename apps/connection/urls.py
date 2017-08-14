@@ -6,7 +6,7 @@ from apps.connection.views import CreateConnectionView, ListConnectorView, Googl
     SalesforceAuthSuccessCreateConnection, ShopifyAuthView, ShopifyAuthSuccessCreateConnection, TestConnectionView, \
     CreateConnectionSuccessView, HubspotAuthView, HubspotAuthSuccessCreateConnection, EvernoteAuthView, \
     EvernoteAuthSuccessCreateConnection, AsanaAuthView, CreateTokenAuthorizedConnectionView, MercadoLibreAuthView, \
-    MercadoLibreAuthSuccessCreateConnection, AjaxMercadoLibrePostSiteView #,AJAXGetSurveyListView
+    MercadoLibreAuthSuccessCreateConnection, AjaxMercadoLibrePostSiteView, WunderListAuthView #,AJAXGetSurveyListView
 
 from apps.gp.enum import GoogleAPIEnum
 
@@ -25,6 +25,7 @@ urlpatterns = [
     url(r'^auth-callback/google/', GoogleAuthView.as_view(), name="google_auth"),
     url(r'^auth-callback/facebook/', GoogleAuthView.as_view(), name="facebook_auth"),
     url(r'^auth-callback/asana/', AsanaAuthView.as_view(), name="asana_auth"),
+    url(r'^auth-callback/wunderlist/', WunderListAuthView.as_view(), name="wunderlist_auth"),
 
     # Auth Success
     url(r'^auth/google/success/$', GoogleAuthSuccessView.as_view(),
