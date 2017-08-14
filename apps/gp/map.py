@@ -14,12 +14,14 @@ class MapField(object):
 
     def __init__(self, d, controller=None, **kwargs):
         if controller == ConnectorEnum.MySQL:
+            print(d)
             if 'name' in d:
                 self.name = d['name']
                 self.label = d['name']
             if 'null' in d:
                 if d['null'] is not True:
-                    self.required = True
+                    if d['auto_increment'] is not True:
+                        self.required = True
             self.field_type = 'text'
             self.max_length = 200
         elif controller == ConnectorEnum.SugarCRM:

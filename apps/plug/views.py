@@ -146,7 +146,7 @@ class TestPlugView(TemplateView):
         p = Plug.objects.get(pk=self.kwargs.get('pk'))
         if p.plug_type == 'source':
             try:
-                sd_sample = StoredData.objects.filter(plug=p, connection=p.connection).order_by('-id')[0]
+                sd_sample = StoredData.objects.filter(plug=p, connection=p.connection).order_by('-id').last()
                 sd = StoredData.objects.filter(plug=p, connection=p.connection, object_id=sd_sample.object_id)
                 context['object_list'] = sd
             except IndexError:
