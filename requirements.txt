@@ -74,6 +74,7 @@ tweepy==3.5.0
 uritemplate==3.0.0
 uWSGI==2.0.15
 vine==1.1.3
+wunderpy2==0.1.4
 xmldict==0.4.1
 xmltodict==0.11.0
 git+git://github.com/Seraphicer/python-instagram-ext.git
