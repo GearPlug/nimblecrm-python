@@ -542,59 +542,29 @@ class WunderListController(BaseController):
         return response.json()
 
     def create_task(self, **kwargs):
-        list_id = int(kwargs['parents'])
-        title = str(kwargs['title'])
-        print(list_id)
-        print(title)
+        _list_id = int(kwargs['parents'])
+        _title = str(kwargs['title'])
 
-        data = {'list_id': list_id, 'title': title}
+        data = {'list_id': _list_id, 'title': _title}
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain', 'X-Access-Token': self._token, 'X-Client-ID': settings.WUNDERLIST_CLIENT_ID}
 
         response = requests.post('http://a.wunderlist.com/api/v1/tasks', data = json.dumps(data), headers=headers)
-        print(response.status_code)
-        print(response.text)
         return response
 
     def update_task(self):
         
-        data = {'list_id': list_id, 'title': title}
+        data = {'list_id': self._list_id, 'title': self._title}
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain', 'X-Access-Token': self._token, 'X-Client-ID': settings.WUNDERLIST_CLIENT_ID}
 
         response = requests.post('http://a.wunderlist.com/api/v1/tasks', data = json.dumps(data), headers=headers)
-        print(response.status_code)
-        print(response.text)
         return response
         pass
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
-        # if action_specification.name.lower() == 'task':
-        #     # task_list_id = action_specification_id
-        #     task_list_values = PlugActionSpecification.objects.filter(
-        #          action_specification__action__action_type='target',
-        #          action_specification__action__connector__name__iexact="wunderlist",
-        #          action_specification__name__iexact='list')
-        #     print('List Id for Task: ', task_list_values.value('value'))
-        #     task_list_id = ''
-        #     headers = {
-        #         'X-Access-Token': self._token,
-        #         'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
-        #     }
-        #     params = {'list_id': task_list_id}
-        #     response = requests.get('http://a.wunderlist.com/api/v1/tasks', headers=headers, data=params)
-        #     try:
-        #         print('Task of this list: ', response.text)
-        #         print('Task of this list: ', response.json)
-        #         print('Task of this list: ', response.body)
-        #     except Exception as e:
-        #         print('CLomo tu te llama yo no se')
-        #     return tuple(
-        #         {'name': p['title'], 'id': p['id']} for p in self.get_lists())
+        
         elif action_specification.name.lower() == 'list':
-            # Para esto necesitamos las listas de tareas, para que
-            # el usuario seleccione de que lista quiere leer
-            # las tareas completadas.
             return tuple(
                 {'id': l['id'], 'name': l['title']} for l in
                 self.get_lists())
@@ -625,17 +595,13 @@ class WunderListController(BaseController):
             }
             response = requests.post(
                 'http://a.wunderlist.com/api/v1/webhooks', headers=headers, data=body_data)
-            print(response.status_code)
             if response.status_code == 201:
                 webhook.generated_id = response.json()['id']
                 webhook.url = response.json()['url']
                 webhook.is_active = True
                 webhook.save(update_fields=[
                              'url', 'generated_id', 'is_active'])
-                print('Webhook Creado con exito: ', response.json())
             else:
-                print('*** Error Creando WebHook ***')
-
         return True
 
     def list_webhooks(self):
@@ -643,7 +609,6 @@ class WunderListController(BaseController):
         if action == 'completed task':
             list_id = self._plug.plug_action_specification.get(
                 action_specification__name='task list')
-
             headers = {
                 'X-Access-Token': self._token,
                 'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
@@ -653,8 +618,6 @@ class WunderListController(BaseController):
             }
             response = requests.get(
                 'http://a.wunderlist.com/api/v1/webhooks', headers=headers, data=body_data)
-            print('*******************')
-            print('LISTA DE WEBHOOKS:', response.json())
             return(response.json())
 
     # Metodo de borrado de webhooks, utilizacion manual.
@@ -668,31 +631,16 @@ class WunderListController(BaseController):
                     'X-Access-Token': self._token,
                     'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
                 }
-                # El valor revision queda un poco confuso, la documentacion lo define como
-                # un valor proveniente de la entidad que se desea actualizar, el valor
-                # no se encuentra en el response que se recibe cuando se crea el webhook
-                # pero utilizando el integer 0 se recibe en el response el status code
-                # 204, que segun la documentacion indica que el proceso de borrado se
-                # completo con exito.
                 body_data = {
                     'revision': 0,
                 }
                 response = requests.delete('http://a.wunderlist.com/api/v1/webhooks/{0}'.format(str(wh['id'])),
                                            headers=headers, data=body_data)
-                try:
-                    print(response)
-                    print(response.status_code)
-                    print(response.json())
-                    print(response.text)
-                except Exception as e:
-                    print(e)
-                    pass
         else:
             print('NO HAY WEBHOOKS CREADOS EN ESTE MOMENTO.')
 
     def download_to_stored_data(self, connection_object=None, plug=None,
                                 task=None, **kwargs):
-        print('Download To Stored Data')
         if task is not None:
             task_id = task['subject']['id']
             q = StoredData.objects.filter(
@@ -701,7 +649,6 @@ class WunderListController(BaseController):
             task_stored_data = []
             if not q.exists():
                 task_data = self.get_task(task_id)
-                print('task data: ', task_data)
                 for k, v in task_data.items():
                     if type(v) not in [list, dict]:
                         task_stored_data.append(
@@ -710,7 +657,6 @@ class WunderListController(BaseController):
                                        name=k, value=v or ''))
             extra = {}
             for task in task_stored_data:
-                print('task stored data: ', task_stored_data)
                 try:
                     extra['status'] = 's'
                     extra = {'controller': 'wunderlist'}
@@ -720,8 +666,6 @@ class WunderListController(BaseController):
                             task.object_id, task.plug.id,
                             task.connection.id),
                         extra=extra)
-                    print('Extra: ', extra)
-                    print('Task:', task)
                 except Exception as e:
                     extra['status'] = 'f'
                     self._log.info(
@@ -733,7 +677,6 @@ class WunderListController(BaseController):
         return False
 
     def get_target_fields(self, **kwargs):
-        print('Target Fields')
         return [{'name': 'title', 'type': 'text', 'required': True},
                 {'name': 'completed', 'type': 'text', 'required': True},
                 {'name': 'completed_by_id', 'type': 'int', 'required': False},
@@ -743,12 +686,10 @@ class WunderListController(BaseController):
                 ]
 
     def get_mapping_fields(self, **kwargs):
-        print('Mapping Fields')
         fields = self.get_target_fields()
         return [MapField(f, controller=ConnectorEnum.WunderList) for f in fields]
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
-        print('Sending Stored Data')
         data_list = get_dict_with_source_data(source_data, target_fields)
         if self._plug is not None:
             obj_list = []
