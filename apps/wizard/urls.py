@@ -1,10 +1,10 @@
 from django.conf.urls import url
 
-from apps.wizard.views import MSSQLFieldList, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, \
+from apps.wizard.views import MSSQLFieldList, SugarCRMModuleList, \
     MySQLFieldList, PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, \
     SlackWebhookEvent, BitbucketWebhookEvent, JiraWebhookEvent, JiraProjectList, \
-    GetResponseCampaignsList, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, GoogleCalendarsList, \
-    GoogleCalendarWebhookEvent, SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
+    GetResponseCampaignsList, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, \
+    SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
     YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent, SalesforceSObjectList, SalesforceEventList, \
     SalesforceWebhookEvent
 
@@ -41,9 +41,6 @@ urlpatterns = [
     url(r'^gear/map/(?P<gear_id>\d+)/$', CreateGearMapView.as_view(), name='create_gear_map'),
 
     # PLUG CREATION SPECIFICS FOR CONNECTOR
-    # GoogleSheets
-    url(r"async/google/drive/sheets/list/", GoogleDriveSheetList.as_view(), name='async_google_drive_sheets'),
-    url(r"async/google/sheet/worksheets/", GoogleSheetsWorksheetList.as_view(), name='async_google_sheet_worksheets'),
     # SugarCRM
     url(r"async/sugarcrm/module/list/", SugarCRMModuleList.as_view(), name='async_sugarcrm_modules'),
     # MySQL
@@ -83,9 +80,6 @@ urlpatterns = [
 
     # Paypal
     url(r'paypal/webhook/event/', PaypalWebhookEvent.as_view(), name='paypal_webhook_event'),
-    # GoogleCalendar
-    url(r"async/google/calendars/list/", GoogleCalendarsList.as_view(), name='async_google_calendars'),
-    url(r'google/calendar/webhook/event/', GoogleCalendarWebhookEvent.as_view(), name='googlecalendar_webhook_event'),
 
     # YouTube
     url(r"async/youtube/channels/list/", YouTubeChannelsList.as_view(), name='async_youtube_channels'),

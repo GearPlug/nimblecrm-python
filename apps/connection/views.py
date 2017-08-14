@@ -122,22 +122,13 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
     def get(self, *args, **kwargs):
         # El model y los fields varían dependiendo de la conexion.
         if self.kwargs['connector_id'] is not None:
-            connector = ConnectorEnum.get_connector(
-                self.kwargs['connector_id'])
-            self.model, self.fields = ConnectorEnum.get_connector_data(
-                connector)
-            # Creación con url de authorization como OAuth (Trabajan con token en su mayoria.)
-            if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms,
-                             ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
-                             ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
-                             ConnectorEnum.Asana, ConnectorEnum.WunderList]:
-                name = 'create_with_auth'
-            # Investigar que tipos de autorizacion utilizan los conectores
-            # que caen dentro de este elif.
-            elif connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot,
-                               ConnectorEnum.MercadoLibre]:
+            connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
+            self.model, self.fields = ConnectorEnum.get_connector_data(connector)
+            if connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot, ConnectorEnum.MercadoLibre]:
                 name = '{0}/create'.format(connector.name.lower())
-            else:  # Sin autorization. Creación por formulario.
+            elif connector.has_auth:
+                name = 'create_with_auth'
+            else:
                 name = 'create'
             self.template_name = '%s/%s.html' % (app_name, name)
         return super(CreateConnectionView, self).get(*args, **kwargs)
@@ -153,7 +144,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms,
                              ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
                              ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
-                             ConnectorEnum.Asana]:
+                             ConnectorEnum.Asana, ConnectorEnum.Twitter, ConnectorEnum.Instagram]:
                 name = 'create_with_auth'
             elif connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot,
                                ConnectorEnum.MercadoLibre]:  # Especial
@@ -169,6 +160,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         context['connection'] = connector.name
         context['connector_name'] = connector.name
         context['connector_id'] = connector.value
+        print("conector", connector)
         if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms, ConnectorEnum.GoogleContacts,
                          ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube]:
             api = GoogleAPIEnum.get_api(connector.name)
@@ -187,8 +179,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             context['authorization_url'] = get_shopify_url()
         elif connector == ConnectorEnum.Instagram:
             flow = get_instagram_auth()
-            context['authorizaton_url'] = flow.get_authorize_login_url(
-                scope=INSTAGRAM_SCOPE)
+            context['authorizaton_url'] = flow.get_authorize_login_url(scope=settings.INSTAGRAM_SCOPE)
         elif connector == ConnectorEnum.Salesforce:
             flow = get_salesforce_auth()
             context['authorizaton_url'] = flow
@@ -207,7 +198,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                                   redirect_uri=settings.ASANA_REDIRECT_URL)
             authorization_url, state = oauth.authorization_url(
                 'https://app.asana.com/-/oauth_authorize?response_type=code&client_id={0}&redirect_uri={1}&state=1234'
-                .format(settings.ASANA_CLIENT_ID, settings.ASANA_REDIRECT_URL))
+                    .format(settings.ASANA_CLIENT_ID, settings.ASANA_REDIRECT_URL))
             context['authorization_url'] = authorization_url
         elif connector == ConnectorEnum.MercadoLibre:
             flow = get_mercadolibre_auth()
@@ -223,8 +214,6 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                                   redirect_uri=settings.WUNDERLIST_REDIRECT_URL)
             authorization_url, state = oauth.authorization_url(
                 'https://www.wunderlist.com/oauth/authorize?state=RANDOM')
-                # .format(settings.WUNDERLIST_CLIENT_ID, settings.WUNDERLIST_REDIRECT_URL))
-            print('AUTH-URL:', authorization_url)
             context['authorization_url'] = authorization_url
         return context
 
@@ -378,6 +367,8 @@ def get_twitter_auth():
 
 
 class InstagramAuthView(View):
+    print("auth")
+
     def get(self, request, *args, **kwargs):
         flow = get_instagram_auth()
         access_token = flow.exchange_code_for_access_token(request.GET['code'])
@@ -388,11 +379,13 @@ class InstagramAuthView(View):
 
 class InstagramAuthSuccessCreateConnection(TemplateView):
     template_name = 'connection/instagram/success.html'
+    print("sucess")
 
     def get(self, request, *args, **kwargs):
         try:
             if 'instagram_access_token' in request.session:
                 access_token = request.session.pop('instagram_access_token')
+                print("credenciales")
                 print(access_token)
                 print(request.user)
                 print(ConnectorEnum.Instagram.value)
@@ -412,7 +405,7 @@ class InstagramAuthSuccessCreateConnection(TemplateView):
 
 def get_instagram_auth():
     return InstagramAPI(client_id=settings.INSTAGRAM_CLIENT_ID, client_secret=settings.INSTAGRAM_CLIENT_SECRET,
-                        redirect_uri=INSTAGRAM_AUTH_URL)
+                        redirect_uri=settings.INSTAGRAM_AUTH_URL)
 
 
 def get_mercadolibre_auth(code=None):
@@ -508,7 +501,7 @@ class SurveyMonkeyAuthView(View):
         print(settings.SURVEYMONKEY_REDIRECT_URI)
         try:
             access_token_uri = settings.SURVEYMONKEY_API_BASE + \
-                settings.SURVEYMONKEY_ACCESS_TOKEN_ENDPOINT
+                               settings.SURVEYMONKEY_ACCESS_TOKEN_ENDPOINT
             access_token_response = requests.post(access_token_uri, data=data)
             access_json = access_token_response.json()
             try:
@@ -558,7 +551,7 @@ class ShopifyAuthView(View):
     def get(self, request, *args, **kwargs):
         code = request.GET.get('code', '')
         url = "https://" + settings.SHOPIFY_SHOP_URL + \
-            ".myshopify.com/admin/oauth/access_token"
+              ".myshopify.com/admin/oauth/access_token"
         params = {'client_id': settings.SHOPIFY_API_KEY,
                   'client_secret': settings.SHOPIFY_API_KEY_SECRET, 'code': code}
         try:
@@ -712,6 +705,7 @@ class WunderListAuthView(View):
         self.request.session['connection_data'] = {'token': token['access_token']}
         self.request.session['connector_name'] = ConnectorEnum.WunderList.name
         return redirect(reverse('connection:create_token_authorized_connection'))
+
 
 class CreateTokenAuthorizedConnectionView(View):
     def get(self, request, **kwargs):

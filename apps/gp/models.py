@@ -462,6 +462,7 @@ class Plug(models.Model):
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
+    is_tested = models.BooleanField(default=False)
 
     @property
     def is_source(self):

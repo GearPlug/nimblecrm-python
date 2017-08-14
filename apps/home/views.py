@@ -6,7 +6,7 @@ from django.utils.decorators import method_decorator
 from django.http import JsonResponse, HttpResponse
 import json
 from apps.user.views import LoginView
-from apps.gp.models import PlugActionSpecification
+from apps.gp.models import PlugActionSpecification, Webhook
 from apps.gp.enum import ConnectorEnum
 
 
@@ -38,38 +38,34 @@ class IncomingWebhook(View):
         # print('dispatch')
         return super(IncomingWebhook, self).dispatch(request, *args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
-        # print('post')
+    def head(self, request, *args, **kwargs):
+        print('head')
+        response = HttpResponse(status=500)
         connector_name = self.kwargs['connector'].lower()
         connector = ConnectorEnum.get_connector(name=connector_name)
+        if connector == ConnectorEnum.SurveyMonkey:
+            response.status_code = 200
+            return response
 
+    def post(self, request, *args, **kwargs):
+        force_update = request.POST.get('force_update', False)
+        response = HttpResponse(status=500)
+        connector_name = self.kwargs['connector'].lower()
+        connector = ConnectorEnum.get_connector(name=connector_name)
+        controller_class = ConnectorEnum.get_controller(connector)
+        controller = controller_class()
         # SLACK
-        if connector == ConnectorEnum.Slack:
-            data = json.loads(request.body.decode('utf-8'))
-            if 'challenge' in data.keys():
-                return JsonResponse({'challenge': data['challenge']})
-            elif 'type' in data.keys() and data['type'] == 'event_callback':
-                event = data['event']
-                if event['type'] == "message":
-                    channel_list = PlugActionSpecification.objects.filter(
-                        action_specification__action__action_type='source',
-                        action_specification__action__connector__name__iexact="slack",
-                        plug__gear_source__is_active=True,
-                        # TODO  TEST NO FUNCIONA POR ESTO
-                        value=event['channel'])
-                    controller_class = ConnectorEnum.get_controller(connector)
-                    for plug_action_specification in channel_list:
-                        controller = controller_class(
-                            plug_action_specification.plug.connection.related_connection,
-                            plug_action_specification.plug)
-                        controller.download_source_data(event=data)
-            else:
-                print("No callback event")
-            return JsonResponse({'slack': True})
-
+        response = HttpResponse(status=200)
+        try:
+            body = json.loads(request.body.decode('utf-8'))
+        except Exception as e:
+            print(e)
+            body = None
+        if connector in [ConnectorEnum.Slack, ]:
+            response = controller.do_webhook_process(body=body, post=request.POST, get=request.GET)
+            return response
         # ASANA
         elif connector == ConnectorEnum.Asana:
-            response = HttpResponse(status=200)
             if 'HTTP_X_HOOK_SECRET' in request.META:
                 response['X-Hook-Secret'] = request.META[
                     'HTTP_X_HOOK_SECRET']
@@ -91,9 +87,8 @@ class IncomingWebhook(View):
                         ping = controller.test_connection()
                         if ping:
                             controller.download_source_data(event=event)
-        # Jira
+            response.status_code = 200
         elif connector == ConnectorEnum.JIRA:
-            response = HttpResponse(status=200)
             data = json.loads(request.body.decode('utf-8'))
             issue = data['issue']
             project_list = PlugActionSpecification.objects.filter(
@@ -109,13 +104,12 @@ class IncomingWebhook(View):
                 ping = controller.test_connection()
                 if ping:
                     controller.download_source_data(issue=issue)
-        # WUNDERLIST
+            response.status_code = 200
         elif connector == ConnectorEnum.WunderList:
             response = HttpResponse(status=200)
             controller_class = ConnectorEnum.get_controller(connector)
             task = json.loads(request.body.decode("utf-8"))
             if 'operation' in task:
-                id_list = task['subject']['parents'][0]['id']
                 kwargs = {'action_specification__action__action_type': 'source',
                           'action_specification__action__connector__name__iexact': 'wunderlist',
                           'action_specification__name__iexact': 'list',
@@ -127,13 +121,9 @@ class IncomingWebhook(View):
                     if 'completed' in task['data'] and task['data']['completed'] == True:
                         print('se completo una tarea')
                         kwargs['action_specification__action__name__iexact'] = 'completed task'
-                #
                 try:
-                    specification_list = PlugActionSpecification.objects.filter(
-                        **kwargs)
-                    print(len(specification_list))
+                    specification_list = PlugActionSpecification.objects.filter(**kwargs)
                 except Exception as e:
-                    print(e)
                     specification_list = []
                 for s in specification_list:
                     controller = controller_class(
@@ -141,7 +131,37 @@ class IncomingWebhook(View):
                     ping = controller.test_connection()
                     if ping:
                         controller.download_source_data(task=task)
-            return response
-        else:
-            pass
+        elif connector == ConnectorEnum.GoogleCalendar:
+            webhook_id = kwargs.pop('webhook_id', None)
+            w = Webhook.objects.get(pk=webhook_id)
+            controller_class = ConnectorEnum.get_controller(connector)
+            controller = controller_class(w.plug.connection.related_connection, w.plug)
+            ping = controller.test_connection()
+            if ping:
+                events = controller.get_events()
+                controller.download_source_data(events=events)
+                response.status_code = 200
+        elif connector == ConnectorEnum.Gmail:
+            webhook_id = kwargs.pop('webhook_id', None)
+            response.status_code = 200
+        elif connector == ConnectorEnum.SurveyMonkey:
+            responses = []
+            data = request.body.decode('utf-8')
+            data = json.loads(data)
+            survey = {'id': data['object_id']}
+            responses.append(survey)
+            qs = PlugActionSpecification.objects.filter(
+                action_specification__action__action_type='source',
+                action_specification__action__connector__name__iexact="SurveyMonkey",
+                value=data['resources']['survey_id']
+            )
+            for plug_action_specification in qs:
+                controller_class = ConnectorEnum.get_controller(connector)
+                controller = controller_class(
+                    plug_action_specification.plug.connection.related_connection,
+                    plug_action_specification.plug)
+                ping = controller.test_connection
+                if ping:
+                    controller.download_source_data(responses=responses)
+            response.status_code = 200
         return response

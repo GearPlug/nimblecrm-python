@@ -106,60 +106,6 @@ class SalesforceWebhookEvent(TemplateView):
         return JsonResponse({'hola': True})
 
 
-class GoogleDriveSheetList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = GoogleSpreadSheetsController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            sheet_list = controller.get_sheet_list()
-        else:
-            sheet_list = list()
-        context['object_list'] = sheet_list
-        return super(GoogleDriveSheetList, self).render_to_response(context)
-
-
-class GoogleCalendarsList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = GoogleCalendarController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            calendar_list = controller.get_calendar_list()
-        else:
-            calendar_list = list()
-        context['object_list'] = calendar_list
-        return super(GoogleCalendarsList, self).render_to_response(context)
-
-
-class GoogleSheetsWorksheetList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        spreadsheet_id = request.POST.get('spreadsheet_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = GoogleSpreadSheetsController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            # El id es el mismo nombre del worksheet
-            worksheet_list = tuple(
-                {'id': ws['title'], 'name': ws['title']} for ws in controller.get_worksheet_list(spreadsheet_id))
-        else:
-            worksheet_list = list()
-        context['object_list'] = worksheet_list
-        return super(GoogleSheetsWorksheetList, self).render_to_response(context)
-
-
 class MySQLFieldList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
 
@@ -660,32 +606,6 @@ class YouTubeChannelsList(LoginRequiredMixin, TemplateView):
         return super(YouTubeChannelsList, self).render_to_response(context)
 
 
-class JiraWebhookEvent(TemplateView):
-    template_name = 'wizard/async/select_options.html'
-    _jira_controller = JIRAController()
-
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(JiraWebhookEvent, self).dispatch(request, *args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        return super(JiraWebhookEvent, self).get(request)
-
-    def post(self, request, *args, **kwargs):
-        data = json.loads(request.body.decode('utf-8'))
-        issue = data['issue']
-        qs = PlugActionSpecification.objects.filter(
-            action_specification__action__action_type='source',
-            action_specification__action__connector__name__iexact="jira",
-            value=issue['fields']['project']['id'],
-            plug__source_gear__is_active=True)
-        for plug_action_specification in qs:
-            self._jira_controller.create_connection(plug_action_specification.plug.connection.related_connection,
-                                                    plug_action_specification.plug)
-            self._jira_controller.download_source_data(issue=issue)
-        return JsonResponse({'hola': True})
-
-
 class GoogleCalendarWebhookEvent(TemplateView):
     template_name = 'wizard/async/select_options.html'
     _googlecalendar_controller = GoogleCalendarController()
@@ -726,6 +646,32 @@ class GoogleCalendarWebhookEvent(TemplateView):
             events = self._googlecalendar_controller.get_events()
             self._googlecalendar_controller.download_source_data(events=events)
 
+        return JsonResponse({'hola': True})
+
+
+class JiraWebhookEvent(TemplateView):
+    template_name = 'wizard/async/select_options.html'
+    _jira_controller = JIRAController()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(JiraWebhookEvent, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        return super(JiraWebhookEvent, self).get(request)
+
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body.decode('utf-8'))
+        issue = data['issue']
+        qs = PlugActionSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="jira",
+            value=issue['fields']['project']['id'],
+            plug__source_gear__is_active=True)
+        for plug_action_specification in qs:
+            self._jira_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+                                                    plug_action_specification.plug)
+            self._jira_controller.download_source_data(issue=issue)
         return JsonResponse({'hola': True})
 
 

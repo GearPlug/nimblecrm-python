@@ -63,16 +63,11 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         ping = controller.test_connection()
         if ping:
             if self.object.is_source:
-                print("SOURCE!")
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
                 if c in [ConnectorEnum.Bitbucket, ConnectorEnum.JIRA, ConnectorEnum.SurveyMonkey,
                          ConnectorEnum.Instagram, ConnectorEnum.YouTube, ConnectorEnum.Shopify,
                          ConnectorEnum.GoogleCalendar, ConnectorEnum.Asana]:
-                    print("WEBHOOK!!")
                     controller.create_webhook()
-            elif self.object.is_target:
-                if c == ConnectorEnum.MailChimp:
-                    controller.get_target_fields(list_id=specification_list[0]['value'])
         self.request.session['source_connection_id'] = None
         self.request.session['target_connection_id'] = None
         return HttpResponseRedirect(self.get_success_url())
@@ -210,7 +205,6 @@ class PlugActionSpecificationOptionsView(LoginRequiredMixin, TemplateView):
         kwargs.update(
             {key: val for key, val in request.POST.items() if key not in ['action_specification_id', 'connection_id']})
         if ping:
-            print("kwargs ANTES\n", kwargs)
             field_list = controller.get_action_specification_options(action_specification_id, **kwargs)
         else:
             field_list = []
