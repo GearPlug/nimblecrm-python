@@ -127,6 +127,9 @@ class InstagramController(BaseController):
             me = self._client.user()
         return me is not None
 
+    def test_connection(self, *args, **kwargs):
+        return self._client is not None
+
     def download_to_stored_data(self, connection_object=None, plug=None, media=None, **kwargs):
         if media is not None:
             _items = []
