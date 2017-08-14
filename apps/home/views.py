@@ -48,11 +48,12 @@ class IncomingWebhook(View):
             return response
 
     def post(self, request, *args, **kwargs):
+        force_update = request.POST.get('force_update', False)
         response = HttpResponse(status=500)
         connector_name = self.kwargs['connector'].lower()
         connector = ConnectorEnum.get_connector(name=connector_name)
-        print(connector)
         # SLACK
+        response = HttpResponse(status=200)
         if connector == ConnectorEnum.Slack:
             data = json.loads(request.body.decode('utf-8'))
             if 'challenge' in data.keys():
@@ -60,22 +61,22 @@ class IncomingWebhook(View):
             elif 'type' in data.keys() and data['type'] == 'event_callback':
                 event = data['event']
                 if event['type'] == "message":
-                    channel_list = PlugActionSpecification.objects.filter(
-                        action_specification__action__action_type='source',
-                        action_specification__action__connector__name__iexact="slack",
-                        plug__gear_source__is_active=True,
-                        # TODO  TEST NO FUNCIONA POR ESTO
-                        value=event['channel'])
+                    query_params = {'action_specification__action__action_type': 'source',
+                                    'action_specification__action__connector__name__iexact': 'slack',
+                                    'value': event['channel'], }
+                    if force_update is not True:
+                        query_params['plug__gear_source__is_active'] = True
+
+                    query_params['plug__gear_source__is_active'] = False
+                    query_params['']
+                    channel_list = PlugActionSpecification.objects.filter(**query_params)
                     controller_class = ConnectorEnum.get_controller(connector)
-                    for plug_action_specification in channel_list:
-                        controller = controller_class(
-                            plug_action_specification.plug.connection.related_connection,
-                            plug_action_specification.plug)
+                    for channel in channel_list:
+                        controller = controller_class(channel.plug.connection.related_connection, channel.plug)
                         controller.download_source_data(event=data)
             else:
                 print("No callback event")
             return JsonResponse({'slack': True})
-
         # ASANA
         elif connector == ConnectorEnum.Asana:
             if 'HTTP_X_HOOK_SECRET' in request.META:
