@@ -445,7 +445,7 @@ class SurveyMonkeyController(BaseController):
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
-    def do_webhook_process(self, body, post, get):
+    def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
         responses = []
         survey = {'id': body['object_id']}
         responses.append(survey)
