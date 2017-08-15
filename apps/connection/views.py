@@ -385,21 +385,19 @@ class HubspotAuthView(View):
 
 class ShopifyAuthView(View):
     def get(self, request, *args, **kwargs):
-        code = request.GET.get('code', '')
-        url = "https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com/admin/oauth/access_token"
-        params = {'client_id': settings.SHOPIFY_API_KEY, 'client_secret': settings.SHOPIFY_API_KEY_SECRET, 'code': code}
+        code = request.GET.get('code', None)
+        shop_url = request.GET.get('shop', None)
+        url = "https://{0}/admin/oauth/access_token".format(shop_url)
+        params = {'client_id': settings.SHOPIFY_API_KEY, 'code': code, 'client_secret': settings.SHOPIFY_API_KEY_SECRET}
         try:
-            response = requests.post(url, params).__dict__['_content'].decode()
-            token = json.loads(response)['access_token']
-            try:
-                request.session['shopify_token'] = token
-                return redirect(reverse('connection:create_token_authorized_connection'))
-            except Exception as e:
-                raise
-                print("Error en Shopify")
+            response = requests.post(url, params).json()
+            self.request.session['connection_data'] = {'token': response['access_token']}
+            self.request.session['connector_name'] = ConnectorEnum.Shopify.name
+            return redirect(reverse('connection:create_token_authorized_connection'))
         except Exception as e:
             raise
-        return redirect(reverse('connection:create_token_authorized_connection'))
+        # TODO: error
+        return redirect(reverse('connection:shopify_success_create_connection'))
 
 
 # NPI
@@ -421,8 +419,8 @@ def get_survey_monkey_url():
 
 
 def get_shopify_url():
-    scopes = "read_products, write_products, read_orders, read_customers, write_orders, write_customers"
-    return "https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com/admin/oauth/authorize?client_id=" + settings.SHOPIFY_API_KEY + "&scope=" + scopes + "&redirect_uri=" + settings.SHOPIFY_REDIRECT_URI
+    return "https://{0}.myshopify.com/admin/oauth/authorize?client_id={1}&scope={2}&redirect_uri={3}".format(
+        'xxxx', settings.SHOPIFY_API_KEY, settings.SHOPIFY_SCOPE, settings.SHOPIFY_REDIRECT_URI)
 
 
 def get_hubspot_url():
