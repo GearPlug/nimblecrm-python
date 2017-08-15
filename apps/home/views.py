@@ -61,7 +61,7 @@ class IncomingWebhook(View):
         except Exception as e:
             print(e)
             body = None
-        if connector in [ConnectorEnum.Slack, ]:
+        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey]:
             response = controller.do_webhook_process(body=body, post=request.POST, get=request.GET)
             return response
         # ASANA

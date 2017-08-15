@@ -353,38 +353,6 @@ class SlackWebhookEvent(TemplateView):
         return JsonResponse({'hola': True})
 
 
-class SurveyMonkeyWebhookEvent(TemplateView):
-    template_name = 'wizard/async/select_options.html'
-    _surveymonkey_controller = SurveyMonkeyController()
-
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(SurveyMonkeyWebhookEvent, self).dispatch(request, *args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        return super(SurveyMonkeyWebhookEvent, self).get(request)
-
-    def post(self, request, *args, **kwargs):
-        responses = []
-        data = request.body.decode()
-        data = json.loads(data)
-        print(data['resources']['survey_id'])
-        survey = {'id': data['object_id']}
-        responses.append(survey)
-        qs = PlugActionSpecification.objects.filter(
-            action_specification__action__action_type='source',
-            action_specification__action__connector__name__iexact="SurveyMonkey",
-            value=data['resources']['survey_id']
-        )
-        for plug_action_specification in qs:
-            print("plug")
-            self._surveymonkey_controller.create_connection(
-                plug_action_specification.plug.connection.related_connection,
-                plug_action_specification.plug)
-            self._surveymonkey_controller.download_source_data(responses=responses)
-        return JsonResponse({'hola': True})
-
-
 class ShopifyWebhookEvent(TemplateView):
     template_name = 'wizard/async/select_options.html'
     _shopify_controller = ShopifyController()
