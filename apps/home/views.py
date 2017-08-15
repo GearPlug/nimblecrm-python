@@ -33,10 +33,24 @@ class HomeView(LoginView):
 
 
 class IncomingWebhook(View):
+    INSTAGRAM_TOKEN = 'GearPlug2017'
+
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
         # print('dispatch')
         return super(IncomingWebhook, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        connector_name = self.kwargs['connector'].lower()
+        connector = ConnectorEnum.get_connector(name=connector_name)
+        if connector == ConnectorEnum.Instagram:
+            mode = request.GET.get('hub.mode', None)
+            challenge = request.GET.get('hub.challenge', None)
+            token = request.GET.get('hub.verify_token', None)
+            if mode != 'subscribe' or not token or token != self.INSTAGRAM_TOKEN:
+                return HttpResponse(status=200)
+            return HttpResponse(challenge)
+        return HttpResponse(status=403)
 
     def head(self, request, *args, **kwargs):
         print('head')
@@ -61,7 +75,7 @@ class IncomingWebhook(View):
         except Exception as e:
             print(e)
             body = None
-        if connector in [ConnectorEnum.Slack, ]:
+        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey]:
             response = controller.do_webhook_process(body=body, post=request.POST, get=request.GET)
             return response
         # ASANA

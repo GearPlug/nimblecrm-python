@@ -1,6 +1,6 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
-from apps.gp.models import StoredData, ActionSpecification, Webhook
+from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification
 from apiconnector.settings import FACEBOOK_APP_SECRET, FACEBOOK_APP_ID, FACEBOOK_GRAPH_VERSION
 import facebook
 import hashlib
@@ -13,6 +13,8 @@ from datetime import time
 from oauth2client import client as GoogleClient
 import surveymonty
 from django.conf import settings
+from django.http import HttpResponse
+
 
 class GoogleFormsController(BaseController):
     _credential = None
@@ -398,7 +400,7 @@ class SurveyMonkeyController(BaseController):
         return list
 
     def create_webhook(self):
-        action=self._plug.action.name
+        action = self._plug.action.name
         if action == "read a survey":
             survey_id = self._plug.plug_action_specification.all()[0].value
             survey_id = str(survey_id)
@@ -423,16 +425,16 @@ class SurveyMonkeyController(BaseController):
             print("response")
             print(r.text)
             if r.status_code == 201:
-                webhook.url=redirect_uri
-                webhook.generated_id=r.json()["id"]
+                webhook.url = redirect_uri
+                webhook.generated_id = r.json()["id"]
                 print("id")
                 print(webhook.generated_id)
-                webhook.is_active=True
+                webhook.is_active = True
                 webhook.save(update_fields=['url', 'generated_id', 'is_active'])
                 print("Se creo el webhook survey monkey")
             else:
-                webhook.is_deleted= True
-                webhook.save(update_fields=['is_deleted',])
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
             return True
         return False
 
@@ -442,3 +444,18 @@ class SurveyMonkeyController(BaseController):
             return [{'name': o['title'], 'id': o['id']} for o in self.get_survey_list()]
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
+        responses = []
+        survey = {'id': body['object_id']}
+        responses.append(survey)
+        survey_list = PlugActionSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="SurveyMonkey",
+            value=body['resources']['survey_id']
+        )
+        for survey in survey_list:
+            self._connection_object, self._plug = survey.plug.connection.related_connection, survey.plug
+            if self.test_connection():
+                self.download_source_data(event=body)
+        return HttpResponse(status=200)

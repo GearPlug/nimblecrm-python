@@ -12,12 +12,6 @@ from apps.gp.views import TemplateViewWithPost
 from oauth2client import client
 
 
-# mysqlc = MySQLController()
-# postgresqlc = PostgreSQLController()
-# mcc = MailChimpController()
-# mssqlc = MSSQLController()
-
-
 class ListGearView(LoginRequiredMixin, ListView):
     """
     Lists all gears related to the authenticated user.

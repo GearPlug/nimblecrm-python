@@ -1,10 +1,8 @@
 from django.conf.urls import url
 
-from apps.wizard.views import MSSQLFieldList, SugarCRMModuleList, \
-    MySQLFieldList, PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList, SlackChannelList, \
-    SlackWebhookEvent, JiraWebhookEvent, JiraProjectList, \
-    GetResponseCampaignsList, InstagramWebhookEvent, InstagramAccountsList, PaypalWebhookEvent, \
-    SurveyMonkeyWebhookEvent, ZohoCRMModuleList, YouTubeWebhookEvent, \
+from apps.wizard.views import JiraWebhookEvent, JiraProjectList, \
+     PaypalWebhookEvent, \
+     ZohoCRMModuleList, YouTubeWebhookEvent, \
     YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent, SalesforceSObjectList, SalesforceEventList, \
     SalesforceWebhookEvent
 
@@ -41,39 +39,15 @@ urlpatterns = [
     url(r'^gear/map/(?P<gear_id>\d+)/$', CreateGearMapView.as_view(), name='create_gear_map'),
 
     # PLUG CREATION SPECIFICS FOR CONNECTOR
-    # SugarCRM
-    url(r"async/sugarcrm/module/list/", SugarCRMModuleList.as_view(), name='async_sugarcrm_modules'),
-    # MySQL
-    url(r"async/mysql/field/list/", MySQLFieldList.as_view(), name='async_mysql_fields'),
-    url(r"async/mssql/field/list/", MSSQLFieldList.as_view(), name='async_mssql_fields'),
-    # PostgreSQL
-    url(r"async/postgresql/field/list/", PostgreSQLFieldList.as_view(), name='async_postgresql_fields'),
-    # Facebook
-    url(r"async/facebook/page/list/", FacebookPageList.as_view(), name='async_facebook_pages'),
-    url(r"async/facebook/form/list/", FacebookFormList.as_view(), name='async_facebook_forms'),
-    # MailChimp
-    url(r'async/mailchimp/lists/list/', MailChimpListsList.as_view(), name='async_mailchimp_lists'),
-    # Slack
-    url(r'async/slack/channel/list/', SlackChannelList.as_view(), name='async_slack_chanels'),
-    url(r'slack/webhook/event/', SlackWebhookEvent.as_view(), name='slack_webhook_event'),
     # Jira
     url(r"async/jira/field/list/", JiraProjectList.as_view(), name='async_jira_projects'),
     url(r'jira/webhook/event/', JiraWebhookEvent.as_view(), name='jira_webhook_event'),
     # GetResponse
-    url(r"async/getresponse/campaigns/list/", GetResponseCampaignsList.as_view(), name='async_getresponse_campaigns'),
-
-    # SurveyMonkey
-    url(r'surveymonkey/webhook/event/(?P<plug_id>\d+)/', SurveyMonkeyWebhookEvent.as_view(),
-        name='surveymonkey_webhook_event'),
 
     # Shopify
     url(r"async/shopify/topic/list/", ShopifyList.as_view(), name='async_shopify_topic_list'),
     url(r'shopify/webhook/event/(?P<plug_id>\d+)/', ShopifyWebhookEvent.as_view(),
         name='shopify_webhook_event'),
-
-    # Instagram
-    url(r'instagram/webhook/event/', InstagramWebhookEvent.as_view(), name='instagram_webhook_event'),
-    url("async/instagram/accounts/list/", InstagramAccountsList.as_view(), name='async_instagram_accounts'),
 
     # Paypal
     url(r'paypal/webhook/event/', PaypalWebhookEvent.as_view(), name='paypal_webhook_event'),
