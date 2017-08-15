@@ -43,7 +43,7 @@ class ConnectorEnum(Enum):
     FreshDesk = 37, 'crm'
     AgileCRM = 38, 'crm'
     GitLab = 39, 'repository'
-    Shopify = 40, 'ecomerce'
+    Shopify = 40, 'ecomerce', 'special'
     Dropbox = 41, '', True
     Magento = 42, 'ecomerce'
     Asana = 43, 'project_management', 'authorization'
@@ -87,8 +87,10 @@ class ConnectorEnum(Enum):
         return apps.get_model('gp', '%sConnection' % connector.name)
 
     def get_controller(connector):
-        return dynamic_import(connector.name, path="apps.gp.controllers.{0}".format(connector.category),
+        a=dynamic_import(connector.name, path="apps.gp.controllers.{0}".format(connector.category),
                               suffix='Controller')
+        print(a)
+        return a
 
 
 class GoogleAPIEnum(Enum):

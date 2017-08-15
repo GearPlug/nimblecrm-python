@@ -3,7 +3,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'nd65g3a23c!y%+a_%+v)!trnjh%c=gh(zg5!gsn*qo&b6*nsbb'
 DEBUG = True
-CURRENT_HOST = "https://g.grplug.com/"
+CURRENT_HOST = "https://fc8b1665.ngrok.io/"
 ALLOWED_HOSTS = [CURRENT_HOST, '*', ]
 CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
@@ -260,12 +260,6 @@ SALESFORCE_REDIRECT_URI = ''
 SALESFORCE_AUTHORIZE_URL = 'https://login.salesforce.com/services/oauth2/authorize'
 SALESFORCE_WEBHOOK_URI = ''
 
-# Shopify
-SHOPIFY_SHOP_URL = "my-first-project-2017"
-SHOPIFY_API_KEY = "8058ebd552b2ba23d9d1c6221b514fab"
-SHOPIFY_API_KEY_SECRET = "d32f6b242ddaa2dd2b29bf3eb329a1c5"
-SHOPIFY_REDIRECT_URI = "{0}/connection/shopify_auth/".format(CURRENT_HOST)
-
 # Hubspot
 HUBSPOT_REDIRECT_URI = "{0}/connection/hubspot_auth/".format(CURRENT_HOST)
 HUBSPOT_CLIENT_ID = "633af850-f08a-42e5-a6e7-da65a177bcd5"
@@ -277,10 +271,10 @@ EVERNOTE_CONSUMER_SECRET = "a4673a77baca5424"
 EVERNOTE_REDIRECT_URL = "http://127.0.0.1:8000/connection/evernote_auth/"
 
 # Shopify
-SHOPIFY_SHOP_URL = "my-first-project-2017"
-SHOPIFY_API_KEY = "8058ebd552b2ba23d9d1c6221b514fab"
-SHOPIFY_API_KEY_SECRET = "d32f6b242ddaa2dd2b29bf3eb329a1c5"
-SHOPIFY_REDIRECT_URI = "{0}/connection/shopify_auth/".format(CURRENT_HOST)
+SHOPIFY_API_KEY = "0eef989bfc56004265e4a8c4e699fd2e"
+SHOPIFY_API_KEY_SECRET = "aa53f3fcd4f635317e3c67b61a067356"
+SHOPIFY_REDIRECT_URI = "{0}connection/auth-callback/shopify/".format(CURRENT_HOST)
+SHOPIFY_SCOPE = "read_products, write_products, read_orders, read_customers, write_orders, write_customers"
 
 # Hubspot
 HUBSPOT_REDIRECT_URI = "{0}/connection/hubspot_auth/".format(CURRENT_HOST)
