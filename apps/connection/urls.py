@@ -2,7 +2,7 @@ from django.conf.urls import url
 from apps.connection.views import CreateConnectionView, ListConnectorView, GoogleAuthView, SlackAuthView, AuthSuccess, \
     TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, ShopifyAuthView, TestConnectionView, \
     CreateConnectionSuccessView, EvernoteAuthView, AsanaAuthView, CreateTokenAuthorizedConnectionView, \
-    MercadoLibreAuthView, AjaxMercadoLibrePostSiteView, WunderListAuthView  # ,AJAXGetSurveyListView
+    MercadoLibreAuthView, AjaxMercadoLibrePostSiteView, WunderListAuthView, HubspotAuthView  # ,AJAXGetSurveyListView
 
 urlpatterns = [
     # Create Connection
@@ -27,7 +27,7 @@ urlpatterns = [
     url(r'^auth-callback/surveymonkey/', SurveyMonkeyAuthView.as_view(), name="surveymonkey_auth"),
     url(r'^auth-callback/evernote/', EvernoteAuthView.as_view(), name="evernote_auth"),
     url(r'^auth-callback/salesforce/', SalesforceAuthView.as_view(), name="salesforce_auth"),
-    url(r'^auth-callback/shopif/', ShopifyAuthView.as_view(), name="shopify_auth"),
+    url(r'^auth-callback/shopify/', ShopifyAuthView.as_view(), name="shopify_auth"),
     url(r'^auth-callback/mercadolibre/', MercadoLibreAuthView.as_view(), name="mercadolibre_auth"),
 
     # Create Authorizated Connection
@@ -35,9 +35,6 @@ urlpatterns = [
         name="create_token_authorized_connection"),
 
     # MercadoLibre
-    url(r"^mercadolibre_auth/$", MercadoLibreAuthView.as_view(), name="mercadolibre_auth"),
-    url(r"^mercadolibre_auth/success/$", MercadoLibreAuthSuccessCreateConnection.as_view(),
-        name="mercadolibre_auth_success_create_connection"),
     url(r"^ajax/mercadolibre/post/site/$", AjaxMercadoLibrePostSiteView.as_view(),
         name="ajax_mercadolibre_post_site"),
 
