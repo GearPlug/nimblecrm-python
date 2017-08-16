@@ -3,7 +3,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'nd65g3a23c!y%+a_%+v)!trnjh%c=gh(zg5!gsn*qo&b6*nsbb'
 DEBUG = True
-CURRENT_HOST = "https://fc8b1665.ngrok.io/"
+CURRENT_HOST = "https://localhost"
 ALLOWED_HOSTS = [CURRENT_HOST, '*', ]
 CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
@@ -268,12 +268,12 @@ HUBSPOT_CLIENT_SECRET = "94e688b7-9390-4b59-a6df-151eac348e89"
 # Evernote
 EVERNOTE_CONSUMER_KEY = "ltorres-6238"
 EVERNOTE_CONSUMER_SECRET = "a4673a77baca5424"
-EVERNOTE_REDIRECT_URL = "http://127.0.0.1:8000/connection/evernote_auth/"
+EVERNOTE_REDIRECT_URL = "{0}/connection/evernote_auth/".format(CURRENT_HOST)
 
 # Shopify
 SHOPIFY_API_KEY = "0eef989bfc56004265e4a8c4e699fd2e"
 SHOPIFY_API_KEY_SECRET = "aa53f3fcd4f635317e3c67b61a067356"
-SHOPIFY_REDIRECT_URI = "{0}connection/auth-callback/shopify/".format(CURRENT_HOST)
+SHOPIFY_REDIRECT_URI = "{0}/connection/auth-callback/shopify/".format(CURRENT_HOST)
 SHOPIFY_SCOPE = "read_products, write_products, read_orders, read_customers, write_orders, write_customers"
 
 # Hubspot
