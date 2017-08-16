@@ -200,7 +200,9 @@ class CreateConnectionSuccessView(LoginRequiredMixin, TemplateView):
     login_url = '/account/login/'
 
 
-class CreateTokenAuthorizedConnectionView(View):
+class CreateTokenAuthorizedConnectionView(TemplateView):
+    template_name = 'connection/auth_success.html'
+
     def get(self, request, **kwargs):
         if 'connection_data' in self.request.session:
             data = self.request.session['connection_data']
