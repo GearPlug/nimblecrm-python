@@ -1,7 +1,7 @@
 from collections import OrderedDict
 import re
 import xml.etree.ElementTree as ET
-
+from importlib import import_module
 
 def get_dict_with_source_data(source_data, target_fields, include_id=False):
     pattern = re.compile("^(\%\%\S+\%\%)$")
