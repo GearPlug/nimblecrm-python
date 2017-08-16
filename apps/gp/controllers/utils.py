@@ -51,9 +51,5 @@ def _recursive_xml_to_dict(lista):
 
 
 def dynamic_import(name, path='', prefix='', suffix=""):
-    components = path.split('.')
-    components.append(prefix + name + suffix)
-    mod = __import__(components[0])
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
+    mod = import_module(path)
+    return getattr(mod, prefix + name + suffix)
