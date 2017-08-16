@@ -1,6 +1,6 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
-from apps.gp.models import StoredData, ActionSpecification
+from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification
 from apiconnector.settings import FACEBOOK_APP_SECRET, FACEBOOK_APP_ID, FACEBOOK_GRAPH_VERSION
 import facebook
 import hashlib
@@ -12,6 +12,8 @@ from apiclient import discovery
 from datetime import time
 from oauth2client import client as GoogleClient
 import surveymonty
+from django.conf import settings
+from django.http import HttpResponse
 
 
 class GoogleFormsController(BaseController):
@@ -22,39 +24,44 @@ class GoogleFormsController(BaseController):
         BaseController.__init__(self, *args, **kwargs)
 
     def create_connection(self, *args, **kwargs):
+        credentials_json = None
         if args:
             super(GoogleFormsController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
                     credentials_json = self._connection_object.credentials_json
+                    if self._plug is not None:
+                        try:
+                            self._spreadsheet_id = self._plug.plug_action_specification.get(
+                                action_specification__name__iexact='form').value
+                        except Exception as e:
+                            print("Error asignando los specifications GoogleForms 2")
                 except Exception as e:
                     print("Error getting the GoogleForms attributes 1")
                     print(e)
                     credentials_json = None
-        elif not args and kwargs:
-            if 'credentials_json' in kwargs:
-                credentials_json = kwargs.pop('credentials_json')
-        else:
-            credentials_json = None
-        files = None
         if credentials_json is not None:
-            try:
-                for s in self._plug.plug_action_specification.all():
-                    if s.action_specification.name.lower() == 'form':
-                        self._spreadsheet_id = s.value
-            except:
-                print("Error asignando los specifications 2")
-            try:
-                _json = json.dumps(credentials_json)
-                self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
-                http_auth = self._credential.authorize(httplib2.Http())
-                drive_service = discovery.build('drive', 'v3', http=http_auth)
-                files = drive_service.files().list().execute()
-            except Exception as e:
-                print("Error getting the GoogleForms attributes 2")
-                self._credential = None
-                files = None
+            self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
+
+    def test_connection(self):
+        try:
+            self._refresh_token()
+            http_auth = self._credential.authorize(httplib2.Http())
+            drive_service = discovery.build('drive', 'v3', http=http_auth)
+            files = drive_service.files().list().execute()
+        except Exception as e:
+            print("Error Test connection GoogleForms")
+            files = None
         return files is not None
+
+    def _upate_connection_object_credentials(self):
+        self._connection_object.credentials_json = self._credential.to_json()
+        self._connection_object.save()
+
+    def _refresh_token(self, token=''):
+        if self._credential.access_token_expired:
+            self._credential.refresh(httplib2.Http())
+            self._upate_connection_object_credentials()
 
     def download_to_stored_data(self, connection_object, plug, *args, **kwargs):
         if plug is None:
@@ -130,7 +137,11 @@ class GoogleFormsController(BaseController):
         return self.get_worksheet_first_row(**kwargs)
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
-        raise ControllerError("This connector has no specifications.")
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'form':
+            return tuple({'id': p['id'], 'name': p['name']} for p in self.get_sheet_list())  # TODO SOLO CARGAR FORMS
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class FacebookLeadsController(BaseController):
@@ -151,6 +162,7 @@ class FacebookLeadsController(BaseController):
                 try:
                     self._token = self._connection_object.token
                 except Exception as e:
+                    raise
                     print("Error getting the Facebook token")
         try:
             if self._plug is not None:
@@ -169,6 +181,7 @@ class FacebookLeadsController(BaseController):
             if 'id' in object_list:
                 return True
         except Exception as e:
+            raise
             return False
         return False
 
@@ -299,6 +312,15 @@ class SurveyMonkeyController(BaseController):
             self._client = surveymonty.Client(self._token)
         return self._token is not None and self._client is not None
 
+    def test_connection(self):
+        try:
+            self._client = surveymonty.Client(self._token)
+            return self._token is not None
+        except Exception as e:
+            print("error survey monkey test connection")
+            print(e)
+            return None
+
     def get_survey_list(self):
         lista = self._client.get_surveys()
         return lista['data']
@@ -378,34 +400,62 @@ class SurveyMonkeyController(BaseController):
         return list
 
     def create_webhook(self):
-        survey_id = self._plug.plug_action_specification.all()[0].value
-        survey_id = str(survey_id)
-        plug_id = self._plug.plug_action_specification.all()[0].id
-        print("plug_id")
-        print(plug_id)
-        redirect_uri = "https://l.grplug.com/wizard/surveymonkey/webhook/event/%s/" % (plug_id)
-        s = requests.session()
-        s.headers.update({
-            "Authorization": "Bearer %s" % self._token,
-            "Content-Type": "application/json"
-        })
-        payload = {
-            "name": "Webhook_prueba",
-            "event_type": "response_completed",
-            "object_type": "survey",
-            "object_ids": [survey_id],
-            "subscription_url": redirect_uri
-        }
-        url = "https://api.surveymonkey.net/v3/webhooks"
-        r = s.post(url, json=payload)
-        if r.status_code == 201:
-            print("Se creo el webhook survey monkey")
+        action = self._plug.action.name
+        if action == "read a survey":
+            survey_id = self._plug.plug_action_specification.all()[0].value
+            survey_id = str(survey_id)
+            webhook = Webhook.objects.create(name='surveymonkey', plug=self._plug,
+                                             url='')
+            plug_id = self._plug.plug_action_specification.all()[0].id
+            redirect_uri = "%s/webhook/surveymonkey/%s/" % settings.CURRENT_HOST, webhook.id
+            s = requests.session()
+            s.headers.update({
+                "Authorization": "Bearer %s" % self._token,
+                "Content-Type": "application/json"
+            })
+            payload = {
+                "name": "Webhook_prueba",
+                "event_type": "response_completed",
+                "object_type": "survey",
+                "object_ids": [survey_id],
+                "subscription_url": redirect_uri
+            }
+            url = "https://api.surveymonkey.net/v3/webhooks"
+            r = s.post(url, json=payload)
+            print("response")
+            print(r.text)
+            if r.status_code == 201:
+                webhook.url = redirect_uri
+                webhook.generated_id = r.json()["id"]
+                print("id")
+                print(webhook.generated_id)
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+                print("Se creo el webhook survey monkey")
+            else:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
             return True
         return False
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
-        if action_specification.name.lower() == 'read a survey':
-            return [{'name': o['title'], 'id': o['id']} for o in self.smc.get_survey_list()]
+        if action_specification.name.lower() == 'survey':
+            return [{'name': o['title'], 'id': o['id']} for o in self.get_survey_list()]
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
+        responses = []
+        survey = {'id': body['object_id']}
+        responses.append(survey)
+        survey_list = PlugActionSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="SurveyMonkey",
+            value=body['resources']['survey_id']
+        )
+        for survey in survey_list:
+            self._connection_object, self._plug = survey.plug.connection.related_connection, survey.plug
+            if self.test_connection():
+                self.download_source_data(event=body)
+        return HttpResponse(status=200)

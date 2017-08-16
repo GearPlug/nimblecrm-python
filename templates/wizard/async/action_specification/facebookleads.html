@@ -3,6 +3,7 @@
 {% block scripts %}
     {{ block.super }}
     <script type="application/javascript">
+    console.log("facebooktestgustavo")
         $(document).ready(function () {
             $(document).on('change', 'select[data-name=page]', function () {
                 var select = $('select[data-name=form]');
@@ -17,6 +18,7 @@
                     }
                 }).done(function (response) {
                     $(select).html(response);
+                    $(select).attr('is-loaded', true);
                 });
             });
         })

@@ -1,3 +1,4 @@
+from django.http import JsonResponse, HttpResponse
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
@@ -43,8 +44,6 @@ class SlackController(BaseController):
 
     def post_message_to_target(self, message='', target=''):
         try:
-            print(target)
-            print(message)
             self._slacker.chat.post_message(target, message)
             return True
         except Exception as e:
@@ -111,6 +110,7 @@ class SlackController(BaseController):
                     self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
                         new_message.object_id, new_message.plug.id, new_message.connection.id), extra=extra)
                     new_message.save()
+            return new_message is not None
         return False
 
     def get_mapping_fields(self, **kwargs):
@@ -122,6 +122,41 @@ class SlackController(BaseController):
             return tuple({'id': c['id'], 'name': c['name']} for c in self.get_channel_list())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
+        """
+            Devuelve un response
+        """
+        if 'challenge' in body.keys():
+            return JsonResponse({'challenge': body['challenge']})
+        elif 'type' in body.keys() and body['type'] == 'event_callback':
+            response = HttpResponse(status=200)
+            event = body['event']
+            if event['type'] == "message":
+                regular_query = {'action_specification__action__action_type': 'source',
+                                 'action_specification__action__connector__name__iexact': 'slack',
+                                 'plug__gear_source__is_active': True,
+                                 'value': event['channel'], }
+                testing_plugs_query = {'action_specification__action__action_type': 'source',
+                                       'action_specification__action__connector__name__iexact': 'slack',
+                                       'plug__gear_source__is_active': False,
+                                       'plug__is_tested': False,
+                                       'value': event['channel'], }
+                channel_list = PlugActionSpecification.objects.filter(**regular_query)
+                test_channel_list = PlugActionSpecification.objects.filter(**testing_plugs_query)
+                print('c', channel_list)
+                print('p', test_channel_list)
+                for channel in channel_list:
+                    self._connection_object, self._plug = channel.plug.connection.related_connection, channel.plug
+                    self.download_source_data(event=body)
+                for channel in test_channel_list:
+                    self._connection_object, self._plug = channel.plug.connection.related_connection, channel.plug
+                    self.download_source_data(event=body)
+                    self._plug.is_tested = True
+                    self._plug.save(update_fields=['is_tested', ])
+        else:
+            print("No callback event")
+        return response
 
 
 class SMSController(BaseController):

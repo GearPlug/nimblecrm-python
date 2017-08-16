@@ -5,31 +5,11 @@ from django.http.response import JsonResponse
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from django.contrib.auth.mixins import LoginRequiredMixin
-from apps.gp.controllers.database import MySQLController, PostgreSQLController, MSSQLController
-from apps.gp.controllers.lead import GoogleFormsController, FacebookLeadsController
-from apps.gp.controllers.crm import SugarCRMController, SalesforceController
-from apps.gp.controllers.crm import SugarCRMController
-from apps.gp.controllers.email import SMTPController
-from apps.gp.controllers.email_marketing import MailChimpController, GetResponseController
-from apps.gp.controllers.directory import GoogleContactsController
-from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController, GoogleCalendarController
-from apps.gp.controllers.im import SlackController
-from apps.gp.controllers.social import TwitterController, YouTubeController
-from apps.gp.controllers.im import SlackController, SMSController
-from apps.gp.controllers.social import TwitterController
-from apps.gp.controllers.project_management import JiraController
-from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
 from oauth2client import client
-
-
-# mysqlc = MySQLController()
-# postgresqlc = PostgreSQLController()
-# mcc = MailChimpController()
-# mssqlc = MSSQLController()
 
 
 class ListGearView(LoginRequiredMixin, ListView):
@@ -154,8 +134,9 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         map.gear.save()
         map_data = []
         for field in form:
-            map_data.append(
-                GearMapData(gear_map=map, target_name=field.name, source_value=form.cleaned_data[field.name]))
+            if form.cleaned_data[field.name]:
+                map_data.append(
+                    GearMapData(gear_map=map, target_name=field.name, source_value=form.cleaned_data[field.name]))
         GearMapData.objects.bulk_create(map_data)
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
@@ -175,8 +156,8 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
         if c == ConnectorEnum.GoogleContacts:
             self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
-            return ['%%%%%s%%%%' % field for field in self.google_contacts_controller.get_contact_fields()]
-        return ['%%%%%s%%%%' % item['name'] for item in StoredData.objects.filter(plug=plug, connection=plug.connection).values('name').distinct()]
+            return ['%%{0}%%'.format(field) for field in self.google_contacts_controller.get_contact_fields()]
+        return ['%%{0}%%'.format(item['name']) for item in StoredData.objects.filter(plug=plug, connection=plug.connection).values('name').distinct()]
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)

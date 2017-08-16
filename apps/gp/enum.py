@@ -4,36 +4,36 @@ from apps.gp.controllers.utils import dynamic_import
 
 
 class ConnectorEnum(Enum):
-    FacebookLeads = 1, 'lead'
-    MySQL = 2, 'database'
-    SugarCRM = 3, 'crm'
-    MailChimp = 4, 'email_marketing'
-    GoogleSpreadSheets = 5, 'ofimatic'
-    PostgreSQL = 6, 'database'
-    MSSQL = 7, 'database'
-    Slack = 8, 'im'
-    JIRA = 9, 'project_management'
-    Bitbucket = 10, 'repository'
-    GoogleForms = 11, 'lead'
-    Twitter = 12, 'social'
+    FacebookLeads = 1, 'lead', 'special'
+    MySQL = 2, 'database', 'form'
+    SugarCRM = 3, 'crm', 'form'
+    MailChimp = 4, 'email_marketing', 'form'
+    GoogleSpreadSheets = 5, 'ofimatic', 'authorization'
+    PostgreSQL = 6, 'database', 'form'
+    MSSQL = 7, 'database', 'form'
+    Slack = 8, 'im', 'authorization'
+    JIRA = 9, 'project_management', 'form'
+    Bitbucket = 10, 'repository', 'form'
+    GoogleForms = 11, 'lead', 'authorization'
+    Twitter = 12, 'social', 'authorization'
     GetResponse = 13, 'email_marketing'
-    GoogleContacts = 14, 'directory'
-    SurveyMonkey = 15, 'lead'
-    GoogleCalendar = 16, 'ofimatic'
+    GoogleContacts = 14, 'directory', 'authorization'
+    SurveyMonkey = 15, 'lead', 'authorization'
+    GoogleCalendar = 16, 'ofimatic', 'authorization'
     MercadoLibre = 17, 'ecomerce'
     AmazonSellerCentral = 18, 'ecomerce'
     PayU = 19, 'ecomerce'
-    Gmail = 20, 'email'
+    Gmail = 20, 'email', 'authorization'
     Ebay = 21, 'ecomerce'
     WooComerce = 22, 'ecomerce'
-    Instagram = 23, 'social'
-    YouTube = 24, 'social'
+    Instagram = 23, 'social', 'authorization'
+    YouTube = 24, 'social', 'authorization'
     Vimeo = 25, 'social'
     ZohoCRM = 26, 'crm'
-    WunderList = 27, 'ofimatic'
+    WunderList = 27, 'ofimatic', 'authorization'
     SMS = 28, 'im'
     SMTP = 29, 'email'
-    Evernote = 30, 'ofimatic'
+    Evernote = 30, 'ofimatic', 'authorization'
     Salesforce = 31, 'crm'
     Vtiger = 32, 'crm'
     ProsperWorks = 33, 'crm'
@@ -43,16 +43,20 @@ class ConnectorEnum(Enum):
     FreshDesk = 37, 'crm'
     AgileCRM = 38, 'crm'
     GitLab = 39, 'repository'
-    Shopify = 40, 'ecomerce'
-    Dropbox = 41, ''
+    Shopify = 40, 'ecomerce', 'special'
+    Dropbox = 41, '', True
     Magento = 42, 'ecomerce'
-    Asana = 43, 'project_management'
+    Asana = 43, 'project_management', 'authorization'
     Mandrill = 44, 'email_marketing'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
         obj._value_ = args[0]
         obj.category = args[1]
+        try:
+            obj.connection_type = args[2]
+        except:
+            obj.connection_type = 'form'
         return obj
 
     def get_connector_data(connector):
@@ -83,19 +87,26 @@ class ConnectorEnum(Enum):
         return apps.get_model('gp', '%sConnection' % connector.name)
 
     def get_controller(connector):
-        return dynamic_import(connector.name, path="apps.gp.controllers.{0}".format(connector.category),
+        a=dynamic_import(connector.name, path="apps.gp.controllers.{0}".format(connector.category),
                               suffix='Controller')
+        print(a)
+        return a
 
 
-class GoogleAPI(Enum):
-    SpreadSheets = 1, 'https://www.googleapis.com/auth/drive'
-    Forms = 2, 'https://www.googleapis.com/auth/drive'
-    Calendar = 3, 'https://www.googleapis.com/auth/calendar'
-    YouTube = 4, 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload'
-    Contacts = 5, 'https://www.google.com/m8/feeds/'
+class GoogleAPIEnum(Enum):
+    GoogleSpreadSheets = 1, 'https://www.googleapis.com/auth/drive'
+    GoogleForms = 2, 'https://www.googleapis.com/auth/drive'
+    GoogleCalendar = 3, 'https://www.googleapis.com/auth/calendar'
+    Youtube = 4, 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload'
+    GoogleContacts = 5, 'https://www.google.com/m8/feeds/'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
         obj._value_ = args[0]
         obj.scope = args[1]
         return obj
+
+    def get_api(name=None):
+        for field in GoogleAPIEnum:
+            if name.lower() == field.name.lower():
+                return field

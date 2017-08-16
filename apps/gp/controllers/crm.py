@@ -360,10 +360,11 @@ class SalesforceController(BaseController):
     def test_connection(self):
         if self.token is not None:
             try:
-                instance_url = self.get_instance_url()
-                self._client = Salesforce(instance_url=instance_url, session_id=self.token)
+                self._client = Salesforce(instance_url=self.get_instance_url(), session_id=self.token)
             except SalesforceAuthenticationFailed:
                 self._client = None
+
+    def test_connection(self):
         return self._client is not None
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
@@ -611,6 +612,14 @@ class SalesforceController(BaseController):
                 event = specification.value
         return sobject, event
 
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'order by':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        elif action_specification.name.lower() == 'unique':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 class HubSpotController(BaseController):
     _token = None

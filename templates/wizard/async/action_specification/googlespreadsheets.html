@@ -4,34 +4,34 @@
     {{ block.super }}
     <script type="application/javascript">
         $(document).ready(function () {
-            var load_spreadsheet = true;
+            console.log("goooglee")
 
-            $(document).on('click', 'select[data-name=spreadsheet]', function () {
-                var select = $(this);
-                if (load_spreadsheet == true) {
-                    var url = "{% url 'wizard:async_google_drive_sheets' %}";
-                    $.ajax({
-                        method: "POST",
-                        url: url,
-                        data: {connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %}}
-                    }).done(function (response) {
-                        $(select).html(response);
-                        load_spreadsheet = false;
-                    });
-                }
-            });
-
+{#            $(document).on('change', 'select[data-name=spreadsheet]', function () {#}
+{#                var select = $('select[data-name=worksheet]');#}
+{#                console.log(select)#}
+{#                var url = "{% url 'wizard:async_google_sheet_worksheets' %}";#}
+{#                var spreadsheet_id = $(this).val();#}
+{#                $.ajax({#}
+{#                    method: "POST",#}
+{#                    url: url,#}
+{#                    data: {#}
+{#                        connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %},#}
+{#                        spreadsheet_id: spreadsheet_id,#}
+{#                    }#}
+{#                }).done(function (response) {#}
+{#                    $(select).html(response);#}
+{#                });#}
+{#            });#}
             $(document).on('change', 'select[data-name=spreadsheet]', function () {
                 var select = $('select[data-name=worksheet]');
-                console.log(select)
-                var url = "{% url 'wizard:async_google_sheet_worksheets' %}";
-                var spreadsheet_id = $(this).val();
+                var url = "{% url 'plug:action_specification_options' %}";
                 $.ajax({
                     method: "POST",
                     url: url,
                     data: {
                         connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %},
-                        spreadsheet_id: spreadsheet_id,
+                        action_specification_id: $(select).attr('data-id'),
+                        sheet_id: $(this).val()
                     }
                 }).done(function (response) {
                     $(select).html(response);

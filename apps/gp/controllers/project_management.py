@@ -1,8 +1,9 @@
+from django.shortcuts import HttpResponse
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import StoredData, ActionSpecification, Webhook
+from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification
 from apps.gp.map import MapField
 from django.urls import reverse
 
@@ -15,7 +16,7 @@ import datetime
 import json
 
 
-class JiraController(BaseController):
+class JIRAController(BaseController):
     _connection = None
 
     def __init__(self, *args, **kwargs):
@@ -23,24 +24,18 @@ class JiraController(BaseController):
 
     def create_connection(self, *args, **kwargs):
         if args:
-            super(JiraController, self).create_connection(*args)
+            super(JIRAController, self).create_connection(*args)
             if self._connection_object is not None:
-                host = self._connection_object.host
-                user = self._connection_object.connection_user
-                password = self._connection_object.connection_password
-        elif kwargs:
-            host = kwargs.pop('host', None)
-            user = kwargs.pop('connection_user', None)
-            password = kwargs.pop('connection_password', None)
-        else:
-            host, user, password = None, None, None
-        if host and user and password:
-            try:
-                self._connection = JIRA(host, basic_auth=(user, password))
-            except Exception as e:
-                print("Error getting the Jira attributes")
-                print(e)
-                self._connection = None
+                try:
+                    host = self._connection_object.host
+                    user = self._connection_object.connection_user
+                    password = self._connection_object.connection_password
+                    if host and user and password:
+                        self._connection = JIRA(host, basic_auth=(user, password))
+                except Exception as e:
+                    self._connection = None
+
+    def test_connection(self):
         return self._connection is not None
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
@@ -62,7 +57,9 @@ class JiraController(BaseController):
 
     def download_to_stored_data(self, connection_object=None, plug=None,
                                 issue=None, **kwargs):
+        print("DOWNLOAD JIRA")
         if issue is not None:
+            print("DOWNLOAD JIRA EN IF")
             issue_key = issue['key']
             _items = []
             q = StoredData.objects.filter(
@@ -105,12 +102,13 @@ class JiraController(BaseController):
         return self._connection.create_issue(fields=fields)
 
     def create_webhook(self):
+        print("creando hook!")
         url = '{}/rest/webhooks/1.0/webhook'.format(
             self._connection_object.host)
         key = self.get_key(self._plug.plug_action_specification.all()[0].value)
         body = {
             "name": "Gearplug Webhook",
-            "url": "http://grplug.com/wizard/jira/webhook/event/",
+            "url": "%s/webhook/jira/0/" %settings.CURRENT_HOST,
             "events": [
                 "jira:issue_created",
             ],
@@ -118,6 +116,8 @@ class JiraController(BaseController):
             "excludeIssueDetails": False
         }
         r = requests.post(url, headers=self._get_header(), json=body)
+        print(r.status_code)
+        print(r.json())
         if r.status_code == 201:
             return True
         return False
@@ -140,7 +140,6 @@ class JiraController(BaseController):
             'project': self.get_key(
                 self._plug.plug_action_specification.all()[0].value)
         }
-
         url = 'http://jira.grplug.com:8080/rest/api/2/user/assignable/search'
         r = requests.get(url, headers=self._get_header(), params=payload)
         if r.status_code == requests.codes.ok:
@@ -153,7 +152,6 @@ class JiraController(BaseController):
             projectIds=self._plug.plug_action_specification.all()[0].value,
             issuetypeNames='Task', expand='projects.issuetypes.fields')
         exclude = ['attachment', 'project']
-
         users = self.get_users()
 
         def f(d, v):
@@ -163,11 +161,9 @@ class JiraController(BaseController):
         _dict = [f(v, k) for k, v in
                  meta['projects'][0]['issuetypes'][0]['fields'].items() if
                  k not in exclude]
-
         for d in _dict:
             if d['id'] == 'reporter' or d['id'] == 'assignee':
                 d['allowedValues'] = users
-
         return sorted(_dict, key=lambda i: i['name'])
 
     def get_target_fields(self, **kwargs):
@@ -176,6 +172,29 @@ class JiraController(BaseController):
     def get_mapping_fields(self, **kwargs):
         fields = self.jirac.get_meta()
         return [MapField(f, controller=ConnectorEnum.JIRA) for f in fields]
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
+        if action_specification.name.lower() == 'project_id':
+            return tuple(
+                {'id': p.id, 'name': p.name} for p in self.get_projects())
+        else:
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
+
+    def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
+        issue = body['issue']
+        project_list = PlugActionSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="jira",
+            action_specification__name__iexact='project_id',
+            value=issue['fields']['project']['id'], )
+        for project in project_list:
+            self._connection_object, self._plug = project.plug.connection.related_connection, project.plug
+            if self.test_connection():
+                self.download_source_data(issue=issue)
+        return HttpResponse(status=200)
 
 
 class AsanaController(BaseController):
@@ -299,7 +318,7 @@ class AsanaController(BaseController):
             webhook = Webhook.objects.create(name='asana', plug=self._plug,
                                              url='')
             # Verificar ngrok para determinar url_base
-            url_base = 'https://93ed276a.ngrok.io'
+            url_base = settings.CURRENT_HOST
             url_path = reverse('home:webhook', kwargs={'connector': 'asana',
                                                        'webhook_id': webhook.id})
             headers = {
@@ -434,7 +453,7 @@ class AsanaController(BaseController):
             extra = {'controller': 'Asana'}
             for item in data_list:
                 task = self.create_task(**item)
-                if task.status_code in  [200,201]:
+                if task.status_code in [200, 201]:
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (task.json()['data']['name']),
                                    extra=extra)

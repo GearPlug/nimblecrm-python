@@ -69,9 +69,6 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
                          ConnectorEnum.GoogleCalendar, ConnectorEnum.Asana, ConnectorEnum.Salesforce,
                          ConnectorEnum.Mandrill]:
                     controller.create_webhook()
-            elif self.object.is_target:
-                if c == ConnectorEnum.MailChimp:
-                    controller.get_target_fields(list_id=specification_list[0]['value'])
         self.request.session['source_connection_id'] = None
         self.request.session['target_connection_id'] = None
         return HttpResponseRedirect(self.get_success_url())
@@ -102,7 +99,6 @@ class ActionListView(LoginRequiredMixin, ListView):
                 kw['connector_id'] = Connection.objects.get(
                     pk=request.session['{0}_connection_id'.format(plug_type)]).connector_id
         self.object_list = self.model.objects.filter(**kw)
-        print(self.object_list.query)
         a = [{'name': a.name, 'id': a.id} for a in self.object_list]
         return JsonResponse(a, safe=False)
 
@@ -133,51 +129,11 @@ class ActionSpecificationsListView(LoginRequiredMixin, ListView):
         self.object_list = self.model.objects.filter(**kw)
         context = self.get_context_data()
         c = ConnectorEnum.get_connector(action.connector.id)
-        if c.name.lower() in ['facebook', ]:
+        if c in [ConnectorEnum.FacebookLeads, ConnectorEnum.GoogleSpreadSheets]:
             self.template_name = 'wizard/async/action_specification/' + c.name.lower() + '.html'
         else:
             self.template_name = 'wizard/async/action_specification.html'
         return super(ActionSpecificationsListView, self).render_to_response(context)
-
-
-class CreatePlugSpecificationsView(ModelFormSetView):
-    model = PlugActionSpecification
-    template_name = '%s/specifications/create.html' % app_name
-    fields = ['plug', 'action_specification', 'value']
-    success_url = reverse_lazy('%s:list' % app_name)
-    max_num = 10
-    extra = 0
-
-    def get(self, request, *args, **kwargs):
-        plug = Plug.objects.get(pk=self.kwargs['plug_id'])
-        print(self.extra)
-        self.extra = plug.action.action_specification.count()
-        return super(CreatePlugSpecificationsView, self).get(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        plug = Plug.objects.get(pk=self.kwargs['plug_id'])
-        self.extra = plug.action.action_specification.count()
-        return super(CreatePlugSpecificationsView, self).post(request, *args, **kwargs)
-
-    def form_valid(self, form, **kwargs):
-        return super(CreatePlugSpecificationsView, self).form_valid(form, **kwargs)
-
-    def form_invalid(self, form, **kwargs):
-        return super(CreatePlugSpecificationsView, self).form_invalid(form, **kwargs)
-
-    def get_queryset(self):
-        return super(CreatePlugSpecificationsView, self).get_queryset().none()
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(CreatePlugSpecificationsView, self).get_context_data(*args, **kwargs)
-        plug = Plug.objects.filter(pk=self.kwargs['plug_id']).select_related('connection__connector').get(
-            pk=self.kwargs['plug_id'])
-        action_specification_list = [esp for esp in plug.action.action_specification.all()]
-        # if esp not in []
-        context['action_specification_list'] = action_specification_list
-        context['plug_id'] = self.kwargs['plug_id']
-        print("c")
-        return context
 
 
 class TestPlugView(TemplateView):
@@ -191,10 +147,11 @@ class TestPlugView(TemplateView):
         p = Plug.objects.get(pk=self.kwargs.get('pk'))
         if p.plug_type == 'source':
             try:
-                sd_sample = StoredData.objects.filter(plug=p, connection=p.connection).order_by('-id')[0]
+                sd_sample = StoredData.objects.filter(plug=p, connection=p.connection).order_by('-id').last()
                 sd = StoredData.objects.filter(plug=p, connection=p.connection, object_id=sd_sample.object_id)
                 context['object_list'] = sd
             except IndexError:
+                print("Failed. force donwload.")
                 try:
                     c = ConnectorEnum.get_connector(p.connection.connector.id)
                     controller_class = ConnectorEnum.get_controller(c)
@@ -229,13 +186,6 @@ class TestPlugView(TemplateView):
                 data_list = controller.download_to_stored_data(p.connection.related_connection, p)
         context = self.get_context_data()
         return super(TestPlugView, self).render_to_response(context)
-
-
-class UpdatePlugSpecificationsView(UpdateView):
-    model = PlugActionSpecification
-    template_name = '%s/specifications/update.html' % app_name
-    fields = ['value']
-    success_url = reverse_lazy('%s:list' % app_name)
 
 
 class PlugActionSpecificationOptionsView(LoginRequiredMixin, TemplateView):
