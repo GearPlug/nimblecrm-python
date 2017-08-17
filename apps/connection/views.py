@@ -391,7 +391,7 @@ class ShopifyAuthView(View):
         params = {'client_id': settings.SHOPIFY_API_KEY, 'code': code, 'client_secret': settings.SHOPIFY_API_KEY_SECRET}
         try:
             response = requests.post(url, params).json()
-            self.request.session['connection_data'] = {'token': response['access_token']}
+            self.request.session['connection_data'] = {'token': response['access_token'], 'shop_url': shop_url}
             self.request.session['connector_name'] = ConnectorEnum.Shopify.name
             return redirect(reverse('connection:create_token_authorized_connection'))
         except Exception as e:
