@@ -1,8 +1,9 @@
+from django.shortcuts import HttpResponse
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import StoredData, ActionSpecification, Webhook
+from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification
 from apps.gp.map import MapField
 from django.urls import reverse
 
@@ -181,6 +182,19 @@ class JIRAController(BaseController):
         else:
             raise ControllerError(
                 "That specification doesn't belong to an action in this connector.")
+
+    def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
+        issue = body['issue']
+        project_list = PlugActionSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="jira",
+            action_specification__name__iexact='project_id',
+            value=issue['fields']['project']['id'], )
+        for project in project_list:
+            self._connection_object, self._plug = project.plug.connection.related_connection, project.plug
+            if self.test_connection():
+                self.download_source_data(issue=issue)
+        return HttpResponse(status=200)
 
 
 class AsanaController(BaseController):
