@@ -123,7 +123,7 @@ class SlackController(BaseController):
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
-    def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
+    def do_webhook_process(self, body=None, POST=None, **kwargs):
         """
             Devuelve un response
         """
