@@ -8,7 +8,8 @@ from apps.gp.models import StoredData, ActionSpecification, HubSpotConnection, V
 from simple_salesforce import Salesforce
 from simple_salesforce.login import SalesforceAuthenticationFailed
 from dateutil.parser import parse
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote_plus
+from urllib import request, parse
 from hashlib import md5
 import urllib.error
 import urllib.request
@@ -17,6 +18,7 @@ import sugarcrm
 import json
 import xmltodict
 import string
+import pprint
 import os
 from apps.gp.models import StoredData
 from apps.gp.map import MapField
@@ -57,7 +59,7 @@ class SugarCRMController(BaseController):
                     self._password = self._connection_object.connection_password
                     self._url = self._connection_object.url
                 except Exception as e:
-                    print("Error getting the SugarCRM attributes")
+                    return e
                 try:
                     self._module = args[2]
                 except:
@@ -884,8 +886,6 @@ class HubSpotController(BaseController):
 
 
 class VtigerController(BaseController):
-    _user = None
-    _password = None
     _url = None
     _token = None
     _values = None
@@ -894,6 +894,7 @@ class VtigerController(BaseController):
     _module_list = None
     _session_name = None
     _user_id = None
+    _query_size = 30
 
     def __init__(self, *args, **kwargs):
         super(VtigerController, self).__init__(*args, **kwargs)
@@ -905,185 +906,183 @@ class VtigerController(BaseController):
                 try:
                     self._user = self._connection_object.connection_user
                     self._password = self._connection_object.connection_access_key
-                    self._url = '%s/webservice.php' % self._connection_object.url
+                    self._url = self._connection_object.url
+                    self._token = self._connection_object.token
                 except Exception as e:
-                    print("Error getting the Vtiger attributes", e)
-                try:
-                    self._module = args[2]
-                except:
-                    pass
-        if self._url is not None and self._user is not None and self._password is not None:
-            if self.get_token() is True:
-                self.login()
+                    print(e)
+        if self._url is not None and self._token is not None:
+            if not self._token:
+                self._token = self.get_token(self._user, self._password)
+            self._session_name, self._user_id = self.login()
+            if self._session_name is None:
+                self._token = self.get_token(self._user, self._password)
+                self._session_name, self._user_id = self.login()
 
     def test_connection(self):
-        return self._values is not None
+        return self._session_name is not None
 
-    def get_token(self):
+    def get_token(self, user, passwd, url=None):
+        if self._url is None and url is not None:
+            self._url = url
+        if self._url is not None:
+            try:
+                values = {'operation': 'getchallenge', 'username': user}
+                r = requests.get(self._url, params=values)
+                if r.status_code == 200:
+                    r = r.json()
+                    return r['result']['token']
+                return None
+            except Exception as e:
+                print(e)
+                return None
+
+    def get_tokenized_access_key(self):
         try:
-            self._values = {'operation': 'getchallenge', 'username': self._user}
-            data = urllib.parse.urlencode(self._values)
-
-            req = urllib.request.Request('%s?%s' % (self._url, data))
-            response = urllib.request.urlopen(req).read()
-            token = json.loads(response.decode('utf-8'))['result']['token']
-            self._token = token
-            int("Table Token >> ", table_token)
-            obj = VtigerConnection.objects.filter(
-                connection_id=self._connection_object.connection.id).update(
-                    token=self._token)
-            return True
-        except Exception as e:
-            print(e)
-            return False
+            return md5(
+                str(self._token + self._password).encode('utf-8')).hexdigest()
+        except Exception as es:
+            return None
 
     def login(self):
         try:
-            # self._token, self._password, self._values = self.get_token()
-            access_and_token = self._token + self._password
-            access_and_token = access_and_token.encode('utf-8')
-            tokenized_access_key = md5(access_and_token).hexdigest()
-            self._values['accessKey'] = tokenized_access_key
-            self._values['operation'] = 'login'
-
-            data = urllib.parse.urlencode(self._values)
-            data = data.encode('utf-8')
-            req = urllib.request.Request(self._url, data)
-            response = urllib.request.urlopen(req)
-            response = (response.read()).decode('utf-8')
-            response = json.loads(response)
-            if response['success']:
-                self._values["sessionName"] = response['result']['sessionName']
+            tokenized_access_key = self.get_tokenized_access_key()
+            values = {'accessKey': tokenized_access_key, 'operation': 'login', 'username': self._user}
+            data = urllib.parse.urlencode(values).encode('utf-8')
+            reqquest = urllib.request.Request(self._url, data)
+            response = json.loads(urllib.request.urlopen(reqquest).read().decode('utf-8'))
+            if response['success'] is True:
+                session_name = response['result']['sessionName']
                 user_id = response['result']['userId']
-                return self._values["sessionName"], user_id
+                return session_name, user_id
+            elif response['success'] is False:
+                return None, None
         except Exception as e:
-            print("Problemas durante el login: ", e)
+            raise
 
-    def extend_session(self):
-        print("EXTENDING SESSION")
-        response = requests.post('{0}?sessionName={1}&operation=extendsession'.
-                                 format(self._url, self._values['sessionName']))
-        pass
+    def get_module(self, module_name):
+        values = {'sessionName': self._session_name, 'operation': 'describe', 'elementType': module_name}
+        r = requests.get(self._url, params=values)
+        if r.status_code == 200:
+            r = r.json()
+            return {'name': module_name, 'id': r['result']['idPrefix']}
+        raise Exception("Error retrieving module data.")
 
-    def get_modules_info(self):
-        """
-        Metodo que devuelve una lista de las entidades del CRM y los campos de
-        dichas entidades.
-        :return:
-        """
-        self._module_dict = {}
+    def get_modules(self):
         try:
-            self._session_name, self._user_id = self.login()
-            req = urllib.request.Request(
-                "{0}?operation=listtypes&sessionName={1}".format(
-                    self._url, self._session_name))
-            response = urllib.request.urlopen(req)
-            response = (response.read()).decode('utf-8')
-            response2 = json.loads(response)
-            mod_ids = []
-            mod_names = []
-            for k2, v2 in response2['result']['information'].items():
-                req = urllib.request.Request(
-                    "{0}?operation=describe&sessionName={1}&elementType={2}"
-                    .format(self._url, self._session_name, k2))
-                response = urllib.request.urlopen(req)
-                response = (response.read()).decode('utf-8')
-                response = json.loads(response)
-                mod_names.append({k2: response['result']['idPrefix']})
-            self._module_dict = mod_names
-            return (self._module_dict)
+            values = {
+                'sessionName': self._session_name,
+                'operation': 'listtypes'
+            }
+            r = requests.get(self._url, params=values)
+            if r.status_code == 200:
+                r = r.json()
+                modules = []
+                if r['success'] == True:
+                    for key in r['result']['information']:
+                        modules.append(self.get_module(key))
+                return modules
+            return []
         except Exception as e:
+            raise
             return (e)
 
-
-    def query_last(self, last, entity):
-        self._session_name, self._user_id = self.login()
-
-        query = "select * from {0} order by createdtime desc;".format(entity)
-        parameters = {
-            'operation': 'query',
-            'session_name': self._session_name,
-            'query': query
-        }
-
-        url_query = '%s?operation=query&sessionName=%s&query=%s' % (
-            self._url, parameters['session_name'], parameters['query'])
-        response = requests.get(url_query)
-        response = response.content.decode('utf-8')
-        response = json.loads(response)
-        data = []
+    def get_module_elements(self, module=None, limit=30):
+        query = "select * from {0} order by createdtime desc;".format(module)
+        values = {'sessionName': self._session_name, 'operation': 'query', 'query' : query}
+        r = requests.get(self._url, params=values).json()
         try:
-            for i in range(len(response)):
-                data.append(response['result'][i])
+            data = r['result']
             return data
         except Exception as e:
-            if e == IndexError:
-                return data
-            else:
-                print("Error En Consulta >> ", e)
+            print(e)
+            return []
 
+    def create_register(self, module, **kwargs):
+
+        kwargs['assigned_user_id'] = self._user_id
+        for k, v in kwargs.items():
+            try:
+                kwargs[k] = (self.get_module(v)["id"])
+            except Exception as e:
+                continue
+
+        kwargs['elementType'] = module
+        parameters = {
+            'operation': 'create',
+            'sessionName': self._session_name,
+            'elementType': kwargs['elementType'],
+            'element': json.dumps(kwargs)
+        }
+
+        parameters = urllib.parse.urlencode(parameters)
+        connection = urllib.request.urlopen(self._url, parameters.encode('utf-8'))
+        response = connection.read().decode('utf-8')
+        response = json.loads(response)
+        if response['success'] is True:
+            return response
+        else:
+            return False
+
+    def delete_register(self):
+        session_name, user_id = login()
+        parameters = {
+            'operation': 'delete',
+            'sessionName': session_name,
+            'id': id
+        }
+        session_name = parameters['sessionName']
+
+        parameters = urllib.parse.urlencode(parameters)
+        connection = urllib.request.urlopen(url, parameters.encode('utf-8'))
+        response = connection.read().decode('utf-8')
+        response = json.loads(response)
+        return response
 
     def get_module_name(self, module_id):
         try:
-            modules_list = self.get_modules_info()
-            for i in modules_list:
-                for k, v in i.items():
-                    if v == module_id:
-                        module_name = k
-                        return module_name
+            for module in self.get_modules():
+                if module['id'] == module_id:
+                    return module['name']
         except Exception as e:
-            print("Error Obteniendo Nombre de modulo >>", e)
-        
-        # Detalles de Modulo.
-        # try:
-        #     details = {
-        #         'operation': 'describe',
-        #         'sessionName': self._values["sessionName"],
-        #         'elementType': str(module_name)
-        #     }
-        #     response = requests.get(
-        #         'http://192.168.10.217/webservice.php?', params=details).json()
-        #     module_fields = []
-        #     for i in response['result']['fields']:
-        #         module_fields.append(i)
-        #     return module_fields
-        # except Exception as e:
-        #     print("Error Obteniendo Specs de Modulo >>", e)
+            print(e)
+
+    def get_module_fields(self, module_name):
+        try:
+            details = {
+                'operation': 'describe',
+                'sessionName': self._session_name,
+                'elementType': str(module_name)
+            }
+            response = requests.get(self._url, params=details).json()
+            module_fields = []
+            for i in response['result']['fields']:
+                module_fields.append(i)
+            return module_fields
+        except Exception as e:
+            print(e)
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
-        options = self.get_modules_info()
-        select = []
         try:
-            if action_specification.name.lower() == 'modulo':
-                return tuple({
-                    'name': k,
-                    'id': v
-                } for option in options for k, v in option.items())
+            if action_specification.name.lower() == 'module':
+                return tuple(self.get_modules())
             else:
                 raise ControllerError(
                     "That specification doesn't belong to an action in this connector."
                 )
         except Exception as e:
-            print('ERROR >> ', e)
+            print(e)
 
     def download_to_stored_data(self, connection_object, plug=None):
-        if plug is None:
-            plug = self._plug
-
-        module_id = self._plug.plug_action_specification.all()[0].value
+        module_id = self._plug.plug_action_specification.get(action_specification__name__iexact='module').value
+        data = self.get_module_elements(limit=30, module=self.get_module_name(module_id))
         new_data = []
-        module_name = self.get_module_name(module_id)
-        data = self.query_last(10, module_name)
-        import pprint
-        pprint.pprint(data)
-
         for field in data:
             q = StoredData.objects.filter(
                 object_id=field['id'],
                 connection=connection_object.connection,
-                 plug=plug)
+                plug=plug)
 
             if not q.exists():
                 for k, v in field.items():
@@ -1111,7 +1110,50 @@ class VtigerController(BaseController):
                     extra['status'] = 'f'
                     self._log.info(
                         'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.'
-                         % (item.object_id, item.name, item.plug.id,
-                           item.connection.id),extra=extra)
+                        % (item.object_id, item.name, item.plug.id,
+                           item.connection.id),
+                        extra=extra)
             return True
         return False
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.Vtiger) for f in fields]
+
+    def get_target_fields(self, **kwargs):
+        module_id = self._plug.plug_action_specification.get(
+            action_specification__name__iexact='module').value
+        module_fields = (self.get_module_fields(self.get_module_name(module_id)))
+        fields_list = []
+        for i in module_fields:
+            if i['editable'] is True:
+                fields_list.append(i)
+        if len(fields_list) > 0:
+            return fields_list
+        else:
+            return False
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if self._plug is not None:
+            obj_list = []
+            extra = {'controller': 'Vtiger'}
+            module_id = self._plug.plug_action_specification.get(
+                action_specification__name__iexact='module').value
+            module_name = self.get_module_name(module_id)
+            for item in data_list:
+                task = self.create_register(module_name, **item)
+                try:
+                    if task['success'] is True:
+                        extra['status'] = 's'
+                        self._log.info(
+                            'Item: %s successfully sent.' % (task),
+                            extra=extra)
+                        obj_list.append(task)
+                    else:
+                        extra['status'] = 'f'
+                        self._log.info('Item: failed to send.', extra=extra)
+                except Exception as e:
+                    print(e)
+            return obj_list
+        raise ControllerError("There's no plug")

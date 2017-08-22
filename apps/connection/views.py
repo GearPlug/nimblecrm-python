@@ -110,6 +110,14 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                                ConnectorEnum.GoogleForms, ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube]:
                 # Guardar credenciales de google en el formulario (deben venir en la sessión).
                 form.instance.credentials_json = self.request.session['google_credentials']
+            elif connector == ConnectorEnum.Vtiger:
+                controller_class = ConnectorEnum.get_controller(connector)
+                controller = controller_class()
+                token = controller.get_token(
+                    form.cleaned_data['connection_user'],
+                    form.cleaned_data['connection_access_key'],
+                    form.cleaned_data['url'])
+                form.instance.token = token
             self.object = form.save()
             self.request.session['auto_select_connection_id'] = c.id
         if self.request.is_ajax():  # Si es ajax devolver True si se guarda en base de datos el objeto.
