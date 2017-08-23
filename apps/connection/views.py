@@ -13,7 +13,7 @@ from apps.gp.enum import ConnectorEnum, GoogleAPIEnum
 from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
     GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection, GoogleCalendarConnection, \
     YouTubeConnection, SMSConnection, ShopifyConnection, HubSpotConnection, MySQLConnection, EvernoteConnection, \
-    SalesforceConnection, MercadoLibreConnection
+    SalesforceConnection, MercadoLibreConnection, GmailConnection
 from oauth2client import client
 from requests_oauthlib import OAuth2Session
 from apiconnector.settings import SLACK_PERMISSIONS_URL, SLACK_CLIENT_SECRET, SLACK_CLIENT_ID
@@ -125,7 +125,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms,
                              ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
                              ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
-                             ConnectorEnum.Asana]:
+                             ConnectorEnum.Asana, ConnectorEnum.Gmail]:
                 name = 'create_with_auth'
             elif connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot,
                                ConnectorEnum.MercadoLibre]:
@@ -144,7 +144,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms,
                              ConnectorEnum.GoogleCalendar, ConnectorEnum.GoogleContacts,
                              ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Evernote,
-                             ConnectorEnum.Asana]:
+                             ConnectorEnum.Asana, ConnectorEnum.Gmail]:
                 name = 'create_with_auth'
             elif connector in [ConnectorEnum.FacebookLeads, ConnectorEnum.HubSpot,
                                ConnectorEnum.MercadoLibre]:  # Especial
@@ -161,7 +161,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         context['connector_name'] = connector.name
         context['connector_id'] = connector.value
         if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms, ConnectorEnum.GoogleContacts,
-                         ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube]:
+                         ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube, ConnectorEnum.Gmail]:
             api = GoogleAPIEnum.get_api(connector.name)
             flow = get_flow(settings.GOOGLE_AUTH_CALLBACK_URL, scope=api.scope)
             context['authorization_url'] = flow.step1_get_authorize_url()
@@ -270,7 +270,9 @@ class GoogleAuthView(View):
     def get(self, request, *args, **kwargs):
         try:
             code = request.GET['code']
+            print(code)
             if 'google_connection_type' in request.session:
+                print('dentro del if')
                 api = GoogleAPIEnum.get_api(request.session['google_connection_type'])
                 credentials = get_flow(settings.GOOGLE_AUTH_CALLBACK_URL, scope=api.scope).step2_exchange(code)
                 request.session['google_credentials'] = credentials.to_json()

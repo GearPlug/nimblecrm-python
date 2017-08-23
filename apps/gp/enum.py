@@ -93,6 +93,7 @@ class GoogleAPIEnum(Enum):
     GoogleCalendar = 3, 'https://www.googleapis.com/auth/calendar'
     Youtube = 4, 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload'
     GoogleContacts = 5, 'https://www.google.com/m8/feeds/'
+    Gmail = 6, 'https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/pubsub'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)

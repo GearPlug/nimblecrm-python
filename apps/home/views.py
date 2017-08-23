@@ -4,9 +4,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse, HttpResponse
+from django.db.models import Q
 import json
+import base64
 from apps.user.views import LoginView
-from apps.gp.models import PlugActionSpecification
+from apps.gp.models import PlugActionSpecification, Plug
 from apps.gp.enum import ConnectorEnum
 
 
@@ -108,4 +110,19 @@ class IncomingWebhook(View):
                 ping = controller.test_connection()
                 if ping:
                     controller.download_source_data(issue=issue)
+        # Gmail
+        elif connector == ConnectorEnum.Gmail:
+            print('Lee el webhook')
+            response = HttpResponse(status=200)
+            data = json.loads(request.body.decode('utf-8'))
+            encoded_message_data = base64.urlsafe_b64decode(data['message']['data'].encode('ASCII'))
+            decoded_message_data = json.loads(encoded_message_data.decode('utf-8'))
+            history_id = decoded_message_data['historyId']
+            email = decoded_message_data['emailAddress']
+            controller_class = ConnectorEnum.get_controller(connector)
+            plug_list = Plug.objects.filter(Q(gear_source__is_active=True)|Q(is_tested=False), plug_type__iexact="source", action__name__iexact="read message",
+                                            plug_action_specification__value__iexact=email)
+            # controller = controller_class(project.plug.connection.related_connection, project.plug)
+            # response = service.users().history().list(userId="me", startHistoryId=history_id).execute()
+            # print(decoded_message_data)
         return response
