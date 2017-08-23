@@ -1,7 +1,7 @@
 from collections import OrderedDict
 import re
 import xml.etree.ElementTree as ET
-
+from importlib import import_module
 
 def get_dict_with_source_data(source_data, target_fields, include_id=False):
     pattern = re.compile("^(\%\%\S+\%\%)$")
@@ -51,9 +51,5 @@ def _recursive_xml_to_dict(lista):
 
 
 def dynamic_import(name, path='', prefix='', suffix=""):
-    components = path.split('.')
-    components.append(prefix + name + suffix)
-    mod = __import__(components[0])
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
+    mod = import_module(path)
+    return getattr(mod, prefix + name + suffix)

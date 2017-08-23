@@ -3,7 +3,8 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'nd65g3a23c!y%+a_%+v)!trnjh%c=gh(zg5!gsn*qo&b6*nsbb'
 DEBUG = True
-ALLOWED_HOSTS = ['*', ]
+CURRENT_HOST = "https://g.grplug.com"
+ALLOWED_HOSTS = [CURRENT_HOST, '*', ]
 CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
 
@@ -188,12 +189,17 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'staticfiles'),
 ]
 
-AUTHENTICATION_BACKENDS = ['account.auth_backends.EmailAuthenticationBackend', ]
+AUTHENTICATION_BACKENDS = [
+    'account.auth_backends.EmailAuthenticationBackend', ]
 
 # account app
 ACCOUNT_EMAIL_UNIQUE = True
 ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = True
-ACCOUNT_USER_DISPLAY = lambda user: user.email
+
+
+def ACCOUNT_USER_DISPLAY(user): return user.email
+
+
 ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/'
 ACCOUNT_SIGNUP_REDIRECT_URL = '/dashboard/'
 
@@ -201,8 +207,7 @@ ACCOUNT_SIGNUP_REDIRECT_URL = '/dashboard/'
 # Facebook
 FACEBOOK_APP_ID = '1860382657578411'
 FACEBOOK_APP_SECRET = '3ce16acabb2efeda4336e4e5f9576d8b'
-
-FACEBOOK_GRAPH_VERSION = '2.6'
+FACEBOOK_GRAPH_VERSION = '2.10'
 
 # Email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -215,67 +220,73 @@ EMAIL_PORT = 587
 # Slack
 SLACK_CLIENT_ID = '129041278545.209366736883'
 SLACK_CLIENT_SECRET = '8a78615be489b8314702c0d67f159ddd'
-SLACK_PERMISSIONS_URL = 'https://slack.com/oauth/authorize?client_id={0}&scope=team:read,channels:read,chat:write:bot,im:history,im:read'.format(SLACK_CLIENT_ID)
+SLACK_PERMISSIONS_URL = 'https://slack.com/oauth/authorize?client_id={0}&scope=team:read,channels:read,chat:write:bot,im:history,im:read'.format(
+    SLACK_CLIENT_ID)
 
 # Google (Gustavo)
 GOOGLE_CLIENT_ID = '278354320502-6ptllif5k11cn8uskm8aotp6fqb2g7dr.apps.googleusercontent.com'
 GOOGLE_CLIENT_SECRET = 'LgJ2hrSVu_lmAJkJhwzgfiDG'
-GOOGLE_AUTH_CALLBACK_URL = 'http://g.grplug.com/connection/auth-callback/google/'
+GOOGLE_AUTH_CALLBACK_URL = '{0}/connection/auth-callback/google/'.format(CURRENT_HOST)
 
 # Twitter
-TWITTER_CLIENT_ID = 'D5ZJJmF11n9Sp8E9p7GRGhpiR'
-TWITTER_CLIENT_SECRET = '0RIWtTgeSfOmsIO10MYyFCU4BQhuoISgShAreYy3RHyeQCd5vb'
+TWITTER_CLIENT_ID = '72ceIxo0vh6IUvPEzRLwU63dK'
+TWITTER_CLIENT_SECRET = 'oRpX6077A1spuOl36JVgupAwhF2ZuYmfL9Dk1WB3OxqkCNtw0N'
 
 # SurveyMonkey
-SURVEYMONKEY_CLIENT_ID = "QIMqiHnrRvuzCFAmlTNOkA"
-SURVEYMONKEY_CLIENT_SECRET = "17068417592671949424384618935059383185"
-SURVEYMONKEY_REDIRECT_URI = "https://l.grplug.com/connection/survey_monkey_auth/"
+SURVEYMONKEY_CLIENT_ID = "aSrDRChrQjqy--JCMHiPDw"
+SURVEYMONKEY_CLIENT_SECRET = "99572991333427996854184255528563883257"
 SURVEYMONKEY_API_BASE = "https://api.surveymonkey.net"
 SURVEYMONKEY_AUTH_CODE_ENDPOINT = "/oauth/authorize"
 SURVEYMONKEY_ACCESS_TOKEN_ENDPOINT = "/oauth/token"
+SURVEYMONKEY_REDIRECT_URI = "{0}/connection/auth-callback/surveymonkey/".format(CURRENT_HOST)
 
 # Instagram
-INSTAGRAM_CLIENT_ID = 'xxxxxxxx'
-INSTAGRAM_CLIENT_SECRET = 'yyyyyyyyy'
-
+INSTAGRAM_CLIENT_ID = '17e2105451294cd6a372233f25e2c6ec'
+INSTAGRAM_CLIENT_SECRET = '6f8a7fb1ac0c4cada3c01d88561d35f6'
+INSTAGRAM_AUTH_URL = '{0}/connection/auth-callback/instagram/'.format(CURRENT_HOST)
+INSTAGRAM_SCOPE = ['basic']
+INSTAGRAM_AUTH_REDIRECT_URL = 'connection:instagram_auth_success_create_connection'
 
 # YouTube
 YOUTUBE_API_KEY = 'XXXXXXXXXXXX'
 
 # SalesForce
-SALESFORCE_CLIENT_ID = ''
-SALESFORCE_CLIENT_SECRET = ''
+SALESFORCE_CLIENT_ID = '3MVG9CEn_O3jvv0w0NDdh1QNjan9zEmgVh3F6Mxsuyq4NUo.InTWMLG4ayz5mlCxTw7eWvlKR.PmtOdTladnW'
+SALESFORCE_CLIENT_SECRET = '1338285709176181412'
 SALESFORCE_REQUEST_TOKEN_URL = 'https://login.salesforce.com/services/oauth2/token'
 SALESFORCE_ACCESS_TOKEN_URL = 'https://login.salesforce.com/services/oauth2/token'
-SALESFORCE_REDIRECT_URI = ''
 SALESFORCE_AUTHORIZE_URL = 'https://login.salesforce.com/services/oauth2/authorize'
-SALESFORCE_WEBHOOK_URI = ''
+SALESFORCE_REDIRECT_URI = '{0}/connection/auth-callback/salesforce/'.format(CURRENT_HOST)
 
-#Shopify
-SHOPIFY_SHOP_URL="my-first-project-2017"
-SHOPIFY_API_KEY="8058ebd552b2ba23d9d1c6221b514fab"
-SHOPIFY_API_KEY_SECRET="d32f6b242ddaa2dd2b29bf3eb329a1c5"
-SHOPIFY_REDIRECT_URI="http://127.0.0.1:8000/connection/shopify_auth/"
+# Hubspot
+HUBSPOT_REDIRECT_URI = "{0}/connection/auth-callback/hubspot/".format(CURRENT_HOST)
+HUBSPOT_CLIENT_ID = "633af850-f08a-42e5-a6e7-da65a177bcd5"
+HUBSPOT_CLIENT_SECRET = "94e688b7-9390-4b59-a6df-151eac348e89"
 
-#Hubspot
-HUBSPOT_REDIRECT_URI="https://87b30496.ngrok.io/connection/hubspot_auth/"
-HUBSPOT_CLIENT_ID="633af850-f08a-42e5-a6e7-da65a177bcd5"
-HUBSPOT_CLIENT_SECRET="94e688b7-9390-4b59-a6df-151eac348e89"
+# Evernote
+EVERNOTE_CONSUMER_KEY = "ltorres-6238"
+EVERNOTE_CONSUMER_SECRET = "a4673a77baca5424"
+EVERNOTE_REDIRECT_URL = "{0}/connection/auth-callback/evernote/".format(CURRENT_HOST)
 
-#Evernote
-EVERNOTE_CONSUMER_KEY="ltorres-6238"
-EVERNOTE_CONSUMER_SECRET="a4673a77baca5424"
-EVERNOTE_REDIRECT_URL="http://127.0.0.1:8000/connection/evernote_auth/"
-
+# Shopify
+SHOPIFY_API_KEY = "0eef989bfc56004265e4a8c4e699fd2e"
+SHOPIFY_API_KEY_SECRET = "aa53f3fcd4f635317e3c67b61a067356"
+SHOPIFY_REDIRECT_URI = "{0}/connection/auth-callback/shopify/".format(CURRENT_HOST)
+SHOPIFY_SCOPE = "read_products, write_products, read_orders, read_customers, write_orders, write_customers"
 
 # Asana
 ASANA_CLIENT_ID = '385400269218379'
 ASANA_CLIENT_SECRET = 'b06634b490e0408d8f575e38a2d7e7f3'
-ASANA_REDIRECT_URL = 'https://26677b10.ngrok.io/connection/auth-callback/asana/'
+ASANA_REDIRECT_URL = '{0}/connection/auth-callback/asana/'.format(CURRENT_HOST)
 ASANA_WEBHOOK_URL = ''
 
 # Mercadolibre
-MERCADOLIBRE_CLIENT_ID=''
-MERCADOLIBRE_CLIENT_SECRET=''
-MERCADOLIBRE_REDIRECT_URL='https://9d25c5df.ngrok.io/connection/mercadolibre_auth/'
 
+MERCADOLIBRE_CLIENT_ID = '1063986061828245'
+MERCADOLIBRE_CLIENT_SECRET = 'MyDv8rmoWjJneTgkxEhp3QRONbUp3CPV'
+MERCADOLIBRE_REDIRECT_URL = '{0}/connection/auth-callback/mercadolibre/'.format(CURRENT_HOST)
+
+# Wunderlist
+WUNDERLIST_CLIENT_ID = 'c68a87efca8b22d50fee'
+WUNDERLIST_CLIENT_SECRET = '8a60113066eb052463be8e1d7414edb8a2f57d2f4cd118b82fb201820c8c'
+WUNDERLIST_REDIRECT_URL = '{0}/connection/auth-callback/wunderlist/'.format(CURRENT_HOST)

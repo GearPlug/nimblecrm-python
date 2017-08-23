@@ -62,3 +62,6 @@ class BaseController(object):
 
     def get_action_specification_options(self, action_specification_id):
         raise ControllerError('Not implemented yet.')
+
+    def do_webhook_process(self,**kwargs):
+        raise ControllerError('Not implemented yet.')

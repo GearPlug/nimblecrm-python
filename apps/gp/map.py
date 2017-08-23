@@ -14,12 +14,14 @@ class MapField(object):
 
     def __init__(self, d, controller=None, **kwargs):
         if controller == ConnectorEnum.MySQL:
+            print(d)
             if 'name' in d:
                 self.name = d['name']
                 self.label = d['name']
             if 'null' in d:
                 if d['null'] is not True:
-                    self.required = True
+                    if d['auto_increment'] is not True:
+                        self.required = True
             self.field_type = 'text'
             self.max_length = 200
         elif controller == ConnectorEnum.SugarCRM:
@@ -128,6 +130,11 @@ class MapField(object):
                 self.choices = [(choice, choice) for choice in d['values']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
+        elif controller == ConnectorEnum.GoogleSpreadSheets:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+                self.field_type = "text"
         elif controller == ConnectorEnum.YouTube:
             if 'name' in d:
                 self.name = d['name']
@@ -150,7 +157,8 @@ class MapField(object):
             if 'type' in d:
                 self.field_type = d['type']
             if 'picklistValues' in d and d['picklistValues']:
-                self.choices = [(c['value'], c['label']) for c in d['picklistValues'] if c['active']]
+                self.choices = [(c['value'], c['label'])
+                                for c in d['picklistValues'] if c['active']]
                 self.choices.insert(0, ('', ''))
         elif controller == ConnectorEnum.Shopify:
             if 'name' in d:
@@ -222,6 +230,14 @@ class MapField(object):
                 self.required = d['required']
             if 'type' in d:
                 self.field_type = d['type']
+        elif controller == ConnectorEnum.Twitter:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
         elif controller == ConnectorEnum.Asana:
             if 'name' in d:
                 self.name = d['name']
@@ -235,6 +251,17 @@ class MapField(object):
                 self.name = d['name']
                 self.label = d['name']
             self.field_type = 'text'
+
+        elif controller == ConnectorEnum.WunderList:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
+            self.field_type = 'text'
+
         elif controller == ConnectorEnum.Gmail:
             if 'name' in d:
                 self.name = d['name']

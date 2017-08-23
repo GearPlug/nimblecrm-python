@@ -1,8 +1,9 @@
+from django.shortcuts import HttpResponse
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import StoredData, ActionSpecification, Webhook
+from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification
 from apps.gp.map import MapField
 from django.urls import reverse
 
@@ -107,7 +108,7 @@ class JIRAController(BaseController):
         key = self.get_key(self._plug.plug_action_specification.all()[0].value)
         body = {
             "name": "Gearplug Webhook",
-            "url": "http://g.grplug.com/webhook/jira/0/",
+            "url": "%s/webhook/jira/0/" %settings.CURRENT_HOST,
             "events": [
                 "jira:issue_created",
             ],
@@ -181,6 +182,19 @@ class JIRAController(BaseController):
         else:
             raise ControllerError(
                 "That specification doesn't belong to an action in this connector.")
+
+    def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
+        issue = body['issue']
+        project_list = PlugActionSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="jira",
+            action_specification__name__iexact='project_id',
+            value=issue['fields']['project']['id'], )
+        for project in project_list:
+            self._connection_object, self._plug = project.plug.connection.related_connection, project.plug
+            if self.test_connection():
+                self.download_source_data(issue=issue)
+        return HttpResponse(status=200)
 
 
 class AsanaController(BaseController):
@@ -304,7 +318,7 @@ class AsanaController(BaseController):
             webhook = Webhook.objects.create(name='asana', plug=self._plug,
                                              url='')
             # Verificar ngrok para determinar url_base
-            url_base = 'https://93ed276a.ngrok.io'
+            url_base = settings.CURRENT_HOST
             url_path = reverse('home:webhook', kwargs={'connector': 'asana',
                                                        'webhook_id': webhook.id})
             headers = {

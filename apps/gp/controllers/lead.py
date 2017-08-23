@@ -1,7 +1,7 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
-from apps.gp.models import StoredData, ActionSpecification
-from apiconnector.settings import FACEBOOK_APP_SECRET, FACEBOOK_APP_ID, FACEBOOK_GRAPH_VERSION
+from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification, Plug
+from django.db.models import Q
 import facebook
 import hashlib
 import hmac
@@ -9,9 +9,11 @@ import httplib2
 import json
 import requests
 from apiclient import discovery
-from datetime import time
+import time
 from oauth2client import client as GoogleClient
 import surveymonty
+from django.conf import settings
+from django.http import HttpResponse
 
 
 class GoogleFormsController(BaseController):
@@ -143,8 +145,6 @@ class GoogleFormsController(BaseController):
 
 
 class FacebookLeadsController(BaseController):
-    _app_id = FACEBOOK_APP_ID
-    _app_secret = FACEBOOK_APP_SECRET
     _base_graph_url = 'https://graph.facebook.com'
     _token = None
     _page = None
@@ -184,11 +184,8 @@ class FacebookLeadsController(BaseController):
         return False
 
     def _get_app_secret_proof(self, access_token):
-        h = hmac.new(
-            self._app_secret.encode('utf-8'),
-            msg=access_token.encode('utf-8'),
-            digestmod=hashlib.sha256
-        )
+        h = hmac.new(settings.FACEBOOK_APP_SECRET.encode('utf-8'), msg=access_token.encode('utf-8'),
+                     digestmod=hashlib.sha256)
         return h.hexdigest()
 
     def _send_request(self, url='', token='', base_url='', params=[], from_date=None):
@@ -196,15 +193,17 @@ class FacebookLeadsController(BaseController):
             base_url = self._base_graph_url
         if not params:
             params = {'access_token': token, 'appsecret_proof': self._get_app_secret_proof(token)}
+            print("\nparams: ", params)
         if from_date is not None:
             params['from_date'] = from_date
-        graph = facebook.GraphAPI(version=FACEBOOK_GRAPH_VERSION)
-        graph.access_token = graph.get_app_access_token(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
-        r = requests.get('%s/v%s/%s' % (base_url, FACEBOOK_GRAPH_VERSION, url),
+        graph = facebook.GraphAPI(version=settings.FACEBOOK_GRAPH_VERSION)
+        graph.access_token = graph.get_app_access_token(settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET)
+        r = requests.get('%s/v%s/%s' % (base_url, settings.FACEBOOK_GRAPH_VERSION, url),
                          params=params)
+        print(r.url, "\n")
         try:
             if r.status_code in [200, 201, 202]:
-                return json.loads(r.text)['data']
+                return r.json()['data']
             else:
                 return []
         except KeyError:
@@ -215,10 +214,8 @@ class FacebookLeadsController(BaseController):
 
     def extend_token(self, token):
         url = 'oauth/access_token'
-        params = {'grant_type': 'fb_exchange_token',
-                  'client_id': self._app_id,
-                  'client_secret': self._app_secret,
-                  'fb_exchange_token': token}
+        params = {'grant_type': 'fb_exchange_token', 'client_id': settings.FACEBOOK_APP_ID,
+                  'client_secret': settings.FACEBOOK_APP_SECRET, 'fb_exchange_token': token}
         r = self._send_request(url=url, params=params)
         try:
             return json.loads(r.text)['access_token']
@@ -243,8 +240,6 @@ class FacebookLeadsController(BaseController):
         return self._send_request(url=url, token=access_token)
 
     def download_to_stored_data(self, connection_object, plug, from_date=None):
-        if plug is None:
-            plug = self._plug
         if from_date is not None:
             from_date = int(time.mktime(from_date.timetuple()) * 1000)
         leads = self.get_leads(connection_object.token, self._form, from_date=from_date)
@@ -286,6 +281,56 @@ class FacebookLeadsController(BaseController):
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
+    def create_webhook(self):
+        pages = self.get_pages(self._token)
+        token = None
+        current_page_id = PlugActionSpecification.objects.get(plug_id=self._plug.id,
+                                                              action_specification__name='page').value
+        for page in pages:
+            if page['id'] == current_page_id:
+                token = page['access_token']
+                break
+        if token is not None:
+            url = '{0}/subscribed_apps'.format(current_page_id)
+            response = self._send_request(url=url, token=token)
+            print(response)
+            return True
+        return False
+
+    def do_webhook_process(self, body=None, GET=None, POST=None, **kwargs):
+        response = HttpResponse(status=400)
+        if GET is not None:
+            print("GET", GET)
+            verify_token = GET.get('hub.verify_token')
+            challenge = GET.get('hub.challenge')
+            if verify_token == 'token-gearplug-058924':
+                response.status_code = 200
+                response.content = challenge
+        elif POST is not None:
+            changes = body['entry'][0]['changes']
+            for lead in changes:
+                is_lead = lead['field'] == 'leadgen'
+                if not is_lead:
+                    continue
+                form_id = lead['value']['form_id']
+                lead_id = lead['value']['leadgen_id']
+                created_time = lead['value']['created_time']
+                print('Webhook LEAD: ', is_lead, form_id, lead_id, created_time)
+                plugs_to_update = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=True),
+                                                      action__name='get leads',
+                                                      plug_action_specification__value=form_id)
+                print("plugs to update: ", len(plugs_to_update))
+                for plug in plugs_to_update:
+                    print(plug, plug.is_tested)
+                    self.create_connection(plug.connection.related_connection, plug)
+                    if self.test_connection():
+                        self.download_source_data(from_date=created_time)
+                    if not plug.is_tested:
+                        plug.is_tested = True
+                        plug.save(update_fields=['is_tested', ])
+            response.status_code = 200
+        return response
+
 
 class SurveyMonkeyController(BaseController):
     _token = None
@@ -309,6 +354,15 @@ class SurveyMonkeyController(BaseController):
             host = kwargs.pop('token', None)
             self._client = surveymonty.Client(self._token)
         return self._token is not None and self._client is not None
+
+    def test_connection(self):
+        try:
+            self._client = surveymonty.Client(self._token)
+            return self._token is not None
+        except Exception as e:
+            print("error survey monkey test connection")
+            print(e)
+            return None
 
     def get_survey_list(self):
         lista = self._client.get_surveys()
@@ -389,34 +443,62 @@ class SurveyMonkeyController(BaseController):
         return list
 
     def create_webhook(self):
-        survey_id = self._plug.plug_action_specification.all()[0].value
-        survey_id = str(survey_id)
-        plug_id = self._plug.plug_action_specification.all()[0].id
-        print("plug_id")
-        print(plug_id)
-        redirect_uri = "https://l.grplug.com/wizard/surveymonkey/webhook/event/%s/" % (plug_id)
-        s = requests.session()
-        s.headers.update({
-            "Authorization": "Bearer %s" % self._token,
-            "Content-Type": "application/json"
-        })
-        payload = {
-            "name": "Webhook_prueba",
-            "event_type": "response_completed",
-            "object_type": "survey",
-            "object_ids": [survey_id],
-            "subscription_url": redirect_uri
-        }
-        url = "https://api.surveymonkey.net/v3/webhooks"
-        r = s.post(url, json=payload)
-        if r.status_code == 201:
-            print("Se creo el webhook survey monkey")
+        action = self._plug.action.name
+        if action == "read a survey":
+            survey_id = self._plug.plug_action_specification.all()[0].value
+            survey_id = str(survey_id)
+            webhook = Webhook.objects.create(name='surveymonkey', plug=self._plug,
+                                             url='')
+            plug_id = self._plug.plug_action_specification.all()[0].id
+            redirect_uri = "%s/webhook/surveymonkey/%s/" % settings.CURRENT_HOST, webhook.id
+            s = requests.session()
+            s.headers.update({
+                "Authorization": "Bearer %s" % self._token,
+                "Content-Type": "application/json"
+            })
+            payload = {
+                "name": "Webhook_prueba",
+                "event_type": "response_completed",
+                "object_type": "survey",
+                "object_ids": [survey_id],
+                "subscription_url": redirect_uri
+            }
+            url = "https://api.surveymonkey.net/v3/webhooks"
+            r = s.post(url, json=payload)
+            print("response")
+            print(r.text)
+            if r.status_code == 201:
+                webhook.url = redirect_uri
+                webhook.generated_id = r.json()["id"]
+                print("id")
+                print(webhook.generated_id)
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+                print("Se creo el webhook survey monkey")
+            else:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
             return True
         return False
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
-        if action_specification.name.lower() == 'read a survey':
-            return [{'name': o['title'], 'id': o['id']} for o in self.smc.get_survey_list()]
+        if action_specification.name.lower() == 'survey':
+            return [{'name': o['title'], 'id': o['id']} for o in self.get_survey_list()]
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def do_webhook_process(self, body=None, POST=None, **kwargs):
+        responses = []
+        survey = {'id': body['object_id']}
+        responses.append(survey)
+        survey_list = PlugActionSpecification.objects.filter(
+            action_specification__action__action_type='source',
+            action_specification__action__connector__name__iexact="SurveyMonkey",
+            value=body['resources']['survey_id']
+        )
+        for survey in survey_list:
+            self._connection_object, self._plug = survey.plug.connection.related_connection, survey.plug
+            if self.test_connection():
+                self.download_source_data(event=body)
+        return HttpResponse(status=200)
