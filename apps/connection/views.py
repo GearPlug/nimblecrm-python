@@ -250,6 +250,12 @@ class TestConnectionView(LoginRequiredMixin, View):
 
 
 # Auth Views
+
+class FacebookAuthView(View):
+    def get(self, request, *args, **kwargs):
+        print(request.GET)
+
+
 class MercadoLibreAuthView(View):
     def get(self, request, *args, **kwargs):
         m = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)

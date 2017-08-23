@@ -20,8 +20,8 @@ def update_all_gears():
     for gear in active_gears:
         connector = ConnectorEnum.get_connector(gear.source.connection.connector_id)
         print("Connector: {0}".format(connector))
-        # update_plug.s(gear.source.id, gear.id).apply_async(queue="source_{0}".format(connector.name.lower()))
-        update_plug.s(gear.source.id, gear.id).apply_async()
+        update_plug.s(gear.source.id, gear.id).apply_async(queue=connector.name.lower())
+        # update_plug.s(gear.source.id, gear.id).apply_async()
         print("Asignado el plug {0} a update de source.".format(gear.source))
 
 
@@ -36,6 +36,7 @@ def update_plug(plug_id, gear_id, **kwargs):
         try:
             print("Updating Gear: {0} as {1}".format(gear_id, plug.plug_type))
             gear = Gear.objects.get(pk=gear_id)
+            print("GEAR %s" % gear_id)
             source_connector = ConnectorEnum.get_connector(plug.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(source_connector)
             if controller_class == SugarCRMController:
@@ -43,19 +44,22 @@ def update_plug(plug_id, gear_id, **kwargs):
                                               plug.plug_action_specification.all()[0].value)
             else:
                 controller = controller_class(plug.connection.related_connection, plug)
+            print("controller %s" % controller_class)
             ping = controller.test_connection()
+            print("PING %s"%ping)
             if ping is not True:
                 print("Error en la connection.")
                 return
             if plug.plug_type.lower() == 'source':
+                print("TYPE: source")
                 has_new_data = controller.download_source_data(from_date=gear.gear_map.last_source_update)
+                print("new data %s" % has_new_data)
                 if gear.gear_map.last_sent_stored_data_id is None:
                     kwargs['force_update'] = True
-                if has_new_data or 'force_update' in kwargs and kwargs['force_update'] == True:
-                    # connector = ConnectorEnum.get_connector(gear.target.connection.connector_id)
-                    # update_plug.s(gear.target.id, gear_id).apply_async(
-                    #     queue="source_{0}".format(connector.name.lower()))
-                    update_plug.s(gear.target.id, gear_id).apply_async()
+                if has_new_data or gear.gear_map.last_sent_stored_data_id is None:
+                    connector = ConnectorEnum.get_connector(gear.target.connection.connector_id)
+                    update_plug.s(gear.target.id, gear_id).apply_async(queue=connector.name.lower())
+                    # update_plug.s(gear.target.id, gear_id).apply_async()
             elif plug.plug_type.lower() == 'target':
                 kwargs = {'connection': gear.source.connection, 'plug': gear.source, }
                 if gear.gear_map.last_sent_stored_data_id is not None:
