@@ -8,8 +8,8 @@ from apps.gp.models import StoredData, ActionSpecification, HubSpotConnection, V
 from simple_salesforce import Salesforce
 from simple_salesforce.login import SalesforceAuthenticationFailed
 from dateutil.parser import parse
-from urllib.parse import urlparse, quote_plus
-from urllib import request, parse
+from urllib.parse import urlparse
+from urllib import parse
 from hashlib import md5
 import urllib.error
 import urllib.request
@@ -18,7 +18,6 @@ import sugarcrm
 import json
 import xmltodict
 import string
-import pprint
 import os
 from apps.gp.models import StoredData
 from apps.gp.map import MapField
@@ -888,13 +887,8 @@ class HubSpotController(BaseController):
 class VtigerController(BaseController):
     _url = None
     _token = None
-    _values = None
-    _session = None
-    _module = None
-    _module_list = None
     _session_name = None
     _user_id = None
-    _query_size = 30
 
     def __init__(self, *args, **kwargs):
         super(VtigerController, self).__init__(*args, **kwargs)
@@ -948,8 +942,8 @@ class VtigerController(BaseController):
             tokenized_access_key = self.get_tokenized_access_key()
             values = {'accessKey': tokenized_access_key, 'operation': 'login', 'username': self._user}
             data = urllib.parse.urlencode(values).encode('utf-8')
-            reqquest = urllib.request.Request(self._url, data)
-            response = json.loads(urllib.request.urlopen(reqquest).read().decode('utf-8'))
+            request = urllib.request.Request(self._url, data)
+            response = json.loads(urllib.request.urlopen(request).read().decode('utf-8'))
             if response['success'] is True:
                 session_name = response['result']['sessionName']
                 user_id = response['result']['userId']
@@ -1024,7 +1018,11 @@ class VtigerController(BaseController):
             return False
 
     def delete_register(self):
-        session_name, user_id = login()
+        """
+        Not implemented Yet.
+        :return:
+        """
+        session_name, user_id = self.login()
         parameters = {
             'operation': 'delete',
             'sessionName': session_name,
@@ -1033,7 +1031,7 @@ class VtigerController(BaseController):
         session_name = parameters['sessionName']
 
         parameters = urllib.parse.urlencode(parameters)
-        connection = urllib.request.urlopen(url, parameters.encode('utf-8'))
+        connection = urllib.request.urlopen(self._url, parameters.encode('utf-8'))
         response = connection.read().decode('utf-8')
         response = json.loads(response)
         return response
