@@ -4,7 +4,7 @@ from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apiconnector.celery import app
-
+from apps.gp.controllers.exceptions.mysql import MySQLError
 from apps.gp.models import StoredData, ActionSpecification
 import MySQLdb
 import copy
@@ -32,20 +32,19 @@ class MySQLController(BaseController):
                 try:
                     self._database = self._connection_object.database
                     self._table = self._connection_object.table
-                except Exception as e:
-                    print("Error getting the MySQL attributes args")
-            if self._connection_object is None:
+                    host = self._connection_object.host
+                    port = self._connection_object.port
+                    user = self._connection_object.connection_user
+                    password = self._connection_object.connection_password
+                except AttributeError as e:
+                    raise MySQLError(code=1, msg='Error getting the MySQL attributes args. {}'.format(str(e)))
+            else:
                 raise ControllerError('No connection.')
-            host = self._connection_object.host
-            port = self._connection_object.port
-            user = self._connection_object.connection_user
-            password = self._connection_object.connection_password
             try:
-                self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password,
-                                                   db=self._database)
+                self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self._database)
                 self._cursor = self._connection.cursor()
-            except Exception as e:
-                self._connection = None
+            except MySQLdb.OperationalError as e:
+                raise MySQLError(code=2, msg='Error instantiating the MySQL client. {}'.format(str(e)))
 
     def test_connection(self):
         return self._connection is not None
@@ -56,9 +55,10 @@ class MySQLController(BaseController):
                 self._cursor.execute('DESCRIBE `{0}`.`{1}`'.format(self._database, self._table))
                 return [{'name': item[0], 'type': item[1], 'null': 'YES' == item, 'is_primary': item[3] == 'PRI',
                          'auto_increment': item[5] == 'auto_increment'} for item in self._cursor]
-            except:
-                # raise
-                print('Error describing table: %s')
+            except MySQLdb.OperationalError as e:
+                raise MySQLError(code=2, msg='Error describing table. {}'.format(str(e)))
+            except MySQLdb.ProgrammingError as e:
+                raise MySQLError(code=3, msg='Error describing table. {}'.format(str(e)))
         return []
 
     def get_primary_keys_deprecated(self):
@@ -80,14 +80,15 @@ class MySQLController(BaseController):
             if limit is not None and isinstance(limit, int):
                 select += 'LIMIT {0}'.format(limit)
             try:
-                print(select)
                 self._cursor.execute(select)
                 cursor_select_all = copy.copy(self._cursor)
                 self.describe_table()
                 cursor_describe = self._cursor
                 return [{column[0]: item[i] for i, column in enumerate(cursor_describe)} for item in cursor_select_all]
-            except Exception as e:
-                print(e)
+            except MySQLdb.OperationalError as e:
+                raise MySQLError(code=2, msg='Error selecting all. {}'.format(str(e)))
+            except MySQLdb.ProgrammingError as e:
+                raise MySQLError(code=3, msg='Error selecting all. {}'.format(str(e)))
         return []
 
     def download_to_stored_data(self, connection_object, plug, **kwargs):
@@ -127,6 +128,7 @@ class MySQLController(BaseController):
             extra['status'] = 'f'
             self._log.info('Item ID: {0}, Field: {1}, Connection: {2}, Plug:{3} failed to save.' % (
                 stored_data.object_id, stored_data.name, stored_data.connection.id,  stored_data.plug.id,), extra=extra)
+            raise MySQLError(code=4, msg='Error in save row. {}'.format(str(e)))
 
     def _get_insert_statement(self, item):
         insert = """INSERT INTO `%s`(%s) VALUES (%s)""" % (
@@ -151,14 +153,20 @@ class MySQLController(BaseController):
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
                     obj_list.append(self._cursor.lastrowid)
-                except Exception as e:
-                    print(e)
+                except MySQLdb.OperationalError as e:
                     extra['status'] = 'f'
                     self._log.info('Item: %s failed to send.' % (self._cursor.lastrowid), extra=extra)
+                    raise MySQLError(code=2, msg='Error selecting all. {}'.format(str(e)))
+                except MySQLdb.ProgrammingError as e:
+                    extra['status'] = 'f'
+                    self._log.info('Item: %s failed to send.' % (self._cursor.lastrowid), extra=extra)
+                    raise MySQLError(code=3, msg='Error selecting all. {}'.format(str(e)))
+
             try:
                 self._connection.commit()
-            except:
+            except Exception as e:
                 self._connection.rollback()
+                raise MySQLError(code=4, msg='Error in commit data. {}'.format(str(e)))
             return obj_list
         raise ControllerError("There's no plug")
 
