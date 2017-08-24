@@ -466,7 +466,7 @@ class StoredData(models.Model):
     object_id = models.CharField('object_id', max_length=150, null=True)
 
     def __str__(self):
-        return '%s %s %s' % (self.id, self.name, self.object_id)
+        return '%s %s %s' % (self.name, self.object_id)
 
 
 class Gear(models.Model):

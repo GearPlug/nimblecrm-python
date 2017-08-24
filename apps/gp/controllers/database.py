@@ -102,7 +102,7 @@ class MySQLController(BaseController):
             unique_value = item['unique']['value']
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
-                new_item = [StoredData(name=column['name'], value=column['value'], object_id=unique_value,
+                new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
                                        connection=connection_object.connection, plug=plug) for column in item['data']]
                 new_item.append(StoredData(name=item['unique']['name'], value=item['unique']['value'],
                                            object_id=unique_value, connection=connection_object.connection, plug=plug))
@@ -112,7 +112,7 @@ class MySQLController(BaseController):
     def _save_stored_data(self, data):
         for item in data:
             self._save_row(item)
-            # self._save_row.delay(self, item)
+            # self._save_row.delay(self, item) TODO DELAY QUEUE
         return True
 
     def _save_row(self, item):
@@ -126,7 +126,7 @@ class MySQLController(BaseController):
         except Exception as e:
             extra['status'] = 'f'
             self._log.info('Item ID: {0}, Field: {1}, Connection: {2}, Plug:{3} failed to save.' % (
-                stored_data.object_id, stored_data.name, stored_data.connection.id,  stored_data.plug.id,), extra=extra)
+                stored_data.object_id, stored_data.name, stored_data.connection.id, stored_data.plug.id,), extra=extra)
 
     def _get_insert_statement(self, item):
         insert = """INSERT INTO `%s`(%s) VALUES (%s)""" % (
