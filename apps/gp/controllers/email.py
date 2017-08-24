@@ -3,7 +3,9 @@ from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Webhook, StoredData, ActionSpecification
+from apps.gp.models import Webhook, StoredData, ActionSpecification, Plug
+from django.http import HttpResponse
+from django.db.models import Q
 from utils.smtp_sender import smtpSender as SMTPClient
 from oauth2client import client as GoogleClient
 from apiclient import discovery, errors
@@ -12,11 +14,12 @@ from email.mime.text import MIMEText
 import json
 import httplib2
 import base64
-
+from email import message_from_bytes
 
 
 class GmailController(BaseController):
     _credential = None
+    _service = None
 
     def __init__(self, *args, **kwargs):
         BaseController.__init__(self, *args, **kwargs)
@@ -33,21 +36,25 @@ class GmailController(BaseController):
                     credentials_json = None
         if credentials_json is not None:
             self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
+            self._service = discovery.build('gmail', 'v1', http=self._credential.authorize(httplib2.Http()))
 
     def test_connection(self):
         try:
             self._refresh_token()
-            http_auth = self._credential.authorize(httplib2.Http())
-            service = discovery.build('gmail', 'v1', http=http_auth)
+        except GoogleClient.HttpAccessTokenRefreshError:
+            print("ERROR EL TOKEN NO TIENE REFRESH TOKEN")
+            return False
         except Exception as e:
+            raise
             print("Error Test connection Gmail")
-            service = None
-        return service is not None
+            self._service = None
+        return self._service is not None
 
     def _refresh_token(self, token=''):
         if self._credential.access_token_expired:
             self._credential.refresh(httplib2.Http())
             self._upate_connection_object_credentials()
+            self._service = discovery.build('gmail', 'v1', http=self._credential.authorize(httplib2.Http()))
 
     def _upate_connection_object_credentials(self):
         self._connection_object.credentials_json = self._credential.to_json()
@@ -58,15 +65,12 @@ class GmailController(BaseController):
         if action == 'Read message':
             # Creacion de Webhook
             webhook = Webhook.objects.create(name='gmail', plug=self._plug, url='')
-            credentials = self._credential
-            http = credentials.authorize(httplib2.Http())
-            service = discovery.build('gmail', 'v1', http=http)
             request = {
                 'labelIds': ['INBOX'],
                 'topicName': 'projects/gearplug-167220/topics/gearplug',
                 'name': 'webhook'
             }
-            res_watch = service.users().watch(userId='me', body=request).execute()
+            res_watch = self._service.users().watch(userId='me', body=request).execute()
             if res_watch['historyId'] is not None:
                 webhook.url = 'https://g.grplug.com/webhook/gmail/0/'
                 webhook.generated_id = self._plug.id
@@ -81,30 +85,28 @@ class GmailController(BaseController):
 
     def download_to_stored_data(self, connection_object=None, plug=None, message=None, **kwargs):
         if message is not None:
-            id=message['messageId']
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=id)
-            task_stored_data = []
-
+            id = message['Id']
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id)
+            if not q.exists():
+                message_stored_data = []
+                for k, v in message.items():
+                    message_stored_data.append(
+                        StoredData(connection=connection_object.connection, plug=plug, name=k, value=v, object_id=id))
             extra = {}
-            for task in task_stored_data:
+            print(message_stored_data)
+            for msg in message_stored_data:
                 try:
                     extra['status'] = 's'
                     extra = {'controller': 'gmail'}
-                    task.save()
+                    msg.save()
                     self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            task.object_id, task.plug.id,
-                            task.connection.id),
-                        extra=extra)
+                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (msg.object_id, msg.plug.id,
+                                                                                        msg.connection.id), extra=extra)
                 except Exception as e:
                     extra['status'] = 'f'
                     self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s failed.' % (
-                            task.object_id, task.plug.id,
-                            task.connection.id),
-                        extra=extra)
+                        'Item ID: %s, Connection: %s, Plug: %s failed.' % (msg.object_id, msg.plug.id,
+                                                                           msg.connection.id), extra=extra)
             return True
         return False
 
@@ -148,26 +150,20 @@ class GmailController(BaseController):
         body = {'raw': raw}
         return body
 
-    def send_message_internal(self, service, user_id, message):
+    def send_message_internal(self, user_id, message):
         try:
-            message = (service.users().messages().send(userId=user_id, body=message).execute())
+            message = (self._service.users().messages().send(userId=user_id, body=message).execute())
             print('Message Id: %s' % message['id'])
             return message
         except errors.HttpError as error:
             print('An error occurred: %s' % error)
 
     def send_message(self, sender, to, subject, msgHtml, msgPlain):
-        credentials = self._credential
-        http = credentials.authorize(httplib2.Http())
-        service = discovery.build('gmail', 'v1', http=http)
         message1 = self.create_message(sender, to, subject, msgHtml, msgPlain)
-        return self.send_message_internal(service, "me", message1)
+        return self.send_message_internal("me", message1)
 
     def get_profile(self):
-        credentials = self._credential
-        http = credentials.authorize(httplib2.Http())
-        service = discovery.build('gmail', 'v1', http=http)
-        results = service.users().getProfile(userId='me').execute()
+        results = self._service.users().getProfile(userId='me').execute()
         return results
 
     def get_action_specification_options(self, action_specification_id):
@@ -175,10 +171,59 @@ class GmailController(BaseController):
             pk=action_specification_id)
         if action_specification.name.lower() == 'email':
             p = self.get_profile()
-            return ({'id': p['emailAddress'], 'name': p['emailAddress']}, )
+            return ({'id': p['emailAddress'], 'name': p['emailAddress']},)
         else:
             raise ControllerError(
                 "That specification doesn't belong to an action in this connector.")
+
+    def get_history(self, history_id):
+        return self._service.users().history().list(userId="me", startHistoryId=history_id).execute()
+
+    def get_message(self, message_id):
+        raw_message = self._service.users().messages().get(userId='me', id=message_id, format='raw').execute()
+        decoded_message = base64.urlsafe_b64decode(raw_message['raw'].encode('ASCII'))
+        text_message = message_from_bytes(decoded_message)
+        return text_message
+
+    def get_cleaned_message(self, message='', message_id=''):
+        return {'Id': message_id, 'Subject': 'Prueba3', 'From': 'ltorres@grplug.com', 'To': 'grplug@gmail.com',
+                'Date': 'Wed, 9 Aug 2017 09:24:41 -0700',
+                'Message-Id': '<CAFcPdBD9uGFBERJKioqF4GFTS1Mk0rxoyihCorUeHJxDv7mbzg@mail.gmail.com>',
+                'Content-Plain': 'Hi\nPlain Email', 'Content-Html': 'Hi<br/>Html Email'}
+
+    def do_webhook_process(self, body=None, POST=None, **kwargs):
+        response = HttpResponse(status=400)
+
+        encoded_message_data = base64.urlsafe_b64decode(body['message']['data'].encode('ASCII'))
+        decoded_message_data = json.loads(encoded_message_data.decode('utf-8'))
+        history_id = decoded_message_data['historyId']
+        email = decoded_message_data['emailAddress']
+        plug_list = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=False),
+                                        plug_type__iexact="source", action__name__iexact="read message",
+                                        plug_action_specification__value__iexact=email)
+        if plug_list:
+            for plug in plug_list:
+                try:
+                    self.create_connection(plug.connection.related_connection, plug)
+                    if self.test_connection():
+                        history = self.get_history(history_id)
+                        message_id = history['history'][0]['messages'][0]['id']
+                        message = self.get_message(message_id=message_id)
+                        message_dict = self.get_cleaned_message(message, message_id)
+                        print(message_dict)
+                        break
+                except Exception as e:
+                    continue
+            for plug in plug_list:
+                try:
+                    self.create_connection(plug.connection.related_connection, plug)
+                    if self.test_connection():
+                        self.download_source_data(message=message_dict)
+                except:
+                    pass
+            response.status_code = 200
+        return response
+
 
 class SMTPController(BaseController):
     client = None

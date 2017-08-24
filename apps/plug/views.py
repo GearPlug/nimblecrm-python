@@ -69,7 +69,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
                          ConnectorEnum.Mandrill, ConnectorEnum.FacebookLeads, ConnectorEnum.Gmail]:
                     print("WEBHOOK!!")
                     controller.create_webhook()
-                    raise Exception("test webhook")
+                    # raise Exception("test webhook")
             else:
                 controller.download_to_stored_data(self.object.connection.related_connection, self.object)
         self.request.session['source_connection_id'] = None
@@ -153,7 +153,7 @@ class TestPlugView(TemplateView):
                 sd_sample = StoredData.objects.filter(plug=p, connection=p.connection).order_by('-id').last()
                 sd = StoredData.objects.filter(plug=p, connection=p.connection, object_id=sd_sample.object_id)
                 context['object_list'] = sd
-            except IndexError:
+            except Exception:
                 print("Failed. force donwload.")
                 try:
                     c = ConnectorEnum.get_connector(p.connection.connector.id)
