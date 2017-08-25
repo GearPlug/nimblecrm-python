@@ -2,8 +2,9 @@ from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 import shopify
 from django.conf import settings
+from django.shortcuts import HttpResponse
 import re
-from apps.gp.models import StoredData, ActionSpecification, Action, Webhook
+from apps.gp.models import StoredData, ActionSpecification, Action, Plug, Webhook
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.controllers.utils import get_dict_with_source_data
@@ -143,6 +144,41 @@ class MercadoLibreController(BaseController):
     def get_listing_types(self):
         params = {'access_token': self._token}
         return self._client.get(path="/sites/{}/listing_types".format(self._site), params=params).json()
+
+    def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
+        import pprint
+        pprint.pprint(body)
+        plugs = Plug.objects.filter(
+            action__action_type='source',
+            action__connector__name__iexact='mercadolibre',
+            action__name=body['topic'],
+            connection__connection_mercadolibre__user_id=body['user_id'])
+        for plug in plugs:
+            self._connection_object, self._plug = plug.connection.related_connection, plug
+            self.create_connection(self._connection_object, self._plug)
+            if self.test_connection():
+                self.download_source_data(event=body)
+        return HttpResponse(status=200)
+
+    def download_to_stored_data(self, connection_object=None, plug=None, event=None, **kwargs):
+        print(event)
+        if event is not None:
+            _items = []
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                          object_id=None)
+            if not q.exists():
+                for k, v in event.items():
+                    obj = StoredData(connection=connection_object.connection, plug=plug,
+                                     object_id=None, name=k, value=v or '')
+                    _items.append(obj)
+            extra = {}
+            for item in _items:
+                extra['status'] = 's'
+                extra = {'controller': 'mercadolibre'}
+                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                    item.object_id, item.plug.id, item.connection.id), extra=extra)
+                item.save()
+        return False
 
 
 class AmazonSellerCentralController(BaseController):

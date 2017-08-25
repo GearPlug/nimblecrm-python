@@ -61,14 +61,6 @@ class MySQLController(BaseController):
                 print('Error describing table: %s')
         return []
 
-    def get_primary_keys_deprecated(self):
-        if self._table is not None and self._database is not None:
-            try:
-                self._cursor.execute('DESCRIBE `{0}`.`{1}`'.format(self._database, self._table))
-                return [item[0] for item in self._cursor if item[3] == 'PRI']
-            except:
-                print('Error ')
-        return None
 
     def select_all(self, limit=50, unique=None, order_by=None):
         if self._table is not None and self._database is not None and self._plug is not None:
@@ -128,7 +120,7 @@ class MySQLController(BaseController):
             self._log.info('Item ID: {0}, Field: {1}, Connection: {2}, Plug:{3} failed to save.' % (
                 stored_data.object_id, stored_data.name, stored_data.connection.id, stored_data.plug.id,), extra=extra)
 
-    def _get_insert_statement(self, item):
+    def _get_insert_statement(self, item0):
         insert = """INSERT INTO `%s`(%s) VALUES (%s)""" % (
             self._table, """,""".join(item.keys()), """,""".join("""\"%s\"""" % i for i in item.values()))
         return insert

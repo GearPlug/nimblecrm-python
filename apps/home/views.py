@@ -80,7 +80,8 @@ class IncomingWebhook(View):
         except Exception as e:
             print(e)
             body = None
-        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.FacebookLeads]:
+        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey,
+                         ConnectorEnum.FacebookLeads, ConnectorEnum.MercadoLibre]:
             response = controller.do_webhook_process(body=body, POST=request.POST)
             return response
         # ASANA
