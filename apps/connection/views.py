@@ -4,16 +4,13 @@ from instagram.client import InstagramAPI
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView, View, TemplateView
+from django.views.generic import CreateView, ListView, View, TemplateView
 from django.core.urlresolvers import reverse
 from django.http import JsonResponse
-from django.shortcuts import redirect, HttpResponse
+from django.shortcuts import redirect
 from apps.connection.apps import APP_NAME as app_name
 from apps.gp.enum import ConnectorEnum, GoogleAPIEnum
-from apps.gp.models import Connection, Connector, GoogleSpreadSheetsConnection, SlackConnection, GoogleFormsConnection, \
-    GoogleContactsConnection, TwitterConnection, SurveyMonkeyConnection, InstagramConnection, GoogleCalendarConnection, \
-    YouTubeConnection, SMSConnection, ShopifyConnection, HubSpotConnection, MySQLConnection, EvernoteConnection, \
-    SalesforceConnection, MercadoLibreConnection
+from apps.gp.models import Connection, Connector, MercadoLibreConnection
 from oauth2client import client
 from requests_oauthlib import OAuth2Session
 from slacker import Slacker
@@ -21,8 +18,6 @@ import json
 import urllib
 import requests
 from evernote.api.client import EvernoteClient
-import evernote.edam.type.ttypes as Types
-from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
 from meli_client import meli
 
 
@@ -116,6 +111,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
+
             if connector.connection_type == 'special':
                 name = '{0}/create'.format(connector.name.lower())
             elif connector.connection_type == 'authorization':
@@ -166,7 +162,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             context['authorizaton_url'] = flow.get_authorize_login_url(scope=settings.INSTAGRAM_SCOPE)
         elif connector == ConnectorEnum.Salesforce:
             flow = get_salesforce_auth()
-            context['authorizaton_url'] = flow
+            context['authorization_url'] = flow
         elif connector == ConnectorEnum.HubSpot:
             context['authorizaton_url'] = get_hubspot_url()
         elif connector == ConnectorEnum.Evernote:
@@ -204,7 +200,9 @@ class CreateConnectionSuccessView(LoginRequiredMixin, TemplateView):
     login_url = '/account/login/'
 
 
-class CreateTokenAuthorizedConnectionView(View):
+class CreateTokenAuthorizedConnectionView(TemplateView):
+    template_name = 'connection/auth_success.html'
+
     def get(self, request, **kwargs):
         if 'connection_data' in self.request.session:
             data = self.request.session['connection_data']
@@ -252,6 +250,12 @@ class TestConnectionView(LoginRequiredMixin, View):
 
 
 # Auth Views
+
+class FacebookAuthView(View):
+    def get(self, request, *args, **kwargs):
+        print(request.GET)
+
+
 class MercadoLibreAuthView(View):
     def get(self, request, *args, **kwargs):
         m = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)

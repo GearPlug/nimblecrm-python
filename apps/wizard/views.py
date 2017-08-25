@@ -106,7 +106,6 @@ class SalesforceWebhookEvent(TemplateView):
         return JsonResponse({'hola': True})
 
 
-
 class ZohoCRMModuleList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
 

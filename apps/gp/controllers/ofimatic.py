@@ -114,7 +114,8 @@ class GoogleSpreadSheetsController(BaseController):
         if is_first:
             if data_list:
                 try:
-                    data_list = [data_list[-1]]
+                    data_list = [data_list[0]]
+                    print('data: ',data_list)
                 except:
                     data_list = []
         if self._plug is not None:
@@ -125,7 +126,7 @@ class GoogleSpreadSheetsController(BaseController):
             sheet_values = self.get_worksheet_values()
             for idx, item in enumerate(obj_list, len(sheet_values) + 1):
                 res = self.create_row(item, idx)
-            return
+            return True
         raise ControllerError("Incomplete.")
 
     def colnum_string(self, n):

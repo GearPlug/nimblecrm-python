@@ -1,19 +1,14 @@
 from django.conf.urls import url
-
 from apps.wizard.views import JiraWebhookEvent, JiraProjectList, \
      PaypalWebhookEvent, \
      ZohoCRMModuleList, YouTubeWebhookEvent, \
-    YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent, SalesforceSObjectList, SalesforceEventList, \
-    SalesforceWebhookEvent
+    YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent#, SalesforceSObjectList, SalesforceEventList
 
 from apps.connection.views import ListConnectionView, ListConnectorView, CreateConnectionView
-from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, DeleteGearView, CreateGearMapView
+from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, CreateGearMapView
 from apps.plug.views import ActionListView, ActionSpecificationsListView, CreatePlugView, TestPlugView
 
 urlpatterns = [
-
-    # WIZARD EN ORDEN
-
     # GEAR LIST
     url(r'^gear/list/$', ListGearView.as_view(), name='gear_list'),
     # GEAR CREATE OR UPDATE
@@ -60,7 +55,6 @@ urlpatterns = [
     url(r"async/zohocrm/module/list/", ZohoCRMModuleList.as_view(), name='async_zohorcrm_modules'),
 
     # Salesforce
-    url(r"async/salesforce/sobjects/list/", SalesforceSObjectList.as_view(), name='async_salesforce_sobjects'),
-    url(r"async/salesforce/event/list/", SalesforceEventList.as_view(), name='async_salesforce_events'),
-    url(r"salesforce/webhook/event/", SalesforceWebhookEvent.as_view(), name='async_salesforce_events'),
+    # url(r"async/salesforce/sobjects/list/", SalesforceSObjectList.as_view(), name='async_salesforce_sobjects'),
+    # url(r"async/salesforce/event/list/", SalesforceEventList.as_view(), name='async_salesforce_events'),
 ]

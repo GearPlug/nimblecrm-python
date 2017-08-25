@@ -1,11 +1,12 @@
 import datetime
 import mandrill
+from django.core.urlresolvers import reverse
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
-from apps.gp.models import ActionSpecification
+from apps.gp.models import ActionSpecification, Webhook, StoredData
 
 from mailchimp3 import MailChimp
 from getresponse.client import GetResponse
@@ -133,13 +134,13 @@ class GetResponseController(BaseController):
             fields = self.get_meta()
         return [MapField(f, controller=ConnectorEnum.GetResponse) for f in fields]
 
-
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'campaign':
             return tuple({'id': c['id'], 'name': c['name']} for c in self.get_campaigns())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
+
 
 class MailChimpController(BaseController):
     """
@@ -457,3 +458,64 @@ class MandrillController(BaseController):
 
     def get_target_fields(self):
         return self.get_meta()
+
+    def get_events(self):
+        return ['send', 'hard_bounce', 'soft_bounce', 'open', 'click', 'spam', 'unsub', 'reject']
+
+    def download_to_stored_data(self, connection_object=None, plug=None, event=None, **kwargs):
+        if event is not None:
+            _items = []
+            # Todo verificar que este ID siempre existe independiente del action
+
+            event_id = event.pop('_id')
+            msg = event.pop('msg')
+            event.update(msg)
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                          object_id=event_id)
+            if not q.exists():
+                for k, v in event.items():
+                    obj = StoredData(connection=connection_object.connection, plug=plug,
+                                     object_id=event_id, name=k, value=v or '')
+                    _items.append(obj)
+            extra = {}
+            for item in _items:
+                extra['status'] = 's'
+                extra = {'controller': 'mandril'}
+                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                    item.object_id, item.plug.id, item.connection.id), extra=extra)
+                item.save()
+        return False
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'event':
+            return tuple({'id': e, 'name': e} for e in self.get_events())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def create_webhook(self):
+        action = self._plug.action.name
+        if action == 'new email':
+            event = self._plug.plug_action_specification.get(action_specification__name='event')
+
+            # Creacion de Webhook
+            webhook = Webhook.objects.create(name='mandrill', plug=self._plug, url='', expiration='')
+
+            # Verificar ngrok para determinar url_base
+            url_base = 'https://fbaa4455.ngrok.io'
+            url_path = reverse('home:webhook', kwargs={'connector': 'mandrill', 'webhook_id': webhook.id})
+            url = url_base + url_path
+
+            try:
+                events = [event.value]
+                response = self._client.webhooks.add(url=url, description='GearPlug Webhook', events=events)
+                # El cliente parsea el response por lo cual siempre viene un diccionario.
+                webhook.url = url
+                webhook.generated_id = response['id']
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+                return True
+            except mandrill.Error as e:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
+                return False
