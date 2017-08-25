@@ -119,7 +119,6 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         if self.kwargs['connector_id'] is not None:
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
-
             if connector.connection_type == 'special':
                 name = '{0}/create'.format(connector.name.lower())
             elif connector.connection_type == 'authorization':
@@ -149,7 +148,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         context['connector_name'] = connector.name
         context['connector_id'] = connector.value
         if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms, ConnectorEnum.GoogleContacts,
-                         ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube]:
+                         ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube, ConnectorEnum.Gmail]:
             api = GoogleAPIEnum.get_api(connector.name)
             flow = get_flow(settings.GOOGLE_AUTH_CALLBACK_URL, scope=api.scope)
             context['authorization_url'] = flow.step1_get_authorize_url()
