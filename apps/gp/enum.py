@@ -20,7 +20,7 @@ class ConnectorEnum(Enum):
     GoogleContacts = 14, 'directory', 'authorization'
     SurveyMonkey = 15, 'lead', 'authorization'
     GoogleCalendar = 16, 'ofimatic', 'authorization'
-    MercadoLibre = 17, 'ecomerce'
+    MercadoLibre = 17, 'ecomerce', 'special'
     AmazonSellerCentral = 18, 'ecomerce'
     PayU = 19, 'ecomerce'
     Gmail = 20, 'email', 'authorization'

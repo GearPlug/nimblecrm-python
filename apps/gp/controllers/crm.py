@@ -5,11 +5,15 @@ from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
-from apps.gp.models import StoredData, ActionSpecification, HubSpotConnection
+from apps.gp.models import StoredData, ActionSpecification, HubSpotConnection, VtigerConnection
 from simple_salesforce import Salesforce
 from simple_salesforce.login import SalesforceAuthenticationFailed
 from dateutil.parser import parse
 from urllib.parse import urlparse
+from urllib import parse
+from hashlib import md5
+import urllib.error
+import urllib.request
 import requests
 import sugarcrm
 import json
@@ -55,13 +59,14 @@ class SugarCRMController(BaseController):
                     self._password = self._connection_object.connection_password
                     self._url = self._connection_object.url
                 except Exception as e:
-                    print("Error getting the SugarCRM attributes")
+                    return e
                 try:
                     self._module = args[2]
                 except:
                     pass
         if self._url is not None and self._user is not None and self._password is not None:
-            self._session = sugarcrm.Session(self._url, self._user, self._password)
+            self._session = sugarcrm.Session(self._url, self._user,
+                                             self._password)
 
     def test_connection(self):
         return self._session is not None and self._session.session_id is not None
@@ -87,13 +92,9 @@ class SugarCRMController(BaseController):
         return self._session.set_entries(obj_list)
 
     def download_to_stored_data(self, connection_object, plug, limit=29, order_by="date_entered DESC", **kwargs):
-        print("descargando mierda")
-        module = plug.plug_action_specification.get(
-            action_specification__name="module").value  # Especificar que specification
-        print("module", module)
+        module = plug.plug_action_specification.get(action_specification__name="module").value
         data = self.get_entry_list(module, max_results=limit, order_by=order_by)
         new_data = []
-        print('data', data)
         for item in data:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item.id)
             if not q.exists():
@@ -109,11 +110,15 @@ class SugarCRMController(BaseController):
                     if (i + 1) % field_count == 0:
                         extra['status'] = 's'
                         self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                        item.object_id, item.plug.id, item.connection.id),
+                                       extra=extra)
                 except:
                     extra['status'] = 'f'
-                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+                    self._log.info(
+                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.'
+                        % (item.object_id, item.name, item.plug.id,
+                           item.connection.id),
+                        extra=extra)
             return True
         return False
 
@@ -133,12 +138,14 @@ class SugarCRMController(BaseController):
                 try:
                     res = self.set_entry(CustomSugarObject(module_name, **item))
                     extra['status'] = 's'
-                    self._log.info('Item: %s successfully sent.' % (res.id), extra=extra)
+                    self._log.info(
+                        'Item: %s successfully sent.' % (res.id), extra=extra)
                     obj_list.append(id)
                 except Exception as e:
                     print(e)
                     extra['status'] = 'f'
-                    self._log.info('Item: %s failed to send.' % (res.id), extra=extra)
+                    self._log.info(
+                        'Item: %s failed to send.' % (res.id), extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
 
@@ -149,12 +156,18 @@ class SugarCRMController(BaseController):
         return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
         if action_specification.name.lower() == 'module':
-            module_list = tuple({'id': m.module_key, 'name': m.module_key} for m in self.get_available_modules())
+            module_list = tuple({
+                                    'id': m.module_key,
+                                    'name': m.module_key
+                                } for m in self.get_available_modules())
             return module_list
         else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector."
+            )
 
 
 class ZohoCRMController(BaseController):
@@ -185,18 +198,28 @@ class ZohoCRMController(BaseController):
         url = "https://crm.zoho.com/crm/private/json/Info/getModules"
         return requests.get(url, params).__dict__
 
-    def download_to_stored_data(self, connection_object, plug, ):
+    def download_to_stored_data(
+            self,
+            connection_object,
+            plug, ):
         module_id = self._plug.plug_action_specification.all()[0].value
         module_name = self.get_module_name(module_id)
         data = self.get_feeds(module_name)
         new_data = []
         for item in data:
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                          object_id=item[item['id']])
+            q = StoredData.objects.filter(
+                connection=connection_object.connection,
+                plug=plug,
+                object_id=item[item['id']])
             if not q.exists():
                 for column in item:
-                    new_data.append(StoredData(name=column, value=item[column], object_id=item[item['id']],
-                                               connection=connection_object.connection, plug=plug))
+                    new_data.append(
+                        StoredData(
+                            name=column,
+                            value=item[column],
+                            object_id=item[item['id']],
+                            connection=connection_object.connection,
+                            plug=plug))
         if new_data:
             field_count = len(data)
             extra = {'controller': 'zohocrm'}
@@ -205,12 +228,18 @@ class ZohoCRMController(BaseController):
                     item.save()
                     if (i + 1) % field_count == 0:
                         extra['status'] = 's'
-                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                        self._log.info(
+                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.'
+                            % (item.object_id, item.plug.id,
+                               item.connection.id),
+                            extra=extra)
                 except:
                     extra['status'] = 'f'
-                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+                    self._log.info(
+                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.'
+                        % (item.object_id, item.name, item.plug.id,
+                           item.connection.id),
+                        extra=extra)
             return True
         return False
 
@@ -223,12 +252,17 @@ class ZohoCRMController(BaseController):
             for item in data_list:
                 try:
                     response = self.insert_records(item, module_id)
-                    self._log.info('Item: %s successfully sent.' % (int(response['#text'])), extra=extra)
+                    self._log.info(
+                        'Item: %s successfully sent.' %
+                        (int(response['#text'])),
+                        extra=extra)
                     obj_list.append(id)
                 except Exception as e:
                     print(e)
                     extra['status'] = 'f'
-                    self._log.info('Item: %s failed to send.' % (int(response['#text'])), extra=extra)
+                    self._log.info(
+                        'Item: %s failed to send.' % (int(response['#text'])),
+                        extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
 
@@ -262,7 +296,8 @@ class ZohoCRMController(BaseController):
                 if (type(val['FL']) == dict):
                     fields.append(val['FL'])
                 else:
-                    for i in val['FL']: fields.append(i)
+                    for i in val['FL']:
+                        fields.append(i)
             return fields
         else:
             print(response)
@@ -285,7 +320,7 @@ class ZohoCRMController(BaseController):
             module_n = "Book"
         else:
             module_n = name
-            module_n = module_n[: - 1]
+            module_n = module_n[:-1]
         modules['name'] = name
         modules['id'] = module_n.upper() + 'ID'
         for d in my_dictionary['FL']:
@@ -293,12 +328,18 @@ class ZohoCRMController(BaseController):
                 modules[d['val']] = d['content']
             else:
                 for v2 in d:
-                    if (v2 != 'val'): self.get_lists(d[v2], v2)
+                    if (v2 != 'val'):
+                        self.get_lists(d[v2], v2)
         return modules
 
     def get_feeds(self, module_name):
         max_result = 30
-        params = {'toIndex': 30, 'authtoken': self._token, 'scope': 'crmapi', 'sortOrderString': 'desc'}
+        params = {
+            'toIndex': 30,
+            'authtoken': self._token,
+            'scope': 'crmapi',
+            'sortOrderString': 'desc'
+        }
         url = "https://crm.zoho.com/crm/private/json/" + module_name + "/getMyRecords"
         response = requests.get(url, params).__dict__['_content'].decode()
         response = json.loads(response)
@@ -326,18 +367,23 @@ class ZohoCRMController(BaseController):
         return module_name.replace(" ", "")
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(pk=action_specification_id)
+        action_specification = ActionSpecification.objects.filter(
+            pk=action_specification_id)
         if action_specification.name.lower() == 'feed':
             modules = self.get_modules()['_content'].decode()
             modules = json.loads(modules)['response']['result']['row']
             module_list = []
             for m in modules:
-                if m['pl'] not in ['Feeds', 'Visits', 'Social', 'Documents', 'Quotes', 'Sales Orders',
-                                   'Purchase Orders']:
+                if m['pl'] not in [
+                    'Feeds', 'Visits', 'Social', 'Documents', 'Quotes',
+                    'Sales Orders', 'Purchase Orders'
+                ]:
                     module_list.append({'id': m['id'], 'name': m['pl']})
             return tuple(module_list)
         else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector."
+            )
 
 
 class SalesforceController(BaseController):
@@ -360,6 +406,7 @@ class SalesforceController(BaseController):
     def test_connection(self):
         if self.token is not None:
             try:
+                self._client = Salesforce(instance_url=self.get_instance_url(), session_id=self.token)
                 self._client = Salesforce(instance_url=self.get_instance_url(), session_id=self.token)
             except SalesforceAuthenticationFailed:
                 self._client = None
@@ -411,16 +458,20 @@ class SalesforceController(BaseController):
             fields['Birthdate'] = parse(birthdate).strftime('%Y-%m-%d')
         email_bounced_date = fields.pop('EmailBouncedDate', None)
         if email_bounced_date:
-            fields['EmailBouncedDate'] = parse(email_bounced_date).strftime('%Y-%m-%dT%H:%M:%S%z')
+            fields['EmailBouncedDate'] = parse(email_bounced_date).strftime(
+                '%Y-%m-%dT%H:%M:%S%z')
         last_activity_date = fields.pop('LastActivityDate', None)
         if last_activity_date:
-            fields['LastActivityDate'] = parse(last_activity_date).strftime('%Y-%m-%d')
+            fields['LastActivityDate'] = parse(last_activity_date).strftime(
+                '%Y-%m-%d')
         last_referenced_date = fields.pop('LastReferencedDate', None)
         if last_referenced_date:
-            fields['LastReferencedDate'] = parse(last_referenced_date).strftime('%Y-%m-%d')
+            fields['LastReferencedDate'] = parse(last_referenced_date).strftime(
+                '%Y-%m-%d')
         last_viewed_date = fields.pop('LastViewedDate', None)
         if last_viewed_date:
-            fields['LastViewedDate'] = parse(last_viewed_date).strftime('%Y-%m-%d')
+            fields['LastViewedDate'] = parse(last_viewed_date).strftime(
+                '%Y-%m-%d')
         converted_date = fields.pop('ConvertedDate', None)
         if converted_date:
             fields['ConvertedDate'] = parse(converted_date).strftime('%Y-%m-%d')
@@ -432,15 +483,23 @@ class SalesforceController(BaseController):
 
     def get_contact_meta(self):
         data = self._client.Contact.describe()
-        return [f for f in data['fields'] if f['createable'] and f['type'] != 'reference']
+        return [
+            f for f in data['fields']
+            if f['createable'] and f['type'] != 'reference'
+        ]
 
     def get_lead_meta(self):
         data = self._client.Lead.describe()
-        return [f for f in data['fields'] if f['createable'] and f['type'] != 'reference']
+        return [
+            f for f in data['fields']
+            if f['createable'] and f['type'] != 'reference'
+        ]
 
     def get_mapping_fields(self):
         fields = self.get_target_fields()
-        return [MapField(f, controller=ConnectorEnum.Salesforce) for f in fields]
+        return [
+            MapField(f, controller=ConnectorEnum.Salesforce) for f in fields
+        ]
 
     def get_target_fields(self, **kwargs):
         if self._plug.action.name == 'create contact':
@@ -479,16 +538,16 @@ class SalesforceController(BaseController):
         return self.rest_url()
 
     def get_sobjects(self):
-        return requests.get(self.rest_url() + 'sobjects', headers=self.headers()).json()
+        return requests.get(
+            self.rest_url() + 'sobjects', headers=self.headers()).json()
 
     def create_apex_class(self, name, body):
-        _dict = {
-            'ApiVersion': '40.0',
-            'Body': body,
-            'Name': name
-        }
+        _dict = {'ApiVersion': '40.0', 'Body': body, 'Name': name}
 
-        return requests.post(self.rest_url() + 'tooling/sobjects/ApexClass', headers=self.headers(), json=_dict)
+        return requests.post(
+            self.rest_url() + 'tooling/sobjects/ApexClass',
+            headers=self.headers(),
+            json=_dict)
 
     def create_apex_trigger(self, name, body, sobject):
         _dict = {
@@ -497,13 +556,17 @@ class SalesforceController(BaseController):
             'Name': name,
             'TableEnumOrId': sobject
         }
-        return requests.post(self.rest_url() + 'tooling/sobjects/ApexTrigger', headers=self.headers(), json=_dict)
+        return requests.post(
+            self.rest_url() + 'tooling/sobjects/ApexTrigger',
+            headers=self.headers(),
+            json=_dict)
 
     def get_apex_triggers(self):
-        params = {
-            'q': 'SELECT Name, Body from ApexTrigger'
-        }
-        return requests.get(self.rest_url() + 'tooling/query', headers=self.headers(), params=params).json()
+        params = {'q': 'SELECT Name, Body from ApexTrigger'}
+        return requests.get(
+            self.rest_url() + 'tooling/query',
+            headers=self.headers(),
+            params=params).json()
 
     def create_remote_site(self, name, url):
         test = '<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><env:Header><urn:SessionHeader xmlns:urn="http://soap.sforce.com/2006/04/metadata"><urn:sessionId>{sessionId}</urn:sessionId></urn:SessionHeader></env:Header><env:Body><createMetadata xmlns="http://soap.sforce.com/2006/04/metadata"><metadata xsi:type="RemoteSiteSetting"><fullName>{name}</fullName><isActive>true</isActive><url>{url}</url></metadata></createMetadata></env:Body></env:Envelope>'.replace(
@@ -527,25 +590,17 @@ class SalesforceController(BaseController):
     def create_webhook(self):
         action = self._plug.action.name
         if action == 'new event':
-            sobject = self._plug.plug_action_specification.get(
-                action_specification__name='sobject')
-            event = self._plug.plug_action_specification.get(
-                action_specification__name='event')
+            sobject = self._plug.plug_action_specification.get(action_specification__name='sobject')
+            event = self._plug.plug_action_specification.get(action_specification__name='event')
             # Creacion de Webhook
-            webhook = Webhook.objects.create(name='salesforce', plug=self._plug,
-                                             url='', expiration='')
+            webhook = Webhook.objects.create(name='salesforce', plug=self._plug, url='', expiration='')
             # Verificar ngrok para determinar url_base
             url_base = 'https://9963f73a.ngrok.io'
-            url_path = reverse('home:webhook', kwargs={'connector': 'salesforce',
-                                                       'webhook_id': webhook.id})
+            url_path = reverse('home:webhook', kwargs={'connector': 'salesforce', 'webhook_id': webhook.id})
             url = url_base + url_path
-
             with open(os.path.join(settings.BASE_DIR, 'files', 'Webhook.txt'), 'r') as file:
                 body = file.read()
-
             response1 = self.create_apex_class('Webhook', body)
-            print(response1.json())
-            print(response1.status_code)
             if response1.status_code != 201:
                 response = response1.json()
                 # Si el APEX Class ya existe (es duplicado), continuamos, si es otro error, paramos
@@ -595,8 +650,10 @@ class SalesforceController(BaseController):
         return self.cget_sobject()
 
     def get_event_list(self):
-        return ['before insert', 'before update', 'before delete', 'after insert', 'after update', 'after delete',
-                'after undelete']
+        return [
+            'before insert', 'before update', 'before delete', 'after insert',
+            'after update', 'after delete', 'after undelete'
+        ]
 
     def get_instance_url(self):
         o = urlparse(self.api_url('profile'))
@@ -620,6 +677,7 @@ class SalesforceController(BaseController):
             return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
+
 
 class HubSpotController(BaseController):
     _token = None
@@ -645,28 +703,52 @@ class HubSpotController(BaseController):
         return self._token is not None
 
     def get_modules(self):
-        return [{'name': 'companies', 'id': 'companies'}, {'name': 'contacts', 'id': 'contacts'},
-                {'name': 'deals', 'id': 'deals'}]
+        return [{
+            'name': 'companies',
+            'id': 'companies'
+        }, {
+            'name': 'contacts',
+            'id': 'contacts'
+        }, {
+            'name': 'deals',
+            'id': 'deals'
+        }]
 
     def get_action_specification_options(self, action_specification_id):
         print("actions")
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
         if action_specification.name.lower() == 'data':
-            return tuple({'name': o['name'], 'id': o['id']} for o in self.get_modules())
+            return tuple({
+                             'name': o['name'],
+                             'id': o['id']
+                         } for o in self.get_modules())
         else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector."
+            )
 
-    def download_to_stored_data(self, connection_object, plug, ):
+    def download_to_stored_data(
+            self,
+            connection_object,
+            plug, ):
         module_id = self._plug.plug_action_specification.all()[0].value
         new_data = []
         data = self.get_data(module_id)
         for item in data:
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                          object_id=item['id'])
+            q = StoredData.objects.filter(
+                connection=connection_object.connection,
+                plug=plug,
+                object_id=item['id'])
             if not q.exists():
                 for column in item:
-                    new_data.append(StoredData(name=column, value=item[column], object_id=item['id'],
-                                               connection=connection_object.connection, plug=plug))
+                    new_data.append(
+                        StoredData(
+                            name=column,
+                            value=item[column],
+                            object_id=item['id'],
+                            connection=connection_object.connection,
+                            plug=plug))
         if new_data:
             field_count = len(data)
             extra = {'controller': 'hubspot'}
@@ -675,12 +757,18 @@ class HubSpotController(BaseController):
                     item.save()
                     if (i + 1) % field_count == 0:
                         extra['status'] = 's'
-                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                        self._log.info(
+                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.'
+                            % (item.object_id, item.plug.id,
+                               item.connection.id),
+                            extra=extra)
                 except:
                     extra['status'] = 'f'
-                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+                    self._log.info(
+                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.'
+                        % (item.object_id, item.name, item.plug.id,
+                           item.connection.id),
+                        extra=extra)
             return True
         return False
 
@@ -691,7 +779,9 @@ class HubSpotController(BaseController):
             url = "https://api.hubapi.com/companies/v2/companies/"
         if (module_id == 'deals'):
             url = "https://api.hubapi.com/deals/v1/deal/paged?includeAssociations=true&limit=30&properties=dealname"
-        headers = {'Authorization': 'Bearer {0}'.format(self._token), }
+        headers = {
+            'Authorization': 'Bearer {0}'.format(self._token),
+        }
         result = requests.get(url, headers=headers).json()[module_id]
         data = []
         for i in result:
@@ -712,7 +802,9 @@ class HubSpotController(BaseController):
         url = "https://api.hubapi.com/properties/v1/" + module_id + "/properties"
         headers = {'Authorization': 'Bearer {0}'.format(self._token)}
         response = requests.get(url, headers=headers).json()
-        return [i for i in response if "label" in i and i['readOnlyValue'] == False]
+        return [
+            i for i in response if "label" in i and i['readOnlyValue'] == False
+        ]
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
@@ -724,12 +816,14 @@ class HubSpotController(BaseController):
                 try:
                     response = self.insert_data(item, module_id).json()
                     id = self.get_id(module_id, response)
-                    self._log.info('Item: %s successfully sent.' % (id), extra=extra)
+                    self._log.info(
+                        'Item: %s successfully sent.' % (id), extra=extra)
                     obj_list.append(id)
                 except Exception as e:
                     print(e)
                     extra['status'] = 'f'
-                    self._log.info('Item: %s failed to send.' % (id), extra=extra)
+                    self._log.info(
+                        'Item: %s failed to send.' % (id), extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
 
@@ -762,10 +856,17 @@ class HubSpotController(BaseController):
 
     def get_refresh_token(self, refresh_token):
         url = "https://api.hubapi.com/oauth/v1/token"
-        headers = {'Content-Type': 'application/x-www-form-urlencoded', 'charset': 'utf-8'}
-        data = {'grant_type': 'refresh_token', 'client_id': settings.HUBSPOT_CLIENT_ID,
-                'client_secret': settings.HUBSPOT_CLIENT_SECRET,
-                'redirect_uri': settings.HUBSPOT_REDIRECT_URI, 'refresh_token': self._refresh_token}
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'charset': 'utf-8'
+        }
+        data = {
+            'grant_type': 'refresh_token',
+            'client_id': settings.HUBSPOT_CLIENT_ID,
+            'client_secret': settings.HUBSPOT_CLIENT_SECRET,
+            'redirect_uri': settings.HUBSPOT_REDIRECT_URI,
+            'refresh_token': self._refresh_token
+        }
         response = requests.post(url, headers=headers, data=data).json()
         self._connection_object.token = response['access_token']
         self._connection_object.refresh_token = response['refresh_token']
@@ -774,5 +875,280 @@ class HubSpotController(BaseController):
 
     def request(self):
         url = "https://api.hubapi.com/contacts/v1/lists/all/contacts/all"
-        headers = {'Authorization': 'Bearer {0}'.format(self._token), }
+        headers = {
+            'Authorization': 'Bearer {0}'.format(self._token),
+        }
         return requests.get(url, headers=headers).json()
+
+
+class VtigerController(BaseController):
+    _url = None
+    _token = None
+    _session_name = None
+    _user_id = None
+
+    def __init__(self, *args, **kwargs):
+        super(VtigerController, self).__init__(*args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(VtigerController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._user = self._connection_object.connection_user
+                    self._password = self._connection_object.connection_access_key
+                    self._url = self._connection_object.url
+                    self._token = self._connection_object.token
+                except Exception as e:
+                    print(e)
+        if self._url is not None and self._token is not None:
+            if not self._token:
+                self._token = self.get_token(self._user, self._password)
+            self._session_name, self._user_id = self.login()
+            if self._session_name is None:
+                self._token = self.get_token(self._user, self._password)
+                self._session_name, self._user_id = self.login()
+
+    def test_connection(self):
+        return self._session_name is not None
+
+    def get_token(self, user, passwd, url=None):
+        if self._url is None and url is not None:
+            self._url = url
+        if self._url is not None:
+            try:
+                values = {'operation': 'getchallenge', 'username': user}
+                r = requests.get(self._url, params=values)
+                if r.status_code == 200:
+                    r = r.json()
+                    return r['result']['token']
+                return None
+            except Exception as e:
+                print(e)
+                return None
+
+    def get_tokenized_access_key(self):
+        try:
+            return md5(
+                str(self._token + self._password).encode('utf-8')).hexdigest()
+        except Exception as es:
+            return None
+
+    def login(self):
+        try:
+            tokenized_access_key = self.get_tokenized_access_key()
+            values = {'accessKey': tokenized_access_key, 'operation': 'login', 'username': self._user}
+            data = urllib.parse.urlencode(values).encode('utf-8')
+            request = urllib.request.Request(self._url, data)
+            response = json.loads(urllib.request.urlopen(request).read().decode('utf-8'))
+            if response['success'] is True:
+                session_name = response['result']['sessionName']
+                user_id = response['result']['userId']
+                return session_name, user_id
+            elif response['success'] is False:
+                return None, None
+        except Exception as e:
+            raise
+
+    def get_module(self, module_name):
+        values = {'sessionName': self._session_name, 'operation': 'describe', 'elementType': module_name}
+        r = requests.get(self._url, params=values)
+        if r.status_code == 200:
+            r = r.json()
+            return {'name': module_name, 'id': r['result']['idPrefix']}
+        raise Exception("Error retrieving module data.")
+
+    def get_modules(self):
+        try:
+            values = {
+                'sessionName': self._session_name,
+                'operation': 'listtypes'
+            }
+            r = requests.get(self._url, params=values)
+            if r.status_code == 200:
+                r = r.json()
+                modules = []
+                if r['success'] == True:
+                    for key in r['result']['information']:
+                        modules.append(self.get_module(key))
+                return modules
+            return []
+        except Exception as e:
+            raise
+            return (e)
+
+    def get_module_elements(self, module=None, limit=30):
+        query = "select * from {0} order by createdtime desc;".format(module)
+        values = {'sessionName': self._session_name, 'operation': 'query', 'query': query}
+        r = requests.get(self._url, params=values).json()
+        try:
+            data = r['result']
+            return data
+        except Exception as e:
+            print(e)
+            return []
+
+    def create_register(self, module, **kwargs):
+
+        kwargs['assigned_user_id'] = self._user_id
+        for k, v in kwargs.items():
+            try:
+                kwargs[k] = (self.get_module(v)["id"])
+            except Exception as e:
+                continue
+
+        kwargs['elementType'] = module
+        parameters = {
+            'operation': 'create',
+            'sessionName': self._session_name,
+            'elementType': kwargs['elementType'],
+            'element': json.dumps(kwargs)
+        }
+
+        parameters = urllib.parse.urlencode(parameters)
+        connection = urllib.request.urlopen(self._url, parameters.encode('utf-8'))
+        response = connection.read().decode('utf-8')
+        response = json.loads(response)
+        if response['success'] is True:
+            return response
+        else:
+            return False
+
+    def delete_register(self):
+        """
+        Not implemented Yet.
+        :return:
+        """
+        session_name, user_id = self.login()
+        parameters = {
+            'operation': 'delete',
+            'sessionName': session_name,
+            'id': id
+        }
+        session_name = parameters['sessionName']
+
+        parameters = urllib.parse.urlencode(parameters)
+        connection = urllib.request.urlopen(self._url, parameters.encode('utf-8'))
+        response = connection.read().decode('utf-8')
+        response = json.loads(response)
+        return response
+
+    def get_module_name(self, module_id):
+        try:
+            for module in self.get_modules():
+                if module['id'] == module_id:
+                    return module['name']
+        except Exception as e:
+            print(e)
+
+    def get_module_fields(self, module_name):
+        try:
+            details = {
+                'operation': 'describe',
+                'sessionName': self._session_name,
+                'elementType': str(module_name)
+            }
+            response = requests.get(self._url, params=details).json()
+            module_fields = []
+            for i in response['result']['fields']:
+                module_fields.append(i)
+            return module_fields
+        except Exception as e:
+            print(e)
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
+        try:
+            if action_specification.name.lower() == 'module':
+                return tuple(self.get_modules())
+            else:
+                raise ControllerError(
+                    "That specification doesn't belong to an action in this connector."
+                )
+        except Exception as e:
+            print(e)
+
+    def download_to_stored_data(self, connection_object, plug=None):
+        module_id = self._plug.plug_action_specification.get(action_specification__name__iexact='module').value
+        data = self.get_module_elements(limit=30, module=self.get_module_name(module_id))
+        new_data = []
+        for field in data:
+            q = StoredData.objects.filter(
+                object_id=field['id'],
+                connection=connection_object.connection,
+                plug=plug)
+
+            if not q.exists():
+                for k, v in field.items():
+                    new_data.append(
+                        StoredData(
+                            name=k,
+                            value=v or '',
+                            object_id=field['id'],
+                            connection=connection_object.connection,
+                            plug=plug))
+        if new_data:
+            field_count = len(data)
+            extra = {'controller': 'vtiger'}
+            for i, item in enumerate(new_data):
+                try:
+                    item.save()
+                    if (i + 1) % field_count == 0:
+                        extra['status'] = 's'
+                        self._log.info(
+                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.'
+                            % (item.object_id, item.plug.id,
+                               item.connection.id),
+                            extra=extra)
+                except:
+                    extra['status'] = 'f'
+                    self._log.info(
+                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.'
+                        % (item.object_id, item.name, item.plug.id,
+                           item.connection.id),
+                        extra=extra)
+            return True
+        return False
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.Vtiger) for f in fields]
+
+    def get_target_fields(self, **kwargs):
+        module_id = self._plug.plug_action_specification.get(
+            action_specification__name__iexact='module').value
+        module_fields = (self.get_module_fields(self.get_module_name(module_id)))
+        fields_list = []
+        for i in module_fields:
+            if i['editable'] is True:
+                fields_list.append(i)
+        if len(fields_list) > 0:
+            return fields_list
+        else:
+            return False
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if self._plug is not None:
+            obj_list = []
+            extra = {'controller': 'Vtiger'}
+            module_id = self._plug.plug_action_specification.get(
+                action_specification__name__iexact='module').value
+            module_name = self.get_module_name(module_id)
+            for item in data_list:
+                task = self.create_register(module_name, **item)
+                try:
+                    if task['success'] is True:
+                        extra['status'] = 's'
+                        self._log.info(
+                            'Item: %s successfully sent.' % (task),
+                            extra=extra)
+                        obj_list.append(task)
+                    else:
+                        extra['status'] = 'f'
+                        self._log.info('Item: failed to send.', extra=extra)
+                except Exception as e:
+                    print(e)
+            return obj_list
+        raise ControllerError("There's no plug")

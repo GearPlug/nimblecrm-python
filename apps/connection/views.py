@@ -101,6 +101,14 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             elif connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleContacts,
                                ConnectorEnum.GoogleForms, ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube]:
                 form.instance.credentials_json = self.request.session['google_credentials']
+            elif connector == ConnectorEnum.Vtiger:
+                controller_class = ConnectorEnum.get_controller(connector)
+                controller = controller_class()
+                token = controller.get_token(
+                    form.cleaned_data['connection_user'],
+                    form.cleaned_data['connection_access_key'],
+                    form.cleaned_data['url'])
+                form.instance.token = token
             self.object = form.save()
             self.request.session['auto_select_connection_id'] = c.id
         if self.request.is_ajax():
@@ -249,11 +257,21 @@ class TestConnectionView(LoginRequiredMixin, View):
 
 
 # Auth Views
+
+class FacebookAuthView(View):
+    def get(self, request, *args, **kwargs):
+        print(request.GET)
+
+
 class MercadoLibreAuthView(View):
     def get(self, request, *args, **kwargs):
         m = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
-        token = m.mlo.authorize(code=request.GET.get('code'), redirect_URI=settings.MERCADOLIBRE_REDIRECT_URL)
-        request.session['connection_data'] = {'token': token, 'site': 'TODO: site_id?'}
+        token = m.authorize(code=request.GET.get('code'), redirect_URI=settings.MERCADOLIBRE_REDIRECT_URL)
+        params = {'access_token': token}
+        user_me = m.get(path="/users/me", params=params).json()
+        user_id = user_me['id']
+        site_id = 'MLC'
+        request.session['connection_data'] = {'token': token, 'site': site_id, 'user_id': user_id}
         request.session['connector_name'] = ConnectorEnum.MercadoLibre.name
         return redirect(reverse('connection:create_token_authorized_connection'))
 
@@ -388,7 +406,7 @@ class ShopifyAuthView(View):
         params = {'client_id': settings.SHOPIFY_API_KEY, 'code': code, 'client_secret': settings.SHOPIFY_API_KEY_SECRET}
         try:
             response = requests.post(url, params).json()
-            self.request.session['connection_data'] = {'token': response['access_token']}
+            self.request.session['connection_data'] = {'token': response['access_token'], 'shop_url': shop_url}
             self.request.session['connector_name'] = ConnectorEnum.Shopify.name
             return redirect(reverse('connection:create_token_authorized_connection'))
         except Exception as e:

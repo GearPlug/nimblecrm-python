@@ -237,6 +237,7 @@ class ShopifyConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_shopify')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
+    shop_url= models.CharField('shop_url', max_length=300)
 
     def __str__(self):
         return self.name
@@ -410,6 +411,19 @@ class AsanaConnection(models.Model):
         return self.name
 
 
+class VtigerConnection(models.Model):
+    connection = models.OneToOneField(
+        Connection, on_delete=models.CASCADE, related_name='connection_vtiger')
+    name = models.CharField('name', max_length=200)
+    connection_user = models.CharField('user', max_length=60)
+    connection_access_key = models.CharField('password', max_length=40)
+    token = models.CharField('token', max_length=100, blank=True, null=True)
+    url = models.URLField('url')
+
+    def __str__(self):
+        return self.name
+
+
 class MercadoLibreConnection(models.Model):
     SITES = (('MLA', 'Argentina'), ('MLB', 'Brazil'), ('MCO', 'Colombia'), ('MCR', 'Costa Rica'), ('MEC', 'Ecuador'),
              ('MLC', 'Chile'), ('MLM', 'Mexico'), ('MLU', 'Uruguay'), ('MLV', 'Venezuela'), ('MPA', 'Panama'),
@@ -417,6 +431,7 @@ class MercadoLibreConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mercadolibre')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
+    user_id = models.CharField('user_id', max_length=200)
     site = models.CharField(max_length=3, choices=SITES)
 
     def __str__(self):
@@ -476,7 +491,7 @@ class StoredData(models.Model):
     object_id = models.CharField('object_id', max_length=150, null=True)
 
     def __str__(self):
-        return '%s %s %s' % (self.id, self.name, self.object_id)
+        return '%s %s %s' % (self.name, self.object_id)
 
 
 class Gear(models.Model):

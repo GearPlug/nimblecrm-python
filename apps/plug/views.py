@@ -69,9 +69,8 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
                          ConnectorEnum.Mandrill, ConnectorEnum.FacebookLeads, ConnectorEnum.Gmail]:
                     print("WEBHOOK!!")
                     controller.create_webhook()
-                    # raise Exception("test webhook")
-            else:
-                controller.download_to_stored_data(self.object.connection.related_connection, self.object)
+                else:
+                    controller.download_to_stored_data(self.object.connection.related_connection, self.object)
         self.request.session['source_connection_id'] = None
         self.request.session['target_connection_id'] = None
         return HttpResponseRedirect(self.get_success_url())
@@ -163,8 +162,8 @@ class TestPlugView(TemplateView):
                     if ping:
                         controller.download_to_stored_data(p.connection.related_connection, p)
                 except Exception as e:
-                    raise
                     print("error")
+                    raise
         elif p.plug_type == 'target':
             c = ConnectorEnum.get_connector(p.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(c)

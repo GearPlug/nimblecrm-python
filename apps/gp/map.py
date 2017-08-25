@@ -18,10 +18,10 @@ class MapField(object):
             if 'name' in d:
                 self.name = d['name']
                 self.label = d['name']
-            if 'null' in d:
-                if d['null'] is not True:
-                    if d['auto_increment'] is not True:
-                        self.required = True
+            # if 'null' in d:
+            #     if d['null'] is not True and d['auto_increment'] is not True:
+            #         self.required = True
+            self.required = False
             self.field_type = 'text'
             self.max_length = 200
         elif controller == ConnectorEnum.SugarCRM:
@@ -251,7 +251,24 @@ class MapField(object):
                 self.name = d['name']
                 self.label = d['name']
             self.field_type = 'text'
-
+        elif controller == ConnectorEnum.Vtiger:
+            import pprint
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['label']
+            if 'type' in d:
+                self.field_type = d['type']['name']
+            if 'picklistValues' in d['type'] and d['type']['picklistValues']:
+                self.choices = [(c['value'], c['label'])
+                                for c in d['type']['picklistValues']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
+            if 'refersTo' in d['type'] and d['type']['refersTo']:
+                self.choices = [(c, c) for c in d['type']['refersTo']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
+            if 'mandatory' in d:
+                self.required = d['mandatory']
         elif controller == ConnectorEnum.WunderList:
             if 'name' in d:
                 self.name = d['name']
