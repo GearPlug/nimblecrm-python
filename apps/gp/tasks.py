@@ -22,7 +22,7 @@ def update_all_gears():
         print("Connector: {0}".format(connector))
         update_plug.s(gear.source.id, gear.id).apply_async(queue=connector.name.lower())
         # update_plug.s(gear.source.id, gear.id).apply_async()
-        print("Asignado el plug {0} a update de source.".format(gear.source))
+        print("Asignado el plug {0} al queue: {1}.".format(gear.source, connector.name.lower()))
 
 
 # @app.task(queue="connector")
@@ -59,6 +59,7 @@ def update_plug(plug_id, gear_id, **kwargs):
                 if has_new_data or gear.gear_map.last_sent_stored_data_id is None:
                     connector = ConnectorEnum.get_connector(gear.target.connection.connector_id)
                     update_plug.s(gear.target.id, gear_id).apply_async(queue=connector.name.lower())
+                    print("Asignado el plug {0} al queue: {1}.".format(gear.target, connector.name.lower()))
                     # update_plug.s(gear.target.id, gear_id).apply_async()
             elif plug.plug_type.lower() == 'target':
                 kwargs = {'connection': gear.source.connection, 'plug': gear.source, }

@@ -161,8 +161,8 @@ class TestPlugView(TemplateView):
                     if ping:
                         controller.download_to_stored_data(p.connection.related_connection, p)
                 except Exception as e:
-                    raise
                     print("error")
+                    raise
         elif p.plug_type == 'target':
             c = ConnectorEnum.get_connector(p.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(c)
