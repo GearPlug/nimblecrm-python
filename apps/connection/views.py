@@ -200,7 +200,9 @@ class CreateConnectionSuccessView(LoginRequiredMixin, TemplateView):
     login_url = '/account/login/'
 
 
-class CreateTokenAuthorizedConnectionView(View):
+class CreateTokenAuthorizedConnectionView(TemplateView):
+    template_name = 'connection/auth_success.html'
+
     def get(self, request, **kwargs):
         if 'connection_data' in self.request.session:
             data = self.request.session['connection_data']
@@ -248,6 +250,12 @@ class TestConnectionView(LoginRequiredMixin, View):
 
 
 # Auth Views
+
+class FacebookAuthView(View):
+    def get(self, request, *args, **kwargs):
+        print(request.GET)
+
+
 class MercadoLibreAuthView(View):
     def get(self, request, *args, **kwargs):
         m = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
@@ -391,7 +399,7 @@ class ShopifyAuthView(View):
         params = {'client_id': settings.SHOPIFY_API_KEY, 'code': code, 'client_secret': settings.SHOPIFY_API_KEY_SECRET}
         try:
             response = requests.post(url, params).json()
-            self.request.session['connection_data'] = {'token': response['access_token']}
+            self.request.session['connection_data'] = {'token': response['access_token'], 'shop_url': shop_url}
             self.request.session['connector_name'] = ConnectorEnum.Shopify.name
             return redirect(reverse('connection:create_token_authorized_connection'))
         except Exception as e:

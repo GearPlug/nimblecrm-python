@@ -17,7 +17,7 @@ urlpatterns = [
     # Auth Callbacks
     url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),
     url(r'^auth-callback/google/', GoogleAuthView.as_view(), name="google_auth"),
-    url(r'^auth-callback/facebook/', GoogleAuthView.as_view(), name="facebook_auth"),
+    url(r'^auth-callback/facebookleads/', Face.as_view(), name="facebook_auth"),
     url(r'^auth-callback/asana/', AsanaAuthView.as_view(), name="asana_auth"),
     url(r'^auth-callback/wunderlist/', WunderListAuthView.as_view(), name="wunderlist_auth"),
     url(r'^auth-callback/twitter/', TwitterAuthView.as_view(), name="twitter_auth"),

@@ -42,20 +42,25 @@ class IncomingWebhook(View):
         return super(IncomingWebhook, self).dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
+        response = HttpResponse(status=400)
         connector_name = self.kwargs['connector'].lower()
         connector = ConnectorEnum.get_connector(name=connector_name)
+
+        if connector in [ConnectorEnum.FacebookLeads]:
+            controller_class = ConnectorEnum.get_controller(connector)
+            controller = controller_class()
+            response = controller.do_webhook_process(GET=request.GET)
         if connector == ConnectorEnum.Instagram:
             mode = request.GET.get('hub.mode', None)
             challenge = request.GET.get('hub.challenge', None)
             token = request.GET.get('hub.verify_token', None)
             if mode != 'subscribe' or not token or token != self.INSTAGRAM_TOKEN:
-                return HttpResponse(status=200)
-            return HttpResponse(challenge)
-        return HttpResponse(status=403)
+                response.status_code = 200
+                response.content = challenge
+        return response
 
     def head(self, request, *args, **kwargs):
-        print('head')
-        response = HttpResponse(status=500)
+        response = HttpResponse(status=400)
         connector_name = self.kwargs['connector'].lower()
         connector = ConnectorEnum.get_connector(name=connector_name)
         if connector == ConnectorEnum.SurveyMonkey:
@@ -63,21 +68,21 @@ class IncomingWebhook(View):
             return response
 
     def post(self, request, *args, **kwargs):
-        force_update = request.POST.get('force_update', False)
-        response = HttpResponse(status=500)
+        response = HttpResponse(status=400)
         connector_name = self.kwargs['connector'].lower()
         connector = ConnectorEnum.get_connector(name=connector_name)
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class()
+        print(connector)
         # SLACK
-        response = HttpResponse(status=200)
         try:
             body = json.loads(request.body.decode('utf-8'))
         except Exception as e:
             print(e)
             body = None
-        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.MercadoLibre]:
-            response = controller.do_webhook_process(body=body, post=request.POST, get=request.GET)
+        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey,
+                         ConnectorEnum.FacebookLeads, ConnectorEnum.MercadoLibre]:
+            response = controller.do_webhook_process(body=body, POST=request.POST)
             return response
         # ASANA
         elif connector == ConnectorEnum.Asana:
@@ -177,6 +182,24 @@ class IncomingWebhook(View):
                 ping = controller.test_connection
                 if ping:
                     controller.download_source_data(responses=responses)
+            response.status_code = 200
+        elif connector == ConnectorEnum.Shopify:
+            data=[]
+            fields = request.body.decode('utf-8')
+            fields = json.loads(fields)
+            id=fields["id"]
+            data.append(id)
+            webhook_id = kwargs.pop('webhook_id', None)
+            w = Webhook.objects.get(pk=webhook_id)
+            if w.plug.gear_source.first().is_active or not w.plug.is_tested:
+                if not w.plug.is_tested:
+                    w.plug.is_tested = True
+                controller_class = ConnectorEnum.get_controller(connector)
+                controller = controller_class(w.plug.connection.related_connection, w.plug)
+                ping = controller.test_connection()
+                if ping:
+                    controller.download_source_data(list=data)
+                    w.plug.save()
             response.status_code = 200
         elif connector == ConnectorEnum.MercadoLibre:
             decoded = json.loads(request.body.decode("utf-8"))
