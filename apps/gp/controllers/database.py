@@ -123,7 +123,7 @@ class MySQLController(BaseController):
                 stored_data.object_id, stored_data.name, stored_data.connection.id, stored_data.plug.id, ), extra=extra)
             raise MySQLError(code=4, msg='Error in save row. {}'.format(str(e)))
 
-    def _get_insert_statement(self, item0):
+    def _get_insert_statement(self, item):
         insert = """INSERT INTO `%s`(%s) VALUES (%s)""" % (
             self._table, """,""".join(item.keys()), """,""".join("""\"%s\"""" % i for i in item.values()))
         return insert
