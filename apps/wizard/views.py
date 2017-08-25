@@ -106,78 +106,6 @@ class SalesforceWebhookEvent(TemplateView):
         return JsonResponse({'hola': True})
 
 
-class MySQLFieldList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = MySQLController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            # El id es el mismo nombre del module
-            field_list = tuple({'id': f['name'], 'name': f['name']} for f in controller.describe_table())
-        else:
-            field_list = list()
-        context['object_list'] = field_list
-        return super(MySQLFieldList, self).render_to_response(context)
-
-
-class PostgreSQLFieldList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = PostgreSQLController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            # El id es el mismo nombre del module
-            field_list = tuple({'id': f['name'], 'name': f['name']} for f in controller.describe_table())
-        else:
-            field_list = []
-        context['object_list'] = field_list
-        return super(PostgreSQLFieldList, self).render_to_response(context)
-
-
-class MSSQLFieldList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = MSSQLController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            # El id es el mismo nombre del module
-            field_list = tuple({'id': f['name'], 'name': f['name']} for f in controller.describe_table())
-        else:
-            field_list = []
-        context['object_list'] = field_list
-        return super(MSSQLFieldList, self).render_to_response(context)
-
-
-class SugarCRMModuleList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = SugarCRMController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            # El id es el mismo nombre del module
-            module_list = tuple({'id': m.module_key, 'name': m.module_key} for m in controller.get_available_modules())
-        else:
-            module_list = []
-        context['object_list'] = module_list
-        return super(SugarCRMModuleList, self).render_to_response(context)
-
-
 class ZohoCRMModuleList(LoginRequiredMixin, TemplateView):
     template_name = 'wizard/async/select_options.html'
 
@@ -218,171 +146,6 @@ class ShopifyList(TemplateViewWithPost):
             object_list = []
         context['object_list'] = object_list
         return super(ShopifyList, self).render_to_response(context)
-
-
-class MailChimpListsList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = MailChimpController(connection.related_connection)
-        ping = controller.create_connection()
-        if ping:
-            # El id es el mismo nombre del module
-            lists_list = controller.get_lists()
-        else:
-            lists_list = []
-        context['object_list'] = lists_list
-        return super(MailChimpListsList, self).render_to_response(context)
-
-
-class GetResponseCampaignsList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = GetResponseController(connection.related_connection)
-        ping = controller.create_connection()
-        if ping:
-            # El id es el mismo nombre del module
-            lists_list = controller.get_campaigns()
-        else:
-            lists_list = []
-        context['object_list'] = lists_list
-        return super(GetResponseCampaignsList, self).render_to_response(context)
-
-
-class FacebookPageList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = FacebookLeadsController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            token = connection.related_connection.token
-            pages = controller.get_pages(token)
-            page_list = tuple({'id': p['id'], 'name': p['name']} for p in pages)
-        else:
-            page_list = []
-        context['object_list'] = page_list
-        return super(FacebookPageList, self).render_to_response(context)
-
-
-class FacebookFormList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        page_id = request.POST.get('page_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = FacebookLeadsController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            token = connection.related_connection.token
-            forms = controller.get_forms(token, page_id)
-            form_list = tuple({'id': p['id'], 'name': p['name']} for p in forms)
-        else:
-            form_list = []
-        context['object_list'] = form_list
-        return super(FacebookFormList, self).render_to_response(context)
-
-
-class SlackChannelList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-    slack_controller = SlackController()
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        sc = SlackConnection.objects.get(connection_id=connection_id)
-        self.slack_controller.create_connection(sc)
-        context['object_list'] = self.slack_controller.get_channel_list()
-        return super(SlackChannelList, self).render_to_response(context)
-
-
-class SlackUserList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-    _slack_controller = SlackController()
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        sc = SlackConnection.objects.get(connection_id=connection_id)
-        self._slack_controller.create_connection(sc)
-        context['object_list'] = self._slack_controller.get_channel_list()
-        return super(SlackChannelList, self).render_to_response(context)
-
-
-class SlackWebhookEvent(TemplateView):
-    template_name = 'wizard/async/select_options.html'
-    _slack_controller = SlackController()
-
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(SlackWebhookEvent, self).dispatch(request, *args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        return super(SlackWebhookEvent, self).get(request)
-
-    def post(self, request, *args, **kwargs):
-        data = json.loads(request.body.decode('utf-8'))
-        if 'challenge' in data.keys():
-            return JsonResponse({'challenge': data['challenge']})
-        elif 'type' in data.keys() and data['type'] == 'event_callback':
-            event = data['event']
-            slack_channel_list = PlugActionSpecification.objects.filter(
-                action_specification__action__action_type='source',
-                action_specification__action__connector__name__iexact="slack",
-                plug__source_gear__is_active=True)
-            if event['type'] == "message" and event['channel'] in [c.value for c in slack_channel_list]:
-                for plug_action_specification in slack_channel_list:
-                    self._slack_controller.create_connection(
-                        plug_action_specification.plug.connection.related_connection,
-                        plug_action_specification.plug)
-                    self._slack_controller.download_source_data(event=data)
-        else:
-            print("No callback event")
-        return JsonResponse({'hola': True})
-
-
-class SurveyMonkeyWebhookEvent(TemplateView):
-    template_name = 'wizard/async/select_options.html'
-    _surveymonkey_controller = SurveyMonkeyController()
-
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(SurveyMonkeyWebhookEvent, self).dispatch(request, *args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        return super(SurveyMonkeyWebhookEvent, self).get(request)
-
-    def post(self, request, *args, **kwargs):
-        responses = []
-        data = request.body.decode()
-        data = json.loads(data)
-        print(data['resources']['survey_id'])
-        survey = {'id': data['object_id']}
-        responses.append(survey)
-        qs = PlugActionSpecification.objects.filter(
-            action_specification__action__action_type='source',
-            action_specification__action__connector__name__iexact="SurveyMonkey",
-            value=data['resources']['survey_id']
-        )
-        for plug_action_specification in qs:
-            print("plug")
-            self._surveymonkey_controller.create_connection(
-                plug_action_specification.plug.connection.related_connection,
-                plug_action_specification.plug)
-            self._surveymonkey_controller.download_source_data(responses=responses)
-        return JsonResponse({'hola': True})
 
 
 class ShopifyWebhookEvent(TemplateView):
@@ -431,88 +194,33 @@ class JiraProjectList(LoginRequiredMixin, TemplateView):
         return super(JiraProjectList, self).render_to_response(context)
 
 
-class BitbucketWebhookEvent(TemplateView):
-    template_name = 'wizard/async/select_options.html'
-    _bitbucket_controller = BitbucketController()
-
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(BitbucketWebhookEvent, self).dispatch(request, *args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        return super(BitbucketWebhookEvent, self).get(request)
-
-    def post(self, request, *args, **kwargs):
-        data = json.loads(request.body.decode('utf-8'))
-        issue = data['issue']
-        qs = PlugActionSpecification.objects.filter(
-            action_specification__action__action_type='source',
-            action_specification__action__connector__name__iexact="bitbucket",
-            plug__source_gear__is_active=True)
-        for plug_action_specification in qs:
-            self._bitbucket_controller.create_connection(plug_action_specification.plug.connection.related_connection,
-                                                         plug_action_specification.plug)
-            self._bitbucket_controller.download_source_data(issue=issue)
-        return JsonResponse({'hola': True})
-
-
-class InstagramAccountsList(LoginRequiredMixin, TemplateView):
-    template_name = 'wizard/async/select_options.html'
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        connection_id = request.POST.get('connection_id', None)
-        connection = Connection.objects.get(pk=connection_id)
-        controller = InstagramController()
-        ping = controller.create_connection(connection.related_connection)
-        if ping:
-            # El id es el mismo nombre del module
-            account_list = tuple({'id': a[0], 'name': a[1]} for a in controller.get_account())
-        else:
-            account_list = []
-        context['object_list'] = account_list
-        return super(InstagramAccountsList, self).render_to_response(context)
-
-
-class InstagramWebhookEvent(TemplateView):
-    template_name = 'wizard/async/select_options.html'
-    _instagram_controller = InstagramController()
-    TOKEN = 'GearPlug2017'
-
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(InstagramWebhookEvent, self).dispatch(request, *args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        mode = request.GET.get('hub.mode', None)
-        challenge = request.GET.get('hub.challenge', None)
-        token = request.GET.get('hub.verify_token', None)
-        if mode != 'subscribe' or not token or token != self.TOKEN:
-            return JsonResponse({'Success': False})
-        return HttpResponse(challenge)
-
-    def post(self, request, *args, **kwargs):
-        data = json.loads(request.body.decode('utf-8'))
-        if data[0]['changed_aspect'] != 'media':
-            return JsonResponse({'hola': True})
-        media_id = data[0]['data']['media_id']
-        object_id = data[0]['object_id']
-        qs = PlugActionSpecification.objects.filter(
-            action_specification__action__action_type='source',
-            action_specification__action__connector__name__iexact="instagram",
-            value=object_id,
-            plug__source_gear__is_active=True)
-        for plug_action_specification in qs:
-            self._instagram_controller.create_connection(plug_action_specification.plug.connection.related_connection,
-                                                         plug_action_specification.plug)
-            media = self._instagram_controller.get_media(media_id)
-            self._instagram_controller.download_source_data(media=media)
-        return JsonResponse({'hola': True})
+# class BitbucketWebhookEvent(TemplateView):
+#     template_name = 'wizard/async/select_options.html'
+#     _bitbucket_controller = BitbucketController()
+#
+#     @method_decorator(csrf_exempt)
+#     def dispatch(self, request, *args, **kwargs):
+#         return super(BitbucketWebhookEvent, self).dispatch(request, *args, **kwargs)
+#
+#     def get(self, request, *args, **kwargs):
+#         return super(BitbucketWebhookEvent, self).get(request)
+#
+#     def post(self, request, *args, **kwargs):
+#         data = json.loads(request.body.decode('utf-8'))
+#         issue = data['issue']
+#         qs = PlugActionSpecification.objects.filter(
+#             action_specification__action__action_type='source',
+#             action_specification__action__connector__name__iexact="bitbucket",
+#             plug__source_gear__is_active=True)
+#         for plug_action_specification in qs:
+#             self._bitbucket_controller.create_connection(plug_action_specification.plug.connection.related_connection,
+#                                                          plug_action_specification.plug)
+#             self._bitbucket_controller.download_source_data(issue=issue)
+#         return JsonResponse({'hola': True})
 
 
 class PaypalWebhookEvent(TemplateView):
     template_name = 'wizard/async/select_options.html'
-    _bitbucket_controller = BitbucketController()
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
@@ -531,25 +239,11 @@ class PaypalWebhookEvent(TemplateView):
         event_body = request.body.decode('utf-8')
         response = WebhookEvent.verify(
             transmission_id, timestamp, webhook_id, event_body, cert_url, actual_signature, auth_algo)
-        print(response)
-        # Devuelve True si es válido
-        # if not response:
-        #     return JsonResponse({'hola': True})
         webhook_event_json = json.loads(request.body.decode('utf-8'))
         webhook_event = WebhookEvent(webhook_event_json)
         event_resource = webhook_event.get_resource()
-        print(event_resource, type(event_resource))
-
-        print(event_resource.parent_payment)
-
-        # payment = paypalrestsdk.Payment.find(event_resource.parent_payment)
-        # print(payment)
-
         payment_history = paypalrestsdk.Payment.all({"count": 100})
-        print(payment_history.payments)
-
         sale = Sale.find(event_resource.parent_payment)
-        print(sale)
         return JsonResponse({'hola': True})
 
 
@@ -716,25 +410,3 @@ def async_spreadsheet_values(request, plug_id, spreadsheet_id, worksheet_id):
     data = {'ColumnCount': column_count, 'RowCount': row_count, 'Table': template.render(context)}
     ctx = {'Success': True, 'Data': data}
     return HttpResponse(json.dumps(ctx), content_type='application/json')
-
-
-# def prueba1(request):
-#     ctx = {}
-#     return render()
-
-class Prueba1(CreateView):
-    model = Connector
-    success_url = ''
-    template_name = 'index.html'
-
-    def post(self, request, *args, **kwargs):
-        pass
-
-    def get(self, request, *args, **kwargs):
-        pass
-
-    def form_valid(self, form):
-        pass
-
-    def form_invalid(self, form):
-        pass

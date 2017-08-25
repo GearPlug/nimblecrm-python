@@ -3,6 +3,7 @@ from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
+from apiconnector.celery import app
 
 from apps.gp.models import StoredData, ActionSpecification
 import MySQLdb
@@ -52,36 +53,34 @@ class MySQLController(BaseController):
     def describe_table(self):
         if self._table is not None and self._database is not None:
             try:
-                self._cursor.execute('DESCRIBE `%s`.`%s`' % (self._database, self._table))
-                return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2], 'is_primary': item[3] == 'PRI'} for
-                        item in self._cursor]
+                self._cursor.execute('DESCRIBE `{0}`.`{1}`'.format(self._database, self._table))
+                return [{'name': item[0], 'type': item[1], 'null': 'YES' == item, 'is_primary': item[3] == 'PRI',
+                         'auto_increment': item[5] == 'auto_increment'} for item in self._cursor]
             except:
-                raise
+                # raise
                 print('Error describing table: %s')
         return []
 
-    def get_primary_keys(self):
+    def get_primary_keys_deprecated(self):
         if self._table is not None and self._database is not None:
             try:
-                self._cursor.execute('DESCRIBE `%s`.`%s`' % (self._database, self._table))
+                self._cursor.execute('DESCRIBE `{0}`.`{1}`'.format(self._database, self._table))
                 return [item[0] for item in self._cursor if item[3] == 'PRI']
             except:
                 print('Error ')
         return None
 
-    def select_all(self, limit=50):
+    def select_all(self, limit=50, unique=None, order_by=None):
         if self._table is not None and self._database is not None and self._plug is not None:
-            try:
-                order_by = self._plug.plug_action_specification.all()[0].value
-            except:
-                order_by = None
-            print(order_by)
-            select = 'SELECT * FROM `%s`.`%s`' % (self._database, self._table)
+            select = 'SELECT * FROM `{0}`.`{1}`'.format(self._database, self._table)
+            if unique is not None:
+                select += 'GROUP BY `{0}` '.format(unique.value)
             if order_by is not None:
-                select += 'ORDER BY %s DESC ' % order_by
+                select += 'ORDER BY `{0}` DESC '.format(order_by.value)
             if limit is not None and isinstance(limit, int):
-                select += 'LIMIT %s' % limit
+                select += 'LIMIT {0}'.format(limit)
             try:
+                print(select)
                 self._cursor.execute(select)
                 cursor_select_all = copy.copy(self._cursor)
                 self.describe_table()
@@ -92,40 +91,42 @@ class MySQLController(BaseController):
         return []
 
     def download_to_stored_data(self, connection_object, plug, **kwargs):
-        if plug is None:
-            plug = self._plug
-        data = self.select_all()
-        id_list = self.get_primary_keys()
-        parsed_data = [{'id': tuple(item[key] for key in id_list),
-                        'data': [{'name': key, 'value': item[key]} for key in item.keys() if key not in id_list]}
+        order_by = self._plug.plug_action_specification.filter(action_specification__name__iexact='order by').first()
+        unique = self._plug.plug_action_specification.get(action_specification__name__iexact='unique')
+        data = self.select_all(unique=unique, order_by=order_by)
+        parsed_data = [{'unique': {'name': str(unique.value), 'value': item[unique.value]},
+                        'data': [{'name': key, 'value': value} for key, value in item.items() if key != unique.value]}
                        for item in data]
         new_data = []
         for item in parsed_data:
-            try:
-                id_item = item['id'][0]
-            except IndexError:
-                id_item = None
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id_item)
+            unique_value = item['unique']['value']
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
-                for column in item['data']:
-                    new_data.append(StoredData(name=column['name'], value=column['value'], object_id=id_item,
-                                               connection=connection_object.connection, plug=plug))
-        if new_data:
-            field_count = len(parsed_data[0]['data'])
-            extra = {'controller': 'mysql'}
-            for i, item in enumerate(new_data):
-                try:
-                    item.save()
-                    if (i + 1) % field_count == 0:
-                        extra['status'] = 's'
-                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            item.object_id, item.plug.id, item.connection.id), extra=extra)
-                except:
-                    extra['status'] = 'f'
-                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
-            return True
-        return False
+                new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
+                                       connection=connection_object.connection, plug=plug) for column in item['data']]
+                new_item.append(StoredData(name=item['unique']['name'], value=item['unique']['value'],
+                                           object_id=unique_value, connection=connection_object.connection, plug=plug))
+                new_data.append(new_item)
+        return self._save_stored_data(new_data)
+
+    def _save_stored_data(self, data):
+        for item in data:
+            self._save_row(item)
+            # self._save_row.delay(self, item) TODO DELAY QUEUE
+        return True
+
+    def _save_row(self, item):
+        extra = {'controller': 'mysql', 'status': 's'}
+        try:
+            for stored_data in item:
+                stored_data.save()
+            # self._create_row.delay(self, item)
+            self._log.info('Item ID: {0}, Connection: {1}, Plug: {2} successfully stored.'.format(
+                stored_data.object_id, stored_data.plug.id, stored_data.connection.id), extra=extra)
+        except Exception as e:
+            extra['status'] = 'f'
+            self._log.info('Item ID: {0}, Field: {1}, Connection: {2}, Plug:{3} failed to save.' % (
+                stored_data.object_id, stored_data.name, stored_data.connection.id, stored_data.plug.id,), extra=extra)
 
     def _get_insert_statement(self, item):
         insert = """INSERT INTO `%s`(%s) VALUES (%s)""" % (
@@ -165,12 +166,13 @@ class MySQLController(BaseController):
         return self.describe_table(**kwargs)
 
     def get_mapping_fields(self, **kwargs):
-        return [MapField(f, controller=ConnectorEnum.MySQL) for f in self.describe_table() if f['is_primary'] is not True]
-        # return [item['name'] for item in self.describe_table() if item['is_primary'] is not True]
+        return [MapField(f, controller=ConnectorEnum.MySQL) for f in self.describe_table()]
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'order by':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        elif action_specification.name.lower() == 'unique':
             return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")

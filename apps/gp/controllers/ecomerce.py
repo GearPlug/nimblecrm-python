@@ -3,7 +3,7 @@ from apps.gp.controllers.exception import ControllerError
 import shopify
 from django.conf import settings
 import re
-from apps.gp.models import StoredData, ActionSpecification, Action
+from apps.gp.models import StoredData, ActionSpecification, Action, Webhook
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.controllers.utils import get_dict_with_source_data
@@ -11,6 +11,7 @@ from magento import MagentoAPI
 import json
 import ast
 from meli_client import meli
+from django.urls import reverse
 
 
 class EbayController(BaseController):
@@ -164,44 +165,51 @@ class ShopifyController(BaseController):
             if self._connection_object is not None:
                 try:
                     self._token = self._connection_object.token
+                    self._shop_url = self._connection_object.shop_url
                 except Exception as e:
                     print("Error getting the shopify token")
 
     def test_connection(self):
-        return self._token is not None
-        raise ControllerError("TODO")
-
-    def get_topics(self):
-        return [{'name': 'customers', 'id': 'customers'}, {'name': 'products', 'id': 'products'}]
+        try:
+            session = shopify.Session("https://" + self._shop_url, self._token)
+            return self._token and self._shop_url is not None
+        except:
+            raise ControllerError("TODO")
 
     def download_to_stored_data(self, connection_object, plug, list=None):
         if plug is None:
             plug = self._plug
-        topic_id = self._plug.plug_action_specification.all()[0].value
+        action = plug.action.name
+        session = shopify.Session("https://" + self._shop_url, self._token)
+        shopify.ShopifyResource.activate_session(session)
 
         if list is None:
-            session = shopify.Session("https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com", self._token)
-            shopify.ShopifyResource.activate_session(session)
-            if (topic_id == "customers"):
-                list = shopify.Customer.find()
-            elif (topic_id == "products"):
-                list = shopify.Products.find()
+            list = []
+            if action == 'new customer':
+                list2 = shopify.Customer.find()
+            elif action == 'new product':
+                list2 = shopify.Product.find()
+            elif action == 'new order':
+                list2 = shopify.Order.find()
+            for l in list2:
+                m = re.findall(r'\d+', str(l))
+                list.append(m[0])
 
         new_data = []
         for item in list:
-            m = re.findall(r'\d+', str(item))
-            id = int(m[0])
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id)
+            id_field = int(item)
+            print("item", item, type(item))
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id_field)
             if not q.exists():
-                if (topic_id == "customers"):
-                    details = shopify.Customer.find(id)
-                elif (topic_id == "products"):
-                    details = shopify.Products.find(id)
+                if action == 'new customer':
+                    details = shopify.Customer.find(id_field)
+                elif action == 'new product':
+                    details = shopify.Product.find(id_field)
+                elif action == 'new order':
+                    details = shopify.Order.find(id_field)
                 for value in details.attributes:
-                    information = details.attributes[value]
-                    if (information == None):
-                        information = ''
-                    new_data.append(StoredData(name=value, value=information, object_id=id,
+                    information = details.attributes[value] or ''
+                    new_data.append(StoredData(name=value, value=information, object_id=id_field,
                                                connection=connection_object.connection, plug=plug))
         if new_data:
             extra = {'controller': 'shopify'}
@@ -217,24 +225,42 @@ class ShopifyController(BaseController):
         return True
 
     def create_webhook(self):
-        topic_id = self._plug.plug_action_specification.all()[0].value
-        plug_id = self._plug.plug_action_specification.all()[0].id
-        session = shopify.Session("https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com", self._token)
-        shopify.ShopifyResource.activate_session(session)
+        action = self._plug.action.name
+        webhook = Webhook.objects.create(name='shopify', plug=self._plug, url='')
+        url_path = reverse('home:webhook', kwargs={'connector': 'shopify', 'webhook_id': webhook.id})
+        session = shopify.Session("https://" + self._shop_url, self._token)
+        url_base = settings.CURRENT_HOST
+        if action == 'new product':
+            topic = 'products'
+        elif action == 'new customer':
+            topic = 'customers'
+        elif action == 'new order':
+            topic = 'orders'
         new_webhook = shopify.Webhook()
-        new_webhook.topic = topic_id + "/create"
-        new_webhook.address = "https://l.grplug.com/wizard/shopify/webhook/event/%s/" % (plug_id)
+        new_webhook.topic = topic + "/create"
+        new_webhook.address = url_base + url_path
         new_webhook.format = "json"
         success = new_webhook.save()
+        shopify.ShopifyResource.activate_session(session)
         if success == True:
+            webhook.url = url_base + url_path
+            webhook.is_active = True
+            id = re.findall(r'\d+', str(self.get_list_webhooks()[-1]))
+            webhook.generated_id = id[0]
+            webhook.save(update_fields=['url', 'generated_id', 'is_active'])
             print("Se creo el webhook shopify")
             return True
+        else:
+            webhook.is_deleted = True
+            webhook.save(update_fields=['is_deleted', ])
+            print("Error al crear el webhook en shopify")
         return False
 
     def get_list_webhooks(self):  # Metodo para listar los webhooks
-        session = shopify.Session("https://" + settings.SHOPIFY_SHOP_URL + ".myshopify.com", self._token)
+        session = shopify.Session("https://" + self._shop_url, self._token)
         shopify.ShopifyResource.activate_session(session)
         webhook = shopify.Webhook.find()
+        print(webhook)
         return webhook
 
     def get_target_fields(self, **kwargs):

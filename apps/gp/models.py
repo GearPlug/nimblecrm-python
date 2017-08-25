@@ -105,8 +105,7 @@ class Connection(models.Model):
 
 
 class JiraConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_jira')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_jira')
     name = models.CharField('name', max_length=200)
     host = models.CharField('host', max_length=200)
     connection_user = models.CharField('user', max_length=60)
@@ -127,8 +126,7 @@ class FacebookLeadsConnection(models.Model):
 
 
 class InstagramConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_instagram')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_instagram')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
 
@@ -137,8 +135,7 @@ class InstagramConnection(models.Model):
 
 
 class MySQLConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_mysql')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mysql')
     name = models.CharField('name', max_length=200)
     host = models.CharField('host', max_length=200)
     database = models.CharField('database', max_length=200)
@@ -152,8 +149,7 @@ class MySQLConnection(models.Model):
 
 
 class PostgreSQLConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_postgresql')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_postgresql')
     name = models.CharField('name', max_length=200)
     host = models.CharField('host', max_length=200)
     database = models.CharField('database', max_length=200)
@@ -167,8 +163,7 @@ class PostgreSQLConnection(models.Model):
 
 
 class MSSQLConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_mssql')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mssql')
     name = models.CharField('name', max_length=200)
     host = models.CharField('host', max_length=200)
     database = models.CharField('database', max_length=200)
@@ -194,8 +189,7 @@ class MagentoConnection(models.Model):
 
 
 class SugarCRMConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_sugarcrm')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_sugarcrm')
     name = models.CharField('name', max_length=200)
     url = models.CharField('url', max_length=200)
     connection_user = models.CharField('user', max_length=200)
@@ -206,8 +200,7 @@ class SugarCRMConnection(models.Model):
 
 
 class MailChimpConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_mailchimp')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mailchimp')
     name = models.CharField('name', max_length=200)
     connection_user = models.CharField('user', max_length=200)
     api_key = models.CharField('api key', max_length=200)
@@ -226,15 +219,13 @@ class MandrillConnection(models.Model):
 
 
 class GetResponseConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_getresponse')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_getresponse')
     name = models.CharField('name', max_length=200)
     api_key = models.CharField('api key', max_length=200)
 
 
 class SurveyMonkeyConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_surveymonkey')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_surveymonkey')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
 
@@ -243,18 +234,17 @@ class SurveyMonkeyConnection(models.Model):
 
 
 class ShopifyConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_shopify')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_shopify')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
+    shop_url= models.CharField('shop_url', max_length=300)
 
     def __str__(self):
         return self.name
 
 
 class TwitterConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_twitter')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_twitter')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
     token_secret = models.CharField('token', max_length=300)
@@ -275,8 +265,7 @@ class GoogleSpreadSheetsConnection(models.Model):
 
 
 class GoogleFormsConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_googleforms')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_googleforms')
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
 
@@ -285,8 +274,7 @@ class GoogleFormsConnection(models.Model):
 
 
 class GoogleCalendarConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_googlecalendar')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_googlecalendar')
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
 
@@ -295,8 +283,7 @@ class GoogleCalendarConnection(models.Model):
 
 
 class YouTubeConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_youtube')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_youtube')
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
 
@@ -305,8 +292,7 @@ class YouTubeConnection(models.Model):
 
 
 class GooglePushWebhook(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='google_push_webhook')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='google_push_webhook')
     channel_id = models.CharField('channel_id', max_length=200)
     resource_id = models.CharField('resource_id', max_length=200)
     expiration = models.CharField('expiration', max_length=200)
@@ -319,8 +305,7 @@ class GooglePushWebhook(models.Model):
 
 
 class SlackConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_slack')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_slack')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=100)
 
@@ -329,8 +314,7 @@ class SlackConnection(models.Model):
 
 
 class EvernoteConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_evernote')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_evernote')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=100)
 
@@ -339,8 +323,7 @@ class EvernoteConnection(models.Model):
 
 
 class BitbucketConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_bitbucket')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_bitbucket')
     name = models.CharField('name', max_length=200)
     connection_user = models.CharField('user', max_length=60)
     connection_password = models.CharField('password', max_length=40)
@@ -350,8 +333,7 @@ class BitbucketConnection(models.Model):
 
 
 class GoogleContactsConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_googlecontacts')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_googlecontacts')
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
 
@@ -360,8 +342,7 @@ class GoogleContactsConnection(models.Model):
 
 
 class WunderListConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_wunderlist')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_wunderlist')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
 
@@ -370,8 +351,7 @@ class WunderListConnection(models.Model):
 
 
 class ZohoCRMConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_zohocrm')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_zohocrm')
     token = models.CharField('token', max_length=300)
     name = models.CharField('name', max_length=200)
 
@@ -380,19 +360,17 @@ class ZohoCRMConnection(models.Model):
 
 
 class HubSpotConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_hubspotcrm')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_hubspotcrm')
+    name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
     refresh_token = models.CharField('token', max_length=300)
-    name = models.CharField('name', max_length=200)
 
     def __str__(self):
         return self.name
 
 
 class SMSConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_sms')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_sms')
     name = models.CharField('name', max_length=200)
     connection_user = models.CharField('user', max_length=60)
     connection_password = models.CharField('password', max_length=40)
@@ -402,8 +380,7 @@ class SMSConnection(models.Model):
 
 
 class SalesforceConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_salesforce')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_salesforce')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
 
@@ -412,8 +389,7 @@ class SalesforceConnection(models.Model):
 
 
 class SMTPConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_smtp')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_smtp')
     name = models.CharField('name', max_length=200)
     host = models.CharField('host', max_length=200)
     port = models.CharField('port', max_length=200)
@@ -425,8 +401,7 @@ class SMTPConnection(models.Model):
 
 
 class AsanaConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
-                                      related_name='connection_asana')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_asana')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
     refresh_token = models.CharField('refresh token', max_length=300)
@@ -465,12 +440,9 @@ class MercadoLibreConnection(models.Model):
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
     name = models.CharField('name', max_length=120)
-    connection = models.ForeignKey(Connection, null=True,
-                                   on_delete=models.CASCADE,
-                                   related_name='plug')
+    connection = models.ForeignKey(Connection, null=True, on_delete=models.CASCADE, related_name='plug')
     action = models.ForeignKey(Action, null=True, on_delete=models.CASCADE)
-    plug_type = models.CharField(choices=ACTION_TYPE, max_length=7,
-                                 default='source')
+    plug_type = models.CharField(choices=ACTION_TYPE, max_length=7, default='source')
     user = models.ForeignKey(User)
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
@@ -508,16 +480,14 @@ class StoredData(models.Model):
     object_id = models.CharField('object_id', max_length=150, null=True)
 
     def __str__(self):
-        return '%s %s %s' % (self.id, self.name, self.object_id)
+        return '%s %s %s' % (self.name, self.object_id)
 
 
 class Gear(models.Model):
     name = models.CharField('name', max_length=120)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    source = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL,
-                               related_name='gear_source')
-    target = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL,
-                               related_name='gear_target')
+    source = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='gear_source')
+    target = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='gear_target')
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
@@ -532,13 +502,10 @@ class GearMap(models.Model):
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
     is_active = models.BooleanField('is active', default=True)
-    last_sent_stored_data = models.ForeignKey(StoredData,
-                                              related_name='gear_map',
-                                              null=True, default=None,
+    last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', null=True, default=None,
                                               on_delete=models.SET_NULL)
-    last_sent_stored_data_creation_date = models.DateTimeField(
-        'last sent storeddata creation date', null=True,
-        default=None)
+    last_sent_stored_data_creation_date = models.DateTimeField('last sent storeddata creation date', null=True,
+                                                               default=None)
     last_source_update = models.DateTimeField(null=True, default=None)
     created = models.DateTimeField('created', auto_now_add=True)
 
@@ -557,8 +524,7 @@ class GearMapData(models.Model):
 
 class Webhook(models.Model):
     name = models.CharField('webhook name', max_length=100)
-    plug = models.ForeignKey(Plug, on_delete=models.CASCADE,
-                             related_name='webhook')
+    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='webhook')
     url = models.URLField('url')
     generated_id = models.CharField('generated id', max_length=200)
     created = models.DateTimeField('created', auto_now_add=True)

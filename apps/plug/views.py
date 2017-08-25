@@ -63,11 +63,13 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         ping = controller.test_connection()
         if ping:
             if self.object.is_source:
-                controller.download_to_stored_data(self.object.connection.related_connection, self.object)
                 if c in [ConnectorEnum.Bitbucket, ConnectorEnum.JIRA, ConnectorEnum.SurveyMonkey,
                          ConnectorEnum.Instagram, ConnectorEnum.YouTube, ConnectorEnum.Shopify,
-                         ConnectorEnum.GoogleCalendar, ConnectorEnum.Asana]:
+                         ConnectorEnum.GoogleCalendar, ConnectorEnum.Asana, ConnectorEnum.Salesforce,
+                         ConnectorEnum.Mandrill, ConnectorEnum.FacebookLeads]:
                     controller.create_webhook()
+                else:
+                    controller.download_to_stored_data(self.object.connection.related_connection, self.object)
         self.request.session['source_connection_id'] = None
         self.request.session['target_connection_id'] = None
         return HttpResponseRedirect(self.get_success_url())
@@ -146,10 +148,10 @@ class TestPlugView(TemplateView):
         p = Plug.objects.get(pk=self.kwargs.get('pk'))
         if p.plug_type == 'source':
             try:
-                sd_sample = StoredData.objects.filter(plug=p, connection=p.connection).order_by('-id')[0]
+                sd_sample = StoredData.objects.filter(plug=p, connection=p.connection).order_by('-id').last()
                 sd = StoredData.objects.filter(plug=p, connection=p.connection, object_id=sd_sample.object_id)
                 context['object_list'] = sd
-            except IndexError:
+            except Exception:
                 print("Failed. force donwload.")
                 try:
                     c = ConnectorEnum.get_connector(p.connection.connector.id)
@@ -159,8 +161,8 @@ class TestPlugView(TemplateView):
                     if ping:
                         controller.download_to_stored_data(p.connection.related_connection, p)
                 except Exception as e:
-                    raise
                     print("error")
+                    raise
         elif p.plug_type == 'target':
             c = ConnectorEnum.get_connector(p.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(c)

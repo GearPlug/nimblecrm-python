@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
@@ -19,7 +20,7 @@ import json
 import xmltodict
 import string
 import os
-from apps.gp.models import StoredData
+from apps.gp.models import StoredData, Webhook
 from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 import xml.etree.ElementTree as ET
@@ -90,34 +91,16 @@ class SugarCRMController(BaseController):
     def set_entries(self, obj_list):
         return self._session.set_entries(obj_list)
 
-    def download_to_stored_data(self,
-                                connection_object,
-                                plug,
-                                limit=29,
-                                order_by="date_entered DESC",
-                                **kwargs):
-        print("descargando mierda")
-        module = plug.plug_action_specification.get(
-            action_specification__name="module"
-        ).value  # Especificar que specification
-        print("module", module)
+    def download_to_stored_data(self, connection_object, plug, limit=29, order_by="date_entered DESC", **kwargs):
+        module = plug.plug_action_specification.get(action_specification__name="module").value
         data = self.get_entry_list(module, max_results=limit, order_by=order_by)
         new_data = []
-        print('data', data)
         for item in data:
-            q = StoredData.objects.filter(
-                connection=connection_object.connection,
-                plug=plug,
-                object_id=item.id)
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item.id)
             if not q.exists():
                 for column in item.fields:
-                    new_data.append(
-                        StoredData(
-                            name=column['name'],
-                            value=column['value'],
-                            object_id=item.id,
-                            connection=connection_object.connection,
-                            plug=plug))
+                    new_data.append(StoredData(name=column['name'], value=column['value'], object_id=item.id,
+                                               connection=connection_object.connection, plug=plug))
         if new_data:
             field_count = len(data[0].fields)
             extra = {'controller': 'sugarcrm'}
@@ -126,11 +109,9 @@ class SugarCRMController(BaseController):
                     item.save()
                     if (i + 1) % field_count == 0:
                         extra['status'] = 's'
-                        self._log.info(
-                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.'
-                            % (item.object_id, item.plug.id,
-                               item.connection.id),
-                            extra=extra)
+                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                        item.object_id, item.plug.id, item.connection.id),
+                                       extra=extra)
                 except:
                     extra['status'] = 'f'
                     self._log.info(
@@ -179,9 +160,9 @@ class SugarCRMController(BaseController):
             pk=action_specification_id)
         if action_specification.name.lower() == 'module':
             module_list = tuple({
-                'id': m.module_key,
-                'name': m.module_key
-            } for m in self.get_available_modules())
+                                    'id': m.module_key,
+                                    'name': m.module_key
+                                } for m in self.get_available_modules())
             return module_list
         else:
             raise ControllerError(
@@ -220,7 +201,7 @@ class ZohoCRMController(BaseController):
     def download_to_stored_data(
             self,
             connection_object,
-            plug,):
+            plug, ):
         module_id = self._plug.plug_action_specification.all()[0].value
         module_name = self.get_module_name(module_id)
         data = self.get_feeds(module_name)
@@ -394,8 +375,8 @@ class ZohoCRMController(BaseController):
             module_list = []
             for m in modules:
                 if m['pl'] not in [
-                        'Feeds', 'Visits', 'Social', 'Documents', 'Quotes',
-                        'Sales Orders', 'Purchase Orders'
+                    'Feeds', 'Visits', 'Social', 'Documents', 'Quotes',
+                    'Sales Orders', 'Purchase Orders'
                 ]:
                     module_list.append({'id': m['id'], 'name': m['pl']})
             return tuple(module_list)
@@ -421,19 +402,16 @@ class SalesforceController(BaseController):
                 except Exception as e:
                     print("Error getting salesforce attributes")
                     print(e)
-        elif kwargs:
-            try:
-                self.token = kwargs.pop('token', None)
-            except Exception as e:
-                print("Error getting salesforce attributes")
-                print(e)
+
+    def test_connection(self):
         if self.token is not None:
             try:
-                instance_url = self.get_instance_url()
-                self._client = Salesforce(
-                    instance_url=instance_url, session_id=self.token)
+                self._client = Salesforce(instance_url=self.get_instance_url(), session_id=self.token)
+                self._client = Salesforce(instance_url=self.get_instance_url(), session_id=self.token)
             except SalesforceAuthenticationFailed:
                 self._client = None
+
+    def test_connection(self):
         return self._client is not None
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
@@ -453,36 +431,24 @@ class SalesforceController(BaseController):
             return
         raise ControllerError("Incomplete.")
 
-    def download_to_stored_data(self,
-                                connection_object=None,
-                                plug=None,
-                                event=None,
-                                **kwargs):
+    def download_to_stored_data(self, connection_object=None, plug=None, event=None, **kwargs):
         if event is not None:
             _items = []
-            # media es un objecto, se debe convertir a diccionario:
-            _dict = event.__dict__
-            q = StoredData.objects.filter(
-                connection=connection_object.connection,
-                plug=plug,
-                object_id=event.id)
+            # Todo verificar que este ID siempre existe independiente del action
+            event_id = event['new'][0]['Id']
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                          object_id=event_id)
             if not q.exists():
-                for k, v in _dict.items():
-                    obj = StoredData(
-                        connection=connection_object.connection,
-                        plug=plug,
-                        object_id=event.id,
-                        name=k,
-                        value=v or '')
+                for k, v in event.items():
+                    obj = StoredData(connection=connection_object.connection, plug=plug,
+                                     object_id=event_id, name=k, value=v or '')
                     _items.append(obj)
             extra = {}
             for item in _items:
                 extra['status'] = 's'
                 extra = {'controller': 'salesforce'}
-                self._log.info(
-                    'Item ID: %s, Connection: %s, Plug: %s successfully stored.'
-                    % (item.object_id, item.plug.id, item.connection.id),
-                    extra=extra)
+                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                    item.object_id, item.plug.id, item.connection.id), extra=extra)
                 item.save()
         return False
 
@@ -614,12 +580,6 @@ class SalesforceController(BaseController):
 
         return requests.post(self.metadata_url(), headers=headers, data=test)
 
-    # tree = ET.parse('remote_site.xml')
-    # print(tree)
-    # print(ET.tostring(tree.getroot(), encoding='utf8', method='xml'))
-
-    # controlador
-
     def cget_sobject(self):
         _dict = self.get_sobjects()
         return [o['name'] for o in _dict['sobjects'] if o['triggerable']]
@@ -628,34 +588,63 @@ class SalesforceController(BaseController):
         _dict = self.get_apex_triggers()
 
     def create_webhook(self):
-        body = None
-        with open(os.path.join(settings.BASE_DIR, 'files', 'Webhook.txt'),
-                  'r') as file:
-            body = file.read()
+        action = self._plug.action.name
+        if action == 'new event':
+            sobject = self._plug.plug_action_specification.get(action_specification__name='sobject')
+            event = self._plug.plug_action_specification.get(action_specification__name='event')
+            # Creacion de Webhook
+            webhook = Webhook.objects.create(name='salesforce', plug=self._plug, url='', expiration='')
+            # Verificar ngrok para determinar url_base
+            url_base = 'https://9963f73a.ngrok.io'
+            url_path = reverse('home:webhook', kwargs={'connector': 'salesforce', 'webhook_id': webhook.id})
+            url = url_base + url_path
+            with open(os.path.join(settings.BASE_DIR, 'files', 'Webhook.txt'), 'r') as file:
+                body = file.read()
+            response1 = self.create_apex_class('Webhook', body)
+            if response1.status_code != 201:
+                response = response1.json()
+                # Si el APEX Class ya existe (es duplicado), continuamos, si es otro error, paramos
+                print(response[0]['errorCode'])
+                print(response[0]['errorCode'] != 'DUPLICATE_VALUE')
+                if 'errorCode' in response[0] and response[0]['errorCode'] == 'DUPLICATE_VALUE':
+                    pass
+                else:
+                    return False
 
-        apex_class = self.create_apex_class('Webhook', body)
-        print(apex_class.text)
+            response2 = self.create_remote_site('GearPlug' + 'RemoteSiteSetting{}'.format(webhook.id), url)
+            if response2.status_code != 200:
+                return False
 
-        remote_site_site = self.create_remote_site(
-            'GearPlug' + 'RemoteSiteSetting', settings.SALESFORCE_WEBHOOK_URI)
-        print(remote_site_site.text)
+            with open(os.path.join(settings.BASE_DIR, 'files', 'WebhookTrigger.txt'), 'r') as file:
+                body = file.read()
 
-        body = None
-        with open(
-                os.path.join(settings.BASE_DIR, 'files', 'WebhookTrigger.txt'),
-                'r') as file:
-            body = file.read()
+            body = body.replace('{name}', 'GearPlug{}'.format(webhook.id))
+            body = body.replace('{sobject}', sobject.value)
+            body = body.replace('{events}', event.value)
+            body = body.replace('{url}', "'" + url + "'")
 
-        sobject, event = self.get_specifications_values()
+            apex_trigger = self.create_apex_trigger('GearPlug', body, 'User')
+            if apex_trigger.status_code == 201:
+                webhook.url = url_base + url_path
+                webhook.generated_id = apex_trigger.json()['id']
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            else:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
+            return True
+        return False
 
-        body = body.replace('{name}', 'GearPlug')
-        body = body.replace('{sobject}', sobject)
-        body = body.replace('{events}', event)
-        body = body.replace('{url}',
-                            "'" + settings.SALESFORCE_WEBHOOK_URI + "'")
-
-        apex_trigger = self.create_apex_trigger('GearPlug', body, 'User')
-        print(apex_trigger.text)
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() in ['sobject']:
+            tup = tuple({'id': p, 'name': p} for p in self.get_sobject_list())
+            return tup
+        if action_specification.name.lower() in ['event']:
+            tup = tuple({'id': p, 'name': p} for p in self.get_event_list())
+            return tup
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
     def get_sobject_list(self):
         return self.cget_sobject()
@@ -680,6 +669,15 @@ class SalesforceController(BaseController):
                 event = specification.value
         return sobject, event
 
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'order by':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        elif action_specification.name.lower() == 'unique':
+            return tuple({'id': c['name'], 'name': c['name']} for c in self.describe_table())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
+
 
 class HubSpotController(BaseController):
     _token = None
@@ -699,7 +697,6 @@ class HubSpotController(BaseController):
                     print("Error getting the hubspot token")
 
     def test_connection(self):
-
         response = self.request()
         if 'status' in response and response['status'] == "error":
             self.get_refresh_token(self._refresh_token)
@@ -723,9 +720,9 @@ class HubSpotController(BaseController):
             pk=action_specification_id)
         if action_specification.name.lower() == 'data':
             return tuple({
-                'name': o['name'],
-                'id': o['id']
-            } for o in self.get_modules())
+                             'name': o['name'],
+                             'id': o['id']
+                         } for o in self.get_modules())
         else:
             raise ControllerError(
                 "That specification doesn't belong to an action in this connector."
@@ -734,7 +731,7 @@ class HubSpotController(BaseController):
     def download_to_stored_data(
             self,
             connection_object,
-            plug,):
+            plug, ):
         module_id = self._plug.plug_action_specification.all()[0].value
         new_data = []
         data = self.get_data(module_id)
@@ -982,7 +979,7 @@ class VtigerController(BaseController):
 
     def get_module_elements(self, module=None, limit=30):
         query = "select * from {0} order by createdtime desc;".format(module)
-        values = {'sessionName': self._session_name, 'operation': 'query', 'query' : query}
+        values = {'sessionName': self._session_name, 'operation': 'query', 'query': query}
         r = requests.get(self._url, params=values).json()
         try:
             data = r['result']

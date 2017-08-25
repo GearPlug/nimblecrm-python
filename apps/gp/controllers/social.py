@@ -1,8 +1,9 @@
+from django.http import HttpResponse
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from django.conf import settings
-from apps.gp.models import StoredData
+from apps.gp.models import StoredData, ActionSpecification, PlugActionSpecification
 from instagram.client import InstagramAPI
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
@@ -98,12 +99,13 @@ class TwitterController(BaseController):
         }]
 
     def get_mapping_fields(self, **kwargs):
-        fields=self.get_target_fields()
+        fields = self.get_target_fields()
         return [MapField(f, controller=ConnectorEnum.Twitter) for f in fields]
 
 
 class InstagramController(BaseController):
     _client = None
+    TOKEN = 'GearPlug2017'
 
     def __init__(self, *args, **kwargs):
         BaseController.__init__(self, *args, **kwargs)
@@ -159,7 +161,7 @@ class InstagramController(BaseController):
             'object': 'user',
             'aspect': 'media',
             'verify_token': 'GearPlug2017',
-            'callback_url': 'http://m.gearplug.com/wizard/instagram/webhook/event/'
+            'callback_url': '%s/wizard/instagram/webhook/event/' % settings.CURRENT_HOST
         }
         r = requests.post(url, data=body)
         if r.status_code == 201:
@@ -173,6 +175,29 @@ class InstagramController(BaseController):
     def get_media(self, media_id):
         media = self._client.media(media_id)
         return media
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'account':
+            return tuple({'id': a[0], 'name': a[1]} for a in self.get_account())
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
+        if body[0]['changed_aspect'] == 'media':
+            media_id = body[0]['data']['media_id']
+            object_id = body[0]['object_id']
+            instagram_list = PlugActionSpecification.objects.filter(
+                action_specification__action__action_type='source',
+                action_specification__action__connector__name__iexact="instagram",
+                value=object_id,
+                plug__source_gear__is_active=True)
+            for instagram in instagram_list:
+                self._connection_object, self._plug = instagram.plug.connection.related_connection, instagram.plug
+                if self.test_connection():
+                    media = self.get_media(media_id)
+                    self.download_source_data(media=media)
+        return HttpResponse(status=200)
 
 
 class YouTubeController(BaseController):
@@ -283,7 +308,7 @@ class YouTubeController(BaseController):
     def create_webhook(self):
         subscribe_url = 'https://pubsubhubbub.appspot.com/subscribe'
         topic_url = 'https://www.youtube.com/xml/feeds/videos.xml?channel_id='
-        callback_url = 'https://m.grplug.com/wizard/youtube/webhook/event/'
+        callback_url = '%s/wizard/youtube/webhook/event/' % settings.CURRENT_HOST
 
         params = {
             'hub.mode': 'subscribe',
