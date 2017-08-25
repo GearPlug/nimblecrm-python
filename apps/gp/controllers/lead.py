@@ -193,14 +193,12 @@ class FacebookLeadsController(BaseController):
             base_url = self._base_graph_url
         if not params:
             params = {'access_token': token, 'appsecret_proof': self._get_app_secret_proof(token)}
-            print("\nparams: ", params)
         if from_date is not None:
             params['from_date'] = from_date
         graph = facebook.GraphAPI(version=settings.FACEBOOK_GRAPH_VERSION)
         graph.access_token = graph.get_app_access_token(settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET)
         r = requests.get('%s/v%s/%s' % (base_url, settings.FACEBOOK_GRAPH_VERSION, url),
                          params=params)
-        print(r.url, "\n")
         try:
             if r.status_code in [200, 201, 202]:
                 return r.json()['data']
@@ -293,14 +291,12 @@ class FacebookLeadsController(BaseController):
         if token is not None:
             url = '{0}/subscribed_apps'.format(current_page_id)
             response = self._send_request(url=url, token=token)
-            print(response)
             return True
         return False
 
     def do_webhook_process(self, body=None, GET=None, POST=None, **kwargs):
         response = HttpResponse(status=400)
         if GET is not None:
-            print("GET", GET)
             verify_token = GET.get('hub.verify_token')
             challenge = GET.get('hub.challenge')
             if verify_token == 'token-gearplug-058924':
@@ -315,13 +311,10 @@ class FacebookLeadsController(BaseController):
                 form_id = lead['value']['form_id']
                 lead_id = lead['value']['leadgen_id']
                 created_time = lead['value']['created_time']
-                print('Webhook LEAD: ', is_lead, form_id, lead_id, created_time)
                 plugs_to_update = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=True),
                                                       action__name='get leads',
                                                       plug_action_specification__value=form_id)
-                print("plugs to update: ", len(plugs_to_update))
                 for plug in plugs_to_update:
-                    print(plug, plug.is_tested)
                     self.create_connection(plug.connection.related_connection, plug)
                     if self.test_connection():
                         self.download_source_data(from_date=created_time)
@@ -346,7 +339,6 @@ class SurveyMonkeyController(BaseController):
                 try:
                     self._token = self._connection_object.token
                     self._client = surveymonty.Client(self._token)
-                    print(self._token)
                 except Exception as e:
                     print("Error getting the surveymonkey token")
                     print(e)
@@ -465,16 +457,11 @@ class SurveyMonkeyController(BaseController):
             }
             url = "https://api.surveymonkey.net/v3/webhooks"
             r = s.post(url, json=payload)
-            print("response")
-            print(r.text)
             if r.status_code == 201:
                 webhook.url = redirect_uri
                 webhook.generated_id = r.json()["id"]
-                print("id")
-                print(webhook.generated_id)
                 webhook.is_active = True
                 webhook.save(update_fields=['url', 'generated_id', 'is_active'])
-                print("Se creo el webhook survey monkey")
             else:
                 webhook.is_deleted = True
                 webhook.save(update_fields=['is_deleted', ])
