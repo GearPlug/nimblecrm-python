@@ -41,7 +41,8 @@ class MySQLController(BaseController):
             else:
                 raise ControllerError('No connection.')
             try:
-                self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self._database)
+                self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password,
+                                                   db=self._database)
                 self._cursor = self._connection.cursor()
             except MySQLdb.OperationalError as e:
                 raise MySQLError(code=2, msg='Error instantiating the MySQL client. {}'.format(str(e)))
@@ -103,7 +104,7 @@ class MySQLController(BaseController):
             unique_value = item['unique']['value']
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
-                new_item = [StoredData(name=column['name'], value=column['value'], object_id=unique_value,
+                new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
                                        connection=connection_object.connection, plug=plug) for column in item['data']]
                 new_item.append(StoredData(name=item['unique']['name'], value=item['unique']['value'],
                                            object_id=unique_value, connection=connection_object.connection, plug=plug))
@@ -113,7 +114,7 @@ class MySQLController(BaseController):
     def _save_stored_data(self, data):
         for item in data:
             self._save_row(item)
-            # self._save_row.delay(self, item)
+            # self._save_row.delay(self, item) TODO DELAY QUEUE
         return True
 
     def _save_row(self, item):
@@ -126,8 +127,8 @@ class MySQLController(BaseController):
                 stored_data.object_id, stored_data.plug.id, stored_data.connection.id), extra=extra)
         except Exception as e:
             extra['status'] = 'f'
-            self._log.info('Item ID: {0}, Field: {1}, Connection: {2}, Plug:{3} failed to save.' % (
-                stored_data.object_id, stored_data.name, stored_data.connection.id,  stored_data.plug.id,), extra=extra)
+            self._log.info('Item ID: {0}, Field: {1}, Connection: {2}, Plug:{3} failed to save.'.format(
+                stored_data.object_id, stored_data.name, stored_data.connection.id, stored_data.plug.id, ), extra=extra)
             raise MySQLError(code=4, msg='Error in save row. {}'.format(str(e)))
 
     def _get_insert_statement(self, item):

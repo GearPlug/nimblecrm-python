@@ -2,8 +2,8 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'nd65g3a23c!y%+a_%+v)!trnjh%c=gh(zg5!gsn*qo&b6*nsbb'
-DEBUG = True
-CURRENT_HOST = "https://g.grplug.com"
+DEBUG = True # False
+CURRENT_HOST = "https://localhost"
 ALLOWED_HOSTS = [CURRENT_HOST, '*', ]
 CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
@@ -194,7 +194,7 @@ AUTHENTICATION_BACKENDS = [
 
 # account app
 ACCOUNT_EMAIL_UNIQUE = True
-ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = True
+ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = False
 
 
 def ACCOUNT_USER_DISPLAY(user): return user.email
@@ -207,7 +207,7 @@ ACCOUNT_SIGNUP_REDIRECT_URL = '/dashboard/'
 # Facebook
 FACEBOOK_APP_ID = '1860382657578411'
 FACEBOOK_APP_SECRET = '3ce16acabb2efeda4336e4e5f9576d8b'
-FACEBOOK_GRAPH_VERSION = '2.10'
+FACEBOOK_GRAPH_VERSION = '2.7'
 
 # Email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

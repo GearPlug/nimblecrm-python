@@ -18,10 +18,10 @@ class MapField(object):
             if 'name' in d:
                 self.name = d['name']
                 self.label = d['name']
-            if 'null' in d:
-                if d['null'] is not True:
-                    if d['auto_increment'] is not True:
-                        self.required = True
+            # if 'null' in d:
+            #     if d['null'] is not True and d['auto_increment'] is not True:
+            #         self.required = True
+            self.required = False
             self.field_type = 'text'
             self.max_length = 200
         elif controller == ConnectorEnum.SugarCRM:

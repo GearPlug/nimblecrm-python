@@ -237,6 +237,7 @@ class ShopifyConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_shopify')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
+    shop_url= models.CharField('shop_url', max_length=300)
 
     def __str__(self):
         return self.name
@@ -466,7 +467,7 @@ class StoredData(models.Model):
     object_id = models.CharField('object_id', max_length=150, null=True)
 
     def __str__(self):
-        return '%s %s %s' % (self.id, self.name, self.object_id)
+        return '%s %s %s' % (self.name, self.object_id)
 
 
 class Gear(models.Model):
