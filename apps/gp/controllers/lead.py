@@ -2,6 +2,10 @@ from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification, Plug
 from django.db.models import Q
+from facebookmarketing.client import Client
+from facebookmarketing.exception import UnknownError, InvalidOauth20AccessTokenError, BaseError
+import facebookmarketing
+from apps.gp.controllers.exceptions.facebookleads import FacebookLeadsError
 import facebook
 import hashlib
 import hmac
@@ -145,10 +149,10 @@ class GoogleFormsController(BaseController):
 
 
 class FacebookLeadsController(BaseController):
-    _base_graph_url = 'https://graph.facebook.com'
     _token = None
     _page = None
     _form = None
+    _client = None
 
     def __init__(self, *args):
         super(FacebookLeadsController, self).__init__(*args)
@@ -159,85 +163,71 @@ class FacebookLeadsController(BaseController):
             if self._connection_object is not None:
                 try:
                     self._token = self._connection_object.token
-                except Exception as e:
-                    raise
-                    print("Error getting the Facebook token")
+                except AttributeError as e:
+                    raise FacebookLeadsError(code=1,
+                                             msg='Error getting the Facebook attributes args. {}'.format(str(e)))
+            else:
+                raise ControllerError('No connection.')
         try:
             if self._plug is not None:
-                # self._page = self._plug.plug_action_specification.all().get(action_specification__name__iexact='page')
                 for s in self._plug.plug_action_specification.all():
                     if s.action_specification.name.lower() == 'page':
                         self._page = s.value
                     if s.action_specification.name.lower() == 'form':
                         self._form = s.value
-        except:
-            print("Error asignando los specifications")
+        except Exception as e:
+            raise FacebookLeadsError(code=1, msg='Error asignando los specifications. {}'.format(str(e)))
+        try:
+            self._client = Client(settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET, 'v2.10')
+            self._client.set_access_token(self._token)
+        except UnknownError as e:
+            raise FacebookLeadsError(code=2, msg='Unknown error. {}'.format(str(e)))
 
     def test_connection(self):
-        try:
-            object_list = self.get_account(self._token).json()
-            if 'id' in object_list:
-                return True
-        except Exception as e:
-            raise
-            return False
+        object_list = self.get_account()
+        if 'id' in object_list:
+            return True
         return False
 
-    def _get_app_secret_proof(self, access_token):
-        h = hmac.new(settings.FACEBOOK_APP_SECRET.encode('utf-8'), msg=access_token.encode('utf-8'),
-                     digestmod=hashlib.sha256)
-        return h.hexdigest()
-
-    def _send_request(self, url='', token='', base_url='', params=[], from_date=None):
-        if not base_url:
-            base_url = self._base_graph_url
-        if not params:
-            params = {'access_token': token, 'appsecret_proof': self._get_app_secret_proof(token)}
-            print("\nparams: ", params)
-        if from_date is not None:
-            params['from_date'] = from_date
-        graph = facebook.GraphAPI(version=settings.FACEBOOK_GRAPH_VERSION)
-        graph.access_token = graph.get_app_access_token(settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET)
-        r = requests.get('%s/v%s/%s' % (base_url, settings.FACEBOOK_GRAPH_VERSION, url),
-                         params=params)
-        print(r.url, "\n")
-        try:
-            if r.status_code in [200, 201, 202]:
-                return r.json()['data']
-            else:
-                return []
-        except KeyError:
-            return r
-        except Exception as e:
-            print(e)
-            return []
-
     def extend_token(self, token):
-        url = 'oauth/access_token'
-        params = {'grant_type': 'fb_exchange_token', 'client_id': settings.FACEBOOK_APP_ID,
-                  'client_secret': settings.FACEBOOK_APP_SECRET, 'fb_exchange_token': token}
-        r = self._send_request(url=url, params=params)
         try:
-            return json.loads(r.text)['access_token']
-        except Exception as e:
-            print(e)
-            return ''
+            self._token = self._client.extend_token(token)['access_token']
+            self._client.set_access_token(self._token)
+            return self._token
+        except BaseError as e:
+            raise FacebookLeadsError(code=3, msg='Error. {}'.format(str(e)))
 
-    def get_account(self, access_token):
-        url = 'me'
-        return self._send_request(url=url, token=access_token)
+    def get_account(self):
+        try:
+            return self._client.get_account()
+        except InvalidOauth20AccessTokenError as e:
+            raise FacebookLeadsError(code=4, msg='Invalid Token. {}'.format(str(e)))
+        except BaseError as e:
+            raise FacebookLeadsError(code=3, msg='Error. {}'.format(str(e)))
 
-    def get_pages(self, access_token):
-        url = 'me/accounts'
-        return self._send_request(url=url, token=access_token)
+    def get_pages(self):
+        try:
+            return self._client.get_pages()
+        except InvalidOauth20AccessTokenError as e:
+            raise FacebookLeadsError(code=4, msg='Invalid Token. {}'.format(str(e)))
+        except BaseError as e:
+            raise FacebookLeadsError(code=3, msg='Error. {}'.format(str(e)))
 
-    def get_leads(self, access_token, form_id, from_date=None):
-        url = '%s/leads' % form_id
-        return self._send_request(url=url, token=access_token, from_date=from_date)
+    def get_leads(self, form_id, from_date=None):
+        try:
+            return self._client.get_ad_leads(form_id, from_date)
+        except InvalidOauth20AccessTokenError as e:
+            raise FacebookLeadsError(code=4, msg='Invalid Token. {}'.format(str(e)))
+        except BaseError as e:
+            raise FacebookLeadsError(code=3, msg='Error. {}'.format(str(e)))
 
-    def get_forms(self, access_token, page_id):
-        url = '%s/leadgen_forms' % page_id
-        return self._send_request(url=url, token=access_token)
+    def get_forms(self, page_id):
+        try:
+            return self._client.get_ad_account_leadgen_forms(page_id)
+        except InvalidOauth20AccessTokenError as e:
+            raise FacebookLeadsError(code=4, msg='Invalid Token. {}'.format(str(e)))
+        except BaseError as e:
+            raise FacebookLeadsError(code=3, msg='Error. {}'.format(str(e)))
 
     def download_to_stored_data(self, connection_object, plug, from_date=None):
         if from_date is not None:
@@ -261,75 +251,76 @@ class FacebookLeadsController(BaseController):
                         extra['status'] = 's'
                         self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
                             item.object_id, item.plug.id, item.connection.id), extra=extra)
-                except:
+                except Exception as e:
                     extra['status'] = 'f'
                     self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
                         item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+                    raise FacebookLeadsError(code=5, msg='Error in download to stored data. {}'.format(str(e)))
             return True
         return False
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'page':
-            pages = self.get_pages(self._token)
-            return tuple({'id': p['id'], 'name': p['name']} for p in pages)
+            pages = self.get_pages()
+            return tuple({'id': p['id'], 'name': p['name']} for p in pages['data'])
         elif action_specification.name.lower() == 'form':
             page_id = kwargs.get('page_id', '')[0] if isinstance(kwargs.get('page_id', ''), list) else kwargs.get(
                 'page_id', '')
-            forms = self.get_forms(self._token, page_id)
-            return tuple({'id': p['id'], 'name': p['name']} for p in forms)
+            forms = self.get_forms(page_id)
+            return tuple({'id': p['id'], 'name': p['name']} for p in forms['data'])
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
-    def create_webhook(self):
-        pages = self.get_pages(self._token)
-        token = None
-        current_page_id = PlugActionSpecification.objects.get(plug_id=self._plug.id,
-                                                              action_specification__name='page').value
-        for page in pages:
-            if page['id'] == current_page_id:
-                token = page['access_token']
-                break
-        if token is not None:
-            url = '{0}/subscribed_apps'.format(current_page_id)
-            response = self._send_request(url=url, token=token)
-            print(response)
-            return True
-        return False
-
-    def do_webhook_process(self, body=None, GET=None, POST=None, **kwargs):
-        response = HttpResponse(status=400)
-        if GET is not None:
-            print("GET", GET)
-            verify_token = GET.get('hub.verify_token')
-            challenge = GET.get('hub.challenge')
-            if verify_token == 'token-gearplug-058924':
-                response.status_code = 200
-                response.content = challenge
-        elif POST is not None:
-            changes = body['entry'][0]['changes']
-            for lead in changes:
-                is_lead = lead['field'] == 'leadgen'
-                if not is_lead:
-                    continue
-                form_id = lead['value']['form_id']
-                lead_id = lead['value']['leadgen_id']
-                created_time = lead['value']['created_time']
-                print('Webhook LEAD: ', is_lead, form_id, lead_id, created_time)
-                plugs_to_update = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=True),
-                                                      action__name='get leads',
-                                                      plug_action_specification__value=form_id)
-                print("plugs to update: ", len(plugs_to_update))
-                for plug in plugs_to_update:
-                    print(plug, plug.is_tested)
-                    self.create_connection(plug.connection.related_connection, plug)
-                    if self.test_connection():
-                        self.download_source_data(from_date=created_time)
-                    if not plug.is_tested:
-                        plug.is_tested = True
-                        plug.save(update_fields=['is_tested', ])
-            response.status_code = 200
-        return response
+    # def create_webhook(self):
+    #     pages = self.get_pages()
+    #     token = None
+    #     current_page_id = PlugActionSpecification.objects.get(plug_id=self._plug.id,
+    #                                                           action_specification__name='page').value
+    #     for page in pages:
+    #         if page['id'] == current_page_id:
+    #             token = page['access_token']
+    #             break
+    #     if token is not None:
+    #         url = '{0}/subscribed_apps'.format(current_page_id)
+    #         response = self._send_request(url=url, token=token)
+    #         print(response)
+    #         return True
+    #     return False
+    #
+    # def do_webhook_process(self, body=None, GET=None, POST=None, **kwargs):
+    #     response = HttpResponse(status=400)
+    #     if GET is not None:
+    #         print("GET", GET)
+    #         verify_token = GET.get('hub.verify_token')
+    #         challenge = GET.get('hub.challenge')
+    #         if verify_token == 'token-gearplug-058924':
+    #             response.status_code = 200
+    #             response.content = challenge
+    #     elif POST is not None:
+    #         changes = body['entry'][0]['changes']
+    #         for lead in changes:
+    #             is_lead = lead['field'] == 'leadgen'
+    #             if not is_lead:
+    #                 continue
+    #             form_id = lead['value']['form_id']
+    #             lead_id = lead['value']['leadgen_id']
+    #             created_time = lead['value']['created_time']
+    #             print('Webhook LEAD: ', is_lead, form_id, lead_id, created_time)
+    #             plugs_to_update = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=True),
+    #                                                   action__name='get leads',
+    #                                                   plug_action_specification__value=form_id)
+    #             print("plugs to update: ", len(plugs_to_update))
+    #             for plug in plugs_to_update:
+    #                 print(plug, plug.is_tested)
+    #                 self.create_connection(plug.connection.related_connection, plug)
+    #                 if self.test_connection():
+    #                     self.download_source_data(from_date=created_time)
+    #                 if not plug.is_tested:
+    #                     plug.is_tested = True
+    #                     plug.save(update_fields=['is_tested', ])
+    #         response.status_code = 200
+    #     return response
 
 
 class SurveyMonkeyController(BaseController):
