@@ -93,7 +93,6 @@ class GmailController(BaseController):
                     message_stored_data.append(
                         StoredData(connection=connection_object.connection, plug=plug, name=k, value=v, object_id=id))
             extra = {}
-            print(message_stored_data)
             for msg in message_stored_data:
                 try:
                     extra['status'] = 's'
@@ -186,10 +185,15 @@ class GmailController(BaseController):
         return text_message
 
     def get_cleaned_message(self, message='', message_id=''):
-        return {'Id': message_id, 'Subject': 'Prueba3', 'From': 'ltorres@grplug.com', 'To': 'grplug@gmail.com',
-                'Date': 'Wed, 9 Aug 2017 09:24:41 -0700',
-                'Message-Id': '<CAFcPdBD9uGFBERJKioqF4GFTS1Mk0rxoyihCorUeHJxDv7mbzg@mail.gmail.com>',
-                'Content-Plain': 'Hi\nPlain Email', 'Content-Html': 'Hi<br/>Html Email'}
+        list_content = []
+        if message.is_multipart():
+            for payload in message.get_payload():
+                list_content.append(payload.get_payload())
+        else:
+            list_content.append(message.get_payload())
+        return {'Id': message_id, 'Subject': message['subject'], 'From': message['from'], 'To': message['to'],
+                'Date': message['date'], 'Message-Id': message['message-id'], 'Content-Plain': list_content[0],
+                'Content-Html': list_content[1]}
 
     def do_webhook_process(self, body=None, POST=None, **kwargs):
         response = HttpResponse(status=400)
@@ -210,7 +214,6 @@ class GmailController(BaseController):
                         message_id = history['history'][0]['messages'][0]['id']
                         message = self.get_message(message_id=message_id)
                         message_dict = self.get_cleaned_message(message, message_id)
-                        print(message_dict)
                         break
                 except Exception as e:
                     continue
