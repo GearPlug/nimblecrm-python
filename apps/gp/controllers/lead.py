@@ -232,8 +232,11 @@ class FacebookLeadsController(BaseController):
     def download_to_stored_data(self, connection_object, plug, from_date=None):
         if from_date is not None:
             from_date = int(time.mktime(from_date.timetuple()) * 1000)
-        leads = self.get_leads(connection_object.token, self._form, from_date=from_date)
+        leads = self.get_leads(self._form, from_date=from_date)
+        import pprint
+        pprint.pprint(leads)
         new_data = []
+        leads = leads['data'] if leads else []
         for item in leads:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
             if not q.exists():
@@ -272,55 +275,53 @@ class FacebookLeadsController(BaseController):
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
-    # def create_webhook(self):
-    #     pages = self.get_pages()
-    #     token = None
-    #     current_page_id = PlugActionSpecification.objects.get(plug_id=self._plug.id,
-    #                                                           action_specification__name='page').value
-    #     for page in pages:
-    #         if page['id'] == current_page_id:
-    #             token = page['access_token']
-    #             break
-    #     if token is not None:
-    #         url = '{0}/subscribed_apps'.format(current_page_id)
-    #         response = self._send_request(url=url, token=token)
-    #         print(response)
-    #         return True
-    #     return False
-    #
-    # def do_webhook_process(self, body=None, GET=None, POST=None, **kwargs):
-    #     response = HttpResponse(status=400)
-    #     if GET is not None:
-    #         print("GET", GET)
-    #         verify_token = GET.get('hub.verify_token')
-    #         challenge = GET.get('hub.challenge')
-    #         if verify_token == 'token-gearplug-058924':
-    #             response.status_code = 200
-    #             response.content = challenge
-    #     elif POST is not None:
-    #         changes = body['entry'][0]['changes']
-    #         for lead in changes:
-    #             is_lead = lead['field'] == 'leadgen'
-    #             if not is_lead:
-    #                 continue
-    #             form_id = lead['value']['form_id']
-    #             lead_id = lead['value']['leadgen_id']
-    #             created_time = lead['value']['created_time']
-    #             print('Webhook LEAD: ', is_lead, form_id, lead_id, created_time)
-    #             plugs_to_update = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=True),
-    #                                                   action__name='get leads',
-    #                                                   plug_action_specification__value=form_id)
-    #             print("plugs to update: ", len(plugs_to_update))
-    #             for plug in plugs_to_update:
-    #                 print(plug, plug.is_tested)
-    #                 self.create_connection(plug.connection.related_connection, plug)
-    #                 if self.test_connection():
-    #                     self.download_source_data(from_date=created_time)
-    #                 if not plug.is_tested:
-    #                     plug.is_tested = True
-    #                     plug.save(update_fields=['is_tested', ])
-    #         response.status_code = 200
-    #     return response
+    def create_webhook(self):
+        current_page_id = PlugActionSpecification.objects.get(plug_id=self._plug.id, action_specification__name='page').value
+        try:
+            token = self._client.get_page_token(current_page_id)
+            if token is not None:
+                app_token = self._client.get_app_token()
+                self._client.create_app_subscriptions('page', settings.CURRENT_HOST + '/webhook/facebookleads/0/',
+                                                      'leadgen', 'token-gearplug-058924', app_token['access_token'])
+                self._client.create_page_subscribed_apps(current_page_id, token)
+                return True
+        except BaseError as e:
+            raise FacebookLeadsError(code=3, msg='Error. {}'.format(str(e)))
+        return False
+
+    def do_webhook_process(self, body=None, GET=None, POST=None, **kwargs):
+        response = HttpResponse(status=400)
+        if GET is not None:
+            print("GET", GET)
+            verify_token = GET.get('hub.verify_token')
+            challenge = GET.get('hub.challenge')
+            if verify_token == 'token-gearplug-058924':
+                response.status_code = 200
+                response.content = challenge
+        elif POST is not None:
+            changes = body['entry'][0]['changes']
+            for lead in changes:
+                is_lead = lead['field'] == 'leadgen'
+                if not is_lead:
+                    continue
+                form_id = lead['value']['form_id']
+                lead_id = lead['value']['leadgen_id']
+                created_time = lead['value']['created_time']
+                print('Webhook LEAD: ', is_lead, form_id, lead_id, created_time)
+                plugs_to_update = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=True),
+                                                      action__name='get leads',
+                                                      plug_action_specification__value=form_id)
+                print("plugs to update: ", len(plugs_to_update))
+                for plug in plugs_to_update:
+                    print(plug, plug.is_tested)
+                    self.create_connection(plug.connection.related_connection, plug)
+                    if self.test_connection():
+                        self.download_source_data(from_date=created_time)
+                    if not plug.is_tested:
+                        plug.is_tested = True
+                        plug.save(update_fields=['is_tested', ])
+            response.status_code = 200
+        return response
 
 
 class SurveyMonkeyController(BaseController):
