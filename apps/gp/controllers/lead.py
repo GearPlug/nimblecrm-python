@@ -1,23 +1,19 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification, Plug
-from django.db.models import Q
+from apps.gp.controllers.exceptions.facebookleads import FacebookLeadsError
 from facebookmarketing.client import Client
 from facebookmarketing.exception import UnknownError, InvalidOauth20AccessTokenError, BaseError
-import facebookmarketing
-from apps.gp.controllers.exceptions.facebookleads import FacebookLeadsError
-import facebook
-import hashlib
-import hmac
+from django.conf import settings
+from django.db.models import Q
+from django.http import HttpResponse
+from apiclient import discovery
+from oauth2client import client as GoogleClient
 import httplib2
 import json
 import requests
-from apiclient import discovery
 import time
-from oauth2client import client as GoogleClient
 import surveymonty
-from django.conf import settings
-from django.http import HttpResponse
 
 
 class GoogleFormsController(BaseController):
@@ -233,8 +229,6 @@ class FacebookLeadsController(BaseController):
         if from_date is not None:
             from_date = int(time.mktime(from_date.timetuple()) * 1000)
         leads = self.get_leads(self._form, from_date=from_date)
-        import pprint
-        pprint.pprint(leads)
         new_data = []
         leads = leads['data'] if leads else []
         for item in leads:
@@ -276,7 +270,8 @@ class FacebookLeadsController(BaseController):
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
     def create_webhook(self):
-        current_page_id = PlugActionSpecification.objects.get(plug_id=self._plug.id, action_specification__name='page').value
+        current_page_id = PlugActionSpecification.objects.get(plug_id=self._plug.id,
+                                                              action_specification__name='page').value
         try:
             token = self._client.get_page_token(current_page_id)
             if token is not None:
@@ -292,7 +287,6 @@ class FacebookLeadsController(BaseController):
     def do_webhook_process(self, body=None, GET=None, POST=None, **kwargs):
         response = HttpResponse(status=400)
         if GET is not None:
-            print("GET", GET)
             verify_token = GET.get('hub.verify_token')
             challenge = GET.get('hub.challenge')
             if verify_token == 'token-gearplug-058924':
@@ -307,13 +301,10 @@ class FacebookLeadsController(BaseController):
                 form_id = lead['value']['form_id']
                 lead_id = lead['value']['leadgen_id']
                 created_time = lead['value']['created_time']
-                print('Webhook LEAD: ', is_lead, form_id, lead_id, created_time)
                 plugs_to_update = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=True),
                                                       action__name='get leads',
                                                       plug_action_specification__value=form_id)
-                print("plugs to update: ", len(plugs_to_update))
                 for plug in plugs_to_update:
-                    print(plug, plug.is_tested)
                     self.create_connection(plug.connection.related_connection, plug)
                     if self.test_connection():
                         self.download_source_data(from_date=created_time)
@@ -338,7 +329,6 @@ class SurveyMonkeyController(BaseController):
                 try:
                     self._token = self._connection_object.token
                     self._client = surveymonty.Client(self._token)
-                    print(self._token)
                 except Exception as e:
                     print("Error getting the surveymonkey token")
                     print(e)
@@ -457,16 +447,11 @@ class SurveyMonkeyController(BaseController):
             }
             url = "https://api.surveymonkey.net/v3/webhooks"
             r = s.post(url, json=payload)
-            print("response")
-            print(r.text)
             if r.status_code == 201:
                 webhook.url = redirect_uri
                 webhook.generated_id = r.json()["id"]
-                print("id")
-                print(webhook.generated_id)
                 webhook.is_active = True
                 webhook.save(update_fields=['url', 'generated_id', 'is_active'])
-                print("Se creo el webhook survey monkey")
             else:
                 webhook.is_deleted = True
                 webhook.save(update_fields=['is_deleted', ])

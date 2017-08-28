@@ -251,6 +251,24 @@ class MapField(object):
                 self.name = d['name']
                 self.label = d['name']
             self.field_type = 'text'
+        elif controller == ConnectorEnum.Vtiger:
+            import pprint
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['label']
+            if 'type' in d:
+                self.field_type = d['type']['name']
+            if 'picklistValues' in d['type'] and d['type']['picklistValues']:
+                self.choices = [(c['value'], c['label'])
+                                for c in d['type']['picklistValues']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
+            if 'refersTo' in d['type'] and d['type']['refersTo']:
+                self.choices = [(c, c) for c in d['type']['refersTo']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
+            if 'mandatory' in d:
+                self.required = d['mandatory']
         elif controller == ConnectorEnum.WunderList:
             if 'name' in d:
                 self.name = d['name']
@@ -260,6 +278,15 @@ class MapField(object):
             if 'type' in d:
                 self.field_type = d['type']
             self.field_type = 'text'
+
+        elif controller == ConnectorEnum.Gmail:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
         else:
             if 'name' in d:
                 self.name = d['name']

@@ -66,7 +66,8 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
                 if c in [ConnectorEnum.Bitbucket, ConnectorEnum.JIRA, ConnectorEnum.SurveyMonkey,
                          ConnectorEnum.Instagram, ConnectorEnum.YouTube, ConnectorEnum.Shopify,
                          ConnectorEnum.GoogleCalendar, ConnectorEnum.Asana, ConnectorEnum.Salesforce,
-                         ConnectorEnum.Mandrill, ConnectorEnum.FacebookLeads]:
+                         ConnectorEnum.Mandrill, ConnectorEnum.FacebookLeads, ConnectorEnum.Gmail]:
+                    print("WEBHOOK!!")
                     controller.create_webhook()
                 else:
                     controller.download_to_stored_data(self.object.connection.related_connection, self.object)
@@ -161,8 +162,8 @@ class TestPlugView(TemplateView):
                     if ping:
                         controller.download_to_stored_data(p.connection.related_connection, p)
                 except Exception as e:
-                    raise
                     print("error")
+                    raise
         elif p.plug_type == 'target':
             c = ConnectorEnum.get_connector(p.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(c)

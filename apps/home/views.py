@@ -4,11 +4,16 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse, HttpResponse
+from django.db.models import Q
+from oauth2client import client as GoogleClient
 import json
+import base64
 from apps.user.views import LoginView
-from apps.gp.models import PlugActionSpecification, Webhook
+from apps.gp.models import PlugActionSpecification, Plug, Webhook
 from apps.gp.enum import ConnectorEnum
 from urllib.parse import unquote
+from apiclient import discovery, errors
+import httplib2
 
 
 class DashBoardView(LoginRequiredMixin, TemplateView):
@@ -73,13 +78,15 @@ class IncomingWebhook(View):
         connector = ConnectorEnum.get_connector(name=connector_name)
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class()
+        print(connector)
         # SLACK
         try:
             body = json.loads(request.body.decode('utf-8'))
         except Exception as e:
             print(e)
             body = None
-        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.FacebookLeads]:
+        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Gmail,
+                         ConnectorEnum.FacebookLeads, ConnectorEnum.MercadoLibre]:
             response = controller.do_webhook_process(body=body, POST=request.POST)
             return response
         # ASANA
@@ -122,7 +129,6 @@ class IncomingWebhook(View):
                 ping = controller.test_connection()
                 if ping:
                     controller.download_source_data(issue=issue)
-            response.status_code = 200
         elif connector == ConnectorEnum.WunderList:
             response = HttpResponse(status=200)
             controller_class = ConnectorEnum.get_controller(connector)
@@ -159,9 +165,6 @@ class IncomingWebhook(View):
                 events = controller.get_events()
                 controller.download_source_data(events=events)
                 response.status_code = 200
-        elif connector == ConnectorEnum.Gmail:
-            webhook_id = kwargs.pop('webhook_id', None)
-            response.status_code = 200
         elif connector == ConnectorEnum.SurveyMonkey:
             responses = []
             data = request.body.decode('utf-8')
@@ -180,6 +183,24 @@ class IncomingWebhook(View):
                 ping = controller.test_connection
                 if ping:
                     controller.download_source_data(responses=responses)
+            response.status_code = 200
+        elif connector == ConnectorEnum.Shopify:
+            data=[]
+            fields = request.body.decode('utf-8')
+            fields = json.loads(fields)
+            id=fields["id"]
+            data.append(id)
+            webhook_id = kwargs.pop('webhook_id', None)
+            w = Webhook.objects.get(pk=webhook_id)
+            if w.plug.gear_source.first().is_active or not w.plug.is_tested:
+                if not w.plug.is_tested:
+                    w.plug.is_tested = True
+                controller_class = ConnectorEnum.get_controller(connector)
+                controller = controller_class(w.plug.connection.related_connection, w.plug)
+                ping = controller.test_connection()
+                if ping:
+                    controller.download_source_data(list=data)
+                    w.plug.save()
             response.status_code = 200
         elif connector == ConnectorEnum.MercadoLibre:
             decoded = json.loads(request.body.decode("utf-8"))
