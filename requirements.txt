@@ -81,3 +81,5 @@ git+git://github.com/Seraphicer/python-instagram-ext.git
 git+git://github.com/ingmferrer/python-sdk.git
 git+git://github.com/gustav0/sugarcrm.git
 git+git://github.com/evernote/evernote-sdk-python3.git
+git+git://github.com/GearPlug/facebookmarketing-python.git
+
