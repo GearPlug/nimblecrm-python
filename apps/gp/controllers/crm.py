@@ -25,6 +25,7 @@ from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 import xml.etree.ElementTree as ET
 from django.conf import settings
+import re
 
 
 class CustomSugarObject(sugarcrm.SugarObject):
@@ -1152,3 +1153,196 @@ class VtigerController(BaseController):
                     print(e)
             return obj_list
         raise ControllerError("There's no plug")
+
+
+class ActiveCampaignController(BaseController):
+    _host = None
+    _key = None
+
+    def __init__(self, *args, **kwargs):
+        super(ActiveCampaignController, self).__init__(*args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(ActiveCampaignController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._host = self._connection_object.host
+                    self._key = self._connection_object.connection_access_key
+                except Exception as e:
+                    print(e)
+
+    def get_account_info(self):
+        self.create_connection()
+        params = [
+            ('api_action', "account_view"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.get(url=final_url, params=params)
+        if r.status_code == 200:
+            return True
+        else:
+            return False
+
+    def get_lists(self):
+        params = [
+            ('api_action', "list_list"),
+            ('api_key', self._key),
+            ('ids', "all"),
+            ('api_output', 'json'),
+            ('full', 0)
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        r = requests.get(url=final_url, params=params, headers=headers)
+        lists = r.json()
+
+        # Se retorna result porque la data relevante se encuentra mismo
+        # nivel que data no relevante.
+        result = []
+        if lists['result_code'] == 1:
+            for k, v in lists.items():
+                if type(v) == dict:
+                    result.append(v)
+        return result
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
+        try:
+            if action_specification.name.lower() == 'lists':
+                for i in self.get_lists():
+                    return tuple({'id': i['id'], 'name': i['name']} for i in self.get_lists())
+            else:
+                raise ControllerError(
+                    "That specification doesn't belong to an action in this connector."
+                )
+        except Exception as e:
+            print(e)
+
+    def test_connection(self):
+        try:
+            return self.get_account_info() is True
+        except:
+            return False
+
+    def create_webhook(self):
+        action = self._plug.action.name
+        if action == 'Detect contact creation':
+            selected_list = self._plug.plug_action_specification.get(
+                action_specification__name='lists')
+
+            # Creacion de Webhook
+            webhook = Webhook.objects.create(name='activecampaign', plug=self._plug,
+                                             url='', expiration='')
+
+            # Verificar ngrok para determinar url_base
+            url_base = 'https://e0ae5cfd.ngrok.io'
+            url_path = reverse('home:webhook',
+                               kwargs={'connector': 'activecampaign',
+                                       'webhook_id': webhook.id})
+            url = url_base + url_path
+            params = [
+                ('api_action', "webhook_add"),
+                ('api_key', self._key),
+                ('api_output', 'json'),
+            ]
+            post_array = {
+                "name": "GearPlug WebHook",
+                "url": url,
+                "lists": selected_list,
+                "action": "subscribe",
+                "init": "admin"
+            }
+            final_url = "{0}/admin/api.php".format(self._host)
+            r = requests.post(url=final_url, data=post_array, params=params)
+            if r.status_code == 201:
+                webhook.url = url_base + url_path
+                webhook.generated_id = r.json()['id']
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            else:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
+            return True
+        return False
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return [
+            MapField(f, controller=ConnectorEnum.ActiveCampaign) for f in fields
+        ]
+
+    def get_target_fields(self, **kwargs):
+        return [{'name': 'email', 'type': 'varchar', 'required': True},
+                {'name': 'first_name', 'type': 'varchar', 'required': False},
+                {'name': 'last_name', 'type': 'varchar', 'required': False},
+                {'name': 'phone', 'type': 'varchar', 'required': False},
+                {'name': 'orgname', 'type': 'varchar', 'required': False},
+                ]
+
+    def create_user(self, data):
+        params = [
+            ('api_action', "contact_sync"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+        ]
+        data=data
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, data=data, params=params).json()
+        return r
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+
+        if self._plug is not None:
+            obj_list = []
+            extra = {'controller': 'activecampaign'}
+            for item in data_list:
+                try:
+                    response = self.create_user(item)
+                    self._log.info(
+                        'Item: %s successfully sent.' % (list(item.items())[0][1]),
+                        extra=extra)
+                    obj_list.append(id)
+                except Exception as e:
+                    print(e)
+                    extra['status'] = 'f'
+                    self._log.info(
+                        'Item: %s failed to send.' % (list(item.items())[0][1]),
+                        extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")
+
+    def download_to_stored_data(self, connection_object=None, plug=None, **kwargs):
+        new_data = []
+        if kwargs is not None:
+            q = StoredData.objects.filter(object_id=36, connection=connection_object.id, plug=plug.id)
+            if not q.exists():
+                for k, v in kwargs.items():
+                    new_data.append(StoredData(name=k, value=v or '', object_id=kwargs['contact[id]'], connection=connection_object.connection, plug=plug))
+            if new_data:
+                print(new_data)
+                field_count = len(kwargs)
+                extra = {'controller': 'activecampaign'}
+                for i, item in enumerate(new_data):
+                    try:
+                        item.save()
+                        if (i + 1) % field_count == 0:
+                            extra['status'] = 's'
+                            self._log.info(
+                                'Item ID: %s, Connection: %s, Plug: %s successfully stored.'
+                                % (item.object_id, item.plug.id,
+                                   item.connection.id),
+                                extra=extra)
+                    except:
+                        extra['status'] = 'f'
+                        self._log.info(
+                            'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.'
+                            % (item.object_id, item.name, item.plug.id,
+                               item.connection.id),
+                            extra=extra)
+            return True
+        return False
