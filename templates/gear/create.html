@@ -6,7 +6,7 @@
         <form action="" method="post" autocomplete="off">
             {% csrf_token %}
             {{ form }}
-            <button >Create {{ object_name }}</button>
+            <button >{% block gear_action %}Create{% endblock %} {{ object_name }}</button>
             {% if form.error %}
                 <div class="error">{{ form.error }}</div>
             {% endif %}
