@@ -1,19 +1,6 @@
 {% extends 'layouts/components_base.html' %}
 {% load static %}
 
-{% block left_menu_0 %}
-    <a href="#">Mis Gears</a>
-    <br>
-    <a href="#">Lista de APPs</a>
-{% endblock %}
-
-{% block left_menu_1 %}
-    <a href="#">Actividad</a>
-    <br>
-    <a href="#">Ayuda</a>
-    <br>
-    <a href="#">Administrar conexiones</a>
-{% endblock %}
 
 {% block content %}
     <div class="post">
@@ -22,5 +9,23 @@
         </div>
         <h1><a href="">Titulo</a></h1>
         <p>Texto</p>
+    </div>
+    {# USER INFO #}
+    <div> User:
+        <div>{{ request.user }}</div>
+    </div>
+    <br/>
+    {# GROUPS (CARPETAS) #}
+    <div>Groups:
+        {% for group in gear_groups %}
+            <div>{{ group }}</div>
+        {% endfor %}
+    </div>
+    <br/>
+    {# GEARS "MAS USADOS" #}
+    <div>Most used gears:
+        {% for gear in used_gears %}
+            <div>{{ gear }}</div>
+        {% endfor %}
     </div>
 {% endblock content %}

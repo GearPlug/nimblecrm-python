@@ -1,0 +1,35 @@
+{% extends 'layouts/components_base.html' %}
+{% load static %}
+
+{% block content %}
+    {# GRUPOS DE GEARS #}
+    <div class="group-list">
+        {% for group in object_list %}
+            <div data-group-id="{{ group.id }}">Group: {{ group }}</div>
+        {% endfor %}
+    </div>
+
+    {# GEARS DE CADA GRUPO #}
+    {% for group in object_list %}
+        {# AQUI VA OCULTO #}
+        <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;">
+            {% for gear in group.gear.all %}
+                <div data-gear-id="{{ gear.id }}">
+                    <img src="{{ gear.source.connection.connector.icon.url }}" height="20" width="20">
+                    <span> --- </span>
+                    <img src="{{ gear.target.connection.connector.icon.url }}" height="20" width="20">
+                    {{ gear.name }}
+                </div>
+                <div class="tools-re"><a href="javascript:;"><i class="fa fa-wrench" aria-hidden="true"></i></a>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+    <br/>
+    {# CREAR GRUPO DE GEARS #}
+    <a href="{% url 'gear:create_group' %}">CREAR GRUPO</a>
+    <br/>
+    {# CREAR GEAR #}
+    <a href="{% url 'gear:create' %}">CREAR GEAR</a>
+{% endblock %}

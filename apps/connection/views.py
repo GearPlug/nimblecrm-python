@@ -30,7 +30,7 @@ class ListConnectorView(LoginRequiredMixin, ListView):
 
     """
     model = Connector
-    template_name = 'wizard/connector_list.html'
+    template_name = 'connection/connector_list.html'
     login_url = '/account/login/'
 
     def get_queryset(self):
@@ -56,7 +56,7 @@ class ListConnectionView(LoginRequiredMixin, ListView):
 
     """
     model = Connection
-    template_name = 'wizard/connection_list.html'
+    template_name = 'connection/list.html'
     login_url = '/account/login/'
 
     def get_queryset(self):
