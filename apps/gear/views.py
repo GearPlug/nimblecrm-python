@@ -63,6 +63,35 @@ class CreateGearView(LoginRequiredMixin, CreateView):
         return context
 
 
+class UpdateGearView(LoginRequiredMixin, UpdateView):
+    """
+    Updates the selected gear.
+
+    - Calls the connector list as a source.
+
+    """
+    model = Gear
+    template_name = 'gear/update.html'
+    fields = ['name', 'gear_group']
+    login_url = '/account/login/'
+    success_url = reverse_lazy('connection:connector_list', kwargs={'type': 'source'})
+
+    def get(self, request, *args, **kwargs):
+        request.session['gear_id'] = self.kwargs.get('pk', None)
+        return super(UpdateGearView, self).get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        try:
+            return self.model.objects.filter(pk=self.kwargs.get('pk', None), user=self.request.user)
+        except Exception as e:
+            raise
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateGearView, self).get_context_data(**kwargs)
+        context['object_name'] = self.model.__name__
+        return context
+
+
 class CreateGearGroupView(CreateView):
     model = GearGroup
     template_name = 'gear/create.html'
@@ -80,23 +109,27 @@ class CreateGearGroupView(CreateView):
         return context
 
 
-class UpdateGearView(LoginRequiredMixin, UpdateView):
-    """
-    Updates the selected gear.
-
-    - Calls the connector list as a source.
-
-    TODO: VALIDAR QUE EL DUEÑO ES QUIEN LO EDITA.
-    """
-    model = Gear
-    template_name = 'wizard/gear_create.html'
+class UpdateGearGroupView(UpdateView):
+    model = GearGroup
+    template_name = 'gear/update.html'
     fields = ['name', ]
     login_url = '/account/login/'
-    success_url = reverse_lazy('wizard:connector_list', kwargs={'type': 'source'})
+    success_url = reverse_lazy('gear:list')
 
     def get(self, request, *args, **kwargs):
         request.session['gear_id'] = self.kwargs.get('pk', None)
-        return super(UpdateGearView, self).get(request, *args, **kwargs)
+        return super(UpdateGearGroupView, self).get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        try:
+            return self.model.objects.filter(pk=self.kwargs.get('pk', None), user=self.request.user)
+        except Exception as e:
+            raise
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateGearGroupView, self).get_context_data(**kwargs)
+        context['object_name'] = self.model.__name__
+        return context
 
 
 class DeleteGearView(DeleteView):
