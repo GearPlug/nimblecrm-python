@@ -493,7 +493,11 @@ class StoredData(models.Model):
 
 
 class GearGroup(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField('name', max_length=64)
+
+    def __str__(self):
+        return self.name
 
 
 class Gear(models.Model):
@@ -504,7 +508,7 @@ class Gear(models.Model):
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
-    gear_group = models.ForeignKey(GearGroup, on_delete=models.SET_NULL, related_name='gear_group')
+    gear_group = models.ForeignKey(GearGroup, null=True, on_delete=models.SET_NULL, related_name='gear')
 
     @property
     def is_running(self):
@@ -583,5 +587,6 @@ admin.site.register(Action)
 admin.site.register(ActionSpecification)
 admin.site.register(Connection)
 admin.site.register(Gear)
+admin.site.register(GearGroup)
 admin.site.register(Plug)
 admin.site.register(PlugActionSpecification)

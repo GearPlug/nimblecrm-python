@@ -14,28 +14,6 @@
             })
         });
 
-        function getSpreadsheetInfo(_id) {
-            var url = '/account/async/spreadsheet/info/ID/'.replace('ID', _id);
-            var callback = function (response) {
-                if (response.Success == true) {
-                    $('#sheet-selector').html(response.sheets)
-                }
-            };
-            getData(url, callback);
-        }
-
-        function getSpreadsheetValues(_id, sheet_id) {
-            var url = '/account/async/spreadsheet/values/ID/SHEET/'.replace('ID', _id).replace('SHEET', sheet_id);
-            var callback = function (response) {
-                if (response.Success == true) {
-                    $('#column-count').text(response.Data.ColumnCount);
-                    $('#row-count').text(response.Data.RowCount);
-                    $('#table').html(response.Data.Table)
-                }
-            };
-            getData(url, callback);
-        }
-
         function getData(url, callback) {
             $.ajax({
                 url: url,
@@ -49,14 +27,17 @@
 {% endblock %}
 
 {% block body %}
-    DASHBOARD MAIN
-    <select id="spreadsheet">
-        {% for s in sheets %}
-            <option value="{{ s.0 }}">{{ s.1 }}</option>
-        {% endfor %}
-    </select>
-    <div id="sheet-selector"></div>
-    COLUMNAS <span id="column-count"></span>
-    FILAS <span id="row-count"></span>
-    <div id="table"></div>
+    <div id="table">
+        <ul>
+            {% for a in object_list %}
+                <li>{{ a }}
+                    <ul>
+                        {% for g in a.gear.all %}
+                           <li>{{ g.name }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endblock %}
