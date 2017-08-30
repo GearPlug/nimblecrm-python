@@ -1,6 +1,5 @@
 {% extends 'commons/site_base.html' %}
 {% load static %}
-{% load bootstrap_tags %}
 
 {% block body %}
     <div class="box-tool">
@@ -11,7 +10,7 @@
             <div class="container">
                 <form class="create-gear-form form-horizontal" action="" method="post" autocomplete="off">
                     {% csrf_token %}
-                    {{ form|as_bootstrap }}
+                    {{ form }}
                     <button id="singlebutton" name="singlebutton">Create gear</button>
                     {% if form.error %}
                         <div class="error">{{ form.error }}</div>

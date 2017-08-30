@@ -3,9 +3,11 @@
 {% block scripts %}
     {{ block.super }}
     <script type="application/javascript">
-    console.log("facebooktestgustavo")
         $(document).ready(function () {
             $(document).on('change', 'select[data-name=page]', function () {
+                if($(this).val() == '-') {
+                    return
+                }
                 var select = $('select[data-name=form]');
                 var url = "{% url 'plug:action_specification_options' %}";
                 $.ajax({

@@ -1,9 +1,6 @@
 {% extends "commons/anonymous_base.html" %}
 {% load static %}
-{% load account_tags %}
 {% load i18n %}
-{% load widget_tweaks %}
-{% load bootstrap_tags %}
 
 {% block head_title %}{% trans "Log in" %}{% endblock %}
 
@@ -19,9 +16,8 @@
                             <img src="{% static 'img/Logo_Login_Gear_Plug.png' %}">
                         </div>
                         <p>Enter your e-mail acount and your password to sign in</p>
-                        {#                        {{ form|as_bootstrap }}#}
-                        {% render_field form.email class+="form-control input-md validate[required,custom[email]]" placeholder="Email" %}
-                        {% render_field form.password class+="form-control input-md" placeholder="Password" %}
+                        {{ form.login }}
+                        {{ form.password }}
                         <button id="singlebutton" name="singlebutton">Login</button>
                         {% if form.error %}
                             <div class="error">{{ form.error }}</div>

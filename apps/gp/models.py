@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib import admin
 from apps.gp.model_fields import JSONField
-from apps.user.models import User
+from django.contrib.auth.models import User
 from apps.gp.enum import ConnectorEnum
 
 connections = ['connection_{0}'.format(connector.name.lower()) for connector in
@@ -39,10 +39,8 @@ class ConnectorCategory(models.Model):
 
 class Action(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
-    connector = models.ForeignKey(Connector, on_delete=models.CASCADE,
-                                  related_name='action')
-    action_type = models.CharField(choices=ACTION_TYPE, max_length=7,
-                                   default='source')
+    connector = models.ForeignKey(Connector, on_delete=models.CASCADE, related_name='action')
+    action_type = models.CharField(choices=ACTION_TYPE, max_length=7, default='source')
     name = models.CharField('name', max_length=120)
     description = models.CharField('description', max_length=300)
     is_active = models.BooleanField('is active', default=False)
@@ -237,7 +235,7 @@ class ShopifyConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_shopify')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
-    shop_url= models.CharField('shop_url', max_length=300)
+    shop_url = models.CharField('shop_url', max_length=300)
 
     def __str__(self):
         return self.name
@@ -494,6 +492,14 @@ class StoredData(models.Model):
         return '{0} {1}'.format(self.name, self.object_id)
 
 
+class GearGroup(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField('name', max_length=64)
+
+    def __str__(self):
+        return self.name
+
+
 class Gear(models.Model):
     name = models.CharField('name', max_length=120)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -502,6 +508,7 @@ class Gear(models.Model):
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
+    gear_group = models.ForeignKey(GearGroup, null=True, on_delete=models.SET_NULL, related_name='gear')
 
     @property
     def is_running(self):
@@ -580,5 +587,6 @@ admin.site.register(Action)
 admin.site.register(ActionSpecification)
 admin.site.register(Connection)
 admin.site.register(Gear)
+admin.site.register(GearGroup)
 admin.site.register(Plug)
 admin.site.register(PlugActionSpecification)
