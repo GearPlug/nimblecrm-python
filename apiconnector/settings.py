@@ -178,22 +178,10 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-# account app
-# ACCOUNT_EMAIL_UNIQUE = True
-# ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = False
-#
-#
-# def ACCOUNT_USER_DISPLAY(user): return user.email
-#
-#
-# ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/'
-# ACCOUNT_SIGNUP_REDIRECT_URL = '/dashboard/'
-
-# NEW ACCOUNT APP
+# Account
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_EMAIL_REQUIRED = True
 LOGIN_REDIRECT_URL = '/dashboard/'
-
 
 # SETTINGS CENTRALIZADOS
 # Facebook
