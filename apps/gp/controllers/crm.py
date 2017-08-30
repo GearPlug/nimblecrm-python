@@ -1239,7 +1239,8 @@ class ActiveCampaignController(BaseController):
                                              url='', expiration='')
 
             # Verificar ngrok para determinar url_base
-            url_base = 'https://e0ae5cfd.ngrok.io'
+            # url_base = 'https://e0ae5cfd.ngrok.io'
+            url_base = settings.CURRENT_HOST
             url_path = reverse('home:webhook',
                                kwargs={'connector': 'activecampaign',
                                        'webhook_id': webhook.id})
@@ -1316,16 +1317,16 @@ class ActiveCampaignController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def download_to_stored_data(self, connection_object=None, plug=None, **kwargs):
+    def download_to_stored_data(self, connection_object=None, plug=None, data=None, **kwargs):
         new_data = []
-        if kwargs is not None:
-            q = StoredData.objects.filter(object_id=36, connection=connection_object.id, plug=plug.id)
+        if data is not None:
+            object_id = int(data['contact[id]'])
+            q = StoredData.objects.filter(object_id=object_id, connection=connection_object.id, plug=plug.id)
             if not q.exists():
-                for k, v in kwargs.items():
-                    new_data.append(StoredData(name=k, value=v or '', object_id=kwargs['contact[id]'], connection=connection_object.connection, plug=plug))
+                for k, v in data.items():
+                    new_data.append(StoredData(name=k, value=v or '', object_id=object_id, connection=connection_object.connection, plug=plug))
             if new_data:
-                print(new_data)
-                field_count = len(kwargs)
+                field_count = len(data)
                 extra = {'controller': 'activecampaign'}
                 for i, item in enumerate(new_data):
                     try:
@@ -1337,7 +1338,8 @@ class ActiveCampaignController(BaseController):
                                 % (item.object_id, item.plug.id,
                                    item.connection.id),
                                 extra=extra)
-                    except:
+                    except Exception as e:
+                        print(e)
                         extra['status'] = 'f'
                         self._log.info(
                             'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.'
