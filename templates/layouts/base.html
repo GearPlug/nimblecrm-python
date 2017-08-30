@@ -27,11 +27,15 @@
             <div class="content container">
                 <div class="row">
                     <div class="col-md-12">
-                        <div class="col-md-12">{% block wizard_content %}Wizard{% endblock %}</div>
+                        <div class="col-md-12 wizard_color">{% block wizard_content %}Wizard Bar{% endblock %}</div>
                         <div class="col-md-2">
-                            <div class="col-md-12">{% block logo %}<img width="10" height="10" src="{% static 'img/bg_login.jpg' %}">{% endblock %}</div>
-                            <div class="col-md-12">{% block left_menu_0 %}Fijos{% endblock %}</div>
-                            <div class="col-md-12">{% block left_menu_1 %}Lista{% endblock %}</div>
+                            <div class="col-md-12 logo_border">
+                                {% block logo %}
+                                    <img src="{% static 'img/gp_logo.png' %}" class="img-responsive">
+                                {% endblock %}
+                            </div>
+                            <div class="col-md-12 menu_left_border_up">{% block left_menu_0 %}Fijos{% endblock %}</div>
+                            <div class="col-md-12 menu_left_border_down">{% block left_menu_1 %}Lista{% endblock %}</div>
                         </div>
                         <div class="col-md-10">{% block content %}{% endblock %}</div>
                     </div>

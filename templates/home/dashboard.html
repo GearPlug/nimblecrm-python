@@ -1,31 +1,25 @@
 {% extends 'layouts/components_base.html' %}
 {% load static %}
 
-
 {% block content %}
-    <div class="post">
-        <div class="date">
-            Fecha
+    <div class="col-md-12">
+        {# USER INFO #}
+        <div> User:
+            <div>{{ request.user }}</div>
         </div>
-        <h1><a href="">Titulo</a></h1>
-        <p>Texto</p>
+        <br/>
+        {# GROUPS (CARPETAS) #}
+        <div>Groups:
+            {% for group in gear_groups %}
+                <div>{{ group }}</div>
+            {% endfor %}
+        </div>
+        <br/>
+        {# GEARS "MAS USADOS" #}
+        <div>Most used gears:
+            {% for gear in used_gears %}
+                <div>{{ gear }}</div>
+            {% endfor %}
+        </div>
     </div>
-    {# USER INFO #}
-    <div> User:
-        <div>{{ request.user }}</div>
-    </div>
-    <br/>
-    {# GROUPS (CARPETAS) #}
-    <div>Groups:
-        {% for group in gear_groups %}
-            <div>{{ group }}</div>
-        {% endfor %}
-    </div>
-    <br/>
-    {# GEARS "MAS USADOS" #}
-    <div>Most used gears:
-        {% for gear in used_gears %}
-            <div>{{ gear }}</div>
-        {% endfor %}
-    </div>
-{% endblock content %}
+{% endblock %}
