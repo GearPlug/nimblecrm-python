@@ -27,26 +27,18 @@
             <div class="content container">
                 <div class="row">
                     <div class="col-md-12">
-                        <div class="col-md-12">Wizard</div>
+                        <div class="col-md-12">{% block wizard_content %}Wizard{% endblock %}</div>
                         <div class="col-md-2">
-                            <div class="col-md-12">
-                                Logo
-                            </div>
-                            <div class="col-md-12">
-                                Fijos
-                            </div>
-                            <div class="col-md-12">
-                                Lista
-                            </div>
+                            <div class="col-md-12">{% block logo %}Logo{% endblock %}</div>
+                            <div class="col-md-12">{% block left_menu_0 %}Fijos{% endblock %}</div>
+                            <div class="col-md-12">{% block left_menu_1 %}Lista{% endblock %}</div>
                         </div>
-                        <div class="col-md-10">
-                            {% block content %}{% endblock %}
-                        </div>
+                        <div class="col-md-10">{% block content %}{% endblock %}</div>
                     </div>
                 </div>
             </div>
             <div class="page-footer">
-                <h1><a href="/">Footer</a></h1>
+                <h1><a href="/">{% block footer_content %}Footer{% endblock %}</a></h1>
             </div>
 
             {% block base_scripts %}
