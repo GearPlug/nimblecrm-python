@@ -18,12 +18,7 @@
         {# GEARS "MAS USADOS" #}
         <div>Most used gears:
             {% for gear in used_gears %}
-                <div data-gear-id="{{ gear.id }}">
-                    <img src="{{ gear.source.connection.connector.icon.url }}" height="20" width="20">
-                    <span> --- </span>
-                    <img src="{{ gear.target.connection.connector.icon.url }}" height="20" width="20">
-                    {{ gear.name }}
-                </div>
+                {% include 'gear/snippets/gear_small.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
             {% endfor %}
         </div>
     </div>
