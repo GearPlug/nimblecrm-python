@@ -3,29 +3,36 @@
 
 {% block content %}
     {# GRUPOS DE GEARS #}
-    <div class="group-list">
+    <div class="col-md-12 gear_border_gear">
+        Groups:
+        <br />
         {% for group in object_list %}
-            <div data-group-id="{{ group.id }}">Group: {{ group }}</div>
+            {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=2 %}
         {% endfor %}
     </div>
 
     {# GEARS DE CADA GRUPO #}
-    {% for group in object_list %}
-        {# AQUI VA OCULTO #}
-        <div><a href="{% url 'gear:update_group' pk=group.id %}"><i class="fa fa-wrench" aria-hidden="true"></i></a>{{ group.name }}</div>
-        <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;">
-            {% for gear in group.gear.all %}
-                <div data-gear-id="{{ gear.id }}">
-                <a href="{% url 'gear:update' pk=gear.id %}"><i class="fa fa-wrench" aria-hidden="true"></i></a>
-                    <img src="{{ gear.source.connection.connector.icon.url }}" height="20" width="20">
-                    <span> --- </span>
-                    <img src="{{ gear.target.connection.connector.icon.url }}" height="20" width="20">
-                    {{ gear.name }}
-                </div>
-            {% endfor %}
-        </div>
-        <br/>
-    {% endfor %}
+    <div class="col-md-12 gear_border_gear">
+        Gears:
+        <br />
+        {% for group in object_list %}
+            {# AQUI VA OCULTO #}
+
+            <div><a href="{% url 'gear:update_group' pk=group.id %}"><i class="fa fa-wrench" aria-hidden="true"></i></a>{{ group.name }}</div>
+            <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;">
+                {% for gear in group.gear.all %}
+                    <div data-gear-id="{{ gear.id }}">
+                    <a href="{% url 'gear:update' pk=gear.id %}"><i class="fa fa-wrench" aria-hidden="true"></i></a>
+                        <img src="{{ gear.source.connection.connector.icon.url }}" height="20" width="20">
+                        <span> --- </span>
+                        <img src="{{ gear.target.connection.connector.icon.url }}" height="20" width="20">
+                        {{ gear.name }}
+                    </div>
+                {% endfor %}
+            </div>
+            <br/>
+        {% endfor %}
+    </div>
 
     <br/>
     {# CREAR GRUPO DE GEARS #}
