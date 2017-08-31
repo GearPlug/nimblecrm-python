@@ -4,25 +4,30 @@
 {% block content %}
     <div class="col-md-12">
         {# USER INFO #}
-        <div class="col-md-12">
-            <div class="col-md-4"> User:
-                <div>{{ request.user }}</div>
+        <div class="col-md-12 dashboard_border">
+            <div class="col-md-4">
+                User: {{ request.user }}</div>
             </div>
             <div class="col-md-4">
-                Información de Conectores y creditos
+                Connectors and Credits Information
             </div>
             <div class="col-md-4">
-                Grafico de disponibilidad
+                Availability graph
             </div>
         </div>
 
         {# GROUPS (CARPETAS) #}
-        <div class="col-md-12">
-            Proyectos:
+        <div class="col-md-12 dashboard_border">
+            Projects:
             <br />
             {% for group in gear_groups %}
-                <div class="col-md-4">{{ group }}</div>
-
+                <div class="col-md-4 projects_border">
+                    <div class="col-md-12">
+                        <i class="fa fa-folder-o" aria-hidden="true"></i>
+                        <br />
+                        {{ group }}
+                    </div>
+                </div>
             {% endfor %}
         </div>
         {# GEARS "MAS USADOS" #}
