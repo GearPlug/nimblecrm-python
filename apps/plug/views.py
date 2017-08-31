@@ -66,7 +66,8 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
                 if c in [ConnectorEnum.Bitbucket, ConnectorEnum.JIRA, ConnectorEnum.SurveyMonkey,
                          ConnectorEnum.Instagram, ConnectorEnum.YouTube, ConnectorEnum.Shopify,
                          ConnectorEnum.GoogleCalendar, ConnectorEnum.Asana, ConnectorEnum.Salesforce,
-                         ConnectorEnum.Mandrill, ConnectorEnum.FacebookLeads, ConnectorEnum.Gmail]:
+                         ConnectorEnum.Mandrill, ConnectorEnum.FacebookLeads, ConnectorEnum.Gmail,
+                         ConnectorEnum.GitLab]:
                     print("WEBHOOK!!")
                     controller.create_webhook()
                 else:

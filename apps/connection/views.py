@@ -196,6 +196,13 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                                   redirect_uri=settings.WUNDERLIST_REDIRECT_URL)
             url, state = oauth.authorization_url('https://www.wunderlist.com/oauth/authorize?state=RANDOM')
             context['authorization_url'] = url
+        elif connector == ConnectorEnum.GitLab:
+            oauth = OAuth2Session(client_id=settings.GITLAB_CLIENT_ID,
+                                  redirect_uri=settings.GITLAB_REDIRECT_URL)
+            authorization_url, state = oauth.authorization_url(
+                'https://gitlab.com/oauth/authorize?response_type=code&client_id={0}&redirect_uri={1}&state=1234'
+                    .format(settings.GITLAB_CLIENT_ID, settings.GITLAB_REDIRECT_URL))
+            context['authorization_url'] = authorization_url
         return context
 
 
@@ -413,6 +420,24 @@ class ShopifyAuthView(View):
             raise
         # TODO: error
         return redirect(reverse('connection:shopify_success_create_connection'))
+
+class GitLabAuthView(View):
+    def get(self, request, *args, **kwargs):
+        code = request.GET.get('code', '')
+        oauth = OAuth2Session(client_id=settings.GITLAB_CLIENT_ID,
+                              redirect_uri=settings.GITLAB_REDIRECT_URL)
+        token = oauth.fetch_token("https://gitlab.com/oauth/token",
+                                  code=code,
+                                  authorization_response=settings.GITLAB_REDIRECT_URL,
+                                  client_id=settings.GITLAB_CLIENT_ID,
+                                  client_secret=settings.GITLAB_CLIENT_SECRET, )
+        self.request.session['connection_data'] = {
+            'token': token['access_token'],
+            'refresh_token': token['refresh_token'],
+            }
+        self.request.session['connector_name'] = ConnectorEnum.GitLab.name
+        return redirect(
+            reverse('connection:create_token_authorized_connection'))
 
 
 # NPI

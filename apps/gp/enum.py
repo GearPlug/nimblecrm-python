@@ -42,7 +42,7 @@ class ConnectorEnum(Enum):
     DynamicCRM = 36, 'crm'
     FreshDesk = 37, 'crm'
     AgileCRM = 38, 'crm'
-    GitLab = 39, 'repository'
+    GitLab = 39, 'repository', 'authorization'
     Shopify = 40, 'ecomerce', 'special'
     Dropbox = 41, '', True
     Magento = 42, 'ecomerce'

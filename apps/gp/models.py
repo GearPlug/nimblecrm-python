@@ -445,6 +445,15 @@ class GmailConnection(models.Model):
     def __str__(self):
         return self.name
 
+class GitLabConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_gitlab')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+    refresh_token = models.CharField('refresh token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
 
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
@@ -504,7 +513,7 @@ class Gear(models.Model):
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
-    gear_group = models.ForeignKey(GearGroup, on_delete=models.SET_NULL, related_name='gear_group')
+    gear_group = models.ForeignKey(GearGroup, null=True, on_delete=models.SET_NULL, related_name='gear_group')
 
     @property
     def is_running(self):

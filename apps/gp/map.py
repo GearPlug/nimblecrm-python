@@ -279,6 +279,16 @@ class MapField(object):
                 self.field_type = d['type']
             self.field_type = 'text'
 
+        elif controller == ConnectorEnum.GitLab:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
+            self.field_type = 'text'
+
         elif controller == ConnectorEnum.Gmail:
             if 'name' in d:
                 self.name = d['name']
