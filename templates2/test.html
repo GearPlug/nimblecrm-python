@@ -1,0 +1,15 @@
+{% extends 'commons/site_base.html' %}
+
+{% block body %}
+    <div>
+        {% for obj in fb_data %}
+            {{ obj.field_data }}
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+
+    </script>
+{% endblock %}

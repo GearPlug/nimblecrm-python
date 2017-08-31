@@ -1,0 +1,30 @@
+{% extends 'commons/site_base.html' %}
+{% load static %}
+
+{% block body %}
+    <div class="box-tool">
+        <div class="box-title">
+            <h2>connector list</h2>
+        </div>
+
+        <div class="search-connetor">
+            <div class="container-4">
+                <input type="search" id="search" name="search" placeholder="search">
+                <button class="icon"><i class="fa fa-search"></i></button>
+            </div>
+        </div>
+
+        <ul class="list-connector">
+            {% for connector in object_list %}
+                <li>
+                    <a href="{% url 'wizard:connection_list' connector_id=connector.id type=type %}">
+                        <div class="gr_ go2Conn">
+                            <img src="{{ connector.icon.url }}" height="60" width="60">
+                            <p>{{ connector.name }}</p>
+                        </div>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

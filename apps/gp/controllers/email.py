@@ -34,6 +34,7 @@ class GmailController(BaseController):
                 except Exception as e:
                     print(e)
                     credentials_json = None
+                    len(h)
         if credentials_json is not None:
             self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
             self._service = discovery.build('gmail', 'v1', http=self._credential.authorize(httplib2.Http()))

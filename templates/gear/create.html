@@ -1,22 +1,16 @@
-{% extends 'commons/site_base.html' %}
+{% extends 'layouts/site_base.html' %}
 {% load static %}
-{% load bootstrap_tags %}
-{% block body %}
-<div class="box-tool">
-   <div class="box-title">
-      <h2>new gear</h2>
-   </div>
-   <div class="panel">
-      <div class="container">
-         <form class="create-gear-form form-horizontal" action="" method="post" autocomplete="off">
+
+{% block content %}
+    <div>
+        <form action="" method="post" autocomplete="off">
             {% csrf_token %}
-            {{ form|as_bootstrap }}
-            <button id="singlebutton" name="singlebutton">Create gear</button>
+            {{ form }}
+            <button >{% block gear_action %}Create{% endblock %} {{ object_name }}</button>
             {% if form.error %}
-            <div class="error">{{ form.error }}</div>
+                <div class="error">{{ form.error }}</div>
             {% endif %}
-         </form>
-      </div>
-   </div>
-</div>
+        </form>
+
+    </div>
 {% endblock %}

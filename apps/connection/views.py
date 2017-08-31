@@ -30,7 +30,7 @@ class ListConnectorView(LoginRequiredMixin, ListView):
 
     """
     model = Connector
-    template_name = 'wizard/connector_list.html'
+    template_name = 'connection/connector_list.html'
     login_url = '/account/login/'
 
     def get_queryset(self):
@@ -54,9 +54,11 @@ class ListConnectionView(LoginRequiredMixin, ListView):
 
     - Called after the user selects a connector to use/create a connection.
 
+    - Asign the  connection_id to the session.
+
     """
     model = Connection
-    template_name = 'wizard/connection_list.html'
+    template_name = 'connection/list.html'
     login_url = '/account/login/'
 
     def get_queryset(self):
@@ -73,7 +75,7 @@ class ListConnectionView(LoginRequiredMixin, ListView):
         connection_id = request.POST.get('connection', None)
         connector_type = kwargs['type']
         request.session['%s_connection_id' % connector_type] = connection_id
-        return redirect(reverse('wizard:plug_create', kwargs={'plug_type': connector_type}))
+        return redirect(reverse('plug:create', kwargs={'plug_type': connector_type}))
 
 
 class CreateConnectionView(LoginRequiredMixin, CreateView):
@@ -81,12 +83,14 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
     Clase para crear conexion.
     - llamado desde lista de conexiones en caso tal que el usuario desee
     crear una nueva conexion.
+
+    TODO REVIEW
     """
     model = Connection
     login_url = '/account/login/'
     fields = []
-    template_name = '%s/create.html' % app_name
-    success_url = reverse_lazy('%s:create_success' % app_name)
+    template_name = 'connection/create.html'
+    success_url = reverse_lazy('connection:create_success')
 
     def form_valid(self, form, *args, **kwargs):
         connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
@@ -120,12 +124,9 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
             if connector.connection_type == 'special':
-                name = '{0}/create'.format(connector.name.lower())
+                self.template_name = 'connection/create/{0}.html'.format(connector.name.lower())
             elif connector.connection_type == 'authorization':
-                name = 'create_with_auth'
-            else:
-                name = 'create'
-            self.template_name = '%s/%s.html' % (app_name, name)
+                self.template_name = 'connection/create_with_auth.html'
         return super(CreateConnectionView, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
@@ -133,12 +134,9 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
             self.model, self.fields = ConnectorEnum.get_connector_data(connector)
             if connector.connection_type == 'special':
-                name = '{0}/create'.format(connector.name.lower())
+                self.template_name = 'connection/create/{0}.html'.format(connector.name.lower())
             elif connector.connection_type == 'authorization':
-                name = 'create_with_auth'
-            else:
-                name = 'create'
-            self.template_name = '%s/%s.html' % (app_name, name)
+                self.template_name = 'connection/create_with_auth.html'
         return super(CreateConnectionView, self).post(*args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):
@@ -203,7 +201,7 @@ class CreateConnectionSuccessView(LoginRequiredMixin, TemplateView):
     """
     template para cerrar la vnetana al terminar el auth??
     """
-    template_name = 'connection/create_connection_success.html'
+    template_name = 'connection/success_close.html'
     login_url = '/account/login/'
 
 
@@ -238,23 +236,25 @@ class TestConnectionView(LoginRequiredMixin, View):
     """
 
     def post(self, request, **kwargs):
-        print(request.POST)
-        connector = ConnectorEnum.get_connector(kwargs['connector_id'])
-        if 'connection_id' in request.POST:
-            connection_object = Connection.objects.get(
-                pk=request.POST['connection_id']).related_connection
-            controller_class = ConnectorEnum.get_controller(connector)
-            controller = controller_class(connection_object)
-        else:
-            connection_model = ConnectorEnum.get_model(connector)
-            connection_params = {key: str(val)
-                                 for key, val in request.POST.items()}
-            del (connection_params['csrfmiddlewaretoken'])
-            connection_object = connection_model(**connection_params)
-            controller_class = ConnectorEnum.get_controller(connector)
-            controller = controller_class(connection_object)
-        return JsonResponse({'data': controller.test_connection(), 'connection_test': controller.test_connection()})
-
+        try:
+            connector = ConnectorEnum.get_connector(kwargs['connector_id'])
+            if 'connection_id' in request.POST:
+                connection_object = Connection.objects.get(
+                    pk=request.POST['connection_id']).related_connection
+                controller_class = ConnectorEnum.get_controller(connector)
+                controller = controller_class(connection_object)
+            else:
+                connection_model = ConnectorEnum.get_model(connector)
+                connection_params = {key: str(val)
+                                     for key, val in request.POST.items()}
+                del (connection_params['csrfmiddlewaretoken'])
+                connection_object = connection_model(**connection_params)
+                controller_class = ConnectorEnum.get_controller(connector)
+                controller = controller_class(connection_object)
+            return JsonResponse({'test': controller.test_connection()})
+        except Exception as e:
+            print(e)
+            return JsonResponse({'test': False})
 
 # Auth Views
 

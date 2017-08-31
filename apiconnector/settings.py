@@ -2,7 +2,7 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'nd65g3a23c!y%+a_%+v)!trnjh%c=gh(zg5!gsn*qo&b6*nsbb'
-DEBUG = True # False
+DEBUG = True  # False
 CURRENT_HOST = "https://localhost"
 ALLOWED_HOSTS = [CURRENT_HOST, '*', ]
 CORS_ORIGIN_ALLOW_ALL = True
@@ -17,24 +17,34 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     # 3rd
-    'django_uwsgi',
-    'account',
-    'django_forms_bootstrap',
-    'oauth2_provider',
-    'rest_framework',
-    'widget_tweaks',
+
+    # Accounts
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+
+    # Debug
     'debug_toolbar',
+
+    # TODO REVIEW
     'facebook',
-    'extra_views',
+    # 'django_uwsgi',
+    # 'account',
+    # 'django_forms_bootstrap',
+    # 'oauth2_provider',
+    # 'rest_framework',
+    # 'widget_tweaks',
+    # 'extra_views',
     #
+    # 'apps.user',
+
+    # GRPLUG
     'apps.wizard',
     'apps.home',
-    'apps.user',
     'apps.gear',
     'apps.plug',
     'apps.connection',
     'apps.gp',
-
 ]
 
 MIDDLEWARE = [
@@ -46,8 +56,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-    # 'account.middleware.LocaleMiddleware',  # account app
-    # 'account.middleware.TimezoneMiddleware',  # account app
 ]
 
 ROOT_URLCONF = 'apiconnector.urls'
@@ -63,7 +71,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                "account.context_processors.account",
             ],
         },
     },
@@ -72,10 +79,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'apiconnector.wsgi.application'
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    # },
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
@@ -90,25 +93,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': 'log/django/debug.log',
-        },
-    },
-    'loggers': {
-        'django.server': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-}
 
 LOGGING = {
     'version': 1,
@@ -190,18 +174,14 @@ STATICFILES_DIRS = [
 ]
 
 AUTHENTICATION_BACKENDS = [
-    'account.auth_backends.EmailAuthenticationBackend', ]
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 
-# account app
-ACCOUNT_EMAIL_UNIQUE = True
-ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = False
-
-
-def ACCOUNT_USER_DISPLAY(user): return user.email
-
-
-ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/'
-ACCOUNT_SIGNUP_REDIRECT_URL = '/dashboard/'
+# Account
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_EMAIL_REQUIRED = True
+LOGIN_REDIRECT_URL = '/dashboard/'
 
 # SETTINGS CENTRALIZADOS
 # Facebook
