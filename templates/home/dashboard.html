@@ -1,26 +1,34 @@
-{% extends 'layouts/components_base.html' %}
+{% extends 'layouts/site_base.html' %}
 {% load static %}
 
-{% block left_menu_0 %}
-    <a href="#">Mis Gears</a>
-    <br>
-    <a href="#">Lista de APPs</a>
-{% endblock %}
-
-{% block left_menu_1 %}
-    <a href="#">Actividad</a>
-    <br>
-    <a href="#">Ayuda</a>
-    <br>
-    <a href="#">Administrar conexiones</a>
-{% endblock %}
-
 {% block content %}
-    <div class="post">
-        <div class="date">
-            Fecha
+    {# USER INFO #}
+    <div class="col-md-12 dashboard_border">
+        <div class="col-md-4">
+            User: {{ request.user }}
         </div>
-        <h1><a href="">Titulo</a></h1>
-        <p>Texto</p>
+        <div class="col-md-4">
+            Connectors and Credits Information
+        </div>
+        <div class="col-md-4">
+            Availability graph
+        </div>
     </div>
-{% endblock content %}
+
+    {# GROUPS (CARPETAS) #}
+    <div class="col-md-12 dashboard_border">
+        Groups:
+        <br />
+        {% for group in gear_groups %}
+            {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=4%}
+        {% endfor %}
+    </div>
+    {# GEARS "MAS USADOS" #}
+    <div class="col-md-12 dashboard_border">
+        Gears:
+        <br />
+        {% for gear in used_gears %}
+            {% include 'gear/snippets/gear_small.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
+        {% endfor %}
+    </div>
+{% endblock %}

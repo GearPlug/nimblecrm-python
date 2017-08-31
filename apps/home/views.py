@@ -1,14 +1,13 @@
-from django.shortcuts import redirect
-from django.views.generic import TemplateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
-from django.http import JsonResponse, HttpResponse
+from django.views.generic import TemplateView, View
+from django.views.decorators.csrf import csrf_exempt
 from allauth.account.views import LoginView
-import json
-from apps.gp.models import PlugActionSpecification, Plug, Webhook
+from apps.gp.models import GearGroup, Gear, PlugActionSpecification, Plug, Webhook
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import GearGroup
+import json
 
 
 class DashBoardView(LoginRequiredMixin, TemplateView):
@@ -19,10 +18,8 @@ class DashBoardView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(DashBoardView, self).get_context_data(**kwargs)
-        context["message"] = "Hello!"
-        groups = GearGroup.objects.filter(user=self.request.user)
-        print(groups)
-        context['object_list'] = groups
+        context['gear_groups'] = GearGroup.objects.filter(user=self.request.user)[:3]
+        context['used_gears'] = Gear.objects.filter(user=self.request.user)[:3]
         return context
 
 

@@ -1,4 +1,6 @@
-import httplib2
+from apps.gp.models import GearGroup
+
+#
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.http.response import JsonResponse
@@ -6,10 +8,10 @@ from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.gp.enum import ConnectorEnum
-from apps.gp.map import MapField
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
 from oauth2client import client
+import httplib2
 
 
 class ListGearView(LoginRequiredMixin, ListView):
@@ -18,8 +20,8 @@ class ListGearView(LoginRequiredMixin, ListView):
 
     - Is not called in the wizard.
     """
-    model = Gear
-    template_name = 'wizard/gear_list.html'
+    model = GearGroup
+    template_name = 'gear/list.html'
     login_url = '/account/login/'
 
     def get_context_data(self, **kwargs):
@@ -27,7 +29,7 @@ class ListGearView(LoginRequiredMixin, ListView):
         return context
 
     def get_queryset(self):
-        return self.model.objects.filter(user=self.request.user)
+        return self.model.objects.filter(user=self.request.user).prefetch_related('gear')
 
 
 class CreateGearView(LoginRequiredMixin, CreateView):
@@ -38,10 +40,10 @@ class CreateGearView(LoginRequiredMixin, CreateView):
 
     """
     model = Gear
-    template_name = 'wizard/gear_create.html'
-    fields = ['name', ]
+    template_name = 'gear/create.html'
+    fields = ['name', 'gear_group']
     login_url = '/account/login/'
-    success_url = reverse_lazy('wizard:connector_list', kwargs={'type': 'source'})
+    success_url = reverse_lazy('connection:connector_list', kwargs={'type': 'source'})
 
     def get(self, request, *args, **kwargs):
         request.session['gear_id'] = None
@@ -49,17 +51,15 @@ class CreateGearView(LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         self.request.session['gear_id'] = self.object.id
-        return reverse('wizard:connector_list', kwargs={'type': 'source'})
+        return super(CreateGearView, self).get_success_url()
 
     def form_valid(self, form):
         form.instance.user = self.request.user
         return super(CreateGearView, self).form_valid(form)
 
-    def get_queryset(self):
-        return self.model.objects.filter(user=self.request.user).prefetch_related()
-
     def get_context_data(self, **kwargs):
         context = super(CreateGearView, self).get_context_data(**kwargs)
+        context['object_name'] = self.model.__name__
         return context
 
 
@@ -69,17 +69,67 @@ class UpdateGearView(LoginRequiredMixin, UpdateView):
 
     - Calls the connector list as a source.
 
-    TODO: VALIDAR QUE EL DUEÑO ES QUIEN LO EDITA.
     """
     model = Gear
-    template_name = 'wizard/gear_create.html'
-    fields = ['name', ]
+    template_name = 'gear/update.html'
+    fields = ['name', 'gear_group']
     login_url = '/account/login/'
-    success_url = reverse_lazy('wizard:connector_list', kwargs={'type': 'source'})
+    success_url = reverse_lazy('connection:connector_list', kwargs={'type': 'source'})
 
     def get(self, request, *args, **kwargs):
         request.session['gear_id'] = self.kwargs.get('pk', None)
         return super(UpdateGearView, self).get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        try:
+            return self.model.objects.filter(pk=self.kwargs.get('pk', None), user=self.request.user)
+        except Exception as e:
+            raise
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateGearView, self).get_context_data(**kwargs)
+        context['object_name'] = self.model.__name__
+        return context
+
+
+class CreateGearGroupView(CreateView):
+    model = GearGroup
+    template_name = 'gear/create.html'
+    fields = ['name', ]
+    login_url = '/account/login/'
+    success_url = reverse_lazy('gear:list')
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super(CreateGearGroupView, self).form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super(CreateGearGroupView, self).get_context_data(**kwargs)
+        context['object_name'] = self.model.__name__
+        return context
+
+
+class UpdateGearGroupView(UpdateView):
+    model = GearGroup
+    template_name = 'gear/update.html'
+    fields = ['name', ]
+    login_url = '/account/login/'
+    success_url = reverse_lazy('gear:list')
+
+    def get(self, request, *args, **kwargs):
+        request.session['gear_id'] = self.kwargs.get('pk', None)
+        return super(UpdateGearGroupView, self).get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        try:
+            return self.model.objects.filter(pk=self.kwargs.get('pk', None), user=self.request.user)
+        except Exception as e:
+            raise
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateGearGroupView, self).get_context_data(**kwargs)
+        context['object_name'] = self.model.__name__
+        return context
 
 
 class DeleteGearView(DeleteView):
@@ -98,7 +148,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
 
     """
     login_url = '/account/login/'
-    template_name = 'gear/map/create.html'
+    template_name = 'gear/map.html'
     form_class = MapForm
     form_field_list = []
     source_object_list = []
@@ -157,7 +207,8 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         if c == ConnectorEnum.GoogleContacts:
             self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
             return ['%%{0}%%'.format(field) for field in self.google_contacts_controller.get_contact_fields()]
-        return ['%%{0}%%'.format(item['name']) for item in StoredData.objects.filter(plug=plug, connection=plug.connection).values('name').distinct()]
+        return ['%%{0}%%'.format(item['name']) for item in
+                StoredData.objects.filter(plug=plug, connection=plug.connection).values('name').distinct()]
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)

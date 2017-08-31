@@ -1,0 +1,59 @@
+{% extends 'layouts/site_base.html' %}
+{% load static %}
+
+{% block content %}
+    {# GRUPOS DE GEARS #}
+    <div class="col-md-12 gear_border_gear">
+        Groups:
+        <br />
+        {% for group in object_list %}
+            {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=2 %}
+        {% endfor %}
+    </div>
+
+    {# GEARS DE CADA GRUPO #}
+    <div class="col-md-10 gear_border_gear">
+        Gears:
+        <br />
+        {% for group in object_list %}
+            {# AQUI VA OCULTO #}
+            <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;" data-show="True"
+                 id="group_gear">
+                {% for gear in group.gear.all %}
+                    {% if forloop.counter.0 == forloop.parentloop.counter.0 %}
+                        <div>
+                            Group: {{ group.name }}&nbsp;
+                            <a href="{% url 'gear:update_group' pk=group.id %}">
+                                <i class="fa fa-wrench" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    {% endif %}
+                    {% include 'gear/snippets/gear_extend.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
+                {% endfor %}
+            </div>
+            <br/>
+        {% endfor %}
+    </div>
+
+    <div class="col-md-2">
+        {# CREAR GRUPO DE GEARS #}
+        <a href="{% url 'gear:create_group' %}">New group</a>
+        <br />
+        {# CREAR GEAR #}
+        <a href="{% url 'gear:create' %}">New gear</a>
+    </div>
+{% endblock %}
+
+{% block scripts_gear %}
+    <script>
+{#        function show_gear() {#}
+{#            var group = document.getElementById('group_gear');#}
+{#            var gear_show = group.getAttribute('data-show');#}
+{#            var id = group.getAttribute('data-group-id');#}
+{#            if(gear_show == 'True'){#}
+{#                group.setAttribute('data-show','False');#}
+{#                #}
+{#            }#}
+{#        }#}
+    </script>
+{% endblock %}

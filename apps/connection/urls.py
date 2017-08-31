@@ -1,8 +1,9 @@
 from django.conf.urls import url
-from apps.connection.views import CreateConnectionView, ListConnectorView, GoogleAuthView, SlackAuthView, AuthSuccess, \
-    TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, ShopifyAuthView, TestConnectionView, \
-    CreateConnectionSuccessView, EvernoteAuthView, AsanaAuthView, CreateTokenAuthorizedConnectionView, \
-    MercadoLibreAuthView, AjaxMercadoLibrePostSiteView, WunderListAuthView, HubspotAuthView  # ,AJAXGetSurveyListView
+from apps.connection.views import CreateConnectionView, ListConnectionView, ListConnectorView, AuthSuccess, \
+    TestConnectionView, CreateConnectionSuccessView, CreateTokenAuthorizedConnectionView, \
+    GoogleAuthView, SlackAuthView, TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, \
+    ShopifyAuthView, EvernoteAuthView, AsanaAuthView, MercadoLibreAuthView, WunderListAuthView, HubspotAuthView, \
+    AjaxMercadoLibrePostSiteView  # ,AJAXGetSurveyListView
 
 urlpatterns = [
     # Create Connection
@@ -11,8 +12,11 @@ urlpatterns = [
     url(r'create/success/$', CreateConnectionSuccessView.as_view(), name='create_success'),
     # Test Connection
     url(r'^test/(?P<connector_id>\d+)/$', TestConnectionView.as_view(), name="test"),
+    # Connection list
+    url(r'^list/(?P<connector_id>\d+)/(?P<type>(source|target)+)/$', ListConnectionView.as_view(),
+        name='list'),
     # List Connectors
-    url(r'list/connector/$', ListConnectorView.as_view(), name='list_connector'),
+    url(r'^list/connector/(?P<type>(source|target)+)/$', ListConnectorView.as_view(), name='connector_list'),
 
     # Auth Callbacks
     url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),

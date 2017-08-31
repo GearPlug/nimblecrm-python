@@ -1,1 +1,6 @@
-body{ background-color: #00aeef !important; }
+body{ background-color: white !important; }
+.wizard_color{
+    background-color: #7D97B6;
+    color: white;
+}
+.border_base{ border: 1px solid #BD5F39; }

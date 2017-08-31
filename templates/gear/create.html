@@ -1,0 +1,16 @@
+{% extends 'layouts/site_base.html' %}
+{% load static %}
+
+{% block content %}
+    <div>
+        <form action="" method="post" autocomplete="off">
+            {% csrf_token %}
+            {{ form }}
+            <button >{% block gear_action %}Create{% endblock %} {{ object_name }}</button>
+            {% if form.error %}
+                <div class="error">{{ form.error }}</div>
+            {% endif %}
+        </form>
+
+    </div>
+{% endblock %}
