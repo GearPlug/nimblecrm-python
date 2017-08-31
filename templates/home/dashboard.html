@@ -17,20 +17,16 @@
 
     {# GROUPS (CARPETAS) #}
     <div class="col-md-12 dashboard_border">
-        Projects:
+        Groups:
         <br />
         {% for group in gear_groups %}
-            <div class="col-md-4">
-                <div class="col-md-12 projects_border">
-                    <i class="fa fa-folder-o" aria-hidden="true"></i>
-                    <br />
-                    {{ group }}
-                </div>
-            </div>
+            {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=4%}
         {% endfor %}
     </div>
     {# GEARS "MAS USADOS" #}
-    <div>Most used gears:
+    <div class="col-md-12 dashboard_border">
+        Gears:
+        <br />
         {% for gear in used_gears %}
             {% include 'gear/snippets/gear_small.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
         {% endfor %}

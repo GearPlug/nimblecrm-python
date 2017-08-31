@@ -7,6 +7,7 @@
 {% endblock %}
 {% block styles %}
     <link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
+    <link href="{% static 'css/gear.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block body_base %}
@@ -50,9 +51,9 @@
     </div>
     <div class="page-footer">
         {% block footer_base %}
-            <h1>
-                <a href="/">{% block footer_content %}Footer{% endblock %}</a>
-            </h1>
+            {% block footer_content %}
+                <i class="fa fa-copyright" aria-hidden="true"></i> 2017 GearPlug
+            {% endblock %}
         {% endblock %}
     </div>
 {% endblock %}
