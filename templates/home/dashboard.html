@@ -4,17 +4,27 @@
 {% block content %}
     <div class="col-md-12">
         {# USER INFO #}
-        <div> User:
-            <div>{{ request.user }}</div>
+        <div class="col-md-12">
+            <div class="col-md-4"> User:
+                <div>{{ request.user }}</div>
+            </div>
+            <div class="col-md-4">
+                Información de Conectores y creditos
+            </div>
+            <div class="col-md-4">
+                Grafico de disponibilidad
+            </div>
         </div>
-        <br/>
+
         {# GROUPS (CARPETAS) #}
-        <div>Groups:
+        <div class="col-md-12">
+            Proyectos:
+            <br />
             {% for group in gear_groups %}
-                <div>{{ group }}</div>
+                <div class="col-md-4">{{ group }}</div>
+
             {% endfor %}
         </div>
-        <br/>
         {# GEARS "MAS USADOS" #}
         <div>Most used gears:
             {% for gear in used_gears %}
