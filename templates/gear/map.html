@@ -1,0 +1,26 @@
+{% extends 'layouts/site_base.html' %}
+{% load static %}
+
+{% block content %}
+    MAP: ss
+    <form method="POST" action="" class="">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button>Create Map</button>
+    </form>
+{% endblock %}
+{% block styles %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'vendor/jquery-ui-1.12.0/jquery-ui.min.css' %}">
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
+    <script>
+        $(document).ready(function () {
+            var availableTags = [{% for item in source_object_list %}'{{ item }}',{% endfor %}];
+            $('input').autocomplete({source: availableTags});
+            {#            $('form div.form-group div input.form-control').removeAttr('required');#}
+        })
+    </script>
+{% endblock %}

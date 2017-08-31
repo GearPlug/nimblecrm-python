@@ -34,7 +34,7 @@
             </form>
         {% endfor %}
         {% if request.session.gear_id != None %}
-            <a href="{% url 'gear:create_gear_map' gear_id=request.session.gear_id %}">Continue (after
+            <a href="{% url 'gear:map' gear_id=request.session.gear_id %}">Continue (after
                 test)</a>
         {% endif %}
     {% endif %}

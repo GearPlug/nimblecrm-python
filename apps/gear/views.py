@@ -148,7 +148,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
 
     """
     login_url = '/account/login/'
-    template_name = 'gear/map/create.html'
+    template_name = 'gear/map.html'
     form_class = MapForm
     form_field_list = []
     source_object_list = []
