@@ -25,6 +25,7 @@ class MapField(object):
             self.field_type = 'text'
             self.max_length = 200
         elif controller == ConnectorEnum.SugarCRM:
+            print(d)
             if 'name' in d:
                 self.name = d['name']
             if 'label' in d:
