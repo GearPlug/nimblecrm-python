@@ -1,40 +1,39 @@
-{% extends 'layouts/components_base.html' %}
+{% extends 'layouts/site_base.html' %}
 {% load static %}
 
 {% block content %}
-    <div class="col-md-12">
-        {# USER INFO #}
-        <div class="col-md-12 dashboard_border">
-            <div class="col-md-4">
-                User: {{ request.user }}</div>
-            </div>
-            <div class="col-md-4">
-                Connectors and Credits Information
-            </div>
-            <div class="col-md-4">
-                Availability graph
-            </div>
+    {# USER INFO #}
+    <div class="col-md-12 dashboard_border">
+        <div class="col-md-4">
+            User: {{ request.user }}
         </div>
-
-        {# GROUPS (CARPETAS) #}
-        <div class="col-md-12 dashboard_border">
-            Projects:
-            <br />
-            {% for group in gear_groups %}
-                <div class="col-md-4 projects_border">
-                    <div class="col-md-12">
-                        <i class="fa fa-folder-o" aria-hidden="true"></i>
-                        <br />
-                        {{ group }}
-                    </div>
-                </div>
-            {% endfor %}
+        <div class="col-md-4">
+            Connectors and Credits Information
         </div>
-        {# GEARS "MAS USADOS" #}
-        <div>Most used gears:
-            {% for gear in used_gears %}
-                {% include 'gear/snippets/gear_small.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
-            {% endfor %}
+        <div class="col-md-4">
+            Availability graph
         </div>
     </div>
+
+    {# GROUPS (CARPETAS) #}
+    <div class="col-md-12 dashboard_border">
+        Projects:
+        <br />
+        {% for group in gear_groups %}
+            <div class="col-md-4">
+                <div class="col-md-12 projects_border">
+                    <i class="fa fa-folder-o" aria-hidden="true"></i>
+                    <br />
+                    {{ group }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {# GEARS "MAS USADOS" #}
+    <div>Most used gears:
+        {% for gear in used_gears %}
+            {% include 'gear/snippets/gear_small.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
+        {% endfor %}
+    </div>
+
 {% endblock %}

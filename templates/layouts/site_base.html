@@ -1,0 +1,59 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+
+{% block scripts %}
+    {{ block.super }}
+{% endblock %}
+{% block styles %}
+    <link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block body_base %}
+    <div class="content container">
+        <div class="row">
+            <div class="col-md-12">
+                {% block wizard_base %}
+                    <div class="col-md-12 wizard_color">{% block wizard_content %}Wizard Bar{% endblock %}</div>
+                {% endblock %}
+                {% block left_menu_base %}
+                    <div class="col-md-2">
+                        <div class="col-md-12 border_base">
+                            {% block logo %}
+                                <img src="{% static 'img/gp_logo.png' %}" class="img-responsive">
+                            {% endblock %}
+                        </div>
+                        <div class="col-md-12 border_base">
+                            {% block left_menu_0 %}
+                                <i class="fa fa-cog" aria-hidden="true"></i>&nbsp;
+                                <a href="{% url 'gear:list' %}">Mis Gears</a>
+                                <br>
+                                <i class="fa fa-folder-o" aria-hidden="true"></i>&nbsp;<a href="#">Lista de APPs</a>
+                                <hr/>
+                            {% endblock %}
+                        </div>
+                        <div class="col-md-12 border_base">
+                            {% block left_menu_1 %}
+                                <i class="fa fa-cogs" aria-hidden="true"></i>&nbsp;<a href="#">Actividad</a>
+                                <br>
+                                <i class="fa fa-hand-paper-o" aria-hidden="true"></i>&nbsp;<a href="#">Ayuda</a>
+                                <br>
+                                <i class="fa fa-users" aria-hidden="true"></i>&nbsp;
+                                <a href="#">Administrar conexiones</a>
+                            {% endblock %}
+                        </div>
+                    </div>
+                {% endblock %}
+                <div class="col-md-10">{% block content %}{% endblock %}</div>
+            </div>
+        </div>
+    </div>
+    <div class="page-footer">
+        {% block footer_base %}
+            <h1>
+                <a href="/">{% block footer_content %}Footer{% endblock %}</a>
+            </h1>
+        {% endblock %}
+    </div>
+{% endblock %}
+
