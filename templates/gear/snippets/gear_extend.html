@@ -1,0 +1,15 @@
+<div data-gear-id="{{ gear.id }}" class="col-md-12 gear_border_gear_0">
+    <div class="col-md-4">
+        <img src="{{ gear.source.connection.connector.icon.url }}" height="20" width="20">
+        <span> --- </span>
+        <img src="{{ gear.target.connection.connector.icon.url }}" height="20" width="20">
+    </div>
+    <div class="col-md-4">
+        {{ gear.name }}
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'gear:update' pk=gear.id %}"><i class="fa fa-wrench" aria-hidden="true"></i></a>
+        <i class="fa fa-pause" aria-hidden="true"></i>
+        <i class="fa fa-play" aria-hidden="true"></i>
+    </div>
+</div>
