@@ -1,0 +1,11 @@
+{# id: Gear's id. Used for data attribute. #}
+{# name: Gear's name. #}
+{# source: Source connector app's icon url. #}
+{# target: Target connector app's icon url. #}
+
+<div data-gear-id="{{ id }}">
+    <img src="{{ source }}" height="20" width="20">
+    <span> --- </span>
+    <img src="{{ target }}" height="20" width="20">
+    {{ name }}
+</div>
