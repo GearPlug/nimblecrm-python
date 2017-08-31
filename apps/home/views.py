@@ -4,11 +4,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse, HttpResponse
+from allauth.account.views import LoginView
 from django.db.models import Q
 from oauth2client import client as GoogleClient
 import json
 import base64
-from apps.user.views import LoginView
+# from apps.user.views import LoginView
 from apps.gp.models import PlugActionSpecification, Plug, Webhook
 from apps.gp.enum import ConnectorEnum
 from urllib.parse import unquote

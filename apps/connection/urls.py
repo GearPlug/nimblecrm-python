@@ -15,7 +15,6 @@ urlpatterns = [
     url(r'list/connector/$', ListConnectorView.as_view(), name='list_connector'),
 
     # Auth Callbacks
-    # url(r'^auth-callback/facebookleads/', Face.as_view(), name="facebook_auth"),
     url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),
     url(r'^auth-callback/google/', GoogleAuthView.as_view(), name="google_auth"),
     url(r'^auth-callback/asana/', AsanaAuthView.as_view(), name="asana_auth"),
