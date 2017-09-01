@@ -1,51 +1,37 @@
+import json
+import os
+import string
+import urllib.error
+import urllib.request
+from hashlib import md5
+from urllib import parse
+from urllib.parse import urlparse
+
+import requests
+from dateutil.parser import parse
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from simple_salesforce import Salesforce
+from simple_salesforce.login import SalesforceAuthenticationFailed
+from sugarcrm.client import Client as SugarClient
+from sugarcrm.exception import BaseError, WrongParameter, InvalidLogin
+
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
+from apps.gp.controllers.exceptions.sugarcrm import SugarCRMError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
-from apps.gp.models import StoredData, ActionSpecification, HubSpotConnection, VtigerConnection
-from simple_salesforce import Salesforce
-from simple_salesforce.login import SalesforceAuthenticationFailed
-from dateutil.parser import parse
-from urllib.parse import urlparse
-from urllib import parse
-from hashlib import md5
-import urllib.error
-import urllib.request
-import requests
-import sugarcrm
-import json
-import xmltodict
-import string
-import os
+from apps.gp.models import ActionSpecification
 from apps.gp.models import StoredData, Webhook
-from apps.gp.map import MapField
-from apps.gp.enum import ConnectorEnum
-import xml.etree.ElementTree as ET
-from django.conf import settings
-import re
 
-
-class CustomSugarObject(sugarcrm.SugarObject):
-    module = "CustomObject"
-
-    def __init__(self, *args, **kwargs):
-        if args:
-            self.module = args[0]
-        return super(CustomSugarObject, self).__init__(**kwargs)
-
-    @property
-    def query(self):
-        return ''
 
 
 class SugarCRMController(BaseController):
     _user = None
     _password = None
     _url = None
-    _session = None
+    _client = None
     _module = None
 
     def __init__(self, *args, **kwargs):
@@ -59,51 +45,68 @@ class SugarCRMController(BaseController):
                     self._user = self._connection_object.connection_user
                     self._password = self._connection_object.connection_password
                     self._url = self._connection_object.url
-                except Exception as e:
-                    return e
-                try:
-                    self._module = args[2]
-                except:
-                    pass
+                except AttributeError as e:
+                    raise SugarCRMError(code=1, msg='Error getting the SugarCRM attributes args. {}'.format(str(e)))
+            else:
+                raise ControllerError('No connection.')
+        try:
+            self._module = args[2]
+        except Exception as e:
+            pass
         if self._url is not None and self._user is not None and self._password is not None:
-            self._session = sugarcrm.Session(self._url, self._user,
-                                             self._password)
+            try:
+                self._client = SugarClient(self._url, self._user, self._password)
+            except InvalidLogin as e:
+                raise SugarCRMError(code=2, msg='Invalid login. {}'.format(str(e)))
 
     def test_connection(self):
-        return self._session is not None and self._session.session_id is not None
+        return self._client is not None and self._client.session_id is not None
 
     def get_available_modules(self):
-        return self._session.get_available_modules()
-
-    def get_entries(self, module_name, id_list):
-        return self._session.get_entries(module_name, id_list)
+        try:
+            return self._client.get_available_modules()
+        except BaseError as e:
+            raise SugarCRMError(code=3, msg='Error. {}'.format(str(e)))
 
     def get_entry_list(self, module, **kwargs):
-        custom_module = CustomSugarObject(module)
-        return self._session.get_entry_list(custom_module, **kwargs)
+        try:
+            return self._client.get_entry_list(module, **kwargs)
+        except WrongParameter as e:
+            raise SugarCRMError(code=4, msg='Wrong Parameter. {}'.format(str(e)))
+        except BaseError as e:
+            raise SugarCRMError(code=3, msg='Error. {}'.format(str(e)))
 
     def get_module_fields(self, module, **kwargs):
-        custom_module = CustomSugarObject(module)
-        return self._session.get_module_fields(custom_module, **kwargs)
+        try:
+            return self._client.get_module_fields(module, **kwargs)
+        except WrongParameter as e:
+            raise SugarCRMError(code=4, msg='Wrong Parameter. {}'.format(str(e)))
+        except BaseError as e:
+            raise SugarCRMError(code=3, msg='Error. {}'.format(str(e)))
 
-    def set_entry(self, obj):
-        return self._session.set_entry(obj)
-
-    def set_entries(self, obj_list):
-        return self._session.set_entries(obj_list)
+    def set_entry(self, module, item):
+        try:
+            return self._client.set_entry(module, item)
+        except WrongParameter as e:
+            raise SugarCRMError(code=4, msg='Wrong Parameter. {}'.format(str(e)))
+        except BaseError as e:
+            raise SugarCRMError(code=3, msg='Error. {}'.format(str(e)))
 
     def download_to_stored_data(self, connection_object, plug, limit=29, order_by="date_entered DESC", **kwargs):
         module = plug.plug_action_specification.get(action_specification__name="module").value
         data = self.get_entry_list(module, max_results=limit, order_by=order_by)
+        entries = data['entry_list']
         new_data = []
-        for item in data:
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item.id)
+        for item in entries:
+            item['name_value_list'] = self.dictfy(item['name_value_list'])
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
             if not q.exists():
-                for column in item.fields:
-                    new_data.append(StoredData(name=column['name'], value=column['value'], object_id=item.id,
-                                               connection=connection_object.connection, plug=plug))
+                for k, v in item['name_value_list'].items():
+                    new_data.append(
+                        StoredData(name=k, value=v, object_id=item['id'], connection=connection_object.connection,
+                                   plug=plug))
         if new_data:
-            field_count = len(data[0].fields)
+            field_count = len(entries[0]['name_value_list'])
             extra = {'controller': 'sugarcrm'}
             for i, item in enumerate(new_data):
                 try:
@@ -111,17 +114,16 @@ class SugarCRMController(BaseController):
                     if (i + 1) % field_count == 0:
                         extra['status'] = 's'
                         self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                        item.object_id, item.plug.id, item.connection.id),
-                                       extra=extra)
-                except:
+                        item.object_id, item.plug.id, item.connection.id), extra=extra)
+                except Exception as e:
                     extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.'
-                        % (item.object_id, item.name, item.plug.id,
-                           item.connection.id),
-                        extra=extra)
+                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
             return True
         return False
+
+    def dictfy(self, _dict):
+        return {k: v['value'] for k, v in _dict.items()}
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
@@ -137,38 +139,32 @@ class SugarCRMController(BaseController):
             extra = {'controller': 'sugarcrm'}
             for item in data_list:
                 try:
-                    res = self.set_entry(CustomSugarObject(module_name, **item))
+                    res = self.set_entry(module_name, item)
                     extra['status'] = 's'
-                    self._log.info(
-                        'Item: %s successfully sent.' % (res.id), extra=extra)
+                    self._log.info('Item: %s successfully sent.' % (res['id']), extra=extra)
                     obj_list.append(id)
                 except Exception as e:
-                    print(e)
                     extra['status'] = 'f'
-                    self._log.info(
-                        'Item: %s failed to send.' % (res.id), extra=extra)
+                    self._log.info('Item: %s failed to send.' % (res['id']), extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
 
     def get_mapping_fields(self, **kwargs):
         specification = self._plug.plug_action_specification.first()
         module = specification.value
-        fields = self.get_module_fields(module, get_structure=True)
-        return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields]
+        fields = self.get_module_fields(module)
+        import pprint
+        pprint.pprint(fields)
+        return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields['module_fields'].values()]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(
-            pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'module':
-            module_list = tuple({
-                                    'id': m.module_key,
-                                    'name': m.module_key
-                                } for m in self.get_available_modules())
+            data = self.get_available_modules()
+            module_list = tuple({'id': m['module_key'], 'name': m['module_key']} for m in data['modules'])
             return module_list
         else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector."
-            )
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class ZohoCRMController(BaseController):
