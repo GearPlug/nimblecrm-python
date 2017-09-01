@@ -8,7 +8,7 @@ from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.models import ActionSpecification, Webhook, StoredData
 
-from mailchimp3 import MailChimp
+from mailchimp.client import Client
 from getresponse.client import GetResponse
 
 
@@ -147,6 +147,7 @@ class MailChimpController(BaseController):
     MailChimpController Class
     """
     _client = None
+    _token= None
 
     def __init__(self, *args, **kwargs):
         BaseController.__init__(self, *args, **kwargs)
@@ -156,13 +157,20 @@ class MailChimpController(BaseController):
             super(MailChimpController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
-                    self._client = MailChimp(self._connection_object.connection_user, self._connection_object.api_key)
+                    self._token=self._connection_object.token
+                    self._client = Client(access_token=self._token)
                 except Exception as e:
                     print("Error getting the MailChimp attributes")
                     self._client = None
+                    self._token= None
 
     def test_connection(self):
-        return self._client is not None and self.get_lists() is not None
+            try:
+                self._client.get_lists()
+                return self._client is not None and self._token is not None
+            except Exception as e:
+                print(e)
+                return self._client is None and self._token is None
 
     def get_lists(self):
         if self._client:
@@ -227,8 +235,7 @@ class MailChimpController(BaseController):
         raise ControllerError("Incomplete.")
 
     def get_target_fields(self, **kwargs):
-        list = self._plug.plug_action_specification.get(action_specification__name__iexact='list')
-        return self.get_list_merge_fields(list_id=list.id)
+        return {}
 
     def get_all_members(self, list_id):
         return self._client.lists.members.all(list_id, get_all=True, fields="members.id,members.email_address")
@@ -249,7 +256,7 @@ class MailChimpController(BaseController):
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'list':
-            return tuple({'id': c['id'], 'name': c['name']} for c in self.get_lists())
+            return tuple({'id': c['id'], 'name': c['name']} for c in self._client.get_lists()['lists'])
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 

@@ -3,7 +3,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'nd65g3a23c!y%+a_%+v)!trnjh%c=gh(zg5!gsn*qo&b6*nsbb'
 DEBUG = True  # False
-CURRENT_HOST = "https://localhost"
+CURRENT_HOST = "http://127.0.0.1:8000"
 ALLOWED_HOSTS = [CURRENT_HOST, '*', ]
 CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
@@ -177,9 +177,9 @@ LOGIN_REDIRECT_URL = '/dashboard/'
 
 # SETTINGS CENTRALIZADOS
 # Facebook
-FACEBOOK_APP_ID = '1860382657578411'
-FACEBOOK_APP_SECRET = '3ce16acabb2efeda4336e4e5f9576d8b'
-FACEBOOK_GRAPH_VERSION = '2.7'
+FACEBOOK_APP_ID = '116121845719363'
+FACEBOOK_APP_SECRET = '4d743c1e1331b05ecbb696ebfbbff4ae'
+FACEBOOK_GRAPH_VERSION = '2.10'
 
 # Email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -262,3 +262,9 @@ MERCADOLIBRE_REDIRECT_URL = '{0}/connection/auth-callback/mercadolibre/'.format(
 WUNDERLIST_CLIENT_ID = 'c68a87efca8b22d50fee'
 WUNDERLIST_CLIENT_SECRET = '8a60113066eb052463be8e1d7414edb8a2f57d2f4cd118b82fb201820c8c'
 WUNDERLIST_REDIRECT_URL = '{0}/connection/auth-callback/wunderlist/'.format(CURRENT_HOST)
+
+# Wunderlist
+MAILCHIMP_CLIENT_ID = '130614039674'
+MAILCHIMP_CLIENT_SECRET = 'ec67ed08c77c04752b168fcc9b732485596d68e4709d9920af'
+MAILCHIMP_REDIRECT_URL = '{0}/connection/auth-callback/mailchimp/'.format(CURRENT_HOST)
+MAILCHIMP_ACCESS_TOKEN_URI = 'https://login.mailchimp.com/oauth2/token'

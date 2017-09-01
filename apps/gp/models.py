@@ -200,8 +200,7 @@ class SugarCRMConnection(models.Model):
 class MailChimpConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mailchimp')
     name = models.CharField('name', max_length=200)
-    connection_user = models.CharField('user', max_length=200)
-    api_key = models.CharField('api key', max_length=200)
+    token = models.CharField('user', max_length=200)
 
     def __str__(self):
         return self.name
