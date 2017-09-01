@@ -194,6 +194,8 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                                   redirect_uri=settings.WUNDERLIST_REDIRECT_URL)
             url, state = oauth.authorization_url('https://www.wunderlist.com/oauth/authorize?state=RANDOM')
             context['authorization_url'] = url
+        elif connector == ConnectorEnum.FacebookLeads:
+            context['app_id'] = settings.FACEBOOK_APP_ID
         return context
 
 
