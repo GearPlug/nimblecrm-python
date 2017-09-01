@@ -292,7 +292,7 @@ class FacebookLeadsController(BaseController):
                 app_token = self._client.get_app_token()
                 self._client.create_app_subscriptions('page', '{0}/webhook/facebookleads/0/'.format(settings.CURRENT_HOST),
                                                       'leadgen', 'token-gearplug-058924', app_token['access_token'])
-                self._client.create_page_subscribed_apps(current_page_id, token)
+                self._client.create_page_subscribed_apps(current_page_id, token['access_token'])
                 return True
         except BaseError as e:
             raise
