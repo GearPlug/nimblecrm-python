@@ -17,8 +17,7 @@
         <br />
         {% for group in object_list %}
             {# AQUI VA OCULTO #}
-            <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;" data-show="True"
-                 id="group_gear">
+            <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;" id="group_gear_{{ group.id }}" data-show="True">
                 {% for gear in group.gear.all %}
                     {% if forloop.counter.0 == forloop.parentloop.counter.0 %}
                         <div>
@@ -47,8 +46,15 @@
 {% block scripts_gear %}
     <script>
         function show_gear(id) {
-            var a = document.querySelectorAll("[data-group-id='"+id+"']");
-            var b = a.getAttribute('data-show');
+            var gear_id = document.getElementById("group_gear_"+id);
+            var data_show = gear_id.getAttribute('data-show');
+            if(data_show == "True"){
+                gear_id.style.display = "none";
+                gear_id.setAttribute('data-show','False');
+            }else{
+                gear_id.style.display = "block";
+                gear_id.setAttribute('data-show','True');
+            }
         }
     </script>
 {% endblock %}
