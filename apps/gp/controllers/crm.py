@@ -1235,7 +1235,6 @@ class ActiveCampaignController(BaseController):
                                              url='', expiration='')
 
             # Verificar ngrok para determinar url_base
-            # url_base = 'https://e0ae5cfd.ngrok.io'
             url_base = settings.CURRENT_HOST
             url_path = reverse('home:webhook',
                                kwargs={'connector': 'activecampaign',
@@ -1255,7 +1254,7 @@ class ActiveCampaignController(BaseController):
             }
             final_url = "{0}/admin/api.php".format(self._host)
             r = requests.post(url=final_url, data=post_array, params=params)
-            if r.status_code == 201:
+            if r.status_code == 200 or r.status_code == 201:
                 webhook.url = url_base + url_path
                 webhook.generated_id = r.json()['id']
                 webhook.is_active = True
@@ -1298,6 +1297,7 @@ class ActiveCampaignController(BaseController):
             obj_list = []
             extra = {'controller': 'activecampaign'}
             for item in data_list:
+                print(item)
                 try:
                     response = self.create_user(item)
                     self._log.info(
@@ -1316,11 +1316,13 @@ class ActiveCampaignController(BaseController):
     def download_to_stored_data(self, connection_object=None, plug=None, data=None, **kwargs):
         new_data = []
         if data is not None:
-            object_id = int(data['contact[id]'])
+            contact_id = data[0]['contact[id]']
+            object_id = int(contact_id)
             q = StoredData.objects.filter(object_id=object_id, connection=connection_object.id, plug=plug.id)
             if not q.exists():
-                for k, v in data.items():
-                    new_data.append(StoredData(name=k, value=v or '', object_id=object_id, connection=connection_object.connection, plug=plug))
+                for i in data:
+                    for k, v in i.items():
+                        new_data.append(StoredData(name=k, value=v or '', object_id=object_id, connection=connection_object.connection, plug=plug))
             if new_data:
                 field_count = len(data)
                 extra = {'controller': 'activecampaign'}
