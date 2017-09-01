@@ -7,6 +7,7 @@ CURRENT_HOST = "https://localhost"
 ALLOWED_HOSTS = [CURRENT_HOST, '*', ]
 CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
+INTERNAL_IPS = ['127.0.0.1',]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -28,15 +29,6 @@ INSTALLED_APPS = [
 
     # TODO REVIEW
     'facebook',
-    # 'django_uwsgi',
-    # 'account',
-    # 'django_forms_bootstrap',
-    # 'oauth2_provider',
-    # 'rest_framework',
-    # 'widget_tweaks',
-    # 'extra_views',
-    #
-    # 'apps.user',
 
     # GRPLUG
     'apps.wizard',
@@ -203,7 +195,7 @@ SLACK_CLIENT_SECRET = '8a78615be489b8314702c0d67f159ddd'
 SLACK_PERMISSIONS_URL = 'https://slack.com/oauth/authorize?client_id={0}&scope=team:read,channels:read,chat:write:bot,im:history,im:read'.format(
     SLACK_CLIENT_ID)
 
-# Google (Gustavo)
+# Google
 GOOGLE_CLIENT_ID = '278354320502-6ptllif5k11cn8uskm8aotp6fqb2g7dr.apps.googleusercontent.com'
 GOOGLE_CLIENT_SECRET = 'LgJ2hrSVu_lmAJkJhwzgfiDG'
 GOOGLE_AUTH_CALLBACK_URL = '{0}/connection/auth-callback/google/'.format(CURRENT_HOST)
