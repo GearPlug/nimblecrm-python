@@ -445,6 +445,15 @@ class GmailConnection(models.Model):
     def __str__(self):
         return self.name
 
+class GitLabConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_gitlab')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+    refresh_token = models.CharField('refresh token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
 
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
