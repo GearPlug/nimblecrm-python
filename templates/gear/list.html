@@ -17,7 +17,8 @@
         <br />
         {% for group in object_list %}
             {# AQUI VA OCULTO #}
-            <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;" id="group_gear_{{ group.id }}" data-show="True">
+            <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;" id="group_gear_{{ group.id }}"
+                 data-show="True">
                 {% for gear in group.gear.all %}
                     {% if forloop.counter.0 == forloop.parentloop.counter.0 %}
                         <div>
@@ -43,8 +44,30 @@
     </div>
 {% endblock %}
 
-{% block scripts_gear %}
+{% block scripts %}
     <script>
+    $(document).ready(function() {
+        var is_blocked = false;
+           console.log("Sii");
+           $("a.toggle-gear-btn").click(function () {
+               var a = $(this);
+               var url = a.attr('href');
+
+               if (is_blocked == false) {
+                   is_blocked = true;
+                   $.ajax({
+                       method: "POST", url: url
+                   }).done(function (response) {
+                       console.log(response.data)
+                       a.html("" + response.data)
+                       is_blocked = false;
+                   });
+               }
+               return false;
+           });
+    })
+
+
         function show_gear(id) {
             var gear_id = document.getElementById("group_gear_"+id);
             var data_show = gear_id.getAttribute('data-show');
