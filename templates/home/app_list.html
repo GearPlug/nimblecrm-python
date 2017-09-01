@@ -3,14 +3,32 @@
 
 
 {% block content %}
-    <ul>
-        {% for connector in object_list %}
-            <li style="display: inline-block; width:150px;">
+    <div class="col-md-12">
+        <div class="col-md-4 steps_border">
+            1. Select an app
+        </div>
+        <div class="col-md-6">&nbsp;</div>
+        <div class="col-md-2">
+            <form>
                 <div>
-                    <img src="{{ connector.icon.url }}" height="60" width="60">
-                    <p>{{ connector.name }}</p>
+                    <input placeholder="Buscar" name="srch-term" id="srch-term" type="text">
+                    <button type="submit"><i class="glyphicon glyphicon-search"></i></button>
+
                 </div>
-            </li>
-        {% endfor %}
-    </ul>
+            </form>
+        </div>
+    </div>
+    <br /><br />
+    <div class="col-md-12">
+        <ul>
+            {% for connector in object_list %}
+                <li style="display: inline-block; width:150px;">
+                    <div>
+                        <img src="{{ connector.icon.url }}" height="60" width="60">
+                        <p class="center-block">{{ connector.name }}</p>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endblock %}

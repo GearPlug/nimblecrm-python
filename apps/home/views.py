@@ -35,6 +35,8 @@ class AppsView(LoginRequiredMixin, ListView):
     template_name = 'home/app_list.html'
     login_url = '/account/login/'
 
+    def get_queryset(self):
+        return self.model.objects.filter(is_active=True)
 
 class HomeView(LoginView):
     template_name = 'home/index.html'
