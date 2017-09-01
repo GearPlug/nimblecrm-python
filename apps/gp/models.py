@@ -429,7 +429,6 @@ class MercadoLibreConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mercadolibre')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
-    user_id = models.CharField('user_id', max_length=200)
     site = models.CharField(max_length=3, choices=SITES)
 
     def __str__(self):
@@ -441,6 +440,16 @@ class GmailConnection(models.Model):
                                       related_name='connection_gmail')
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+class GitLabConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
+                                      related_name='connection_gitlab')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+    refresh_token = models.CharField('refresh token', max_length=300)
 
     def __str__(self):
         return self.name
