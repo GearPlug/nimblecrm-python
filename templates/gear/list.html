@@ -46,14 +46,9 @@
 
 {% block scripts_gear %}
     <script>
-{#        function show_gear() {#}
-{#            var group = document.getElementById('group_gear');#}
-{#            var gear_show = group.getAttribute('data-show');#}
-{#            var id = group.getAttribute('data-group-id');#}
-{#            if(gear_show == 'True'){#}
-{#                group.setAttribute('data-show','False');#}
-{#                #}
-{#            }#}
-{#        }#}
+        function show_gear(id) {
+            var a = document.querySelectorAll("[data-group-id='"+id+"']");
+            var b = a.getAttribute('data-show');
+        }
     </script>
 {% endblock %}

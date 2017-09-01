@@ -2,7 +2,7 @@
 {# name: Group's name. #}
 
 <div class="col-md-{{ columns }}" data-group-id="{{ id }}">
-    <div class="col-md-12 group_border_dash">
+    <div class="col-md-12 group_border_dash" onclick="js:show_gear({{ id }})">
         <i class="fa fa-folder-o" aria-hidden="true"></i>
         <br />
         {{ name }}
