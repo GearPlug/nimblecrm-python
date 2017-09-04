@@ -215,3 +215,10 @@ class IncomingWebhook(View):
             response.status_code = 200
             print(decoded)
         return response
+
+
+class HelpView(LoginRequiredMixin, TemplateView):
+    template_name = 'home/help.html'
+
+class ActivityView(LoginRequiredMixin, TemplateView):
+    template_name = 'home/activity.html'

@@ -3,7 +3,7 @@ from apps.connection.views import CreateConnectionView, ListConnectionView, List
     TestConnectionView, CreateConnectionSuccessView, CreateTokenAuthorizedConnectionView, \
     GoogleAuthView, SlackAuthView, TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, \
     ShopifyAuthView, EvernoteAuthView, AsanaAuthView, MercadoLibreAuthView, WunderListAuthView, HubspotAuthView, \
-    AjaxMercadoLibrePostSiteView  # ,AJAXGetSurveyListView
+    AjaxMercadoLibrePostSiteView, ManageConnectionView  # ,AJAXGetSurveyListView
 
 urlpatterns = [
     # Create Connection
@@ -17,6 +17,8 @@ urlpatterns = [
         name='list'),
     # List Connectors
     url(r'^list/connector/(?P<type>(source|target)+)/$', ListConnectorView.as_view(), name='connector_list'),
+
+    url(r'manage/', ManageConnectionView.as_view(), name="manage"),
 
     # Auth Callbacks
     url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),
