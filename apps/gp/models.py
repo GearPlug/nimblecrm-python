@@ -522,9 +522,8 @@ class GearMap(models.Model):
     is_active = models.BooleanField('is active', default=True)
     last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', null=True, default=None,
                                               on_delete=models.SET_NULL)
-    last_sent_stored_data_creation_date = models.DateTimeField('last sent storeddata creation date', null=True,
-                                                               default=None)
     last_source_update = models.DateTimeField(null=True, default=None)
+    last_source_order_by_field_value = models.CharField(max_length=64, null=True, blank=True, default=None)
     created = models.DateTimeField('created', auto_now_add=True)
 
     class Meta:

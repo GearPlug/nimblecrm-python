@@ -255,7 +255,7 @@ class TestConnectionView(LoginRequiredMixin, View):
                 controller = controller_class(connection_object)
             return JsonResponse({'test': controller.test_connection()})
         except Exception as e:
-            print(e)
+            raise
             return JsonResponse({'test': False})
 
 # Auth Views
