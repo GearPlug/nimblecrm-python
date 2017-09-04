@@ -216,4 +216,25 @@ class IncomingWebhook(View):
             decoded = json.loads(request.body.decode("utf-8"))
             response.status_code = 200
             print(decoded)
+        elif connector == ConnectorEnum.GitLab:
+            received_webhook_raw = request.body.decode('utf-8')
+            received_webhook = json.loads(received_webhook_raw)
+            if received_webhook['object_kind'] == 'issue':
+                if 'action' in received_webhook['object_attributes'].keys():
+                    if received_webhook['object_attributes'][
+                        'action'] == 'open':
+                        webhook_id = kwargs.pop('webhook_id', None)
+                        print("webhook id", webhook_id)
+                        w = Webhook.objects.get(pk=webhook_id)
+                        print("Webhook Object:", w)
+                        if w.plug.gear_source.first().is_active or not w.plug.is_tested:
+                            if not w.plug.is_tested:
+                                w.plug.is_tested = True
+                            controller_class = ConnectorEnum.get_controller(connector)
+                            controller = controller_class(w.plug.connection.related_connection, w.plug)
+                            ping = controller.test_connection()
+                            if ping:
+                                controller.download_source_data(issue=received_webhook)
+                                w.plug.save()
+            response.status_code = 200
         return response
