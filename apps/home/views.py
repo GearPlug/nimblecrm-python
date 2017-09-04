@@ -88,7 +88,6 @@ class IncomingWebhook(View):
         connector = ConnectorEnum.get_connector(name=connector_name)
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class()
-        print(connector)
         # SLACK
         try:
             body = json.loads(request.body.decode('utf-8'))

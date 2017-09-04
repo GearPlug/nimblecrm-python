@@ -90,7 +90,6 @@ class ConnectorEnum(Enum):
     def get_controller(connector):
         a = dynamic_import(connector.name, path="apps.gp.controllers.{0}".format(connector.category),
                            suffix='Controller')
-        print(a)
         return a
 
 
