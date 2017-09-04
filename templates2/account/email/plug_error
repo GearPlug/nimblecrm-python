@@ -1,0 +1,5 @@
+{% load i18n %}{% blocktrans with name=current_site.name %}This is an error message from {{ name }}.
+
+The gear {{ gear_name }} has failed. Click the following link to check it out. {{ url }}
+
+{% endblocktrans %}

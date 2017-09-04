@@ -44,10 +44,11 @@ class ConnectorEnum(Enum):
     AgileCRM = 38, 'crm'
     GitLab = 39, 'repository', 'authorization'
     Shopify = 40, 'ecomerce', 'special'
-    Dropbox = 41, '', True
+    Dropbox = 41, '', 'authorization'
     Magento = 42, 'ecomerce'
     Asana = 43, 'project_management', 'authorization'
     Mandrill = 44, 'email_marketing'
+    ActiveCampaign = 45, 'crm', 'form'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
@@ -87,8 +88,8 @@ class ConnectorEnum(Enum):
         return apps.get_model('gp', '%sConnection' % connector.name)
 
     def get_controller(connector):
-        a=dynamic_import(connector.name, path="apps.gp.controllers.{0}".format(connector.category),
-                              suffix='Controller')
+        a = dynamic_import(connector.name, path="apps.gp.controllers.{0}".format(connector.category),
+                           suffix='Controller')
         print(a)
         return a
 

@@ -1,0 +1,28 @@
+{% extends 'plug/action_specifications.html' %}
+{##}
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            $(document).on('change', 'select[data-name=page]', function () {
+                if ($(this).val() == '-') {
+                    return
+                }
+                var select = $('select[data-name=form]');
+                var url = "{% url 'plug:plug_action_specifications' %}";
+                $.ajax({
+                    method: "POST",
+                    url: url,
+                    data: {
+                        connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %},
+                        action_specification_id: $(select).attr('data-id'),
+                        page_id: $(this).val()
+                    }
+                }).done(function (response) {
+                    $(select).html(response);
+                    $(select).attr('data-is-loaded', true);
+                });
+            });
+        })
+    </script>
+{% endblock %}

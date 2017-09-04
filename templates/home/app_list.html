@@ -1,0 +1,16 @@
+{% extends 'layouts/site_base.html' %}
+{% load static %}
+
+
+{% block content %}
+    <ul>
+        {% for connector in object_list %}
+            <li style="display: inline-block; width:150px;">
+                <div>
+                    <img src="{{ connector.icon.url }}" height="60" width="60">
+                    <p>{{ connector.name }}</p>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -1,10 +1,9 @@
-{% extends 'connection/create.html' %}
-{% load bootstrap_tags %}
+{% extends 'layouts/base.html' %}
 
-{% block body_content %}
-    <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
-          method="post" autocomplete="off">
-        <a href="javascript:authorize('{{ authorization_url }}')">Authorize: {{ connector_name }}</a>
+{% block body_base %}
+    <form id="formCreateConnection" class="" action="" method="post" autocomplete="off">
+        <a href="javascript:authorize('{{ authorization_url }}')"
+           style="color:blue;font-size: 16px;">Authorize: {{ connector_name }}</a>
         {% csrf_token %}
     </form>
 {% endblock %}

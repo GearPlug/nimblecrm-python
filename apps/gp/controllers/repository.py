@@ -11,6 +11,7 @@ from bitbucket.bitbucket import Bitbucket
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
 from django.conf import settings
+from django.urls import reverse
 
 
 class BitbucketController(BaseController):
@@ -232,7 +233,6 @@ class BitbucketController(BaseController):
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 class GitLabController(BaseController):
-
     _token = None
     _refresh_token = None
 
@@ -265,7 +265,7 @@ class GitLabController(BaseController):
 
         params = {
             "grant_type": "refresh_token",
-            "refresh_token": self.refresh_token(),
+            "refresh_token": self._refresh_token,
             "scope": "api"
         }
 
@@ -273,9 +273,13 @@ class GitLabController(BaseController):
                                  data=params)
 
         token = response.json()
-
-        self._token = token['access_token']
-        self._refresh_token = token['refresh_token']
+        try:
+            self._token = token['access_token']
+            self._refresh_token = token['refresh_token']
+            return True
+        except Exception as e:
+            print(e)
+            return False
 
     def create_connection(self, *args, **kwargs):
         if args:
@@ -286,20 +290,15 @@ class GitLabController(BaseController):
 
     def test_connection(self):
         try:
-            self.create_connection()
+            if self.get_user_id() is not None:
+                return True
         except Exception as e:
-            print(e)
-        if self._token is not None:
-            return True
-        else:
-            # cambiar siguiente linea por la aplicacion del metodo refresh_token
             return False
 
     def get_user_id(self):
-
-        endpoint = 'https://gitlab.com/api/v4/user'
+        url = 'https://gitlab.com/api/v4/user'
         try:
-            response = self.do_get(endpoint)
+            response = self.do_get(url)
         except InvalidGrantError:
             self.refresh_token()
 
@@ -309,32 +308,75 @@ class GitLabController(BaseController):
 
         user_id = self.get_user_id()
         url = 'https://gitlab.com/api/v4/users/{0}/projects'.format(user_id)
-
         try:
             response = self.do_get(url)
         except InvalidGrantError:
-            self.refresh_token(self)
+            self.refresh_token()
         return response.json()
 
     def create_issue(self, params=None):
 
         project = self._plug.plug_action_specification.get(
             action_specification__name='project')
-        params = params
-        endpoint = 'https://gitlab.com/api/v4/projects/{0}/issues'.format(project)
+
+        project = project.value
+        params = (
+            ('title', dict(params)['title']),
+            ('id', '0001'),
+            ('name', dict(params)['name']),
+            ('description', dict(params)['description']),
+            ('notes', dict(params)['notes']),
+            ('labels', dict(params)['labels']),
+            ('weight', dict(params)['weight']),
+        )
+        url = 'https://gitlab.com/api/v4/projects/{0}/issues'.format(project)
         try:
-            response = self.do_post(endpoint, params)
+            response = self.do_post(url, params)
         except InvalidGrantError:
             self.refresh_token()
-
         return response
+
+    def download_to_stored_data(self, connection_object=None, plug=None, issue=None, **kwargs):
+        if issue is not None:
+            issue_data = issue['object_attributes']
+            issue_id = issue_data['id']
+            _items = []
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                          object_id=issue_id)
+            if not q.exists():
+                for k, v in issue_data.items():
+                    obj = StoredData(connection=connection_object.connection, plug=plug,
+                                     object_id=issue_id, name=k, value=v or '')
+                    _items.append(obj)
+            extra = {}
+            for item in _items:
+                extra['status'] = 's'
+                extra = {'controller': 'gitlab'}
+                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                    item.object_id, item.plug.id, item.connection.id), extra=extra)
+                item.save()
+        return False
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if is_first:
+            if data_list:
+                try:
+                    data_list = [data_list[-1]]
+                except:
+                    data_list = []
+        if self._plug is not None:
+            for obj in data_list:
+                result = self.create_issue(obj)
+            extra = {'controller': 'gitlab'}
+            return
+        raise ControllerError("Incomplete.")
 
     def create_webhook(self):
         action = self._plug.action.name
         if action == 'Detect Issue Creation':
             project = self._plug.plug_action_specification.get(
                 action_specification__name='project')
-
             # Creacion de Webhook
             webhook = Webhook.objects.create(name='gitlab', plug=self._plug,
                                              url='')
@@ -367,41 +409,6 @@ class GitLabController(BaseController):
                 return True
             except Exception as e:
                 print(e)
-        return False
-
-    def download_to_stored_data(self, connection_object=None, plug=None,
-                                issue=None, **kwargs):
-        if issue is not None:
-            issue = issue[0]
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=issue['id'])
-            new_data = []
-            if not q.exists():
-                for k, v in issue.items():
-                    obj = StoredData(connection=connection_object.connection,
-                                     plug=plug,
-                                     object_id=issue['id'], name=k, value=v or '')
-                    new_data.append(obj)
-            extra = {}
-            for item in new_data:
-                try:
-                    item.save()
-                    extra['status'] = 's'
-                    extra = {'controller': 'gitlab'}
-                    self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            item.object_id, item.plug.id, item.connection.id),
-                        extra=extra)
-                except Exception as e:
-                    print(e)
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.'
-                        % (item.object_id, item.name, item.plug.id,
-                           item.connection.id),
-                        extra=extra)
-            return True
         return False
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
@@ -446,5 +453,4 @@ class GitLabController(BaseController):
             return tuple(
                 {'id': p['id'], 'name': p['name']} for p in self.get_projects())
         else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector.")
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
