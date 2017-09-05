@@ -8,7 +8,6 @@ from django.views.generic import CreateView, ListView, View, TemplateView
 from django.core.urlresolvers import reverse
 from django.http import JsonResponse
 from django.shortcuts import redirect
-from apps.connection.apps import APP_NAME as app_name
 from apps.gp.enum import ConnectorEnum, GoogleAPIEnum
 from apps.gp.models import Connection, Connector, MercadoLibreConnection
 from oauth2client import client
@@ -185,6 +184,18 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                 'https://app.asana.com/-/oauth_authorize?response_type=code&client_id={0}&redirect_uri={1}&state=1234'
                     .format(settings.ASANA_CLIENT_ID, settings.ASANA_REDIRECT_URL))
             context['authorization_url'] = authorization_url
+        elif connector == ConnectorEnum.GitLab:
+            data = {
+                "client_id": settings.GITLAB_CLIENT_ID,
+                "redirect_uri": settings.GITLAB_REDIRECT_URL,
+                "response_type": "code"
+            }
+            oauth = OAuth2Session(client_id=settings.GITLAB_CLIENT_ID,
+                                  redirect_uri=settings.GITLAB_REDIRECT_URL)
+            authorization_url, state = oauth.authorization_url(
+                'https://gitlab.com/oauth/authorize?', data
+            )
+            context['authorization_url'] = authorization_url
         elif connector == ConnectorEnum.MercadoLibre:
             m = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
             context['authorization_url'] = m.auth_url(redirect_URI=settings.MERCADOLIBRE_REDIRECT_URL)
@@ -259,6 +270,7 @@ class TestConnectionView(LoginRequiredMixin, View):
         except Exception as e:
             raise
             return JsonResponse({'test': False})
+
 
 # Auth Views
 
@@ -418,12 +430,31 @@ class ShopifyAuthView(View):
         # TODO: error
         return redirect(reverse('connection:shopify_success_create_connection'))
 
+
+class GitLabAuthView(View):
+    def get(self, request, *args, **kwargs):
+        code = request.GET.get('code', '')
+        oauth = OAuth2Session(client_id=settings.GITLAB_CLIENT_ID,
+                              redirect_uri=settings.GITLAB_REDIRECT_URL)
+        token = oauth.fetch_token('https://gitlab.com/oauth/token',
+                                  code=code,
+                                  authorization_response=settings.GITLAB_REDIRECT_URL,
+                                  client_id=settings.GITLAB_CLIENT_ID,
+                                  client_secret=settings.GITLAB_CLIENT_SECRET)
+
+        request.session['access-token'] = token['access_token']
+        request.session['refresh-token'] = token['refresh_token']
+        self.request.session['connector_name'] = ConnectorEnum.GitLab.name
+        return redirect(
+            reverse('connection:create_token_authorized_connection'))
+
+
 class MailchimpAuthView(View):
     def get(self, request, *args, **kwargs):
         print("get")
         auth_code = request.GET.get('code', None)
         print("code", auth_code)
-        data = {"grant_type":"authorization_code", "client_id": settings.MAILCHIMP_CLIENT_ID,
+        data = {"grant_type": "authorization_code", "client_id": settings.MAILCHIMP_CLIENT_ID,
                 "client_secret": settings.MAILCHIMP_CLIENT_SECRET,
                 "redirect_uri": settings.MAILCHIMP_REDIRECT_URL, "code": auth_code}
         url = settings.MAILCHIMP_ACCESS_TOKEN_URI
@@ -450,9 +481,12 @@ def get_survey_monkey_url():
                                          "client_id": settings.SURVEYMONKEY_CLIENT_ID, "response_type": "code"})
     return '{0}{1}?{2}'.format(settings.SURVEYMONKEY_API_BASE, settings.SURVEYMONKEY_AUTH_CODE_ENDPOINT, url_params)
 
+
 def get_mailchimp_url():
-    return 'https://login.mailchimp.com/oauth2/authorize?client_id={0}&redirect_uri={1}&response_type=code'.format(settings.MAILCHIMP_CLIENT_ID,
-                                                                                                                  settings.MAILCHIMP_REDIRECT_URL)
+    return 'https://login.mailchimp.com/oauth2/authorize?client_id={0}&redirect_uri={1}&response_type=code'.format(
+        settings.MAILCHIMP_CLIENT_ID,
+        settings.MAILCHIMP_REDIRECT_URL)
+
 
 def get_shopify_url():
     return "https://{0}.myshopify.com/admin/oauth/authorize?client_id={1}&scope={2}&redirect_uri={3}".format(

@@ -20,7 +20,7 @@ def update_all_gears():
     for gear in active_gears:
         connector = ConnectorEnum.get_connector(gear.source.connection.connector_id)
         # update_plug.s(gear.source.id, gear.id).apply_async(queue=connector.name.lower())  # CON COLAS
-        update_plug.s(gear.source.id, gear.id).apply_async() # SIN COLAS
+        update_plug.s(gear.source.id, gear.id).apply_async()  # SIN COLAS
         print("Assigning plug {0} to queue: {1}.".format(gear.source.id, connector.name.lower()))
 
 
@@ -46,7 +46,6 @@ def update_plug(plug_id, gear_id, **query_params):
                 print("Error en la connection.")
                 return
             if plug.plug_type.lower() == 'source':
-
                 try:
                     plug.webhook
                     has_new_data = False

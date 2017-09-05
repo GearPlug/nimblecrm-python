@@ -3,7 +3,8 @@ from apps.connection.views import CreateConnectionView, ListConnectionView, List
     TestConnectionView, CreateConnectionSuccessView, CreateTokenAuthorizedConnectionView, \
     GoogleAuthView, SlackAuthView, TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, \
     ShopifyAuthView, EvernoteAuthView, AsanaAuthView, MercadoLibreAuthView, WunderListAuthView, HubspotAuthView, \
-    AjaxMercadoLibrePostSiteView, ManageConnectionView, MailchimpAuthView  # ,AJAXGetSurveyListView
+    AjaxMercadoLibrePostSiteView, ManageConnectionView, MailchimpAuthView, GitLabAuthView  # ,AJAXGetSurveyListView
+
 
 urlpatterns = [
     # Create Connection
@@ -34,8 +35,8 @@ urlpatterns = [
     url(r'^auth-callback/salesforce/', SalesforceAuthView.as_view(), name="salesforce_auth"),
     url(r'^auth-callback/shopify/', ShopifyAuthView.as_view(), name="shopify_auth"),
     url(r'^auth-callback/mercadolibre/', MercadoLibreAuthView.as_view(), name="mercadolibre_auth"),
+    url(r'^auth-callback/gitlab/', GitLabAuthView.as_view(), name="gitlab_auth"),
     url(r'^auth-callback/mailchimp/', MailchimpAuthView.as_view(), name="mailchimp_auth"),
-
     # Create Authorizated Connection
     url(r'^create/authorizated/', CreateTokenAuthorizedConnectionView.as_view(),
         name="create_token_authorized_connection"),

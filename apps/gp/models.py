@@ -428,7 +428,6 @@ class MercadoLibreConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mercadolibre')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
-    user_id = models.CharField('user_id', max_length=200)
     site = models.CharField(max_length=3, choices=SITES)
 
     def __str__(self):
@@ -444,6 +443,24 @@ class GmailConnection(models.Model):
     def __str__(self):
         return self.name
 
+class GitLabConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
+                                      related_name='connection_gitlab')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+    refresh_token = models.CharField('refresh token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+class ActiveCampaignConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_activecampaign')
+    name = models.CharField('name', max_length=200)
+    host = models.CharField('host', max_length=200)
+    connection_access_key = models.CharField('password', max_length=100)
+
+    def __str__(self):
+        return self.name
 
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
