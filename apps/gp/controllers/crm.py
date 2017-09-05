@@ -101,17 +101,12 @@ class SugarCRMController(BaseController):
             raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
 
     def download_to_stored_data(self, connection_object, plug, limit=49, order_by="date_entered DESC", query='',
-                                last_source_id=None, **kwargs):
-        print("DESCARGANDO IN")
-        print("last",last_source_id)
-        print("query",query)
-        print("limit", limit)
-        if last_source_id is not None:
-            if query.isspace():
-                query = "{0}.date_entered > '{0}'".format(self._module.lower(), last_source_id)
+                                last_source_record=None, **kwargs):
+        if last_source_record is not None:
+            if query.isspace() or query == '':
+                query = "{0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
             else:
-                query += " AND {0}.date_entered > '{0}'".format(self._module.lower(), last_source_id)
-        print("query2",query)
+                query += " AND {0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
         data = self.get_entry_list(self._module, max_results=limit, order_by=order_by, query=query)
         entries = data['entry_list']
         new_data = []
@@ -136,7 +131,7 @@ class SugarCRMController(BaseController):
                     extra['status'] = 'f'
                     self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
                         item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
-            return entries[0]['date_entered']['value']
+            return entries[0]['name_value_list']['date_entered']
         return False
 
     def dictfy(self, _dict):

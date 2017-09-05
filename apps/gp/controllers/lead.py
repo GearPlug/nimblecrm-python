@@ -250,16 +250,14 @@ class FacebookLeadsController(BaseController):
         except BaseError as e:
             raise ControllerError(code=3, controller=ConnectorEnum.FacebookLeads, message='Error. {}'.format(str(e)))
 
-    def download_to_stored_data(self, connection_object, plug, lead=None, from_date=None):
+    def download_to_stored_data(self, connection_object, plug, lead=None, from_date=None, **kwargs):
         if lead is not None:
             aditional_data = {'leadgen_id': lead['value']['leadgen_id'], 'page_id': lead['value']['page_id'],
                               'form_id': lead['value']['form_id'], 'adgroup_id': lead['value']['adgroup_id'],
                               'created_time_timestamp': lead['value']['created_time'], }
             leadgen_id = lead['value']['leadgen_id']
-            print(lead)
             lead = self.get_leadgen(leadgen_id)
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=leadgen_id)
-            print(lead)
             new_data = []
             if not q.exists():
                 for column in lead['field_data']:
@@ -286,7 +284,7 @@ class FacebookLeadsController(BaseController):
                         item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
                     raise ControllerError(code=5, controller=ConnectorEnum.FacebookLeads,
                                           message='Error in download to stored data. {}'.format(str(e)))
-            return True
+            return aditional_data['created_time_timestamp']
         return False
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
@@ -302,17 +300,21 @@ class FacebookLeadsController(BaseController):
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
-    def create_webhook(self):
+    def create_webhook(self, url=settings.CURRENT_HOST):
         current_page_id = PlugActionSpecification.objects.get(plug_id=self._plug.id,
                                                               action_specification__name='page').value
         try:
             token = self._client.get_page_token(current_page_id)
             if token is not None:
                 app_token = self._client.get_app_token()
+                webhook = Webhook.objects.create(name='surveymonkey', plug=self._plug, url='', is_deleted=True)
                 self._client.create_app_subscriptions('page',
                                                       '{0}/webhook/facebookleads/0/'.format(settings.CURRENT_HOST),
                                                       'leadgen', 'token-gearplug-058924', app_token['access_token'])
                 self._client.create_page_subscribed_apps(current_page_id, token)
+                webhook.url = '{0}/webhook/facebookleads/0/'.format(url)
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'is_active'])
                 return True
         except BaseError as e:
             raise ControllerError(code=3, message='Error. {}'.format(str(e)))
@@ -340,9 +342,7 @@ class FacebookLeadsController(BaseController):
                                                       action__name='get leads', )
                 plugs_to_update = plugs_to_update.filter(plug_action_specification__value__iexact=page_id,
                                                          plug_action_specification__action_specification__name__iexact='page')
-                print(1, plugs_to_update)
                 for plug in plugs_to_update:
-                    print("i")
                     try:
                         self.create_connection(plug.connection.related_connection, plug)
                         if self.test_connection():
@@ -352,7 +352,6 @@ class FacebookLeadsController(BaseController):
                     if not plug.is_tested:
                         plug.is_tested = True
                         plug.save(update_fields=['is_tested', ])
-                        print("Plug {0} marked as tested.".format(plug.id))
             response.status_code = 200
         return response
 

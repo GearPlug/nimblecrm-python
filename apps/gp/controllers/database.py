@@ -76,12 +76,12 @@ class MySQLController(BaseController):
     def select_all(self, limit=50, unique=None, order_by=None, gt=None):
         if self._table is not None and self._database is not None and self._plug is not None:
             select = 'SELECT * FROM `{0}`.`{1}`'.format(self._database, self._table)
+            if gt is not None:
+                select += ' WHERE `{0}` > "{1}" '.format(order_by.value, gt)
             if unique is not None:
                 select += 'GROUP BY `{0}` '.format(unique.value)
             if order_by is not None:
                 select += 'ORDER BY `{0}` DESC '.format(order_by.value)
-                if gt is not None:
-                    select += 'WHERE `{0}` > `{1}`'.format(order_by.value, gt)
             if limit is not None and isinstance(limit, int):
                 select += 'LIMIT {0}'.format(limit)
             try:
@@ -98,16 +98,15 @@ class MySQLController(BaseController):
                                       message='Error selecting all. {}'.format(str(e)))
         return []
 
-    def download_to_stored_data(self, connection_object, plug, last_source_id=None, **kwargs):
+    def download_to_stored_data(self, connection_object, plug, last_source_record=None, **kwargs):
         order_by = self._plug.plug_action_specification.filter(action_specification__name__iexact='order by').first()
         unique = self._plug.plug_action_specification.get(action_specification__name__iexact='unique')
-        query_params = {'unique': unique, 'oder_by': order_by}
-        if last_source_id is not None:
-            query_params['gt'] = last_source_id
+        query_params = {'unique': unique, 'order_by': order_by}
+        if last_source_record is not None:
+            query_params['gt'] = last_source_record
         data = self.select_all(**query_params)
         parsed_data = [{'unique': {'name': str(unique.value), 'value': item[unique.value]},
-                        'data': [{'name': key, 'value': value} for key, value in item.items() if key != unique.value]}
-                       for item in data]
+                        'data': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
         new_data = []
         for item in parsed_data:
             unique_value = item['unique']['value']
@@ -119,11 +118,12 @@ class MySQLController(BaseController):
                                            object_id=unique_value, connection=connection_object.connection, plug=plug))
                 new_data.append(new_item)
         if new_data:
-            result = self._save_stored_data(new_data.reverse())
+            new_data.reverse()
+            result = self._save_stored_data(new_data)
             for item in parsed_data:
-                for k, v in item.items():
-                    if k == order_by.value:
-                        return v
+                for column in item['data']:
+                    if column['name'] == order_by.value:
+                        return column['value']
         return False
 
     def _save_stored_data(self, data):
