@@ -4,7 +4,6 @@ except ImportError as e:
     from .production_settings import *
 
 import os
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
@@ -258,9 +257,9 @@ WUNDERLIST_CLIENT_SECRET = '8a60113066eb052463be8e1d7414edb8a2f57d2f4cd118b82fb2
 WUNDERLIST_REDIRECT_URL = '{0}/connection/auth-callback/wunderlist/'.format(CURRENT_HOST)
 
 # GitLab
-GITLAB_CLIENT_ID = "2307f61e924130b563f9f27e7543ada8d12e64456c90ff2e3028f24e58515cf4"
-GITLAB_CLIENT_SECRET = "621c8147e8f9c281db80143a7cf64fd14a6c0e58e990a38cc0c37855cafa41ff"
-GITLAB_REDIRECT_URL = "{0}/connection/auth-callback/gitlab/".format(CURRENT_HOST)
+GITLAB_CLIENT_ID = '2307f61e924130b563f9f27e7543ada8d12e64456c90ff2e3028f24e58515cf4'
+GITLAB_CLIENT_SECRET = '621c8147e8f9c281db80143a7cf64fd14a6c0e58e990a38cc0c37855cafa41ff'
+GITLAB_REDIRECT_URL = '{0}/connection/auth-callback/gitlab/'.format(CURRENT_HOST)
 GITLAB_REFRESH_URL = "https://gitlab.com/oauth/token"
 GITLAB_PROTECT_URL = "https://gitlab.com/api/v4/user"
 

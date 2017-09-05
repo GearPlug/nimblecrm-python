@@ -184,18 +184,6 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                 'https://app.asana.com/-/oauth_authorize?response_type=code&client_id={0}&redirect_uri={1}&state=1234'
                     .format(settings.ASANA_CLIENT_ID, settings.ASANA_REDIRECT_URL))
             context['authorization_url'] = authorization_url
-        elif connector == ConnectorEnum.GitLab:
-            data = {
-                "client_id": settings.GITLAB_CLIENT_ID,
-                "redirect_uri": settings.GITLAB_REDIRECT_URL,
-                "response_type": "code"
-            }
-            oauth = OAuth2Session(client_id=settings.GITLAB_CLIENT_ID,
-                                  redirect_uri=settings.GITLAB_REDIRECT_URL)
-            authorization_url, state = oauth.authorization_url(
-                'https://gitlab.com/oauth/authorize?', data
-            )
-            context['authorization_url'] = authorization_url
         elif connector == ConnectorEnum.MercadoLibre:
             m = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
             context['authorization_url'] = m.auth_url(redirect_URI=settings.MERCADOLIBRE_REDIRECT_URL)
@@ -209,6 +197,12 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             context['authorization_url'] = get_mailchimp_url()
         elif connector == ConnectorEnum.FacebookLeads:
             context['app_id'] = settings.FACEBOOK_APP_ID
+        elif connector == ConnectorEnum.GitLab:
+            oauth = OAuth2Session(client_id=settings.GITLAB_CLIENT_ID, redirect_uri=settings.GITLAB_REDIRECT_URL)
+            authorization_url, state = oauth.authorization_url(
+                'https://gitlab.com/oauth/authorize?response_type=code&client_id={0}&redirect_uri={1}&state=1234'.format(
+                    settings.GITLAB_CLIENT_ID, settings.GITLAB_REDIRECT_URL))
+            context['authorization_url'] = authorization_url
         return context
 
 
@@ -436,17 +430,13 @@ class GitLabAuthView(View):
         code = request.GET.get('code', '')
         oauth = OAuth2Session(client_id=settings.GITLAB_CLIENT_ID,
                               redirect_uri=settings.GITLAB_REDIRECT_URL)
-        token = oauth.fetch_token('https://gitlab.com/oauth/token',
-                                  code=code,
+        token = oauth.fetch_token('https://gitlab.com/oauth/token', code=code,
                                   authorization_response=settings.GITLAB_REDIRECT_URL,
-                                  client_id=settings.GITLAB_CLIENT_ID,
-                                  client_secret=settings.GITLAB_CLIENT_SECRET)
-
-        request.session['access-token'] = token['access_token']
-        request.session['refresh-token'] = token['refresh_token']
+                                  client_id=settings.GITLAB_CLIENT_ID, client_secret=settings.GITLAB_CLIENT_SECRET, )
+        self.request.session['connection_data'] = {'token': token['access_token'],
+                                                   'refresh_token': token['refresh_token'], }
         self.request.session['connector_name'] = ConnectorEnum.GitLab.name
-        return redirect(
-            reverse('connection:create_token_authorized_connection'))
+        return redirect(reverse('connection:create_token_authorized_connection'))
 
 
 class MailchimpAuthView(View):

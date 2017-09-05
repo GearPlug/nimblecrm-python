@@ -23,7 +23,11 @@ from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.models import ActionSpecification
 from apps.gp.models import StoredData, Webhook
-
+from apps.gp.map import MapField
+from apps.gp.enum import ConnectorEnum
+import xml.etree.ElementTree as ET
+from django.conf import settings
+import re
 
 
 class SugarCRMController(BaseController):
@@ -1290,7 +1294,7 @@ class ActiveCampaignController(BaseController):
             ('api_key', self._key),
             ('api_output', 'json'),
         ]
-        data=data
+        data = data
         final_url = "{0}/admin/api.php".format(self._host)
         r = requests.post(url=final_url, data=data, params=params).json()
         return r
@@ -1327,7 +1331,8 @@ class ActiveCampaignController(BaseController):
             if not q.exists():
                 for i in data:
                     for k, v in i.items():
-                        new_data.append(StoredData(name=k, value=v or '', object_id=object_id, connection=connection_object.connection, plug=plug))
+                        new_data.append(StoredData(name=k, value=v or '', object_id=object_id,
+                                                   connection=connection_object.connection, plug=plug))
             if new_data:
                 field_count = len(data)
                 extra = {'controller': 'activecampaign'}
