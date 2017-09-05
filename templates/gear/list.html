@@ -55,15 +55,19 @@
                     $.ajax({
                         method: "POST", url: url
                     }).done(function (response) {
-                        console.log(response.data)
-                        a.html("" + response.data)
+                        if (response.data == true) {
+                            a.html('<i class="fa fa-pause" aria-hidden="true"></i>');
+                        } else if (response.data == false) {
+                            a.html('<i class="fa fa-play" aria-hidden="true"></i>');
+                        } else {
+                            a.html('<i class="fa fa-play" aria-hidden="true"></i>' + '&nbsp;' + response.data);
+                        }
                         is_blocked = false;
                     });
                 }
                 return false;
             });
         })
-
 
         function show_gear(id) {
             var gear_id = document.getElementById("group_gear_" + id);
