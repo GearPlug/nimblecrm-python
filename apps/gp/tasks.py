@@ -1,9 +1,10 @@
 from apps.gp.models import Gear, StoredData, GearMapData, Plug
 from apps.gp.enum import ConnectorEnum
-from apps.gp.controllers.crm import SugarCRMController
 from apiconnector.celery import app
 from django.core.cache import cache
+from django.db.models import ObjectDoesNotExist
 from django.utils import timezone
+
 from collections import OrderedDict
 
 LOCK_EXPIRE = 60 * 1
@@ -18,8 +19,8 @@ def update_all_gears():
     print("A total of %s gears will be updated." % gear_amount)
     for gear in active_gears:
         connector = ConnectorEnum.get_connector(gear.source.connection.connector_id)
-        update_plug.s(gear.source.id, gear.id).apply_async(queue=connector.name.lower()) # CON COLAS
-        # update_plug.s(gear.source.id, gear.id).apply_async() # SIN COLAS
+        # update_plug.s(gear.source.id, gear.id).apply_async(queue=connector.name.lower())  # CON COLAS
+        update_plug.s(gear.source.id, gear.id).apply_async() # SIN COLAS
         print("Assigning plug {0} to queue: {1}.".format(gear.source.id, connector.name.lower()))
 
 
@@ -41,13 +42,18 @@ def update_plug(plug_id, gear_id, **query_params):
             controller_class = ConnectorEnum.get_controller(connector)
             controller = controller_class(plug.connection.related_connection, plug)
             ping = controller.test_connection()
-            print("PING: %s" % ping)
             if ping is not True:
                 print("Error en la connection.")
                 return
             if plug.plug_type.lower() == 'source':
-                has_new_data = controller.download_source_data(
-                    last_source_record=gear.gear_map.last_source_order_by_field_value)
+                try:
+                    plug.webhook
+                    has_new_data = False
+                    print("HAS WEBHOOK. DO NOT UPDATE.")
+                except AttributeError as e:
+                    print("LAST IS: {}".format(gear.gear_map.last_source_order_by_field_value))
+                    has_new_data = controller.download_source_data(
+                        last_source_record=gear.gear_map.last_source_order_by_field_value)
                 print("download_result: {}".format(has_new_data))
                 if has_new_data:
                     gear.gear_map.last_source_order_by_field_value = has_new_data
@@ -55,8 +61,8 @@ def update_plug(plug_id, gear_id, **query_params):
                 stored_data = StoredData.objects.filter(**query_params)
                 if stored_data.count() > 0:
                     target_connector = ConnectorEnum.get_connector(gear.target.connection.connector_id)
-                    # update_plug.s(gear.target.id, gear_id).apply_async()  # SIN COLAS
-                    update_plug.s(gear.target.id, gear_id).apply_async(queue=target_connector.name.lower())  # CON COLAS
+                    update_plug.s(gear.target.id, gear_id).apply_async()  # SIN COLAS
+                    # update_plug.s(gear.target.id, gear_id).apply_async(queue=target_connector.name.lower())  # CON COLAS
                     print("Assigning plug {0} to queue: {1}.".format(gear.target.id, connector.name.lower()))
             elif plug.plug_type.lower() == 'target':
                 stored_data = StoredData.objects.filter(**query_params)
