@@ -3,7 +3,7 @@ from apps.gp.controllers.exception import ControllerError
 from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification, Plug
 from apps.gp.enum import ConnectorEnum
 from facebookmarketing.client import Client
-from facebookmarketing.exception import UnknownError, InvalidOauth20AccessTokenError, BaseError
+from facebookmarketing.exceptions import UnknownError, InvalidOauth20AccessTokenError, BaseError
 from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponse
@@ -307,16 +307,14 @@ class FacebookLeadsController(BaseController):
             token = self._client.get_page_token(current_page_id)
             if token is not None:
                 app_token = self._client.get_app_token()
-                webhook = Webhook.objects.create(name='surveymonkey', plug=self._plug, url='', is_deleted=True)
-                self._client.create_app_subscriptions('page',
-                                                      '{0}/webhook/facebookleads/0/'.format(settings.CURRENT_HOST),
-                                                      'leadgen', 'token-gearplug-058924', app_token['access_token'])
+                webhook = Webhook.objects.create(name='facebookleads', plug=self._plug, url='', is_deleted=True)
                 self._client.create_page_subscribed_apps(current_page_id, token)
                 webhook.url = '{0}/webhook/facebookleads/0/'.format(url)
                 webhook.is_active = True
                 webhook.save(update_fields=['url', 'is_active'])
                 return True
         except BaseError as e:
+            raise
             raise ControllerError(code=3, message='Error. {}'.format(str(e)))
         return False
 

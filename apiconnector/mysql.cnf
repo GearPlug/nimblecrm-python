@@ -2,7 +2,7 @@
 [client]
 host = localhost
 port = 3306
-database = apiConnector-00
+database = grplug
 user = root
-password = passwd
+password = root
 default-character-set = utf8
