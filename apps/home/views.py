@@ -33,7 +33,7 @@ class AppsView(LoginRequiredMixin, ListView):
     """
     model = Connector
     template_name = 'home/app_list.html'
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
 
     def get_queryset(self):
         return self.model.objects.filter(is_active=True)

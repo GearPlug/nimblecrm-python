@@ -25,7 +25,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
     fields = ['connection', ]
     template_name = 'plug/create.html'
     success_url = ''
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
 
     def get_context_data(self, **kwargs):
         context = super(CreatePlugView, self).get_context_data(**kwargs)
