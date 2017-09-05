@@ -2,10 +2,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
-from django.views.generic import TemplateView, View
+from django.views.generic import TemplateView, View, ListView
 from django.views.decorators.csrf import csrf_exempt
 from allauth.account.views import LoginView
-from apps.gp.models import GearGroup, Gear, PlugActionSpecification, Plug, Webhook
+from apps.gp.models import GearGroup, Gear, PlugActionSpecification, Plug, Webhook, Connector
 from apps.gp.enum import ConnectorEnum
 import json
 
@@ -23,8 +23,23 @@ class DashBoardView(LoginRequiredMixin, TemplateView):
         return context
 
 
+class AppsView(LoginRequiredMixin, ListView):
+    """
+    Lists all connectors that can be used as the type requested.
+
+    - Called after creating a gear.
+    - Called after testing the source plug.
+
+    """
+    model = Connector
+    template_name = 'home/app_list.html'
+    login_url = '/account/login/'
+
+    def get_queryset(self):
+        return self.model.objects.filter(is_active=True)
+
+
 class HomeView(LoginView):
-    template_name = 'home/index.html'
     success_url = '/dashboard/'
 
     def get(self, *args, **kwargs):
@@ -73,7 +88,6 @@ class IncomingWebhook(View):
         connector = ConnectorEnum.get_connector(name=connector_name)
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class()
-        print(connector)
         # SLACK
         try:
             body = json.loads(request.body.decode('utf-8'))
@@ -227,3 +241,11 @@ class IncomingWebhook(View):
                     w.plug.save()
                 response.status_code = 200
         return response
+
+
+class HelpView(LoginRequiredMixin, TemplateView):
+    template_name = 'home/help.html'
+
+
+class ActivityView(LoginRequiredMixin, TemplateView):
+    template_name = 'home/activity.html'

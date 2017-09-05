@@ -9,25 +9,26 @@
     <br>
 {% endfor %}
 
-
-<script type="application/javascript">
-    $(document).ready(function () {
-        $(document).on('click', 'select.specification_select', function () {
-            var select = $(this);
-            if ($(select).attr('data-is-loaded') == 'false') {
-                var url = "{% url 'plug:plug_action_specifications' %}";
-                $.ajax({
-                    method: "POST",
-                    url: url,
-                    data: {
-                        connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %},
-                        action_specification_id: $(select).attr('data-id')
-                    }
-                }).done(function (response) {
-                    $(select).html(response).trigger('change');
-                    $(select).attr('data-is-loaded', true);
-                });
-            }
-        });
-    })
-</script>
+{% block scripts %}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            $(document).on('click', 'select.specification_select', function () {
+                var select = $(this);
+                if ($(select).attr('data-is-loaded') == 'false') {
+                    var url = "{% url 'plug:plug_action_specifications' %}";
+                    $.ajax({
+                        method: "POST",
+                        url: url,
+                        data: {
+                            connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %},
+                            action_specification_id: $(select).attr('data-id')
+                        }
+                    }).done(function (response) {
+                        $(select).html(response).trigger('change');
+                        $(select).attr('data-is-loaded', true);
+                    });
+                }
+            });
+        })
+    </script>
+{% endblock %}

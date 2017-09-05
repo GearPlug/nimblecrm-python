@@ -7,7 +7,7 @@ class ConnectorEnum(Enum):
     FacebookLeads = 1, 'lead', 'special'
     MySQL = 2, 'database', 'form'
     SugarCRM = 3, 'crm', 'form'
-    MailChimp = 4, 'email_marketing', 'form'
+    MailChimp = 4, 'email_marketing', 'authorization'
     GoogleSpreadSheets = 5, 'ofimatic', 'authorization'
     PostgreSQL = 6, 'database', 'form'
     MSSQL = 7, 'database', 'form'
@@ -90,7 +90,6 @@ class ConnectorEnum(Enum):
     def get_controller(connector):
         a = dynamic_import(connector.name, path="apps.gp.controllers.{0}".format(connector.category),
                            suffix='Controller')
-        print(a)
         return a
 
 

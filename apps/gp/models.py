@@ -200,8 +200,7 @@ class SugarCRMConnection(models.Model):
 class MailChimpConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mailchimp')
     name = models.CharField('name', max_length=200)
-    connection_user = models.CharField('user', max_length=200)
-    api_key = models.CharField('api key', max_length=200)
+    token = models.CharField('user', max_length=200)
 
     def __str__(self):
         return self.name
@@ -539,9 +538,8 @@ class GearMap(models.Model):
     is_active = models.BooleanField('is active', default=True)
     last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', null=True, default=None,
                                               on_delete=models.SET_NULL)
-    last_sent_stored_data_creation_date = models.DateTimeField('last sent storeddata creation date', null=True,
-                                                               default=None)
     last_source_update = models.DateTimeField(null=True, default=None)
+    last_source_order_by_field_value = models.CharField(max_length=64, null=True, blank=True, default=None)
     created = models.DateTimeField('created', auto_now_add=True)
 
     class Meta:
@@ -559,7 +557,7 @@ class GearMapData(models.Model):
 
 class Webhook(models.Model):
     name = models.CharField('webhook name', max_length=100)
-    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='webhook')
+    plug = models.OneToOneField(Plug, on_delete=models.CASCADE, related_name='webhook')
     url = models.URLField('url')
     generated_id = models.CharField('generated id', max_length=200)
     created = models.DateTimeField('created', auto_now_add=True)

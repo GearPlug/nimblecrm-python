@@ -5,7 +5,7 @@
     {# GRUPOS DE GEARS #}
     <div class="col-md-12 gear_border_gear">
         Groups:
-        <br />
+        <br/>
         {% for group in object_list %}
             {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=2 %}
         {% endfor %}
@@ -14,20 +14,19 @@
     {# GEARS DE CADA GRUPO #}
     <div class="col-md-10 gear_border_gear">
         Gears:
-        <br />
+        <br/>
         {% for group in object_list %}
             {# AQUI VA OCULTO #}
-            <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;" data-show="True"
-                 id="group_gear">
+            <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;"
+                 id="group_gear_{{ group.id }}"
+                 data-show="True">
+                <div>
+                    Group: {{ group.name }}&nbsp;
+                    <a href="{% url 'gear:update_group' pk=group.id %}">
+                        <i class="fa fa-wrench" aria-hidden="true"></i>
+                    </a>
+                </div>
                 {% for gear in group.gear.all %}
-                    {% if forloop.counter.0 == forloop.parentloop.counter.0 %}
-                        <div>
-                            Group: {{ group.name }}&nbsp;
-                            <a href="{% url 'gear:update_group' pk=group.id %}">
-                                <i class="fa fa-wrench" aria-hidden="true"></i>
-                            </a>
-                        </div>
-                    {% endif %}
                     {% include 'gear/snippets/gear_extend.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
                 {% endfor %}
             </div>
@@ -38,17 +37,44 @@
     <div class="col-md-2">
         {# CREAR GRUPO DE GEARS #}
         <a href="{% url 'gear:create_group' %}">New group</a>
-        <br />
+        <br/>
         {# CREAR GEAR #}
         <a href="{% url 'gear:create' %}">New gear</a>
     </div>
 {% endblock %}
 
-{% block scripts_gear %}
+{% block scripts %}
     <script>
+        $(document).ready(function () {
+            var is_blocked = false;
+            $("a.toggle-gear-btn").click(function () {
+                var a = $(this);
+                var url = a.attr('href');
+                if (is_blocked == false) {
+                    is_blocked = true;
+                    $.ajax({
+                        method: "POST", url: url
+                    }).done(function (response) {
+                        console.log(response.data)
+                        a.html("" + response.data)
+                        is_blocked = false;
+                    });
+                }
+                return false;
+            });
+        })
+
+
         function show_gear(id) {
-            var a = document.querySelectorAll("[data-group-id='"+id+"']");
-            var b = a.getAttribute('data-show');
+            var gear_id = document.getElementById("group_gear_" + id);
+            var data_show = gear_id.getAttribute('data-show');
+            if (data_show == "True") {
+                gear_id.style.display = "none";
+                gear_id.setAttribute('data-show', 'False');
+            } else {
+                gear_id.style.display = "block";
+                gear_id.setAttribute('data-show', 'True');
+            }
         }
     </script>
 {% endblock %}

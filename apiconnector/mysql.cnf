@@ -2,7 +2,7 @@
 [client]
 host = localhost
 port = 3306
-database =
+database = grplug
 user = root
 password = root
 default-character-set = utf8
