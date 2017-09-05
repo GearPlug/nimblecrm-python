@@ -172,86 +172,49 @@ class MailChimpController(BaseController):
                 print(e)
                 return self._client is None and self._token is None
 
-    def get_lists(self):
-        if self._client:
-            result = self._client.lists.all()
-            try:
-                return [{'name': l['name'], 'id': l['id']} for l in result['lists']]
-            except:
-                return []
-        return []
-
-    def get_list_merge_fields(self, list_id):
-        result = self._client.lists._mc_client._get(url='lists/%s/merge-fields' % list_id)
-        try:
-            return result['merge_fields']
-        except:
-            return []
-
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
         data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[0]]
-                except:
-                    data_list = []
+
         if self._plug is not None:
             status = None
-            _list = None
+            _list = []
             for specification in self._plug.plug_action_specification.all():
                 if specification.action_specification.action.name == 'subscribe':
                     status = 'subscribed'
                 elif specification.action_specification.action.name == 'unsubscribe':
                     status = 'unsubscribed'
-                    _list = self.get_all_members(self._plug.plug_action_specification.all()[0].value)
 
             list_id = self._plug.plug_action_specification.all()[0].value
             for obj in data_list:
                 d = {'email_address': obj.pop('email_address'), 'status': status,
                      'merge_fields': {key: obj[key] for key in obj.keys()}}
-                obj_list.append(d)
-
-            if status == 'unsubscribed':
-                obj_list = self.set_members_hash_id(obj_list, _list)
+                _list.append(d)
 
             extra = {'controller': 'mailchimp'}
-            for item in obj_list:
+            for item in _list:
                 try:
-                    if status == 'subscribed':
-                        res = self._client.lists.members.create(list_id, item)
-                    elif status == 'unsubscribed':
-                        res = self._client.lists.members.update(list_id, item['hash_id'], {'status': 'unsubscribed'})
+                    res=self._client.add_new_list_member(list_id,item)
                     extra['status'] = "s"
                     self._log.info('Email: %s  successfully sent. Result: %s.' % (item['email_address'], res['id']),
-                                   extra=extra)
+                                    extra=extra)
+                    obj_list.append(id)
                 except Exception as e:
                     print(e)
                     res = "User already exists"
                     extra['status'] = 'f'
                     self._log.error('Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
-            return
+            return obj_list
         raise ControllerError("Incomplete.")
 
     def get_target_fields(self, **kwargs):
-        return {}
-
-    def get_all_members(self, list_id):
-        return self._client.lists.members.all(list_id, get_all=True, fields="members.id,members.email_address")
-
-    def set_members_hash_id(self, members, _list):
-        return [dict(m, hash_id=l['id']) for m in members for l in _list['members'] if
-                m['email_address'] == l['email_address']]
+        return [{"name": "email_address", "required": True, "type": "varchar", "label": "email"},
+                {"name": "FNAME", "required": False, "type": "varchar", "label": "First Name"},
+                {"name": "LNAME", "required": False, "type": "varchar", "label": "Last Name"},
+                ]
 
     def get_mapping_fields(self, **kwargs):
-        list = self._plug.plug_action_specification.get(action_specification__name__iexact='list')
-        list_id = list.value
-        print("LIST ID->>", list_id)
-        mfl = [MapField(f, controller=ConnectorEnum.MailChimp) for f in self.get_list_merge_fields(list_id)]
-        mfl.append(MapField({'tag': 'email_address', 'name': 'Email', 'required': True, 'type': 'email',
-                             'options': {'size': 100}}, controller=ConnectorEnum.MailChimp))
-        return mfl
+        return [MapField(f, controller=ConnectorEnum.MailChimp) for f in self.get_target_fields()]
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
