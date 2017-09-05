@@ -460,3 +460,12 @@ def get_flow(redirect_to, scope='https://www.googleapis.com/auth/drive'):
 def get_authorization(request):
     credentials = client.OAuth2Credentials.from_json(request.session['google_credentials'])
     return credentials.authorize(httplib2.Http())
+
+
+class ManageConnectionView(LoginRequiredMixin, ListView):
+    model = Connection
+    template_name = 'connection/manage.html'
+    login_url = '/account/login/'
+
+    def get_queryset(self):
+        return self.model.objects.filter(user=self.request.user)

@@ -47,11 +47,9 @@
     <script>
         $(document).ready(function () {
             var is_blocked = false;
-            console.log("Sii");
             $("a.toggle-gear-btn").click(function () {
                 var a = $(this);
                 var url = a.attr('href');
-
                 if (is_blocked == false) {
                     is_blocked = true;
                     $.ajax({
