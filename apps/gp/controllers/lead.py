@@ -236,6 +236,7 @@ class FacebookLeadsController(BaseController):
 
     def get_leadgen(self, leadgen_id):
         try:
+            print("get lead")
             return self._client.get_leadgen(leadgen_id)
         except Exception as e:
             raise
@@ -251,33 +252,42 @@ class FacebookLeadsController(BaseController):
 
     def download_to_stored_data(self, connection_object, plug, lead=None, from_date=None):
         if lead is not None:
+            aditional_data = {'leadgen_id': lead['value']['leadgen_id'], 'page_id': lead['value']['page_id'],
+                              'form_id': lead['value']['form_id'], 'adgroup_id': lead['value']['adgroup_id'],
+                              'created_time_timestamp': lead['value']['created_time'], }
             leadgen_id = lead['value']['leadgen_id']
+            print(lead)
             lead = self.get_leadgen(leadgen_id)
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=leadgen_id)
+            print(lead)
             new_data = []
             if not q.exists():
                 for column in lead['field_data']:
                     new_data.append(StoredData(name=column['name'], value=column['values'][0], object_id=leadgen_id,
                                                connection=connection_object.connection, plug=plug))
+                for k, v in aditional_data.items():
+                    new_data.append(StoredData(name=k, value=v, object_id=leadgen_id,
+                                               connection=connection_object.connection, plug=plug))
+                new_data.append(StoredData(name='created_time', value=lead['created_time'], object_id=leadgen_id,
+                                           connection=connection_object.connection, plug=plug))
             if new_data:
                 field_count = len(lead['field_data'])
-                extra = {'controller': 'facebook'}
-                for i, item in enumerate(new_data):
-                    try:
-                        item.save()
-                        if (i + 1) % field_count == 0:
-                            extra['status'] = 's'
-                            self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                                item.object_id, item.plug.id, item.connection.id), extra=extra)
-                    except Exception as e:
-                        extra['status'] = 'f'
-                        self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                            item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
-                        raise ControllerError(code=5, controller=ConnectorEnum.FacebookLeads,
-                                              message='Error in download to stored data. {}'.format(str(e)))
-                return True
+            extra = {'controller': 'facebook'}
+            for i, item in enumerate(new_data):
+                try:
+                    item.save()
+                    if (i + 1) % field_count == 0:
+                        extra['status'] = 's'
+                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                except Exception as e:
+                    extra['status'] = 'f'
+                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+                    raise ControllerError(code=5, controller=ConnectorEnum.FacebookLeads,
+                                          message='Error in download to stored data. {}'.format(str(e)))
+            return True
         return False
-
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
@@ -330,7 +340,9 @@ class FacebookLeadsController(BaseController):
                                                       action__name='get leads', )
                 plugs_to_update = plugs_to_update.filter(plug_action_specification__value__iexact=page_id,
                                                          plug_action_specification__action_specification__name__iexact='page')
+                print(1, plugs_to_update)
                 for plug in plugs_to_update:
+                    print("i")
                     try:
                         self.create_connection(plug.connection.related_connection, plug)
                         if self.test_connection():
