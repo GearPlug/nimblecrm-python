@@ -53,14 +53,19 @@
                console.log("Sii a");
                var a = $(this);
                var url = a.attr('href');
-
                if (is_blocked == false) {
                    is_blocked = true;
                    $.ajax({
                        method: "POST", url: url
                    }).done(function (response) {
-                       console.log(response.data)
-                       a.html("" + response.data)
+                       console.log(response.data);
+                       if(response.data == true){
+                           a.html('<i class="fa fa-pause" aria-hidden="true"></i>');
+                       }else if(response.data == false){
+                           a.html('<i class="fa fa-play" aria-hidden="true"></i>');
+                       }else{
+                           a.html('<i class="fa fa-play" aria-hidden="true"></i>' + '&nbsp;' + response.data);
+                       }
                        is_blocked = false;
                    });
                }
