@@ -50,7 +50,12 @@ class BaseController(object):
 
     def download_source_data(self, **kwargs):
         if self._connection_object is not None and self._plug is not None:
-            return self.download_to_stored_data(self._connection_object, self._plug, **kwargs)
+            try:
+                return self.download_to_stored_data(self._connection_object, self._plug, **kwargs)
+            except TypeError:
+                print("CLASS TO FIX: {}".format(self))
+                return self.download_to_stored_data(self._connection_object, self._plug)
+
         else:
             raise ControllerError("There's no active connection or plug.")
 

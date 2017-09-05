@@ -88,7 +88,6 @@ class IncomingWebhook(View):
         connector = ConnectorEnum.get_connector(name=connector_name)
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class()
-        print(connector)
         # SLACK
         try:
             body = json.loads(request.body.decode('utf-8'))
@@ -216,8 +215,33 @@ class IncomingWebhook(View):
             decoded = json.loads(request.body.decode("utf-8"))
             response.status_code = 200
             print(decoded)
+        elif connector == ConnectorEnum.ActiveCampaign:
+            response.status_code = 200
+            data = []
+            fields = dict(request.POST)
+            data.append(fields)
+            clean_data = {}
+            for i in data:
+                if type(i) == dict:
+                    for k, v in i.items():
+                        if type(v) == list:
+                            if len(v) < 2:
+                                clean_data[k] = v[0]
+            clean_data = [clean_data]
+            webhook_id = kwargs['webhook_id']
+            w = Webhook.objects.get(pk=webhook_id)
+            if w.plug.gear_source.first().is_active or not w.plug.is_tested:
+                if not w.plug.is_tested:
+                    w.plug.is_tested = True
+                controller_class = ConnectorEnum.get_controller(connector)
+                controller = controller_class(w.plug.connection.related_connection, w.plug)
+                ping = controller.test_connection()
+                if ping:
+                    controller.download_source_data(data=clean_data)
+                    w.plug.save()
+                response.status_code = 200
         elif connector == ConnectorEnum.GitLab:
-<<<<<<< HEAD
+            #??????????????????????
             response = HttpResponse(status=200)
             issues = request.body.decode("utf-8")
             issues = json.loads(issues)
@@ -261,26 +285,12 @@ class IncomingWebhook(View):
                         w.plug.save()
                     except Exception as e:
                         print(e)
-=======
-            received_webhook_raw = request.body.decode('utf-8')
-            received_webhook = json.loads(received_webhook_raw)
-            if received_webhook['object_kind'] == 'issue':
-                if 'action' in received_webhook['object_attributes'].keys():
-                    if received_webhook['object_attributes'][
-                        'action'] == 'open':
-                        webhook_id = kwargs.pop('webhook_id', None)
-                        print("webhook id", webhook_id)
-                        w = Webhook.objects.get(pk=webhook_id)
-                        print("Webhook Object:", w)
-                        if w.plug.gear_source.first().is_active or not w.plug.is_tested:
-                            if not w.plug.is_tested:
-                                w.plug.is_tested = True
-                            controller_class = ConnectorEnum.get_controller(connector)
-                            controller = controller_class(w.plug.connection.related_connection, w.plug)
-                            ping = controller.test_connection()
-                            if ping:
-                                controller.download_source_data(issue=received_webhook)
-                                w.plug.save()
->>>>>>> 0.4
-            response.status_code = 200
         return response
+
+
+class HelpView(LoginRequiredMixin, TemplateView):
+    template_name = 'home/help.html'
+
+
+class ActivityView(LoginRequiredMixin, TemplateView):
+    template_name = 'home/activity.html'

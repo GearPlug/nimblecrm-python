@@ -1,13 +1,12 @@
-import os
+try:
+    from .local_settings import *
+except ImportError as e:
+    from .production_settings import *
 
+import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SECRET_KEY = 'nd65g3a23c!y%+a_%+v)!trnjh%c=gh(zg5!gsn*qo&b6*nsbb'
-DEBUG = True  # False
-CURRENT_HOST = "https://e0ae5cfd.ngrok.io"
-ALLOWED_HOSTS = [CURRENT_HOST, '*', ]
 CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
-INTERNAL_IPS = ['127.0.0.1',]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -27,11 +26,8 @@ INSTALLED_APPS = [
     # Debug
     'debug_toolbar',
 
-    # TODO REVIEW
-    'facebook',
-
     # GRPLUG
-    'apps.wizard',
+    # 'apps.wizard',
     'apps.home',
     'apps.gear',
     'apps.plug',
@@ -176,18 +172,16 @@ ACCOUNT_EMAIL_REQUIRED = True
 LOGIN_REDIRECT_URL = '/dashboard/'
 
 # SETTINGS CENTRALIZADOS
+
 # Facebook
+
+# FACEBOOK_APP_ID = '1860382657578411'
+# FACEBOOK_APP_SECRET = '3ce16acabb2efeda4336e4e5f9576d8b'
+# FACEBOOK_GRAPH_VERSION = '2.7'
+
 FACEBOOK_APP_ID = '116121845719363'
 FACEBOOK_APP_SECRET = '4d743c1e1331b05ecbb696ebfbbff4ae'
 FACEBOOK_GRAPH_VERSION = '2.10'
-
-# Email
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_USE_TLS = True
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
-EMAIL_PORT = 587
 
 # Slack
 SLACK_CLIENT_ID = '129041278545.209366736883'
@@ -253,7 +247,6 @@ ASANA_REDIRECT_URL = '{0}/connection/auth-callback/asana/'.format(CURRENT_HOST)
 ASANA_WEBHOOK_URL = ''
 
 # Mercadolibre
-
 MERCADOLIBRE_CLIENT_ID = '1063986061828245'
 MERCADOLIBRE_CLIENT_SECRET = 'MyDv8rmoWjJneTgkxEhp3QRONbUp3CPV'
 MERCADOLIBRE_REDIRECT_URL = '{0}/connection/auth-callback/mercadolibre/'.format(CURRENT_HOST)
@@ -267,3 +260,11 @@ WUNDERLIST_REDIRECT_URL = '{0}/connection/auth-callback/wunderlist/'.format(CURR
 GITLAB_CLIENT_ID = '2307f61e924130b563f9f27e7543ada8d12e64456c90ff2e3028f24e58515cf4'
 GITLAB_CLIENT_SECRET = '621c8147e8f9c281db80143a7cf64fd14a6c0e58e990a38cc0c37855cafa41ff'
 GITLAB_REDIRECT_URL = '{0}/connection/auth-callback/gitlab/'.format(CURRENT_HOST)
+GITLAB_REFRESH_URL = "https://gitlab.com/oauth/token"
+GITLAB_PROTECT_URL = "https://gitlab.com/api/v4/user"
+
+# Wunderlist
+MAILCHIMP_CLIENT_ID = '130614039674'
+MAILCHIMP_CLIENT_SECRET = 'ec67ed08c77c04752b168fcc9b732485596d68e4709d9920af'
+MAILCHIMP_REDIRECT_URL = '{0}/connection/auth-callback/mailchimp/'.format(CURRENT_HOST)
+MAILCHIMP_ACCESS_TOKEN_URI = 'https://login.mailchimp.com/oauth2/token'

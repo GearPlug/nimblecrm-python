@@ -200,8 +200,7 @@ class SugarCRMConnection(models.Model):
 class MailChimpConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mailchimp')
     name = models.CharField('name', max_length=200)
-    connection_user = models.CharField('user', max_length=200)
-    api_key = models.CharField('api key', max_length=200)
+    token = models.CharField('user', max_length=200)
 
     def __str__(self):
         return self.name
@@ -429,7 +428,6 @@ class MercadoLibreConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mercadolibre')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
-    user_id = models.CharField('user_id', max_length=200)
     site = models.CharField(max_length=3, choices=SITES)
 
     def __str__(self):
@@ -445,11 +443,22 @@ class GmailConnection(models.Model):
     def __str__(self):
         return self.name
 
+
 class GitLabConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_gitlab')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
     refresh_token = models.CharField('refresh token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
+class ActiveCampaignConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_activecampaign')
+    name = models.CharField('name', max_length=200)
+    host = models.CharField('host', max_length=200)
+    connection_access_key = models.CharField('password', max_length=100)
 
     def __str__(self):
         return self.name
@@ -517,11 +526,7 @@ class Gear(models.Model):
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
-<<<<<<< HEAD
     gear_group = models.ForeignKey(GearGroup, null=True, on_delete=models.SET_NULL, related_name='gear_group')
-=======
-    gear_group = models.ForeignKey(GearGroup, null=True, on_delete=models.SET_NULL, related_name='gear')
->>>>>>> 0.4
 
     @property
     def is_running(self):
@@ -535,9 +540,8 @@ class GearMap(models.Model):
     is_active = models.BooleanField('is active', default=True)
     last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', null=True, default=None,
                                               on_delete=models.SET_NULL)
-    last_sent_stored_data_creation_date = models.DateTimeField('last sent storeddata creation date', null=True,
-                                                               default=None)
     last_source_update = models.DateTimeField(null=True, default=None)
+    last_source_order_by_field_value = models.CharField(max_length=64, null=True, blank=True, default=None)
     created = models.DateTimeField('created', auto_now_add=True)
 
     class Meta:
@@ -555,7 +559,7 @@ class GearMapData(models.Model):
 
 class Webhook(models.Model):
     name = models.CharField('webhook name', max_length=100)
-    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='webhook')
+    plug = models.OneToOneField(Plug, on_delete=models.CASCADE, related_name='webhook')
     url = models.URLField('url')
     generated_id = models.CharField('generated id', max_length=200)
     created = models.DateTimeField('created', auto_now_add=True)

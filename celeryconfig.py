@@ -4,11 +4,13 @@ from datetime import timedelta
 CELERY_IMPORTS = ('apiconnector.celery',)
 
 # Broker settings
-BROKER_URL = 'sqs://AKIAIWBWN7I5X2OEKRAQ:nhLbsWGf74NNq+bKC49USY7b3bzsNLEClvVGRAYi@'
-BROKER_TRANSPORT_OPTIONS = {
-    # 'region': 'us-east-1',
-    'polling_interval': 60,
-}
+# BROKER_URL = 'sqs://AKIAIWBWN7I5X2OEKRAQ:nhLbsWGf74NNq+bKC49USY7b3bzsNLEClvVGRAYi@'
+# BROKER_TRANSPORT_OPTIONS = {
+#     # 'region': 'us-east-1',
+#     'polling_interval': 60,
+# }
+BROKER_URL = 'redis://localhost:6379'
+
 CELERY_DEFAULT_QUEUE = 'grplug0'
 SQS_QUEUE_NAME = 'grplug0'
 

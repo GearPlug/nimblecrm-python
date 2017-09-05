@@ -64,14 +64,14 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
                          ConnectorEnum.Instagram, ConnectorEnum.YouTube, ConnectorEnum.Shopify,
                          ConnectorEnum.GoogleCalendar, ConnectorEnum.Asana, ConnectorEnum.Salesforce,
                          ConnectorEnum.Mandrill, ConnectorEnum.FacebookLeads, ConnectorEnum.Gmail,
-                         ConnectorEnum.GitLab]:
-<<<<<<< HEAD
+                         ConnectorEnum.GitLab, ConnectorEnum.ActiveCampaign]:
                     print("WEBHOOK!!")
-=======
->>>>>>> 0.4
                     controller.create_webhook()
                 else:
-                    controller.download_to_stored_data(self.object.connection.related_connection, self.object)
+                    print("voy a descargar")
+                    last_source_id = controller.download_to_stored_data(self.object.connection.related_connection,
+                                                                        self.object, limit=1)
+                    print(last_source_id)
         self.request.session['source_connection_id'] = None
         self.request.session['target_connection_id'] = None
         return HttpResponseRedirect(self.get_success_url())
@@ -175,17 +175,7 @@ class TestPlugView(TemplateView):
                 sd = StoredData.objects.filter(plug=p, connection=p.connection, object_id=sd_sample.object_id)
                 context['object_list'] = sd
             except Exception:
-                print("Failed. force donwload.")
-                try:
-                    c = ConnectorEnum.get_connector(p.connection.connector.id)
-                    controller_class = ConnectorEnum.get_controller(c)
-                    controller = controller_class(p.connection.related_connection, p)
-                    ping = controller.test_connection()
-                    if ping:
-                        controller.download_to_stored_data(p.connection.related_connection, p)
-                except Exception as e:
-                    print("error")
-                    raise
+                print("Failed. no data.")
         elif p.plug_type == 'target':
             c = ConnectorEnum.get_connector(p.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(c)
@@ -207,6 +197,10 @@ class TestPlugView(TemplateView):
             ping = controller.test_connection()
             print("PING: %s" % ping)
             if ping:
-                data_list = controller.download_to_stored_data(p.connection.related_connection, p)
+                try:
+                    last_source_id = controller.download_to_stored_data(p.connection.related_connection, p, limit=1)
+                    print("new last",last_source_id)
+                except Exception as e:
+                    print("Test Failed. Probably the webhook hasn\'t received any data.")
         context = self.get_context_data()
         return super(TestPlugView, self).render_to_response(context)

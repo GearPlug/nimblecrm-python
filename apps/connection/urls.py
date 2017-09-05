@@ -1,16 +1,10 @@
 from django.conf.urls import url
-<<<<<<< HEAD
-from apps.connection.views import CreateConnectionView, ListConnectorView, GoogleAuthView, SlackAuthView, AuthSuccess, \
-    TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, ShopifyAuthView, TestConnectionView, \
-    CreateConnectionSuccessView, EvernoteAuthView, AsanaAuthView, CreateTokenAuthorizedConnectionView, \
-    MercadoLibreAuthView, AjaxMercadoLibrePostSiteView, WunderListAuthView, HubspotAuthView, GitLabAuthView # ,AJAXGetSurveyListView
-=======
 from apps.connection.views import CreateConnectionView, ListConnectionView, ListConnectorView, AuthSuccess, \
     TestConnectionView, CreateConnectionSuccessView, CreateTokenAuthorizedConnectionView, \
     GoogleAuthView, SlackAuthView, TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, \
     ShopifyAuthView, EvernoteAuthView, AsanaAuthView, MercadoLibreAuthView, WunderListAuthView, HubspotAuthView, \
-    AjaxMercadoLibrePostSiteView, GitLabAuthView  # ,AJAXGetSurveyListView
->>>>>>> 0.4
+    AjaxMercadoLibrePostSiteView, GitLabAuthView, AjaxMercadoLibrePostSiteView, ManageConnectionView, MailchimpAuthView, \
+    GitLabAuthView  # ,AJAXGetSurveyListView
 
 urlpatterns = [
     # Create Connection
@@ -24,6 +18,8 @@ urlpatterns = [
         name='list'),
     # List Connectors
     url(r'^list/connector/(?P<type>(source|target)+)/$', ListConnectorView.as_view(), name='connector_list'),
+
+    url(r'manage/', ManageConnectionView.as_view(), name="manage"),
 
     # Auth Callbacks
     url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),
@@ -39,11 +35,8 @@ urlpatterns = [
     url(r'^auth-callback/salesforce/', SalesforceAuthView.as_view(), name="salesforce_auth"),
     url(r'^auth-callback/shopify/', ShopifyAuthView.as_view(), name="shopify_auth"),
     url(r'^auth-callback/mercadolibre/', MercadoLibreAuthView.as_view(), name="mercadolibre_auth"),
-<<<<<<< HEAD
-    url(r'^auth-callback/gitlab/', GitLabAuthView.as_view(), name="mercadolibre_auth"),
-=======
     url(r'^auth-callback/gitlab/', GitLabAuthView.as_view(), name="gitlab_auth"),
->>>>>>> 0.4
+    url(r'^auth-callback/mailchimp/', MailchimpAuthView.as_view(), name="mailchimp_auth"),
 
     # Create Authorizated Connection
     url(r'^create/authorizated/', CreateTokenAuthorizedConnectionView.as_view(),

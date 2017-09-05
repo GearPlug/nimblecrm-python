@@ -18,33 +18,16 @@ from sugarcrm.exception import BaseError, WrongParameter, InvalidLogin
 
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
-from apps.gp.controllers.exceptions.sugarcrm import SugarCRMError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.models import ActionSpecification
 from apps.gp.models import StoredData, Webhook
-<<<<<<< HEAD
 from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 import xml.etree.ElementTree as ET
 from django.conf import settings
 import re
-
-
-class CustomSugarObject(sugarcrm.SugarObject):
-    module = "CustomObject"
-
-    def __init__(self, *args, **kwargs):
-        if args:
-            self.module = args[0]
-        return super(CustomSugarObject, self).__init__(**kwargs)
-
-    @property
-    def query(self):
-        return ''
-=======
->>>>>>> 0.4
 
 
 class SugarCRMController(BaseController):
@@ -53,6 +36,7 @@ class SugarCRMController(BaseController):
     _url = None
     _client = None
     _module = None
+    __url_end = 'service/v4_1/rest.php'
 
     def __init__(self, *args, **kwargs):
         super(SugarCRMController, self).__init__(*args, **kwargs)
@@ -64,20 +48,26 @@ class SugarCRMController(BaseController):
                 try:
                     self._user = self._connection_object.connection_user
                     self._password = self._connection_object.connection_password
-                    self._url = self._connection_object.url
+                    if not self._connection_object.url.endswith('/service/v4_1/rest.php'):
+                        self._url = self._connection_object.url + '/service/v4_1/rest.php'
+                    else:
+                        self._url = self._connection_object.url
+                    try:
+                        self._module = self._plug.plug_action_specification.get(
+                            action_specification__name__iexact='module').value
+                    except AttributeError as e:
+                        print("no module assigned. no plug specified \nMessage: {0}".format(str(e)))
                 except AttributeError as e:
-                    raise SugarCRMError(code=1, msg='Error getting the SugarCRM attributes args. {}'.format(str(e)))
+                    raise ControllerError(code=1, controller=ConnectorEnum.SugarCRM,
+                                          message='Error getting the SugarCRM attributes args. {}'.format(str(e)))
             else:
                 raise ControllerError('No connection.')
-        try:
-            self._module = args[2]
-        except Exception as e:
-            pass
         if self._url is not None and self._user is not None and self._password is not None:
             try:
                 self._client = SugarClient(self._url, self._user, self._password)
             except InvalidLogin as e:
-                raise SugarCRMError(code=2, msg='Invalid login. {}'.format(str(e)))
+                raise ControllerError(code=2, controller=ConnectorEnum.SugarCRM,
+                                      message='Invalid login. {}'.format(str(e)))
 
     def test_connection(self):
         return self._client is not None and self._client.session_id is not None
@@ -86,35 +76,43 @@ class SugarCRMController(BaseController):
         try:
             return self._client.get_available_modules()
         except BaseError as e:
-            raise SugarCRMError(code=3, msg='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
 
     def get_entry_list(self, module, **kwargs):
         try:
             return self._client.get_entry_list(module, **kwargs)
         except WrongParameter as e:
-            raise SugarCRMError(code=4, msg='Wrong Parameter. {}'.format(str(e)))
+            raise ControllerError(code=4, controller=ConnectorEnum.SugarCRM,
+                                  message='Wrong Parameter. {}'.format(str(e)))
         except BaseError as e:
-            raise SugarCRMError(code=3, msg='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
 
     def get_module_fields(self, module, **kwargs):
         try:
             return self._client.get_module_fields(module, **kwargs)
         except WrongParameter as e:
-            raise SugarCRMError(code=4, msg='Wrong Parameter. {}'.format(str(e)))
+            raise ControllerError(code=4, controller=ConnectorEnum.SugarCRM,
+                                  message='Wrong Parameter. {}'.format(str(e)))
         except BaseError as e:
-            raise SugarCRMError(code=3, msg='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
 
     def set_entry(self, module, item):
         try:
             return self._client.set_entry(module, item)
         except WrongParameter as e:
-            raise SugarCRMError(code=4, msg='Wrong Parameter. {}'.format(str(e)))
+            raise ControllerError(code=4, controller=ConnectorEnum.SugarCRM,
+                                  message='Wrong Parameter. {}'.format(str(e)))
         except BaseError as e:
-            raise SugarCRMError(code=3, msg='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
 
-    def download_to_stored_data(self, connection_object, plug, limit=29, order_by="date_entered DESC", **kwargs):
-        module = plug.plug_action_specification.get(action_specification__name="module").value
-        data = self.get_entry_list(module, max_results=limit, order_by=order_by)
+    def download_to_stored_data(self, connection_object, plug, limit=49, order_by="date_entered DESC", query='',
+                                last_source_record=None, **kwargs):
+        if last_source_record is not None:
+            if query.isspace() or query == '':
+                query = "{0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
+            else:
+                query += " AND {0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
+        data = self.get_entry_list(self._module, max_results=limit, order_by=order_by, query=query)
         entries = data['entry_list']
         new_data = []
         for item in entries:
@@ -122,9 +120,8 @@ class SugarCRMController(BaseController):
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
             if not q.exists():
                 for k, v in item['name_value_list'].items():
-                    new_data.append(
-                        StoredData(name=k, value=v, object_id=item['id'], connection=connection_object.connection,
-                                   plug=plug))
+                    new_data.append(StoredData(name=k, value=v, object_id=item['id'],
+                                               connection=connection_object.connection, plug=plug))
         if new_data:
             field_count = len(entries[0]['name_value_list'])
             extra = {'controller': 'sugarcrm'}
@@ -134,12 +131,12 @@ class SugarCRMController(BaseController):
                     if (i + 1) % field_count == 0:
                         extra['status'] = 's'
                         self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                        item.object_id, item.plug.id, item.connection.id), extra=extra)
+                            item.object_id, item.plug.id, item.connection.id), extra=extra)
                 except Exception as e:
                     extra['status'] = 'f'
                     self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
                         item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
-            return True
+            return entries[0]['name_value_list']['date_entered']
         return False
 
     def dictfy(self, _dict):
@@ -155,11 +152,10 @@ class SugarCRMController(BaseController):
                     data_list = []
         if self._plug is not None:
             obj_list = []
-            module_name = self._plug.plug_action_specification.all()[0].value
             extra = {'controller': 'sugarcrm'}
             for item in data_list:
                 try:
-                    res = self.set_entry(module_name, item)
+                    res = self.set_entry(self._module, item)
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (res['id']), extra=extra)
                     obj_list.append(id)
@@ -170,19 +166,15 @@ class SugarCRMController(BaseController):
         raise ControllerError("There's no plug")
 
     def get_mapping_fields(self, **kwargs):
-        specification = self._plug.plug_action_specification.first()
-        module = specification.value
-        fields = self.get_module_fields(module)
-        import pprint
-        pprint.pprint(fields)
+        fields = self.get_module_fields(self._module)
         return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields['module_fields'].values()]
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'module':
-            data = self.get_available_modules()
-            module_list = tuple({'id': m['module_key'], 'name': m['module_key']} for m in data['modules'])
-            return module_list
+            return tuple(
+                {'id': m['module_key'], 'name': m['module_label']} for m in self.get_available_modules()['modules'] if
+                m['module_key'] != 'Home')
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
@@ -215,10 +207,7 @@ class ZohoCRMController(BaseController):
         url = "https://crm.zoho.com/crm/private/json/Info/getModules"
         return requests.get(url, params).__dict__
 
-    def download_to_stored_data(
-            self,
-            connection_object,
-            plug, ):
+    def download_to_stored_data(self, connection_object, plug, ):
         module_id = self._plug.plug_action_specification.all()[0].value
         module_name = self.get_module_name(module_id)
         data = self.get_feeds(module_name)
@@ -1255,7 +1244,6 @@ class ActiveCampaignController(BaseController):
                                              url='', expiration='')
 
             # Verificar ngrok para determinar url_base
-            # url_base = 'https://e0ae5cfd.ngrok.io'
             url_base = settings.CURRENT_HOST
             url_path = reverse('home:webhook',
                                kwargs={'connector': 'activecampaign',
@@ -1275,7 +1263,7 @@ class ActiveCampaignController(BaseController):
             }
             final_url = "{0}/admin/api.php".format(self._host)
             r = requests.post(url=final_url, data=post_array, params=params)
-            if r.status_code == 201:
+            if r.status_code == 200 or r.status_code == 201:
                 webhook.url = url_base + url_path
                 webhook.generated_id = r.json()['id']
                 webhook.is_active = True
@@ -1306,7 +1294,7 @@ class ActiveCampaignController(BaseController):
             ('api_key', self._key),
             ('api_output', 'json'),
         ]
-        data=data
+        data = data
         final_url = "{0}/admin/api.php".format(self._host)
         r = requests.post(url=final_url, data=data, params=params).json()
         return r
@@ -1318,6 +1306,7 @@ class ActiveCampaignController(BaseController):
             obj_list = []
             extra = {'controller': 'activecampaign'}
             for item in data_list:
+                print(item)
                 try:
                     response = self.create_user(item)
                     self._log.info(
@@ -1336,11 +1325,14 @@ class ActiveCampaignController(BaseController):
     def download_to_stored_data(self, connection_object=None, plug=None, data=None, **kwargs):
         new_data = []
         if data is not None:
-            object_id = int(data['contact[id]'])
+            contact_id = data[0]['contact[id]']
+            object_id = int(contact_id)
             q = StoredData.objects.filter(object_id=object_id, connection=connection_object.id, plug=plug.id)
             if not q.exists():
-                for k, v in data.items():
-                    new_data.append(StoredData(name=k, value=v or '', object_id=object_id, connection=connection_object.connection, plug=plug))
+                for i in data:
+                    for k, v in i.items():
+                        new_data.append(StoredData(name=k, value=v or '', object_id=object_id,
+                                                   connection=connection_object.connection, plug=plug))
             if new_data:
                 field_count = len(data)
                 extra = {'controller': 'activecampaign'}
