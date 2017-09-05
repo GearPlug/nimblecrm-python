@@ -541,7 +541,7 @@ class GearMapData(models.Model):
 
 class Webhook(models.Model):
     name = models.CharField('webhook name', max_length=100)
-    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='webhook')
+    plug = models.OneToOneField(Plug, on_delete=models.CASCADE, related_name='webhook')
     url = models.URLField('url')
     generated_id = models.CharField('generated id', max_length=200)
     created = models.DateTimeField('created', auto_now_add=True)
