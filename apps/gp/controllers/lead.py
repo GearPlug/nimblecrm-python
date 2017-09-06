@@ -285,6 +285,35 @@ class FacebookLeadsController(BaseController):
                     raise ControllerError(code=5, controller=ConnectorEnum.FacebookLeads,
                                           message='Error in download to stored data. {}'.format(str(e)))
             return aditional_data['created_time_timestamp']
+        else:
+            leads = self.get_leads(self._form, from_date=from_date)
+            new_data = []
+            leads = leads['data'] if leads else []
+            for item in leads:
+                q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
+                if not q.exists():
+                    for column in item['field_data']:
+                        new_data.append(StoredData(name=column['name'], value=column['values'][0], object_id=item['id'],
+                                                   connection=connection_object.connection, plug=plug))
+            if new_data:
+                field_count = len(leads[0]['field_data'])
+                entries = len(new_data) // field_count
+                extra = {'controller': 'facebook'}
+                for i, item in enumerate(new_data):
+                    try:
+                        item.save()
+                        if (i + 1) % field_count == 0:
+                            extra['status'] = 's'
+                            self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                                item.object_id, item.plug.id, item.connection.id), extra=extra)
+                    except Exception as e:
+                        extra['status'] = 'f'
+                        self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                            item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+                        raise ControllerError(code=5, controller=ConnectorEnum.FacebookLeads,
+                                              message='Error in download to stored data. {}'.format(str(e)))
+                return True
+            return False
         return False
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
