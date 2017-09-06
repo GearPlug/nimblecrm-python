@@ -1,6 +1,8 @@
 SECRET_KEY = 'nd65g3a23c!y%+a_%+v)!trnjh%c=gh(zg5!gsn*qo&b6*nsbb'
 DEBUG = True
-CURRENT_HOST = "http://localhost"
+CURRENT_HOST_PROTOCOL = "http"
+CURRENT_HOST_NAME = "localhost"
+CURRENT_HOST = "{0}://{1}".format(CURRENT_HOST_PROTOCOL, CURRENT_HOST_NAME)
 ALLOWED_HOSTS = [CURRENT_HOST, '*', ]
 INTERNAL_IPS = ['127.0.0.1', ]
 
