@@ -601,7 +601,7 @@ class SalesforceController(BaseController):
             # Creacion de Webhook
             webhook = Webhook.objects.create(name='salesforce', plug=self._plug, url='', expiration='')
             # Verificar ngrok para determinar url_base
-            url_base = 'https://9963f73a.ngrok.io'
+            url_base = settings.WEBHOOK_HOST
             url_path = reverse('home:webhook', kwargs={'connector': 'salesforce', 'webhook_id': webhook.id})
             url = url_base + url_path
             with open(os.path.join(settings.BASE_DIR, 'files', 'Webhook.txt'), 'r') as file:
@@ -610,8 +610,6 @@ class SalesforceController(BaseController):
             if response1.status_code != 201:
                 response = response1.json()
                 # Si el APEX Class ya existe (es duplicado), continuamos, si es otro error, paramos
-                print(response[0]['errorCode'])
-                print(response[0]['errorCode'] != 'DUPLICATE_VALUE')
                 if 'errorCode' in response[0] and response[0]['errorCode'] == 'DUPLICATE_VALUE':
                     pass
                 else:
@@ -1244,7 +1242,7 @@ class ActiveCampaignController(BaseController):
                                              url='', expiration='')
 
             # Verificar ngrok para determinar url_base
-            url_base = settings.CURRENT_HOST
+            url_base = settings.WEBHOOK_HOST
             url_path = reverse('home:webhook',
                                kwargs={'connector': 'activecampaign',
                                        'webhook_id': webhook.id})

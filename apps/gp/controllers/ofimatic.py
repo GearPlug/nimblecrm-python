@@ -115,7 +115,7 @@ class GoogleSpreadSheetsController(BaseController):
             if data_list:
                 try:
                     data_list = [data_list[0]]
-                    print('data: ',data_list)
+                    print('data: ', data_list)
                 except:
                     data_list = []
         if self._plug is not None:
@@ -352,14 +352,14 @@ class GoogleCalendarController(BaseController):
         body = {
             "id": webhook.id,
             "type": "web_hook",
-            "address": "{0}/webhook/googlecalendar/{1}/".format(settings.CURRENT_HOST,webhook.id),
+            "address": "{0}/webhook/googlecalendar/{1}/".format(settings.WEBHOOK_HOST, webhook.id),
         }
         r = requests.post(url, headers=headers, json=body)
         if r.status_code in [200, 201]:
             data = r.json()
             # GooglePushWebhook.objects.create(connection=self._connection_object.connection, channel_id=data['id'],
             #                                  resource_id=data['resourceId'], expiration=data['expiration'])
-            webhook.url = "{0}/webhook/googlecalendar/{1}/".format(settings.CURRENT_HOST,webhook.id)
+            webhook.url = "{0}/webhook/googlecalendar/{1}/".format(settings.WEBHOOK_HOST, webhook.id)
             webhook.generated_id = data['resourceId']
             webhook.is_active = True
             webhook.expiration = data['expiration']
@@ -600,7 +600,7 @@ class WunderListController(BaseController):
                 action_specification__name='task list')
             webhook = Webhook.objects.create(
                 name='wunderlist', plug=self._plug, url='')
-            url_base = 'https://d6e42ab0.ngrok.io'
+            url_base = settings.WEBHOOK_HOST
             url_path = reverse('home:webhook', kwargs={'connector': 'wunderlist', 'webhook_id': webhook.id})
             headers = {
                 'X-Access-Token': self._token,
@@ -608,7 +608,7 @@ class WunderListController(BaseController):
             }
             body_data = {
                 'list_id': int(list_id.value),
-                'url': 'https://d6e42ab0.ngrok.io/webhook/wunderlist/1/',
+                'url': url_base + url_path,
                 'processor_type': 'generic',
                 'configuration': ''
             }

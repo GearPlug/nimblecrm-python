@@ -300,7 +300,7 @@ class FacebookLeadsController(BaseController):
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
-    def create_webhook(self, url=settings.CURRENT_HOST):
+    def create_webhook(self, url=settings.WEBHOOK_HOST):
         current_page_id = PlugActionSpecification.objects.get(plug_id=self._plug.id,
                                                               action_specification__name='page').value
         try:
@@ -311,7 +311,8 @@ class FacebookLeadsController(BaseController):
                 self._client.create_page_subscribed_apps(current_page_id, token)
                 webhook.url = '{0}/webhook/facebookleads/0/'.format(url)
                 webhook.is_active = True
-                webhook.save(update_fields=['url', 'is_active'])
+                webhook.is_deleted = False
+                webhook.save(update_fields=['url', 'is_active', 'is_deleted'])
                 return True
         except BaseError as e:
             raise
@@ -468,10 +469,9 @@ class SurveyMonkeyController(BaseController):
         if action == "read a survey":
             survey_id = self._plug.plug_action_specification.all()[0].value
             survey_id = str(survey_id)
-            webhook = Webhook.objects.create(name='surveymonkey', plug=self._plug,
-                                             url='')
+            webhook = Webhook.objects.create(name='surveymonkey', plug=self._plug, url='')
             plug_id = self._plug.plug_action_specification.all()[0].id
-            redirect_uri = "%s/webhook/surveymonkey/%s/" % settings.CURRENT_HOST, webhook.id
+            redirect_uri = "%s/webhook/surveymonkey/%s/" % settings.WEBHOOK_HOST, webhook.id
             s = requests.session()
             s.headers.update({
                 "Authorization": "Bearer %s" % self._token,
