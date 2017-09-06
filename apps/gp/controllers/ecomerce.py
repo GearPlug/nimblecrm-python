@@ -35,18 +35,29 @@ class MercadoLibreController(BaseController):
                 try:
                     self._token = self._connection_object.token
                     self._site = self._connection_object.site
-                except Exception as e:
-                    print("Error getting the mercadolibre token")
+                except AttributeError as e:
+                    raise ControllerError(code=1, controller=ConnectorEnum.MercadoLibre,
+                                          message='Failed to get the token. \n{}'.format(str(e)))
             else:
-                raise ControllerError('No connection.')
+                raise ControllerError(code=7, controller=ConnectorEnum.MercadoLibre, message='No connection.')
         try:
             self._client = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
-                                              client_secret=settings.MERCADOLIBRE_CLIENT_SECRET, site=self._site)
+                                              client_secret=settings.MERCADOLIBRE_CLIENT_SECRET,
+                                              site=self._site or 'MCO')
+        except Exception as e:
+            raise ControllerError(code=2, controller=ConnectorEnum.MercadoLibre,
+                                  message='Cannot instantiate the client. {}'.format(str(e)))
+        try:
             self._client.set_token(ast.literal_eval(self._token))
-        except Exception:
-            raise ControllerError('No connection.')
+        except Exception as e:
+            pass
 
     def test_connection(self):
+        if self._client.access_token and not self._client.is_valid_token:
+            new_token = self._client.refresh_token()
+            self._client.set_token(new_token)
+            self._connection_object.token = new_token
+            self._connection_object.save()
         return self.get_me() is not None
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
@@ -66,11 +77,16 @@ class MercadoLibreController(BaseController):
         raise ControllerError("Incomplete.")
 
     def list_product(self, obj):
-        result = self._client.list_item(**obj)
-        return result
+        try:
+            return self._client.list_item(**obj)
+        except Exception as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.MercadoLibre, message='Error. {}'.format(str(e)))
 
     def get_target_fields(self, **kwargs):
-        return self.get_fields()
+        try:
+            return self.get_fields()
+        except Exception as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.MercadoLibre, message='Error. {}'.format(str(e)))
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_fields()
@@ -134,18 +150,22 @@ class MercadoLibreController(BaseController):
         ]
 
     def get_me(self):
-        return self._client.me()
+        try:
+            return self._client.me()
+        except Exception as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.MercadoLibre, message='Error. {}'.format(str(e)))
 
     def get_sites(self):
-        return self._client.get_sites()
-
-    def get_categories(self):
-        # No se está utilizando porque no hay forma de saber cuales categorías son "hojas"
-        return self._client.get_categories(self._site)
+        try:
+            return self._client.get_sites()
+        except Exception as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.MercadoLibre, message='Error. {}'.format(str(e)))
 
     def get_listing_types(self):
-        l = self._client.get_listing_types(self._site)
-        return l
+        try:
+            return self._client.get_listing_types(self._site)
+        except Exception as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.MercadoLibre, message='Error. {}'.format(str(e)))
 
     def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
         plugs = Plug.objects.filter(
@@ -164,11 +184,11 @@ class MercadoLibreController(BaseController):
         if event is not None:
             _items = []
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                          object_id=None)
+                                          object_id=event['resource'])
             if not q.exists():
                 for k, v in event.items():
                     obj = StoredData(connection=connection_object.connection, plug=plug,
-                                     object_id=None, name=k, value=v or '')
+                                     object_id=event['resource'], name=k, value=v or '')
                     _items.append(obj)
             extra = {}
             for item in _items:

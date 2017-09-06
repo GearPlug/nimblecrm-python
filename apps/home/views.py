@@ -211,10 +211,6 @@ class IncomingWebhook(View):
                     controller.download_source_data(list=data)
                     w.plug.save()
             response.status_code = 200
-        elif connector == ConnectorEnum.MercadoLibre:
-            decoded = json.loads(request.body.decode("utf-8"))
-            response.status_code = 200
-            print(decoded)
         return response
 
 
