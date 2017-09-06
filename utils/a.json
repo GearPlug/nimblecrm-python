@@ -1,0 +1,24 @@
+{
+  "invalid": false,
+  "scopes": [
+    "https://www.googleapis.com/auth/gmail.modify",
+    "https://www.googleapis.com/auth/pubsub"
+  ],
+  "_module": "oauth2client.client",
+  "access_token": "ya29.GlywBFP2huYyqxQwAgWPbgOV0buHck4tiO0-FoEaJb4BWrRFWGpFZX8v5haCdpp6fwVIazZ2fvydZ8MAWe8DR29A5gUisaLTWPUNO1qiW-z1E413cd0dUQNglKDLng",
+  "refresh_token": null,
+  "token_uri": "https://www.googleapis.com/oauth2/v4/token",
+  "revoke_uri": "https://accounts.google.com/o/oauth2/revoke",
+  "id_token": null,
+  "client_secret": "LgJ2hrSVu_lmAJkJhwzgfiDG",
+  "token_info_uri": "https://www.googleapis.com/oauth2/v3/tokeninfo",
+  "_class": "OAuth2Credentials",
+  "token_expiry": "2017-08-23T21:51:02Z",
+  "token_response": {
+    "token_type": "Bearer",
+    "access_token": "ya29.GlywBFP2huYyqxQwAgWPbgOV0buHck4tiO0-FoEaJb4BWrRFWGpFZX8v5haCdpp6fwVIazZ2fvydZ8MAWe8DR29A5gUisaLTWPUNO1qiW-z1E413cd0dUQNglKDLng",
+    "expires_in": 3599
+  },
+  "user_agent": null,
+  "client_id": "278354320502-6ptllif5k11cn8uskm8aotp6fqb2g7dr.apps.googleusercontent.com"
+}

@@ -10,7 +10,6 @@ CELERY_IMPORTS = ('apiconnector.celery',)
 #     'polling_interval': 60,
 # }
 BROKER_URL = 'redis://localhost:6379'
-
 CELERY_DEFAULT_QUEUE = 'grplug0'
 SQS_QUEUE_NAME = 'grplug0'
 
