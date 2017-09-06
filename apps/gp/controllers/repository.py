@@ -35,8 +35,8 @@ class BitbucketController(BaseController):
 
     def test_connection(self):
         try:
-            print("con ",self._connection)
-            print("con obj ",self._connection_object)
+            print("con ", self._connection)
+            print("con obj ", self._connection_object)
             print("user ", self._connection_object.connection_user)
             privileges = self._connection.get_privileges()[0]
         except Exception as e:
@@ -87,9 +87,11 @@ class BitbucketController(BaseController):
                   'Authorization': 'Basic {0}'.format(b64encode(authorization.encode('UTF-8')).decode('UTF-8'))}
         return header
 
-    def create_webhook(self, url='https://grplug.com/wizard/bitbucket/webhook/event/'):
-        url = 'https://api.bitbucket.org/2.0/repositories/{}/{}/hooks'.format(self._connection_object.connection_user,
-                                                                              self.get_repository_name())
+    def create_webhook(self, url=settings.WEBHOOK_HOST + reverse('home:webhook',
+                                                                 kwargs={'connector': 'asana', 'webhook_id': 0})):
+        bitbucket_url = 'https://api.bitbucket.org/2.0/repositories/{}/{}/hooks'.format(
+            self._connection_object.connection_user,
+            self.get_repository_name())
         body = {
             'description': 'Gearplug Webhook',
             'url': url,
@@ -98,14 +100,12 @@ class BitbucketController(BaseController):
                 'issue:created'
             ]
         }
-        r = requests.post(url, headers=self._get_header(), json=body)
+        r = requests.post(bitbucket_url, headers=self._get_header(), json=body)
         if r.status_code == 201:
             return True
         return False
 
     def get_repositories(self):
-        print("con ",self._connection_object)
-        print("user ", self._connection_object.connection_user)
         url = '/2.0/repositories/{}'.format(self._connection_object.connection_user)
         r = self._request(url)
         return sorted(r['values'], key=lambda i: i['name']) if r else []
@@ -231,6 +231,7 @@ class BitbucketController(BaseController):
             return tup
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
+
 
 class GitLabController(BaseController):
     _token = None
@@ -378,12 +379,10 @@ class GitLabController(BaseController):
             project = self._plug.plug_action_specification.get(
                 action_specification__name='project')
             # Creacion de Webhook
-            webhook = Webhook.objects.create(name='gitlab', plug=self._plug,
-                                             url='')
+            webhook = Webhook.objects.create(name='gitlab', plug=self._plug,url='')
             # Verificar ngrok para determinar url_base
-            url_base = settings.CURRENT_HOST
-            url_path = reverse('home:webhook', kwargs={'connector': 'gitlab',
-                                                       'webhook_id': webhook.id})
+            url_base = settings.WEBHOOK_HOST
+            url_path = reverse('home:webhook', kwargs={'connector': 'gitlab','webhook_id': webhook.id})
             url_listen_webhook = url_base + url_path
 
             project = project.value
@@ -396,7 +395,6 @@ class GitLabController(BaseController):
                 response = self.do_post(endpoint, params)
             except InvalidGrantError:
                 self.refresh_token()
-
             try:
                 if response.status_code == 201 or response.status_code == 200:
                     webhook.url = url_base + url_path
@@ -413,7 +411,6 @@ class GitLabController(BaseController):
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
-        print(self._plug)
         if self._plug is not None:
             obj_list = []
             extra = {'controller': 'gitlab'}

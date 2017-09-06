@@ -161,7 +161,7 @@ class InstagramController(BaseController):
             'object': 'user',
             'aspect': 'media',
             'verify_token': 'GearPlug2017',
-            'callback_url': '%s/wizard/instagram/webhook/event/' % settings.CURRENT_HOST
+            'callback_url': '%s/wizard/instagram/webhook/event/' % settings.WEBHOOK_HOST
         }
         r = requests.post(url, data=body)
         if r.status_code == 201:
@@ -308,7 +308,7 @@ class YouTubeController(BaseController):
     def create_webhook(self):
         subscribe_url = 'https://pubsubhubbub.appspot.com/subscribe'
         topic_url = 'https://www.youtube.com/xml/feeds/videos.xml?channel_id='
-        callback_url = '%s/wizard/youtube/webhook/event/' % settings.CURRENT_HOST
+        callback_url = '%s/wizard/youtube/webhook/event/' % settings.WEBHOOK_HOST
 
         params = {
             'hub.mode': 'subscribe',
