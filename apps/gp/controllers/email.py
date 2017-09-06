@@ -6,6 +6,8 @@ from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Webhook, StoredData, ActionSpecification, Plug
 from django.http import HttpResponse
 from django.db.models import Q
+from django.conf import settings
+from django.urls import reverse
 from utils.smtp_sender import smtpSender as SMTPClient
 from oauth2client import client as GoogleClient
 from apiclient import discovery, errors
@@ -34,7 +36,6 @@ class GmailController(BaseController):
                 except Exception as e:
                     print(e)
                     credentials_json = None
-                    len(h)
         if credentials_json is not None:
             self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
             self._service = discovery.build('gmail', 'v1', http=self._credential.authorize(httplib2.Http()))
@@ -73,7 +74,7 @@ class GmailController(BaseController):
             }
             res_watch = self._service.users().watch(userId='me', body=request).execute()
             if res_watch['historyId'] is not None:
-                webhook.url = 'https://g.grplug.com/webhook/gmail/0/'
+                webhook.url = settings.WEBHOOK_HOST + reverse('home:webhook', kwargs={'connector': 'gmail', 'webhook_id': 0})
                 webhook.generated_id = self._plug.id
                 webhook.is_active = True
                 webhook.expiration = res_watch['expiration']

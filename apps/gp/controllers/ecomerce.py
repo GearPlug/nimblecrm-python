@@ -265,7 +265,7 @@ class ShopifyController(BaseController):
         webhook = Webhook.objects.create(name='shopify', plug=self._plug, url='')
         url_path = reverse('home:webhook', kwargs={'connector': 'shopify', 'webhook_id': webhook.id})
         session = shopify.Session("https://" + self._shop_url, self._token)
-        url_base = settings.CURRENT_HOST
+        url_base = settings.WEBHOOK_HOST
         if action == 'new product':
             topic = 'products'
         elif action == 'new customer':

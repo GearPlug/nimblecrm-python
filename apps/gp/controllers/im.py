@@ -144,8 +144,6 @@ class SlackController(BaseController):
                                        'value': event['channel'], }
                 channel_list = PlugActionSpecification.objects.filter(**regular_query)
                 test_channel_list = PlugActionSpecification.objects.filter(**testing_plugs_query)
-                print('c', channel_list)
-                print('p', test_channel_list)
                 for channel in channel_list:
                     self._connection_object, self._plug = channel.plug.connection.related_connection, channel.plug
                     self.download_source_data(event=body)

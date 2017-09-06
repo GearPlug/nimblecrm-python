@@ -30,7 +30,7 @@ class ListConnectorView(LoginRequiredMixin, ListView):
     """
     model = Connector
     template_name = 'connection/connector_list.html'
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
 
     def get_queryset(self):
         if self.kwargs['type'].lower() == 'source':
@@ -58,7 +58,7 @@ class ListConnectionView(LoginRequiredMixin, ListView):
     """
     model = Connection
     template_name = 'connection/list.html'
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
 
     def get_queryset(self):
         return self.model.objects.filter(user=self.request.user,
@@ -86,7 +86,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
     TODO REVIEW
     """
     model = Connection
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
     fields = []
     template_name = 'connection/create.html'
     success_url = reverse_lazy('connection:create_success')
@@ -211,7 +211,7 @@ class CreateConnectionSuccessView(LoginRequiredMixin, TemplateView):
     template para cerrar la vnetana al terminar el auth??
     """
     template_name = 'connection/success_close.html'
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
 
 
 class CreateTokenAuthorizedConnectionView(TemplateView):
@@ -508,7 +508,7 @@ def get_authorization(request):
 class ManageConnectionView(LoginRequiredMixin, ListView):
     model = Connection
     template_name = 'connection/manage.html'
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
 
     def get_queryset(self):
         all_connections = self.model.objects.filter(user=self.request.user)

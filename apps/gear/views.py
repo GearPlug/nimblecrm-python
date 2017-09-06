@@ -22,7 +22,7 @@ class ListGearView(LoginRequiredMixin, ListView):
     """
     model = GearGroup
     template_name = 'gear/list.html'
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
 
     def get_context_data(self, **kwargs):
         context = super(ListGearView, self).get_context_data(**kwargs)
@@ -42,7 +42,7 @@ class CreateGearView(LoginRequiredMixin, CreateView):
     model = Gear
     template_name = 'gear/create.html'
     fields = ['name', 'gear_group']
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
     success_url = reverse_lazy('connection:connector_list', kwargs={'type': 'source'})
 
     def get(self, request, *args, **kwargs):
@@ -73,7 +73,7 @@ class UpdateGearView(LoginRequiredMixin, UpdateView):
     model = Gear
     template_name = 'gear/update.html'
     fields = ['name', 'gear_group']
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
     success_url = reverse_lazy('connection:connector_list', kwargs={'type': 'source'})
 
     def get(self, request, *args, **kwargs):
@@ -96,7 +96,7 @@ class CreateGearGroupView(CreateView):
     model = GearGroup
     template_name = 'gear/create.html'
     fields = ['name', ]
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
     success_url = reverse_lazy('gear:list')
 
     def form_valid(self, form):
@@ -113,7 +113,7 @@ class UpdateGearGroupView(UpdateView):
     model = GearGroup
     template_name = 'gear/update.html'
     fields = ['name', ]
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
     success_url = reverse_lazy('gear:list')
 
     def get(self, request, *args, **kwargs):
@@ -147,7 +147,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
     Creates a Map for the selected gear.
 
     """
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
     template_name = 'gear/map.html'
     form_class = MapForm
     form_field_list = []

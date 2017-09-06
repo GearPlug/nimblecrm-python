@@ -7,7 +7,7 @@ from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apps.gp.models import ActionSpecification, Webhook, StoredData
-
+from django.conf import settings
 from mailchimp.client import Client
 from getresponse.client import GetResponse
 
@@ -472,7 +472,7 @@ class MandrillController(BaseController):
             webhook = Webhook.objects.create(name='mandrill', plug=self._plug, url='', expiration='')
 
             # Verificar ngrok para determinar url_base
-            url_base = 'https://fbaa4455.ngrok.io'
+            url_base = settings.WEBHOOK_HOST
             url_path = reverse('home:webhook', kwargs={'connector': 'mandrill', 'webhook_id': webhook.id})
             url = url_base + url_path
 
