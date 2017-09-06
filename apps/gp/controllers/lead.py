@@ -1,9 +1,9 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification, Plug
-from apps.gp.controllers.exceptions.facebookleads import FacebookLeadsError
+from apps.gp.enum import ConnectorEnum
 from facebookmarketing.client import Client
-from facebookmarketing.exception import UnknownError, InvalidOauth20AccessTokenError, BaseError
+from facebookmarketing.exceptions import UnknownError, InvalidOauth20AccessTokenError, BaseError
 from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponse
@@ -145,6 +145,16 @@ class GoogleFormsController(BaseController):
 
 
 class FacebookLeadsController(BaseController):
+    """
+        Facebook Marketing - Leads
+        REQUIRES: FacebookMarketing-Python Library owned by GearPlug.
+        URL: https://github.com/GearPlug/facebookmarketing-python
+
+        TODO:
+        - REVISAR WEBHOOK
+        - REVISAR field from_date en download to stored_data (no webhook)
+    """
+
     _token = None
     _page = None
     _form = None
@@ -160,30 +170,33 @@ class FacebookLeadsController(BaseController):
                 try:
                     self._token = self._connection_object.token
                 except AttributeError as e:
-                    raise FacebookLeadsError(code=1,
-                                             msg='Error getting the Facebook attributes args. {}'.format(str(e)))
+                    raise ControllerError(code=1, controller=ConnectorEnum.FacebookLeads,
+                                          message='Failed to get the token. \n{}'.format(str(e)))
             else:
-                raise ControllerError('No connection.')
-        try:
-            if self._plug is not None:
-                for s in self._plug.plug_action_specification.all():
-                    if s.action_specification.name.lower() == 'page':
-                        self._page = s.value
-                    if s.action_specification.name.lower() == 'form':
-                        self._form = s.value
-        except Exception as e:
-            raise FacebookLeadsError(code=1, msg='Error asignando los specifications. {}'.format(str(e)))
+                raise ControllerError(code=7, controller=ConnectorEnum.FacebookLeads, message='No connection.')
         try:
             self._client = Client(settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET, 'v2.10')
             self._client.set_access_token(self._token)
         except UnknownError as e:
-            raise FacebookLeadsError(code=2, msg='Unknown error. {}'.format(str(e)))
+            raise ControllerError(code=2, controller=ConnectorEnum.FacebookLeads,
+                                  message='Unknown error. {}'.format(str(e)))
+        try:
+            if self._plug is not None:
+                self._page = self._plug.plug_action_specification.filter(action_specification__name='page').first()
+                self._form = self._plug.plug_action_specification.filter(action_specification__name='form').first()
+        except Exception as e:
+            raise ControllerError(code=1, controller=ConnectorEnum.FacebookLeads,
+                                  message='Error asignando los specifications. {}'.format(str(e)))
 
     def test_connection(self):
-        object_list = self.get_account()
-        if 'id' in object_list:
-            return True
-        return False
+        try:
+            object_list = self.get_account()
+            if 'id' in object_list:
+                result = True
+        except Exception as e:
+            print("error testing the connection\nMessage:{0}".format(str(e)))
+            result = False
+        return result
 
     def extend_token(self, token):
         try:
@@ -191,55 +204,72 @@ class FacebookLeadsController(BaseController):
             self._client.set_access_token(self._token)
             return self._token
         except BaseError as e:
-            raise FacebookLeadsError(code=3, msg='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.FacebookLeads, message='Error. {}'.format(str(e)))
 
     def get_account(self):
         try:
             return self._client.get_account()
         except InvalidOauth20AccessTokenError as e:
-            raise FacebookLeadsError(code=4, msg='Invalid Token. {}'.format(str(e)))
+            raise ControllerError(code=4, controller=ConnectorEnum.FacebookLeads,
+                                  message='Invalid Token. {}'.format(str(e)))
         except BaseError as e:
-            raise FacebookLeadsError(code=3, msg='Error. {}'.format(str(e)))
+            raise
+            raise ControllerError(code=3, controller=ConnectorEnum.FacebookLeads, message='Error. {}'.format(str(e)))
 
     def get_pages(self):
         try:
             return self._client.get_pages()
         except InvalidOauth20AccessTokenError as e:
-            raise FacebookLeadsError(code=4, msg='Invalid Token. {}'.format(str(e)))
+            raise ControllerError(code=4, controller=ConnectorEnum.FacebookLeads,
+                                  message='Invalid Token. {}'.format(str(e)))
         except BaseError as e:
-            raise FacebookLeadsError(code=3, msg='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.FacebookLeads, message='Error. {}'.format(str(e)))
 
     def get_leads(self, form_id, from_date=None):
         try:
             return self._client.get_ad_leads(form_id, from_date)
         except InvalidOauth20AccessTokenError as e:
-            raise FacebookLeadsError(code=4, msg='Invalid Token. {}'.format(str(e)))
+            raise ControllerError(code=4, controller=ConnectorEnum.FacebookLeads,
+                                  message='Invalid Token. {}'.format(str(e)))
         except BaseError as e:
-            raise FacebookLeadsError(code=3, msg='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.FacebookLeads, message='Error. {}'.format(str(e)))
+
+    def get_leadgen(self, leadgen_id):
+        try:
+            print("get lead")
+            return self._client.get_leadgen(leadgen_id)
+        except Exception as e:
+            raise
 
     def get_forms(self, page_id):
         try:
             return self._client.get_ad_account_leadgen_forms(page_id)
         except InvalidOauth20AccessTokenError as e:
-            raise FacebookLeadsError(code=4, msg='Invalid Token. {}'.format(str(e)))
+            raise ControllerError(code=4, controller=ConnectorEnum.FacebookLeads,
+                                  message='Invalid Token. {}'.format(str(e)))
         except BaseError as e:
-            raise FacebookLeadsError(code=3, msg='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.FacebookLeads, message='Error. {}'.format(str(e)))
 
-    def download_to_stored_data(self, connection_object, plug, from_date=None):
-        if from_date is not None:
-            from_date = int(time.mktime(from_date.timetuple()) * 1000)
-        leads = self.get_leads(self._form, from_date=from_date)
-        new_data = []
-        leads = leads['data'] if leads else []
-        for item in leads:
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
+    def download_to_stored_data(self, connection_object, plug, lead=None, from_date=None, **kwargs):
+        if lead is not None:
+            aditional_data = {'leadgen_id': lead['value']['leadgen_id'], 'page_id': lead['value']['page_id'],
+                              'form_id': lead['value']['form_id'], 'adgroup_id': lead['value']['adgroup_id'],
+                              'created_time_timestamp': lead['value']['created_time'], }
+            leadgen_id = lead['value']['leadgen_id']
+            lead = self.get_leadgen(leadgen_id)
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=leadgen_id)
+            new_data = []
             if not q.exists():
-                for column in item['field_data']:
-                    new_data.append(StoredData(name=column['name'], value=column['values'][0], object_id=item['id'],
+                for column in lead['field_data']:
+                    new_data.append(StoredData(name=column['name'], value=column['values'][0], object_id=leadgen_id,
                                                connection=connection_object.connection, plug=plug))
-        if new_data:
-            field_count = len(leads[0]['field_data'])
-            entries = len(new_data) // field_count
+                for k, v in aditional_data.items():
+                    new_data.append(StoredData(name=k, value=v, object_id=leadgen_id,
+                                               connection=connection_object.connection, plug=plug))
+                new_data.append(StoredData(name='created_time', value=lead['created_time'], object_id=leadgen_id,
+                                           connection=connection_object.connection, plug=plug))
+            if new_data:
+                field_count = len(lead['field_data'])
             extra = {'controller': 'facebook'}
             for i, item in enumerate(new_data):
                 try:
@@ -252,8 +282,9 @@ class FacebookLeadsController(BaseController):
                     extra['status'] = 'f'
                     self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
                         item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
-                    raise FacebookLeadsError(code=5, msg='Error in download to stored data. {}'.format(str(e)))
-            return True
+                    raise ControllerError(code=5, controller=ConnectorEnum.FacebookLeads,
+                                          message='Error in download to stored data. {}'.format(str(e)))
+            return aditional_data['created_time_timestamp']
         return False
 
     def get_action_specification_options(self, action_specification_id, **kwargs):
@@ -269,19 +300,22 @@ class FacebookLeadsController(BaseController):
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
-    def create_webhook(self):
+    def create_webhook(self, url=settings.CURRENT_HOST):
         current_page_id = PlugActionSpecification.objects.get(plug_id=self._plug.id,
                                                               action_specification__name='page').value
         try:
             token = self._client.get_page_token(current_page_id)
             if token is not None:
                 app_token = self._client.get_app_token()
-                self._client.create_app_subscriptions('page', settings.CURRENT_HOST + '/webhook/facebookleads/0/',
-                                                      'leadgen', 'token-gearplug-058924', app_token['access_token'])
+                webhook = Webhook.objects.create(name='facebookleads', plug=self._plug, url='', is_deleted=True)
                 self._client.create_page_subscribed_apps(current_page_id, token)
+                webhook.url = '{0}/webhook/facebookleads/0/'.format(url)
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'is_active'])
                 return True
         except BaseError as e:
-            raise FacebookLeadsError(code=3, msg='Error. {}'.format(str(e)))
+            raise
+            raise ControllerError(code=3, message='Error. {}'.format(str(e)))
         return False
 
     def do_webhook_process(self, body=None, GET=None, POST=None, **kwargs):
@@ -299,15 +333,20 @@ class FacebookLeadsController(BaseController):
                 if not is_lead:
                     continue
                 form_id = lead['value']['form_id']
-                lead_id = lead['value']['leadgen_id']
-                created_time = lead['value']['created_time']
-                plugs_to_update = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=True),
-                                                      action__name='get leads',
-                                                      plug_action_specification__value=form_id)
+                page_id = lead['value']['page_id']
+                plugs_to_update = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=False),
+                                                      plug_action_specification__value__iexact=form_id,
+                                                      plug_action_specification__action_specification__name__iexact='form',
+                                                      action__name='get leads', )
+                plugs_to_update = plugs_to_update.filter(plug_action_specification__value__iexact=page_id,
+                                                         plug_action_specification__action_specification__name__iexact='page')
                 for plug in plugs_to_update:
-                    self.create_connection(plug.connection.related_connection, plug)
-                    if self.test_connection():
-                        self.download_source_data(from_date=created_time)
+                    try:
+                        self.create_connection(plug.connection.related_connection, plug)
+                        if self.test_connection():
+                            self.download_source_data(lead=lead)
+                    except Exception as e:
+                        print("ERROR: {0}".format(e))
                     if not plug.is_tested:
                         plug.is_tested = True
                         plug.save(update_fields=['is_tested', ])
