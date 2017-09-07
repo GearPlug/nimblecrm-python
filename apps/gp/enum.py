@@ -49,6 +49,7 @@ class ConnectorEnum(Enum):
     Asana = 43, 'project_management', 'authorization'
     Mandrill = 44, 'email_marketing'
     ActiveCampaign = 45, 'crm', 'form'
+    InfusionSoft = 46, 'crm', 'authorization'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)

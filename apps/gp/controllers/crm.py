@@ -27,7 +27,9 @@ from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 import xml.etree.ElementTree as ET
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 import re
+import time
 
 
 class SugarCRMController(BaseController):
@@ -1354,3 +1356,224 @@ class ActiveCampaignController(BaseController):
                             extra=extra)
             return True
         return False
+
+class InfusionSoftController(BaseController):
+    _token = None
+    _refresh_token = None
+    _token_expiration_time = None
+    _actual_time = time.time()
+    _refresh_url = ''
+
+    def __init__(self, *args, **kwargs):
+        super(InfusionSoftController, self).__init__(*args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(InfusionSoftController, self).create_connection(*args)
+            if self._connection_object is not None:
+                print('creando conexion', self._connection_object)
+                try:
+                    self._token = self._connection_object.token
+                    self._refresh_token = self._connection_object.refresh_token
+                    self._token_expiration_time = self._connection_object.token_expiration_time
+                except Exception as e:
+                    print(e)
+
+    def test_connection(self):
+        if self.is_token_expired():
+            self.refresh_token()
+        information = ''
+        return information is not None
+
+    def is_token_expired(self):
+        return float(self._token_expiration_time) < time.time()
+
+    def refresh_token(self):
+        print('REFRESH')
+
+        return None
+
+    def create_webhook(self):
+        action = self._plug.action.name
+        if action == 'Detect actions in Contacts':
+            option = self._plug.plug_action_specification.get(
+                action_specification__name='contact action')
+
+            # Creacion de Webhook
+            webhook = Webhook.objects.create(name='infusionsoft', plug=self._plug,url='')
+
+            # Verificar ngrok para determinar url_base
+            url_base = settings.WEBHOOK_HOST
+            url_path = reverse('home:webhook', kwargs={'connector': 'infusionsoft','webhook_id': webhook.id})
+            hookUrl = url_base+url_path
+            headers = {
+                "Accept": "application/json, */*",
+                'Authorization': 'Bearer {}'.format(self._token)
+            }
+            data = {
+                "eventKey": str(option.value),
+                "hookUrl": str(hookUrl)
+            }
+            response = requests.post("https://api.infusionsoft.com/crm/rest/v1/hooks",
+                                     headers=headers, json=data)
+
+            if response.status_code == 201 or response.status_code == 200:
+                webhook.url = url_base + url_path
+                webhook.generated_id = response.json()['data']['id']
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            else:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
+            return True
+        elif action == 'Detect actions in Opportunities':
+            option = self._plug.plug_action_specification.get(
+                action_specification__name='opportunity actio')
+
+            # Creacion de Webhook
+            webhook = Webhook.objects.create(name='infusionsoft',
+                                             plug=self._plug, url='')
+
+            # Verificar ngrok para determinar url_base
+            url_base = settings.WEBHOOK_HOST
+            url_path = reverse('home:webhook',
+                               kwargs={'connector': 'infusionsoft',
+                                       'webhook_id': webhook.id})
+            hookUrl = url_base + url_path
+            headers = {
+                "Accept": "application/json, */*",
+                'Authorization': 'Bearer {}'.format(self._token)
+            }
+            data = {
+                "eventKey": str(option.value),
+                "hookUrl": str(hookUrl)
+            }
+            response = requests.post(
+                "https://api.infusionsoft.com/crm/rest/v1/hooks",
+                headers=headers, json=data)
+
+            if response.status_code == 201 or response.status_code == 200:
+                webhook.url = url_base + url_path
+                webhook.generated_id = response.json()['data']['id']
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            else:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
+        return False
+
+    @csrf_exempt
+    def hooks_types(self):
+        headers = {
+            "Accept": "application/json, */*",
+            "Authorization": "Bearer {0}".format(self._token)
+        }
+        response = requests.get(
+            "https://api.infusionsoft.com/crm/rest/v1/hooks/event_keys",
+            headers=headers)
+        event_keys = response.json()
+        return event_keys
+
+    # LA ESPECIFICACION ESTA ENTRANDO SIN VALOR
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
+        if action_specification.name.lower() == 'contact action':
+            options = []
+            opt = self.hooks_types()
+            for i in opt:
+                if 'contact' in i:
+                    options.append(i)
+            return tuple(
+                {'id': i, 'name': j} for i, j in enumerate(options)
+            )
+        elif action_specification.name.lower() == 'opportunity action':
+            options = []
+            opt = self.hooks_types()
+            for i in opt:
+                if 'opportunity' in i:
+                    options.append(i)
+            return tuple(
+                {'id': i, 'name': j} for i, j in enumerate(options)
+            )
+        else:
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
+
+    def download_to_stored_data(self, connection_object=None, plug=None,
+                                event=None, **kwargs):
+        if event is not None:
+            event_resource = event['resource']
+            q = StoredData.objects.filter(
+                connection=connection_object.connection, plug=plug,
+                object_id=event_resource)
+            task_stored_data = []
+            if not q.exists():
+                task_data = self.get_task(event_resource).json()['data']
+                for k, v in task_data.items():
+                    if type(v) not in [list, dict]:
+                        task_stored_data.append(
+                            StoredData(connection=connection_object.connection,
+                                       plug=plug, object_id=event_resource,
+                                       name=k, value=v or ''))
+                for key, value in task_data['memberships'][0].items():
+                    for k, v in value.items():
+                        task_stored_data.append(
+                            StoredData(connection=connection_object.connection,
+                                       plug=plug, object_id=event_resource,
+                                       name='{0}_{1}'.format(key, k),
+                                       value=v or ''))
+            extra = {}
+            for task in task_stored_data:
+                try:
+                    extra['status'] = 's'
+                    extra = {'controller': 'infusionSoft'}
+                    task.save()
+                    self._log.info(
+                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            task.object_id, task.plug.id,
+                            task.connection.id),
+                        extra=extra)
+                except Exception as e:
+                    extra['status'] = 'f'
+                    self._log.info(
+                        'Item ID: %s, Connection: %s, Plug: %s failed.' % (
+                            task.object_id, task.plug.id,
+                            task.connection.id),
+                        extra=extra)
+            return True
+        return False
+
+    def get_target_fields(self, **kwargs):
+        return [{'name': 'asignee', 'type': 'text', 'required': False},
+                {'name': 'completed', 'type': 'text', 'required': True},
+                {'name': 'due_on', 'type': 'text', 'required': False},
+                {'name': 'due_at', 'type': 'text', 'required': False},
+                {'name': 'followers', 'type': 'text', 'required': False},
+                {'name': 'hearted', 'type': 'text', 'required': False},
+                {'name': 'name', 'type': 'text', 'required': True},
+                {'name': 'notes', 'type': 'text', 'required': False},
+                {'name': 'tags', 'type': 'text', 'required': False}]
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.Asana) for f in fields]
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if self._plug is not None:
+            obj_list = []
+            extra = {'controller': 'InfusionSoft'}
+            for item in data_list:
+                task = self.create_task(**item)
+                if task.status_code in [200, 201]:
+                    extra['status'] = 's'
+                    self._log.info('Item: %s successfully sent.' % (
+                    task.json()['data']['name']),
+                                   extra=extra)
+                    obj_list.append(task)
+                else:
+                    extra['status'] = 'f'
+                    self._log.info('Item: failed to send.', extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")

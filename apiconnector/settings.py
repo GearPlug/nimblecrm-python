@@ -264,3 +264,9 @@ MAILCHIMP_CLIENT_ID = '130614039674'
 MAILCHIMP_CLIENT_SECRET = 'ec67ed08c77c04752b168fcc9b732485596d68e4709d9920af'
 MAILCHIMP_REDIRECT_URL = '{0}/connection/auth-callback/mailchimp/'.format(CURRENT_HOST)
 MAILCHIMP_ACCESS_TOKEN_URI = 'https://login.mailchimp.com/oauth2/token'
+
+# InfusionSoft
+INFUSIONSOFT_CLIENT_ID = "v36e5mq9jzhutwcn4bg53ydu"
+INFUSIONSOFT_CLIENT_SECRET = "b7ep5A3wYP"
+INFUSIONSOFT_AUTHORIZATION_URL = "https://signin.infusionsoft.com/app/oauth/authorize?"
+INFUSIONSOFT_REDIRECT_URL = '{0}/connection/auth-callback/infusionsoft/'.format(CURRENT_HOST)
