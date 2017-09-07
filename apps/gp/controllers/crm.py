@@ -64,7 +64,8 @@ class SugarCRMController(BaseController):
                 raise ControllerError('No connection.')
         if self._url is not None and self._user is not None and self._password is not None:
             try:
-                self._client = SugarClient(self._url, self._user, self._password)
+                session = requests.Session()
+                self._client = SugarClient(self._url, self._user, self._password, session=session)
             except InvalidLogin as e:
                 raise ControllerError(code=2, controller=ConnectorEnum.SugarCRM,
                                       message='Invalid login. {}'.format(str(e)))
