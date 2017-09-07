@@ -105,7 +105,6 @@ class MySQLController(BaseController):
         if last_source_record is not None:
             query_params['gt'] = last_source_record
         data = self.select_all(**query_params)
-        print(data)
         parsed_data = [{'unique': {'name': str(unique.value), 'value': item[unique.value]},
                         'data': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
         new_data = []
@@ -119,7 +118,6 @@ class MySQLController(BaseController):
                                            object_id=unique_value, connection=connection_object.connection, plug=plug))
                 new_data.append(new_item)
         if new_data:
-            print("TENGO DATA")
             new_data.reverse()
             result = self._save_stored_data(new_data)
             for item in parsed_data:

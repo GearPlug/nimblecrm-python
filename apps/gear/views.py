@@ -62,6 +62,11 @@ class CreateGearView(LoginRequiredMixin, CreateView):
         context['object_name'] = self.model.__name__
         return context
 
+    def get_form(self, form_class=None):
+        form = super(CreateGearView, self).get_form(form_class=form_class)
+        form.fields["gear_group"].queryset = GearGroup.objects.filter(user=self.request.user)
+        return form
+
 
 class UpdateGearView(LoginRequiredMixin, UpdateView):
     """
@@ -107,6 +112,11 @@ class CreateGearGroupView(CreateView):
         context = super(CreateGearGroupView, self).get_context_data(**kwargs)
         context['object_name'] = self.model.__name__
         return context
+
+    def get_form(self, form_class=None):
+        form = super(CreateGearView, self).get_form(form_class=form_class)
+        form.fields["gear_group"].queryset = GearGroup.objects.filter(user=self.request.user)
+        return form
 
 
 class UpdateGearGroupView(UpdateView):
