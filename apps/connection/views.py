@@ -17,7 +17,7 @@ import json
 import urllib
 import requests
 from evernote.api.client import EvernoteClient
-from meli_client import meli
+from mercadolibre.client import Client as MercadolibreClient
 
 
 class ListConnectorView(LoginRequiredMixin, ListView):
@@ -185,8 +185,8 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                     .format(settings.ASANA_CLIENT_ID, settings.ASANA_REDIRECT_URL))
             context['authorization_url'] = authorization_url
         elif connector == ConnectorEnum.MercadoLibre:
-            m = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
-            context['authorization_url'] = m.auth_url(redirect_URI=settings.MERCADOLIBRE_REDIRECT_URL)
+            m = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
+            context['authorization_url'] = m.authorization_url(redirect_uri=settings.MERCADOLIBRE_REDIRECT_URL)
             context['sites'] = MercadoLibreConnection.SITES
         elif connector == ConnectorEnum.WunderList:
             oauth = OAuth2Session(client_id=settings.WUNDERLIST_CLIENT_ID,
@@ -275,10 +275,10 @@ class FacebookAuthView(View):
 
 class MercadoLibreAuthView(View):
     def get(self, request, *args, **kwargs):
-        m = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
-        token = m.authorize(code=request.GET.get('code'), redirect_URI=settings.MERCADOLIBRE_REDIRECT_URL)
-        params = {'access_token': token}
-        user_me = m.get(path="/users/me", params=params).json()
+        m = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
+        token = m.exchange_code(code=request.GET.get('code'), redirect_uri=settings.MERCADOLIBRE_REDIRECT_URL)
+        m.set_token(token)
+        user_me = m.me()
         user_id = user_me['id']
         site_id = 'MLC'
         request.session['connection_data'] = {'token': token, 'site': site_id, 'user_id': user_id}
