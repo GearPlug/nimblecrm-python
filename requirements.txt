@@ -70,7 +70,7 @@ wunderpy2==0.1.4
 xmldict==0.4.1
 xmltodict==0.11.0
 git+git://github.com/Seraphicer/python-instagram-ext.git
-git+git://github.com/ingmferrer/python-sdk.git
 git+git://github.com/evernote/evernote-sdk-python3.git
 git+git://github.com/GearPlug/facebookmarketing-python.git
 git+git://github.com/GearPlug/sugarcrm-python.git
+git+git://github.com/GearPlug/mercadolibre-python.git
