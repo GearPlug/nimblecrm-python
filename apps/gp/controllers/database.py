@@ -118,27 +118,41 @@ class MySQLController(BaseController):
                                            object_id=unique_value, connection=connection_object.connection, plug=plug))
                 new_data.append(new_item)
         store = self._save_stored_data(new_data)
-        self._history(plug, objects)
+        self._history(plug, objects, "source")
         return store
 
-    def _history(self, plug, objects):
-        user_name = User.objects.get(pk=self._plug.user_id).username
-        specification_id = self._plug.plug_action_specification.all()
-        specifications = {}
-        for i in specification_id:
-            name_specification = ActionSpecification.objects.get(id=i.action_specification_id)
-            action = Action.objects.get(id=name_specification.action_id)
-            specifications[name_specification.name]=i.value
-        for objs in objects:
-            obj = StoredData.objects.filter(object_id=objs, plug_id=self._plug.id)
-            data = {}
-            for o in obj:
-                data[o.name] = o.value
-            # print({"user_id": self._plug.user.id, "user_name": user_name, "plug_id": self._plug.id, "conector":"mysql", "action":action.name,
-            #        "specifications":specifications, "data": data})
-            c = Count(user_id=self._plug.user.id, user_name=user_name, plug_id=self._plug.id, name="mysql", action=action.name, specifications=specifications,
-                      data=data)
-            c.save()
+    def _history(self, plug, objects, type):
+        if type is "source":
+            user_name = User.objects.get(pk=self._plug.user_id).username
+            specification_id = self._plug.plug_action_specification.all()
+            specifications = {}
+            for i in specification_id:
+                name_specification = ActionSpecification.objects.get(id=i.action_specification_id)
+                action = Action.objects.get(id=name_specification.action_id)
+                specifications[name_specification.name]=i.value
+            for objs in objects:
+                obj = StoredData.objects.filter(object_id=objs, plug_id=self._plug.id)
+                data = {}
+                for o in obj:
+                    data[o.name] = o.value
+                c = Count(user_id=self._plug.user.id, user_name=user_name, plug_id_input=self._plug.id, name_input="mysql", action_input=action.name,
+                          specifications_input=specifications, data_input=data)
+                c.save()
+        if type is "target":
+            specification_id = self._plug.plug_action_specification.all()
+            specifications = {}
+            for i in specification_id:
+                name_specification = ActionSpecification.objects.get(id=i.action_specification_id)
+                action = Action.objects.get(id=name_specification.action_id)
+                specifications[name_specification.name] = i.value
+            for objs in objects:
+                obj = StoredData.objects.filter(object_id=objs, plug_id=self._plug.id)
+                data = {}
+                for o in obj:
+                    data[o.name] = o.value
+                c = Count(plug_id_output=self._plug.id, name="mysql",
+                          action_output=action.name, specifications_output=specifications,
+                          data_output=data)
         return None
 
     def _save_stored_data(self, data):
@@ -204,6 +218,7 @@ class MySQLController(BaseController):
                 self._connection.rollback()
                 raise ControllerError(code=4, controller=ConnectorEnum.MySQL.name,
                                       message='Error in commit data. {}'.format(str(e)))
+            self._history(self, obj_list,"target")
             return obj_list
         raise ControllerError("There's no plug")
 

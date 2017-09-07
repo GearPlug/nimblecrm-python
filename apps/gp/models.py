@@ -496,10 +496,14 @@ class Count(models.Model):
     datetime = models.DateTimeField(auto_now_add=True)
     user_id = models.CharField('user_id', max_length=200)
     user_name = models.CharField('user_name', max_length=200)
-    plug_id = models.CharField('plug_id', max_length=200)
-    action = models.CharField('action', max_length=200)
-    specifications = models.CharField('specifications', max_length=1000)
-    data = models.CharField('data', max_length=2000)
+    plug_id_input = models.CharField('plug_id', max_length=200)
+    action_input = models.CharField('action_input', max_length=200)
+    specifications_input = models.CharField('specifications_input', max_length=1000)
+    data_input = models.CharField('data', max_length=2000)
+    plug_id_output = models.CharField('plug_id_output', max_length=200)
+    action_output = models.CharField('action_output', max_length=200)
+    specifications_output = models.CharField('specifications_output', max_length=1000)
+    data_output = models.CharField('data_output', max_length=2000)
 
     def __str__(self):
         return self.name
