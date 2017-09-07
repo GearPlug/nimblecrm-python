@@ -114,7 +114,7 @@ class CreateGearGroupView(CreateView):
         return context
 
     def get_form(self, form_class=None):
-        form = super(CreateGearView, self).get_form(form_class=form_class)
+        form = super(CreateGearGroupView, self).get_form(form_class=form_class)
         form.fields["gear_group"].queryset = GearGroup.objects.filter(user=self.request.user)
         return form
 
