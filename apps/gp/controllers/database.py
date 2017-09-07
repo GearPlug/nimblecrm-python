@@ -1,14 +1,16 @@
-from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.utils import get_dict_with_source_data
+from apps.gp.controllers.base import BaseController
+from django.contrib.auth.models import User
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apiconnector.celery import app
 from apps.gp.controllers.exception import ControllerError
-from apps.gp.models import StoredData, ActionSpecification
+from apps.gp.models import StoredData, ActionSpecification, Action, Count
 import MySQLdb
 import copy
 import psycopg2
 import pymssql
+import json
 
 
 class MySQLController(BaseController):
@@ -104,8 +106,10 @@ class MySQLController(BaseController):
                         'data': [{'name': key, 'value': value} for key, value in item.items() if key != unique.value]}
                        for item in data]
         new_data = []
+        objects = []
         for item in parsed_data:
             unique_value = item['unique']['value']
+            objects.append(unique_value)
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
                 new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
@@ -113,7 +117,29 @@ class MySQLController(BaseController):
                 new_item.append(StoredData(name=item['unique']['name'], value=item['unique']['value'],
                                            object_id=unique_value, connection=connection_object.connection, plug=plug))
                 new_data.append(new_item)
-        return self._save_stored_data(new_data)
+        store = self._save_stored_data(new_data)
+        self._history(plug, objects)
+        return store
+
+    def _history(self, plug, objects):
+        user_name = User.objects.get(pk=self._plug.user_id).username
+        specification_id = self._plug.plug_action_specification.all()
+        specifications = {}
+        for i in specification_id:
+            name_specification = ActionSpecification.objects.get(id=i.action_specification_id)
+            action = Action.objects.get(id=name_specification.action_id)
+            specifications[name_specification.name]=i.value
+        for objs in objects:
+            obj = StoredData.objects.filter(object_id=objs, plug_id=self._plug.id)
+            data = {}
+            for o in obj:
+                data[o.name] = o.value
+            # print({"user_id": self._plug.user.id, "user_name": user_name, "plug_id": self._plug.id, "conector":"mysql", "action":action.name,
+            #        "specifications":specifications, "data": data})
+            c = Count(user_id=self._plug.user.id, user_name=user_name, plug_id=self._plug.id, name="mysql", action=action.name, specifications=specifications,
+                      data=data)
+            c.save()
+        return None
 
     def _save_stored_data(self, data):
         for item in data:
@@ -150,6 +176,8 @@ class MySQLController(BaseController):
                 except:
                     data_list = []
         if self._plug is not None:
+            print("plug")
+            print(self._plug.action_id())
             obj_list = []
             extra = {'controller': 'mysql'}
             for item in data_list:
@@ -276,6 +304,7 @@ class PostgreSQLController(BaseController):
     def download_to_stored_data(self, connection_object, plug, **kwargs):
         if plug is None:
             plug = self._plug
+
         data = self.select_all()
         id_list = self.get_primary_keys()
         parsed_data = [{'id': tuple(item[key] for key in id_list),

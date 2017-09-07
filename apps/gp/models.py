@@ -491,6 +491,18 @@ class StoredData(models.Model):
     def __str__(self):
         return '{0} {1}'.format(self.name, self.object_id)
 
+class Count(models.Model):
+    name = models.CharField('name', max_length=200)
+    datetime = models.DateTimeField(auto_now_add=True)
+    user_id = models.CharField('user_id', max_length=200)
+    user_name = models.CharField('user_name', max_length=200)
+    plug_id = models.CharField('plug_id', max_length=200)
+    action = models.CharField('action', max_length=200)
+    specifications = models.CharField('specifications', max_length=1000)
+    data = models.CharField('data', max_length=2000)
+
+    def __str__(self):
+        return self.name
 
 class GearGroup(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
