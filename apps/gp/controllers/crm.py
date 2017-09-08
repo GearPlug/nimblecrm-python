@@ -21,12 +21,13 @@ from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
-from apps.gp.models import ActionSpecification
+from apps.gp.models import ActionSpecification, Plug
 from apps.gp.models import StoredData, Webhook
 from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 import xml.etree.ElementTree as ET
 from django.conf import settings
+from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import re
 import time
@@ -1417,6 +1418,8 @@ class InfusionSoftController(BaseController):
             response = requests.post("https://api.infusionsoft.com/crm/rest/v1/hooks",
                                      headers=headers, json=data)
 
+            print('RESPUESTA CREACION WEBHOOK', response.json())
+
             if response.status_code == 201 or response.status_code == 200:
                 webhook.url = url_base + url_path
                 webhook.generated_id = response.json()['data']['id']
@@ -1428,7 +1431,7 @@ class InfusionSoftController(BaseController):
             return True
         elif action == 'Detect actions in Opportunities':
             option = self._plug.plug_action_specification.get(
-                action_specification__name='opportunity actio')
+                action_specification__name='opportunity action')
 
             # Creacion de Webhook
             webhook = Webhook.objects.create(name='infusionsoft',
@@ -1457,12 +1460,70 @@ class InfusionSoftController(BaseController):
                 webhook.generated_id = response.json()['data']['id']
                 webhook.is_active = True
                 webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+
             else:
                 webhook.is_deleted = True
                 webhook.save(update_fields=['is_deleted', ])
+            return True
+
+        elif 'HTTP_X_HOOK_SECRET' in request.META:
+            print('HOOK HANDSHAKE STARTED')
+            response = HttpResponse(status=200)
+            response['X-Hook-Secret'] = request.META['HTTP_X_HOOK_SECRET']
+            return response
+
+        decoded_events = request.body.decode("utf-8")
+        decoded_events = json.loads(decoded_events)
+
         return False
 
-    @csrf_exempt
+    def do_webhook_process(self, body=None, GET=None, POST=None, META=None, **kwargs):
+        response = HttpResponse(status=400)
+        if GET is not None:
+            verify_token = GET.get('hub.verify_token')
+            challenge = GET.get('hub.challenge')
+            if verify_token == 'token-gearplug-058924':
+                response.status_code = 200
+                response.content = challenge
+        elif POST is not None:
+            changes = body['entry'][0]['changes']
+            for lead in changes:
+                is_lead = lead['field'] == 'leadgen'
+                if not is_lead:
+                    continue
+                form_id = lead['value']['form_id']
+                page_id = lead['value']['page_id']
+                plugs_to_update = Plug.objects.filter(
+                    Q(gear_source__is_active=True) | Q(is_tested=False),
+                    plug_action_specification__value__iexact=form_id,
+                    plug_action_specification__action_specification__name__iexact='form',
+                    action__name='get leads', )
+                plugs_to_update = plugs_to_update.filter(
+                    plug_action_specification__value__iexact=page_id,
+                    plug_action_specification__action_specification__name__iexact='page')
+                for plug in plugs_to_update:
+                    try:
+                        self.create_connection(
+                            plug.connection.related_connection, plug)
+                        if self.test_connection():
+                            last_source_record = self.download_source_data(
+                                lead=lead)
+                            if last_source_record:
+                                self._plug.gear_source.first().gear_map.last_source_order_by_field_value = last_source_record
+                                self._plug.gear_source.first().gear_map.save(
+                                    update_fields=[
+                                        'last_source_order_by_field_value'])
+                    except Exception as e:
+                        print("ERROR: {0}".format(e))
+                    if not plug.is_tested:
+                        plug.is_tested = True
+                        plug.save(update_fields=['is_tested', ])
+            response.status_code = 200
+        elif META is not None:
+            # Aqui Quedamos, posiblemente se deba borrar los IF anteriores.
+            pass
+        return response
+
     def hooks_types(self):
         headers = {
             "Accept": "application/json, */*",
@@ -1474,7 +1535,6 @@ class InfusionSoftController(BaseController):
         event_keys = response.json()
         return event_keys
 
-    # LA ESPECIFICACION ESTA ENTRANDO SIN VALOR
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
@@ -1485,7 +1545,7 @@ class InfusionSoftController(BaseController):
                 if 'contact' in i:
                     options.append(i)
             return tuple(
-                {'id': i, 'name': j} for i, j in enumerate(options)
+                {'id': k, 'name': k.replace('.',' ')} for k in options
             )
         elif action_specification.name.lower() == 'opportunity action':
             options = []
@@ -1494,7 +1554,7 @@ class InfusionSoftController(BaseController):
                 if 'opportunity' in i:
                     options.append(i)
             return tuple(
-                {'id': i, 'name': j} for i, j in enumerate(options)
+                {'id': k, 'name': k.replace('.', ' ')} for k in options
             )
         else:
             raise ControllerError(
