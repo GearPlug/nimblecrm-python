@@ -3,7 +3,7 @@ from apps.gp.controllers.exception import ControllerError
 from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification, Plug
 from apps.gp.enum import ConnectorEnum
 from facebookmarketing.client import Client
-from facebookmarketing.exceptions import UnknownError, InvalidOauth20AccessTokenError, BaseError
+from facebookmarketing.exception import UnknownError, InvalidOauth20AccessTokenError, BaseError
 from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponse
