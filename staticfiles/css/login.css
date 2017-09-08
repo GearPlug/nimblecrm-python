@@ -26,13 +26,13 @@
 }
 
 .profile-img-card {
-    width: 96px;
+    width: 266px;
     height: 96px;
     margin: 0 auto 10px;
     display: block;
     -moz-border-radius: 50%;
     -webkit-border-radius: 50%;
-    border-radius: 50%;
+    border-radius: 0;
 }
 
 .profile-name-card {
@@ -73,6 +73,9 @@
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
+    direction: ltr;
+    height: 44px;
+    font-size: 16px;
 }
 
 .form-signin .form-control:focus {
