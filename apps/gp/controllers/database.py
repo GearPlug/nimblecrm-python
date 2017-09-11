@@ -50,31 +50,28 @@ class MySQLController(BaseController):
 
     def test_connection(self):
         try:
-            result = self.describe_table()
+            self.describe_table()
+            return True
         except Exception as e:
             print(e)
-            result = []
-        if result:
-            return True
-        else:
             return False
 
     def describe_table(self):
-        if self._table is not None and self._database is not None:
-            try:
-                self._cursor.execute('DESCRIBE `{0}`.`{1}`'.format(self._database, self._table))
-                return [{'name': item[0], 'type': item[1], 'null': 'YES' == item, 'is_primary': item[3] == 'PRI',
-                         'auto_increment': item[5] == 'auto_increment'} for item in self._cursor]
-            except MySQLdb.OperationalError as e:
-                raise ControllerError(code=2, controller=ConnectorEnum.MySQL.name,
-                                      message='Error describing table. {}'.format(str(e)))
-            except MySQLdb.ProgrammingError as e:
-                raise ControllerError(code=3, controller=ConnectorEnum.MySQL.name,
-                                      message='Error describing table. {}'.format(str(e)))
-        return []
+        try:
+            self._cursor.execute('DESCRIBE `{0}`.`{1}`'.format(self._database, self._table))
+            return [{'name': item[0], 'type': item[1], 'null': 'YES' == item, 'is_primary': item[3] == 'PRI',
+                     'auto_increment': item[5] == 'auto_increment'} for item in self._cursor]
+        except MySQLdb.OperationalError as e:
+            raise ControllerError(code=2, controller=ConnectorEnum.MySQL.name,
+                                  message='Error describing table. {}'.format(str(e)))
+        except MySQLdb.ProgrammingError as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.MySQL.name,
+                                  message='Error describing table. {}'.format(str(e)))
+        except Exception as e:
+            raise ControllerError("Unexpected Exception. Please report this error: {}".format(str(e)))
 
-    def select_all(self, limit=50, unique=None, order_by=None, gt=None):
-        if self._table is not None and self._database is not None and self._plug is not None:
+    def select_all(self, limit=100, unique=None, order_by=None, gt=None):
+        if self._table is not None and self._database is not None:
             select = 'SELECT * FROM `{0}`.`{1}`'.format(self._database, self._table)
             if gt is not None:
                 select += ' WHERE `{0}` > "{1}" '.format(order_by.value, gt)
@@ -88,8 +85,7 @@ class MySQLController(BaseController):
                 self._cursor.execute(select)
                 cursor_select_all = copy.copy(self._cursor)
                 self.describe_table()
-                cursor_describe = self._cursor
-                return [{column[0]: item[i] for i, column in enumerate(cursor_describe)} for item in cursor_select_all]
+                return [{column[0]: item[i] for i, column in enumerate(self._cursor)} for item in cursor_select_all]
             except MySQLdb.OperationalError as e:
                 raise ControllerError(code=2, controller=ConnectorEnum.MySQL.name,
                                       message='Error selecting all. {}'.format(str(e)))
@@ -98,14 +94,14 @@ class MySQLController(BaseController):
                                       message='Error selecting all. {}'.format(str(e)))
         return []
 
-    def download_to_stored_data(self, connection_object, plug, last_source_record=None, **kwargs):
-        order_by = self._plug.plug_action_specification.filter(action_specification__name__iexact='order by').first()
+    def download_to_stored_data(self, connection_object, plug, last_source_record=None, limit=50, **kwargs):
+        order_by = self._plug.plug_action_specification.get(action_specification__name__iexact='order by')
         unique = self._plug.plug_action_specification.get(action_specification__name__iexact='unique')
-        query_params = {'unique': unique, 'order_by': order_by}
+        query_params = {'unique': unique, 'order_by': order_by, 'limit': limit}
         if last_source_record is not None:
             query_params['gt'] = last_source_record
         data = self.select_all(**query_params)
-        parsed_data = [{'unique': {'name': str(unique.value), 'value': item[unique.value]},
+        parsed_data = [{'unique': {'name': unique.value, 'value': item[unique.value]},
                         'data': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
         new_data = []
         for item in parsed_data:
@@ -114,30 +110,26 @@ class MySQLController(BaseController):
             if not q.exists():
                 new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
                                        connection=connection_object.connection, plug=plug) for column in item['data']]
-                new_item.append(StoredData(name=item['unique']['name'], value=item['unique']['value'],
-                                           object_id=unique_value, connection=connection_object.connection, plug=plug))
                 new_data.append(new_item)
         if new_data:
             new_data.reverse()
-            result = self._save_stored_data(new_data)
+            self._save_stored_data(new_data)
             for item in parsed_data:
                 for column in item['data']:
                     if column['name'] == order_by.value:
                         return column['value']
         return False
 
-    def _save_stored_data(self, data):
+    def _save_stored_data(self, data):  # TODO: ASYNC METHOD
         for item in data:
             self._save_row(item)
-            # self._save_row.delay(self, item) TODO DELAY QUEUE
         return True
 
-    def _save_row(self, item):
+    def _save_row(self, item):  # TODO: ASYNC METHOD
         extra = {'controller': 'mysql', 'status': 's'}
         try:
             for stored_data in item:
                 stored_data.save()
-            # self._create_row.delay(self, item)
             self._log.info('Item ID: {0}, Connection: {1}, Plug: {2} successfully stored.'.format(
                 stored_data.object_id, stored_data.plug.id, stored_data.connection.id), extra=extra)
         except Exception as e:
@@ -148,9 +140,8 @@ class MySQLController(BaseController):
                                   message='Error in save row. {}'.format(str(e)))
 
     def _get_insert_statement(self, item):
-        insert = """INSERT INTO `%s`(%s) VALUES (%s)""" % (
-            self._table, """,""".join(item.keys()), """,""".join("""\"%s\"""" % i for i in item.values()))
-        return insert
+        return """INSERT INTO `{0}`({1}) VALUES ({2})""".format(
+            self._table, ",".join(item.keys()), ",".join('\"{0}\"'.format(i) for i in item.values()))
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
@@ -190,10 +181,10 @@ class MySQLController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def get_target_fields(self, **kwargs):
-        return self.describe_table(**kwargs)
+    def get_target_fields(self):
+        return self.describe_table()
 
-    def get_mapping_fields(self, **kwargs):
+    def get_mapping_fields(self):
         return [MapField(f, controller=ConnectorEnum.MySQL) for f in self.describe_table()]
 
     def get_action_specification_options(self, action_specification_id):
