@@ -95,8 +95,8 @@ class IncomingWebhook(View):
             print(e)
             body = None
         if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Gmail,
-                         ConnectorEnum.FacebookLeads, ConnectorEnum.MercadoLibre]:
-            response = controller.do_webhook_process(body=body, POST=request.POST)
+                         ConnectorEnum.FacebookLeads, ConnectorEnum.MercadoLibre, ConnectorEnum.InfusionSoft]:
+            response = controller.do_webhook_process(body=body, POST=request.POST, META=request.META, webhook_id=kwargs['webhook_id'])
             return response
         # ASANA
         elif connector == ConnectorEnum.Asana:
@@ -241,7 +241,6 @@ class IncomingWebhook(View):
                     w.plug.save()
                 response.status_code = 200
         elif connector == ConnectorEnum.GitLab:
-            #??????????????????????
             response = HttpResponse(status=200)
             issues = request.body.decode("utf-8")
             issues = json.loads(issues)
