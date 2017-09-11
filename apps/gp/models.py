@@ -491,22 +491,25 @@ class StoredData(models.Model):
     def __str__(self):
         return '{0} {1}'.format(self.name, self.object_id)
 
-class Count(models.Model):
-    name = models.CharField('name', max_length=200)
+
+class History(models.Model):
+    name_input = models.CharField('name_input', max_length=200)
     datetime = models.DateTimeField(auto_now_add=True)
     user_id = models.CharField('user_id', max_length=200)
     user_name = models.CharField('user_name', max_length=200)
-    plug_id_input = models.CharField('plug_id', max_length=200)
+    gear_id = models.CharField('gear_id', max_length=200)
+    plug_id_input = models.CharField('plug_id_input', max_length=200)
     action_input = models.CharField('action_input', max_length=200)
     specifications_input = models.CharField('specifications_input', max_length=1000)
-    data_input = models.CharField('data', max_length=2000)
+    data_input = models.CharField('data_input', max_length=2000)
+    name_output = models.CharField('name_output', max_length=200)
     plug_id_output = models.CharField('plug_id_output', max_length=200)
     action_output = models.CharField('action_output', max_length=200)
     specifications_output = models.CharField('specifications_output', max_length=1000)
     data_output = models.CharField('data_output', max_length=2000)
 
     def __str__(self):
-        return self.name
+        return self.name_input
 
 class GearGroup(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
