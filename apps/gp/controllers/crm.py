@@ -1,6 +1,7 @@
 import json
 import os
 import string
+import base64
 import urllib.error
 import urllib.request
 from hashlib import md5
@@ -1308,7 +1309,6 @@ class ActiveCampaignController(BaseController):
             obj_list = []
             extra = {'controller': 'activecampaign'}
             for item in data_list:
-                print(item)
                 try:
                     response = self.create_user(item)
                     self._log.info(
@@ -1359,12 +1359,12 @@ class ActiveCampaignController(BaseController):
             return True
         return False
 
+
 class InfusionSoftController(BaseController):
     _token = None
     _refresh_token = None
     _token_expiration_time = None
     _actual_time = time.time()
-    _refresh_url = ''
 
     def __init__(self, *args, **kwargs):
         super(InfusionSoftController, self).__init__(*args, **kwargs)
@@ -1377,7 +1377,6 @@ class InfusionSoftController(BaseController):
                     self._token = self._connection_object.token
                     self._refresh_token = self._connection_object.refresh_token
                     self._token_expiration_time = self._connection_object.token_expiration_time
-                    print('Conexion Data: {0}, {1}, {2}'.format(self._token, self._refresh_token, self._token_expiration_time))
                 except Exception as e:
                     print(e)
 
@@ -1388,14 +1387,42 @@ class InfusionSoftController(BaseController):
         return information is not None
 
     def is_token_expired(self):
-        return float(self._token_expiration_time) < self._actual_time
+        try:
+            return float(self._token_expiration_time) > self._actual_time
+        except Exception as e:
+            print(e)
+            return False
 
     def refresh_token(self):
-        print('REFRESH')
+        string_to_encode = (str(settings.INFUSIONSOFT_CLIENT_ID+ ':' +settings.INFUSIONSOFT_CLIENT_SECRET)).encode('utf-8')
+        encoded = base64.b64encode(string_to_encode)
+        auth_string = 'basic'+str(encoded)
+        headers = {
+            "Accept": "application/json, */*",
+            "Authorization": "{0}".format(auth_string)
+        }
+        data = {
+            "grant_type": 'refresh_token',
+            "refresh_token": self._refresh_token,
+        }
+        try:
+            response = requests.post(
+                'https://api.infusionsoft.com/token',
+                headers=headers,
+                json=data
+            )
 
-        return None
+            self._token = response.json()['access_token']
+            self._refresh_token = response.json()['refresh_token']
+            self._token_expiration_time = response.json()['expires_at']
+
+        except Exception as e:
+            print(e)
+            return False
 
     def get_contact(self, id):
+        if self.is_token_expired() == True:
+            self._refresh_token
         headers = {
             "Accept": "application/json, */*",
             "Authorization": "Bearer {0}".format(self._token)
@@ -1403,13 +1430,54 @@ class InfusionSoftController(BaseController):
         try:
             response = requests.get('https://api.infusionsoft.com/crm/rest/v1/contacts/{0}'.format(str(id)),
                                     headers=headers)
-            return(response.json())
+            return response.json()
         except Exception as e:
             print(e)
             return False
-        return None
+
+    def create_update_contact(self, **kwargs):
+        if self.is_token_expired() == True:
+            self._refresh_token
+        headers = {
+            "Accept": "application/json, */*",
+            "Authorization": "Bearer {0}".format(self._token)
+        }
+        data = {"addresses": [
+            {
+                "field": "BILLING",
+                "line1": kwargs['addresses'],
+            }
+            ],
+            "email_addresses": [
+            {
+                "email": kwargs['email_addresses'],
+                "field": "EMAIL1"
+            }
+            ],
+            "phone_numbers": [
+            {
+                "field": "PHONE1",
+                "number": kwargs['phone_numbers'],
+            }
+            ],
+            "family_name": kwargs['family_name'],
+            "given_name": kwargs['given_name'],
+            "duplicate_option": "Email",
+        }
+        try:
+            response = requests.put(
+                "https://api.infusionsoft.com/crm/rest/v1/contacts",
+                headers=headers,
+                json=data
+            )
+            return response
+        except Exception as e:
+            print(e)
+            return False
 
     def create_webhook(self):
+        if self.is_token_expired() == True:
+            self._refresh_token
         action = self._plug.action.name
         if action == 'Detect actions in Contacts':
             option = self._plug.plug_action_specification.get(
@@ -1432,6 +1500,7 @@ class InfusionSoftController(BaseController):
             }
             response = requests.post("https://api.infusionsoft.com/crm/rest/v1/hooks",
                                      headers=headers, json=data)
+
             try:
                 r = response.json()
             except Exception as e:
@@ -1487,9 +1556,6 @@ class InfusionSoftController(BaseController):
                 webhook.save(update_fields=['is_deleted', ])
             return True
 
-        # decoded_events = request.body.decode("utf-8")
-        # decoded_events = json.loads(decoded_events)
-
         return False
 
     def do_webhook_process(self, body=None, GET=None, POST=None, META=None, webhook_id=None, **kwargs):
@@ -1521,6 +1587,9 @@ class InfusionSoftController(BaseController):
         return response
 
     def hooks_types(self):
+        if self.is_token_expired() == True:
+            self._refresh_token
+
         headers = {
             "Accept": "application/json, */*",
             "Authorization": "Bearer {0}".format(self._token)
@@ -1532,6 +1601,8 @@ class InfusionSoftController(BaseController):
         return event_keys
 
     def get_action_specification_options(self, action_specification_id):
+        if self.is_token_expired() == True:
+            self._refresh_token
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
         if action_specification.name.lower() == 'contact action':
@@ -1558,9 +1629,10 @@ class InfusionSoftController(BaseController):
 
     def download_to_stored_data(self, connection_object=None, plug=None,
                                 contact=None, **kwargs):
+        if self.is_token_expired() == True:
+            self._refresh_token
         if contact is not None:
             contact_id = contact['id']
-            print('Contact ID', contact_id)
             q = StoredData.objects.filter(
                 connection=connection_object.connection, plug=plug,
                 object_id=contact_id)
@@ -1580,7 +1652,6 @@ class InfusionSoftController(BaseController):
                     contact_data.append(StoredData(connection=connection_object.connection,plug=plug, object_id=contact_id,name=k, value=v or ''))
             extra = {}
             for data in contact_data:
-                print(data)
                 try:
                     extra['status'] = 's'
                     extra = {'controller': 'infusionSoft'}
@@ -1600,14 +1671,13 @@ class InfusionSoftController(BaseController):
             return True
         return False
 
-
     def get_target_fields(self, **kwargs):
         return [{'name': 'given_name', 'type': 'text', 'required': False},
                 {'name': 'family_name', 'type': 'text', 'required': False},
                 {'name': 'middle_name', 'type': 'text', 'required': False},
                 {'name': 'id', 'type': 'text', 'required': False},
                 {'name': 'date_created', 'type': 'text', 'required': False},
-                {'name': 'phone_numbers', 'type': 'text', 'required': False},
+                {'name': 'phone_numbers', 'type': 'text', 'required': True},
                 {'name': 'addresses', 'type': 'text', 'required': False},
                 {'name': 'email_addresses', 'type': 'text', 'required': True},
                 {'name': 'company_company_name', 'type': 'text', 'required': False},
@@ -1615,7 +1685,7 @@ class InfusionSoftController(BaseController):
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_target_fields()
-        return [MapField(f, controller=ConnectorEnum.Asana) for f in fields]
+        return [MapField(f, controller=ConnectorEnum.InfusionSoft) for f in fields]
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
@@ -1623,12 +1693,12 @@ class InfusionSoftController(BaseController):
             obj_list = []
             extra = {'controller': 'InfusionSoft'}
             for item in data_list:
-                task = self.create_task(**item)
+                task = self.create_update_contact(**item)
                 if task.status_code in [200, 201]:
                     extra['status'] = 's'
+                    print(task.json())
                     self._log.info('Item: %s successfully sent.' % (
-                    task.json()['data']['name']),
-                                   extra=extra)
+                    task.json()['given_name']), extra=extra)
                     obj_list.append(task)
                 else:
                     extra['status'] = 'f'
