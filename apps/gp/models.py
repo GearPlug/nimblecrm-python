@@ -1,10 +1,15 @@
 from django.db import models
 from django.contrib import admin
 from apps.gp.model_fields import JSONField
-from apps.user.models import User
+from django.contrib.auth.models import User
+from apps.gp.enum import ConnectorEnum
 
-connections = ['connection_facebook', 'connection_mysql', 'connection_sugarcrm', 'connection_mailchimp',
-               'connection_googlespreadsheets', 'connection_postgresql', 'connection_mssql']
+connections = ['connection_{0}'.format(connector.name.lower()) for connector in
+               ConnectorEnum.get_connector_list()]
+
+
+class Category(models.Model):
+    name = models.CharField('name', max_length=100)
 
 
 class Connector(models.Model):
@@ -13,13 +18,23 @@ class Connector(models.Model):
     css_class = models.CharField('css class', max_length=40, blank=True)
     is_source = models.BooleanField('is source', default=False)
     is_target = models.BooleanField('is target', default=False)
-    icon = models.ImageField('icon', upload_to='connector/icon', null=True, default=None)
+    icon = models.ImageField('icon', upload_to='connector/icon', null=True,
+                             default=None)
+    category = models.ManyToManyField(Category, through='ConnectorCategory')
 
     class Meta:
         verbose_name = 'connector'
 
     def __str__(self):
         return self.name
+
+
+class ConnectorCategory(models.Model):
+    Connector = models.ForeignKey(Connector)
+    category = models.ForeignKey(Category)
+
+    class Meta:
+        db_table = 'gp_connector__category'
 
 
 class Action(models.Model):
@@ -43,16 +58,18 @@ class Action(models.Model):
 
 
 class ActionSpecification(models.Model):
-    action = models.ForeignKey(Action, on_delete=models.CASCADE, related_name='action_specification')
+    action = models.ForeignKey(Action, on_delete=models.CASCADE,
+                               related_name='action_specification')
     name = models.CharField('name', max_length=30)
 
     def __str__(self):
-        return self.action.name + ': ' + self.name +  ' on ' + self.action.connector.name
+        return self.action.name + ': ' + self.name + ' on ' + self.action.connector.name
 
 
 class Connection(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    connector = models.ForeignKey(Connector, default=2, on_delete=models.CASCADE)
+    connector = models.ForeignKey(Connector, default=2,
+                                  on_delete=models.CASCADE)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
     is_deleted = models.BooleanField('is deleted', default=False)
@@ -82,11 +99,23 @@ class Connection(models.Model):
         return 'Object not found'
 
     def __str__(self):
-        return '%s' % self.name
+        return self.name
 
 
-class FacebookConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_facebook')
+class JiraConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_jira')
+    name = models.CharField('name', max_length=200)
+    host = models.CharField('host', max_length=200)
+    connection_user = models.CharField('user', max_length=60)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
+
+
+class FacebookLeadsConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_facebookleads')
+
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
 
@@ -94,7 +123,16 @@ class FacebookConnection(models.Model):
         return self.name
 
 
-class MySQLConnection(models.Model):
+class InstagramConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_instagram')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
+class MySQLConnection(models.Model):  # TODO Encrypt TEST
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mysql')
     name = models.CharField('name', max_length=200)
     host = models.CharField('host', max_length=200)
@@ -105,7 +143,7 @@ class MySQLConnection(models.Model):
     connection_password = models.CharField('password', max_length=40)
 
     def __str__(self):
-        return self.name
+        return '{0}'.format(self.name)
 
 
 class PostgreSQLConnection(models.Model):
@@ -136,6 +174,18 @@ class MSSQLConnection(models.Model):
         return self.name
 
 
+class MagentoConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_magento')
+    name = models.CharField('name', max_length=200)
+    host = models.CharField('host', max_length=200)
+    port = models.CharField('port', max_length=7)
+    connection_user = models.CharField('user', max_length=60)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
+
+
 class SugarCRMConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_sugarcrm')
     name = models.CharField('name', max_length=200)
@@ -150,11 +200,55 @@ class SugarCRMConnection(models.Model):
 class MailChimpConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mailchimp')
     name = models.CharField('name', max_length=200)
-    connection_user = models.CharField('user', max_length=200)
+    token = models.CharField('user', max_length=200)
+
+    def __str__(self):
+        return self.name
+
+
+class MandrillConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mandrill')
+    name = models.CharField('name', max_length=200)
     api_key = models.CharField('api key', max_length=200)
 
     def __str__(self):
         return self.name
+
+
+class GetResponseConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_getresponse')
+    name = models.CharField('name', max_length=200)
+    api_key = models.CharField('api key', max_length=200)
+
+
+class SurveyMonkeyConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_surveymonkey')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
+class ShopifyConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_shopify')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+    shop_url = models.CharField('shop_url', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
+class TwitterConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_twitter')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+    token_secret = models.CharField('token', max_length=300)
+
+
+def __str__(self):
+    return self.name
 
 
 class GoogleSpreadSheetsConnection(models.Model):
@@ -162,6 +256,209 @@ class GoogleSpreadSheetsConnection(models.Model):
                                       related_name='connection_googlespreadsheets')
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class GoogleFormsConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_googleforms')
+    name = models.CharField('name', max_length=200)
+    credentials_json = JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class GoogleCalendarConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_googlecalendar')
+    name = models.CharField('name', max_length=200)
+    credentials_json = JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class YouTubeConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_youtube')
+    name = models.CharField('name', max_length=200)
+    credentials_json = JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class GooglePushWebhook(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='google_push_webhook')
+    channel_id = models.CharField('channel_id', max_length=200)
+    resource_id = models.CharField('resource_id', max_length=200)
+    expiration = models.CharField('expiration', max_length=200)
+    raw_expiration = models.CharField('raw_expiration', max_length=200)
+    created = models.DateTimeField('created', auto_now_add=True)
+    last_update = models.DateTimeField('last update', auto_now=True)
+
+    def __str__(self):
+        return self.channel_id
+
+
+class SlackConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_slack')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=100)
+
+    def __str__(self):
+        return self.name
+
+
+class EvernoteConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_evernote')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=100)
+
+    def __str__(self):
+        return self.name
+
+
+class BitbucketConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_bitbucket')
+    name = models.CharField('name', max_length=200)
+    connection_user = models.CharField('user', max_length=60)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
+
+
+class GoogleContactsConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_googlecontacts')
+    name = models.CharField('name', max_length=200)
+    credentials_json = JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class WunderListConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_wunderlist')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
+class ZohoCRMConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_zohocrm')
+    token = models.CharField('token', max_length=300)
+    name = models.CharField('name', max_length=200)
+
+    def __str__(self):
+        return self.name
+
+
+class HubSpotConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_hubspotcrm')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+    refresh_token = models.CharField('token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
+class SMSConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_sms')
+    name = models.CharField('name', max_length=200)
+    connection_user = models.CharField('user', max_length=60)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
+
+
+class SalesforceConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_salesforce')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
+class SMTPConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_smtp')
+    name = models.CharField('name', max_length=200)
+    host = models.CharField('host', max_length=200)
+    port = models.CharField('port', max_length=200)
+    connection_user = models.CharField('user', max_length=60)
+    connection_password = models.CharField('password', max_length=40)
+
+    def __str__(self):
+        return self.name
+
+
+class AsanaConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_asana')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+    refresh_token = models.CharField('refresh token', max_length=300)
+    token_expiration_timestamp = models.CharField('token expiration timestamp', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
+class VtigerConnection(models.Model):
+    connection = models.OneToOneField(
+        Connection, on_delete=models.CASCADE, related_name='connection_vtiger')
+    name = models.CharField('name', max_length=200)
+    connection_user = models.CharField('user', max_length=60)
+    connection_access_key = models.CharField('password', max_length=40)
+    token = models.CharField('token', max_length=100, blank=True, null=True)
+    url = models.URLField('url')
+
+    def __str__(self):
+        return self.name
+
+
+class MercadoLibreConnection(models.Model):
+    SITES = (('MLA', 'Argentina'), ('MLB', 'Brazil'), ('MCO', 'Colombia'), ('MCR', 'Costa Rica'), ('MEC', 'Ecuador'),
+             ('MLC', 'Chile'), ('MLM', 'Mexico'), ('MLU', 'Uruguay'), ('MLV', 'Venezuela'), ('MPA', 'Panama'),
+             ('MPE', 'Peru'), ('MPT', 'Portugal'), ('MRD', 'Republica Dominicana'))
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mercadolibre')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+    site = models.CharField(max_length=3, choices=SITES)
+
+    def __str__(self):
+        return self.name
+
+
+class GmailConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE,
+                                      related_name='connection_gmail')
+    name = models.CharField('name', max_length=200)
+    credentials_json = JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class GitLabConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_gitlab')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+    refresh_token = models.CharField('refresh token', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
+class ActiveCampaignConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_activecampaign')
+    name = models.CharField('name', max_length=200)
+    host = models.CharField('host', max_length=200)
+    connection_access_key = models.CharField('password', max_length=100)
 
     def __str__(self):
         return self.name
@@ -177,6 +474,7 @@ class Plug(models.Model):
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
+    is_tested = models.BooleanField(default=False)
 
     @property
     def is_source(self):
@@ -190,9 +488,10 @@ class Plug(models.Model):
         return self.name
 
 
-class PlugSpecification(models.Model):
-    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='plug_specification')
-    action_specification = models.ForeignKey(ActionSpecification)
+class PlugActionSpecification(models.Model):
+    plug = models.ForeignKey(Plug, on_delete=models.CASCADE, related_name='plug_action_specification', )
+    action_specification = models.ForeignKey(ActionSpecification, on_delete=models.CASCADE,
+                                             related_name='action_specification')
     value = models.CharField('value', max_length=1000)
 
     class Meta:
@@ -205,20 +504,29 @@ class StoredData(models.Model):
     name = models.CharField('name', max_length=300)
     value = models.CharField('value', max_length=3000, default='', blank=True)
     datetime = models.DateTimeField(auto_now_add=True)
-    object_id = models.CharField('object_id', max_length=50, null=True)
+    object_id = models.CharField('object_id', max_length=150, null=True)
 
     def __str__(self):
-        return '%s %s %s' % (self.id, self.name, self.object_id)
+        return '{0} {1}'.format(self.name, self.object_id)
+
+
+class GearGroup(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField('name', max_length=64)
+
+    def __str__(self):
+        return self.name
 
 
 class Gear(models.Model):
     name = models.CharField('name', max_length=120)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    source = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='source_gear')
-    target = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='target_gear')
+    source = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='gear_source')
+    target = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='gear_target')
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
+    gear_group = models.ForeignKey(GearGroup, null=True, on_delete=models.SET_NULL, related_name='gear')
 
     @property
     def is_running(self):
@@ -232,9 +540,8 @@ class GearMap(models.Model):
     is_active = models.BooleanField('is active', default=True)
     last_sent_stored_data = models.ForeignKey(StoredData, related_name='gear_map', null=True, default=None,
                                               on_delete=models.SET_NULL)
-    last_sent_stored_data_creation_date = models.DateTimeField('last sent storeddata creation date', null=True,
-                                                               default=None)
     last_source_update = models.DateTimeField(null=True, default=None)
+    last_source_order_by_field_value = models.CharField(max_length=64, null=True, blank=True, default=None)
     created = models.DateTimeField('created', auto_now_add=True)
 
     class Meta:
@@ -250,6 +557,20 @@ class GearMapData(models.Model):
         return '%s: %s' % (self.target_name, self.source_value)
 
 
+class Webhook(models.Model):
+    name = models.CharField('webhook name', max_length=100)
+    plug = models.OneToOneField(Plug, on_delete=models.CASCADE, related_name='webhook')
+    url = models.URLField('url')
+    generated_id = models.CharField('generated id', max_length=200)
+    created = models.DateTimeField('created', auto_now_add=True)
+    is_active = models.BooleanField('is active', default=False)
+    is_deleted = models.BooleanField('is deleted', default=False)
+    expiration = models.CharField('expiration', max_length=200, null=True, default=None)
+
+    def __str__(self):
+        return '%s webhook of %s' % (self.name, self.plug)
+
+
 class DBLogEntry(models.Model):
     time = models.DateTimeField(auto_now_add=True)
     level = models.CharField(max_length=10)
@@ -263,8 +584,19 @@ class ControllerLog(DBLogEntry):
     STATUS = (('f', 'Failed'), ('s', 'Successful'))
     module = models.CharField(max_length=30, blank=True, default='')
     process = models.CharField(max_length=20, blank=True, default='')
-    status = models.CharField(max_length=2, blank=False, choices=STATUS, default='f')
+    status = models.CharField(max_length=2, blank=False, choices=STATUS,
+                              default='f')
     controller = models.CharField(max_length=20, blank=True, default='')
+
+
+class ProcessedData():
+    gear = models.ForeignKey(Gear, related_name='processed_data')
+    plug = models.ForeignKey(Plug)
+    connection = models.ForeignKey(Connection)
+    connector = models.ForeignKey(Connector)
+    process_type = models.CharField('process type', max_length=20, choices=(
+        ('source', 'Source'), ('target', 'target')))
+    created = models.DateTimeField('created', auto_now_add=True)
 
 
 admin.site.register(Connector)
@@ -272,5 +604,6 @@ admin.site.register(Action)
 admin.site.register(ActionSpecification)
 admin.site.register(Connection)
 admin.site.register(Gear)
+admin.site.register(GearGroup)
 admin.site.register(Plug)
-admin.site.register(PlugSpecification)
+admin.site.register(PlugActionSpecification)

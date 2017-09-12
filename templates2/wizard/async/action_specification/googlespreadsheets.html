@@ -1,0 +1,42 @@
+{% extends 'wizard/async/action_specification.html' %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            console.log("goooglee")
+
+{#            $(document).on('change', 'select[data-name=spreadsheet]', function () {#}
+{#                var select = $('select[data-name=worksheet]');#}
+{#                console.log(select)#}
+{#                var url = "{% url 'wizard:async_google_sheet_worksheets' %}";#}
+{#                var spreadsheet_id = $(this).val();#}
+{#                $.ajax({#}
+{#                    method: "POST",#}
+{#                    url: url,#}
+{#                    data: {#}
+{#                        connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %},#}
+{#                        spreadsheet_id: spreadsheet_id,#}
+{#                    }#}
+{#                }).done(function (response) {#}
+{#                    $(select).html(response);#}
+{#                });#}
+{#            });#}
+            $(document).on('change', 'select[data-name=spreadsheet]', function () {
+                var select = $('select[data-name=worksheet]');
+                var url = "{% url 'plug:action_specification_options' %}";
+                $.ajax({
+                    method: "POST",
+                    url: url,
+                    data: {
+                        connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %},
+                        action_specification_id: $(select).attr('data-id'),
+                        sheet_id: $(this).val()
+                    }
+                }).done(function (response) {
+                    $(select).html(response);
+                });
+            });
+        })
+    </script>
+{% endblock %}

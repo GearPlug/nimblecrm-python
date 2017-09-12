@@ -1,108 +1,217 @@
-import httplib2
-from django.urls import reverse_lazy
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
+from apps.gp.models import GearGroup
+from django.urls import reverse_lazy, reverse
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView, \
+    FormView
 from django.http.response import JsonResponse
-from django.shortcuts import render
-
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
-from apps.gp.controllers import MySQLController, PostgreSQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, MSSQLController
-from apps.gp.enum import ConnectorEnum, MapField
+from django.contrib.auth.mixins import LoginRequiredMixin
+from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.gp.views import TemplateViewWithPost
 from oauth2client import client
-from apiclient import discovery
-
-import logging
-
-mysqlc = MySQLController()
-postgresqlc = PostgreSQLController()
-mcc = MailChimpController()
-mssqlc = MySQLController()
+import httplib2
 
 
-class ListGearView(ListView):
-    model = Gear
-    template_name = '%s/list.html' % app_name
+class ListGearView(LoginRequiredMixin, ListView):
+    """
+    Lists all gears related to the authenticated user.
+
+    - Is not called in the wizard.
+    """
+    model = GearGroup
+    template_name = 'gear/list.html'
+    login_url = '/accounts/login/'
 
     def get_context_data(self, **kwargs):
         context = super(ListGearView, self).get_context_data(**kwargs)
         return context
 
     def get_queryset(self):
-        queryset = self.model._default_manager.all()
-        return queryset.filter(user=self.request.user)
+        return self.model.objects.filter(
+            user=self.request.user).prefetch_related('gear')
 
 
-class CreateGearView(CreateView):
+class CreateGearView(LoginRequiredMixin, CreateView):
+    """
+    Creates an empty gear and associate it to the authenticated user.
+
+    - Calls the connector list as a source.
+
+    """
     model = Gear
-    fields = ['name', ]
-    template_name = '%s/create.html' % app_name
-    success_url = reverse_lazy('%s:list' % app_name)
+    template_name = 'gear/create.html'
+    fields = ['name', 'gear_group']
+    login_url = '/accounts/login/'
+    success_url = reverse_lazy('connection:connector_list',
+                               kwargs={'type': 'source'})
+
+    def get(self, request, *args, **kwargs):
+        request.session['gear_id'] = None
+        return super(CreateGearView, self).get(request, *args, **kwargs)
+
+    def get_success_url(self):
+        self.request.session['gear_id'] = self.object.id
+        return super(CreateGearView, self).get_success_url()
 
     def form_valid(self, form):
         form.instance.user = self.request.user
         return super(CreateGearView, self).form_valid(form)
 
-    def get(self, *args, **kwargs):
-        return super(CreateGearView, self).get(*args, **kwargs)
+    def get_context_data(self, **kwargs):
+        context = super(CreateGearView, self).get_context_data(**kwargs)
+        context['object_name'] = self.model.__name__
+        return context
+
+    def get_form(self, form_class=None):
+        form = super(CreateGearView, self).get_form(form_class=form_class)
+        form.fields["gear_group"].queryset = GearGroup.objects.filter(
+            user=self.request.user)
+        return form
+
+
+class UpdateGearView(LoginRequiredMixin, UpdateView):
+    """
+    Updates the selected gear.
+
+    - Calls the connector list as a source.
+
+    """
+    model = Gear
+    template_name = 'gear/update.html'
+    fields = ['name', 'gear_group']
+    login_url = '/accounts/login/'
+    success_url = reverse_lazy('connection:connector_list',
+                               kwargs={'type': 'source'})
+
+    def get(self, request, *args, **kwargs):
+        request.session['gear_id'] = self.kwargs.get('pk', None)
+        return super(UpdateGearView, self).get(request, *args, **kwargs)
 
     def get_queryset(self):
-        return self.model.objects.filter(user=self.request.user).prefetch_related()
+        try:
+            return self.model.objects.filter(pk=self.kwargs.get('pk', None),
+                                             user=self.request.user)
+        except Exception as e:
+            raise
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateGearView, self).get_context_data(**kwargs)
+        context['object_name'] = self.model.__name__
+        return context
+
+    def get_form(self, form_class=None):
+        form = super(UpdateGearView, self).get_form(form_class=form_class)
+        form.fields["gear_group"].queryset = GearGroup.objects.filter(
+            user=self.request.user)
+        return form
 
 
-class UpdateGearView(UpdateView):
-    model = Gear
-    fields = ['name', 'source', 'target']
-    template_name = '%s/update.html' % app_name
-    success_url = reverse_lazy('%s:list' % app_name)
+class CreateGearGroupView(CreateView):
+    model = GearGroup
+    template_name = 'gear/create.html'
+    fields = ['name', ]
+    login_url = '/accounts/login/'
+    success_url = reverse_lazy('gear:list')
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super(CreateGearGroupView, self).form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super(CreateGearGroupView, self).get_context_data(**kwargs)
+        context['object_name'] = self.model.__name__
+        return context
+
+
+class UpdateGearGroupView(UpdateView):
+    model = GearGroup
+    template_name = 'gear/update.html'
+    fields = ['name', ]
+    login_url = '/accounts/login/'
+    success_url = reverse_lazy('gear:list')
+
+    def get(self, request, *args, **kwargs):
+        request.session['gear_id'] = self.kwargs.get('pk', None)
+        return super(UpdateGearGroupView, self).get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        try:
+            return self.model.objects.filter(pk=self.kwargs.get('pk', None),
+                                             user=self.request.user)
+        except Exception as e:
+            raise
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateGearGroupView, self).get_context_data(**kwargs)
+        context['object_name'] = self.model.__name__
+        return context
 
 
 class DeleteGearView(DeleteView):
+    """
+    Deletes the selected gear. Should not remove the gear from the database but mark it as deleted instead.
+
+    """
     model = Gear
     template_name = '%s/delete.html' % app_name
     success_url = reverse_lazy('%s:list' % app_name)
 
 
-class CreateGearMapView(FormView):
-    template_name = 'gear/map/create.html'
+class CreateGearMapView(FormView, LoginRequiredMixin):
+    """
+    Creates a Map for the selected gear.
+
+    """
+    login_url = '/accounts/login/'
+    template_name = 'gear/map.html'
     form_class = MapForm
     form_field_list = []
     source_object_list = []
     success_url = reverse_lazy('%s:list' % app_name)
-    scrmc = SugarCRMController()
-    gsc = GoogleSpreadSheetsController()
 
     def get(self, request, *args, **kwargs):
+        """
+        Define las variables source_object_list y form_field_list, necesarias para el mapeo.
+        """
         gear_id = kwargs.pop('gear_id', 0)
-        gear = Gear.objects.filter(pk=gear_id).select_related('source', 'target').get(pk=gear_id)
-        source_plug = Plug.objects.filter(pk=gear.source.id).select_related('connection__connector').get(
+        gear = Gear.objects.filter(pk=gear_id).select_related('source',
+                                                              'target').get(
+            pk=gear_id)
+        source_plug = Plug.objects.filter(pk=gear.source.id).select_related(
+            'connection__connector').get(
             pk=gear.source.id)
-        target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
+        target_plug = Plug.objects.filter(pk=gear.target.id).select_related(
+            'connection__connector').get(
             pk=gear.target.id)
+        # Source options
         self.source_object_list = self.get_available_source_fields(source_plug)
+        # Target fields
         self.form_field_list = self.get_target_field_list(target_plug)
-        # print(self.source_object_list)
-        # print(self.form_field_list)
         return super(CreateGearMapView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
-        gear = Gear.objects.filter(pk=gear_id).select_related('source', 'target').get(pk=gear_id)
-        target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
+        gear = Gear.objects.filter(pk=gear_id).select_related('source',
+                                                              'target').get(
+            pk=gear_id)
+        target_plug = Plug.objects.filter(pk=gear.target.id).select_related(
+            'connection__connector').get(
             pk=gear.target.id)
         self.form_field_list = self.get_target_field_list(target_plug)
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
 
     def form_valid(self, form, *args, **kwargs):
-        map = GearMap.objects.create(gear_id=self.kwargs['gear_id'], is_active=True)
+        map = GearMap.objects.create(gear_id=self.kwargs['gear_id'],
+                                     is_active=True)
         map.gear.is_active = True
         map.gear.save()
         map_data = []
         for field in form:
-            map_data.append(
-                GearMapData(gear_map=map, target_name=field.name, source_value=form.cleaned_data[field.name]))
+            if form.cleaned_data[field.name]:
+                map_data.append(
+                    GearMapData(gear_map=map, target_name=field.name,
+                                source_value=form.cleaned_data[field.name]))
         GearMapData.objects.bulk_create(map_data)
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
@@ -116,78 +225,35 @@ class CreateGearMapView(FormView):
 
     def get_form(self, *args, **kwargs):
         form_class = self.get_form_class()
-        return form_class(extra=self.form_field_list, **self.get_form_kwargs())
+        form = form_class(extra=self.form_field_list, **self.get_form_kwargs())
+        if self.request.method == 'GET':
+            print("Cargar default?")
+        return form
 
     def get_available_source_fields(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
-        fields = ConnectorEnum.get_fields(c)
-        related = plug.connection.related_connection
-        connection_data = {}
-        for field in fields:
-            connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
-        return ['%%%%%s%%%%' % item['name'] for item in self.get_source_data_list(plug, plug.connection)]
+        if c == ConnectorEnum.GoogleContacts:
+            self.google_contacts_controller.create_connection(
+                plug.connection.related_connection, plug)
+            return ['%%{0}%%'.format(field) for field in
+                    self.google_contacts_controller.get_contact_fields()]
+        return ['%%{0}%%'.format(item['name']) for item in
+                StoredData.objects.filter(plug=plug,
+                                          connection=plug.connection).values(
+                    'name').distinct()]
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
-        fields = ConnectorEnum.get_fields(c)
+        controller_class = ConnectorEnum.get_controller(c)
         related = plug.connection.related_connection
-        connection_data = {}
-        for field in fields:
-            connection_data[field] = getattr(related, field) if hasattr(related, field) else ''
-        if c == ConnectorEnum.MySQL:
-            mysqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
-                                     connection_user=connection_data['connection_user'],
-                                     connection_password=connection_data['connection_password'],
-                                     database=connection_data['database'], table=connection_data['table'])
-            form_data = mysqlc.describe_table()
-            # print(form_data)
-            return [item['name'] for item in form_data if item['is_primary'] is not True]
-        elif c == ConnectorEnum.PostgreSQL:
-            postgresqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
-                                          connection_user=connection_data['connection_user'],
-                                          connection_password=connection_data['connection_password'],
-                                          database=connection_data['database'], table=connection_data['table'])
-            form_data = postgresqlc.describe_table()
-            primary_keys = postgresqlc.get_primary_keys()
-            return [item['name'] for item in form_data if item['name'] not in primary_keys]
-        elif c == ConnectorEnum.MSSQL:
-            mssqlc.create_connection(host=connection_data['host'], port=int(connection_data['port']),
-                                     connection_user=connection_data['connection_user'],
-                                     connection_password=connection_data['connection_password'],
-                                     database=connection_data['database'], table=connection_data['table'])
-            form_data = mssqlc.describe_table()
-            primary_keys = mssqlc.get_primary_keys()
-            return [item['name'] for item in form_data if item['name'] not in primary_keys]
-        elif c == ConnectorEnum.SugarCRM:
-            ping = self.scrmc.create_connection(url=connection_data['url'],
-                                                connection_user=connection_data['connection_user'],
-                                                connection_password=connection_data['connection_password'])
+        controller = controller_class(connection=related, plug=plug)
+        if controller.test_connection():
             try:
-                fields = self.scrmc.get_module_fields(plug.plug_specification.all()[0].value, get_structure=True)
-                return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields]
-            except:
+                return controller.get_mapping_fields()
+            except Exception as e:
                 return []
-        elif c == ConnectorEnum.MailChimp:
-            list_id = plug.plug_specification.all()[0].value
-            try:
-                ping = mcc.create_connection(user=connection_data['connection_user'],
-                                             api_key=connection_data['api_key'])
-                fields = mcc.get_list_merge_fields(list_id)
-                mfl = [MapField(f, controller=ConnectorEnum.MailChimp) for f in fields]
-                mfl.append(MapField({'tag': 'email_address', 'name': 'Email', 'required': True, 'type': 'email',
-                                     'options': {'size': 100}}, controller=ConnectorEnum.MailChimp))
-                return mfl
-            except:
-                return []
-        elif c == ConnectorEnum.GoogleSpreadSheets:
-            self.gsc.create_connection(related, plug)
-            values = self.gsc.get_worksheet_first_row()
-            return values
         else:
             return []
-
-    def get_source_data_list(self, plug, connection):
-        return StoredData.objects.filter(plug=plug, connection=connection).values('name').distinct()
 
 
 class GearMapGetSourceData(TemplateViewWithPost):
@@ -207,9 +273,11 @@ def gear_toggle(request, gear_id):
                     g.is_active = not g.is_active
                     g.save()
                 else:
-                    return JsonResponse({'data': 'There\'s no active gear map.'})
+                    return JsonResponse(
+                        {'data': 'There\'s no active gear map.'})
             else:
-                return JsonResponse({'data': "You don't have permission to toogle this gear."})
+                return JsonResponse(
+                    {'data': "You don't have permission to toogle this gear."})
         except Gear.DoesNotExist:
             return JsonResponse({'data': 'Error invalid gear id.'})
         except GearMap.DoesNotExist:
@@ -219,5 +287,6 @@ def gear_toggle(request, gear_id):
 
 
 def get_authorization(request):
-    credentials = client.OAuth2Credentials.from_json(request.session['google_credentials'])
+    credentials = client.OAuth2Credentials.from_json(
+        request.session['google_credentials'])
     return credentials.authorize(httplib2.Http())

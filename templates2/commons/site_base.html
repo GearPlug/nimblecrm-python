@@ -1,0 +1,109 @@
+{% extends 'commons/base.html' %}
+{% load static %}
+
+{% block body_class %}nav-md{% endblock %}
+
+
+{% block styles %}
+    {{ block.super }}
+    <link href="{% static 'vendor/font-awesome2/css/font-awesome2.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/nprogress/nprogress.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/iCheck/skins/flat/green.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/google-code-prettify/bin/prettify.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/select2/dist/css/select2.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/switchery/dist/switchery.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/starrr/dist/starrr.css' %}" rel="stylesheet">
+    <link href="{% static 'css/animate.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/custom.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">    
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+{% endblock %}
+
+
+{% block scripts %}
+    {{ block.super }}
+    <!-- FastClick -->
+    <script src="{% static 'vendor/fastclick/lib/fastclick.js' %}"></script>
+    <!-- NProgress -->
+    <script src="{% static 'vendor/nprogress/nprogress.js' %}"></script>
+    <!-- bootstrap-progressbar -->
+    <script src="{% static 'vendor/bootstrap-progressbar/bootstrap-progressbar.min.js' %}"></script>
+    <!-- iCheck -->
+    <script src="{% static 'vendor/iCheck/icheck.min.js' %}"></script>
+    <!-- bootstrap-daterangepicker -->
+    <script src="{% static 'vendor/moment/min/moment.min.js' %}"></script>
+    <script src="{% static 'vendor/datepicker/daterangepicker.js' %}"></script>
+    <!-- bootstrap-wysiwyg -->
+    <script src="{% static 'vendor/bootstrap-wysiwyg/js/bootstrap-wysiwyg.min.js' %}"></script>
+    <script src="{% static 'vendor/jquery.hotkeys/jquery.hotkeys.js' %}"></script>
+    <script src="{% static 'vendor/google-code-prettify/src/prettify.js' %}"></script>
+    <!-- jQuery Tags Input -->
+    <script src="{% static 'vendor/jquery.tagsinput/src/jquery.tagsinput.js' %}"></script>
+    <!-- Switchery -->
+    <script src="{% static 'vendor/switchery/dist/switchery.min.js' %}"></script>
+    <!-- Select2 -->
+    <script src="{% static 'vendor/select2/dist/js/select2.full.min.js' %}"></script>
+    <!-- Parsley -->
+    <script src="{% static 'vendor/parsleyjs/dist/parsley.min.js' %}"></script>
+    <!-- Autosize -->
+    <script src="{% static 'vendor/autosize/dist/autosize.min.js' %}"></script>
+    <!-- jQuery autocomplete -->
+    <script src="{% static 'vendor/devbridge-autocomplete/dist/jquery.autocomplete.min.js' %}"></script>
+    <!-- starrr -->
+    <script src="{% static 'vendor/starrr/dist/starrr.js' %}"></script>
+    <!-- Custom Theme Scripts -->
+    <!-- jQuery Smart Wizard -->
+    <script src="{% static 'vendor/jQuery-Smart-Wizard/js/jquery.smartWizard.js' %}"></script>
+    <script src="{% static 'js/app.js' %}"></script>
+    <script src="{% static 'js/custom.min.js' %}"></script>
+    <script type="text/javascript">
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie != '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+
+        function sameOrigin(url) {
+            // test that a given url is a same-origin URL
+            // url could be relative or scheme relative or absolute
+            var host = document.location.host; // host + port
+            var protocol = document.location.protocol;
+            var sr_origin = '//' + host;
+            var origin = protocol + sr_origin;
+            // Allow absolute or scheme relative URLs to same origin
+            return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+                    (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+                    // or any other URL that isn't scheme relative or absolute i.e relative.
+                    !(/^(\/\/|http:|https:).*/.test(url));
+        }
+
+        $(document).ready(function () {
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
+                        var csrftoken = getCookie('csrftoken');
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}

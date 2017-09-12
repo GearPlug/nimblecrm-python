@@ -1,0 +1,22 @@
+{% extends 'commons/site_base.html' %}
+{% load static %}
+
+{% block body %}
+    <div class="box-tool">
+        <div class="box-title">
+            <h2>new gear</h2>
+        </div>
+        <div class="panel">
+            <div class="container">
+                <form class="create-gear-form form-horizontal" action="" method="post" autocomplete="off">
+                    {% csrf_token %}
+                    {{ form }}
+                    <button id="singlebutton" name="singlebutton">Create gear</button>
+                    {% if form.error %}
+                        <div class="error">{{ form.error }}</div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

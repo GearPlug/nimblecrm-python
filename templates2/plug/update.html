@@ -1,0 +1,29 @@
+{% extends 'commons/site_base.html' %}
+{% load static %}
+{% load bootstrap_tags %}
+
+{% block body %}
+<div class="box-tool">
+<div class="box-title">
+    <h2>update plug</h2>
+    </div>
+    <div class="panel">
+        <form class="update-plug-form form-horizontal" action="" method="post" autocomplete="off">
+            {% csrf_token %}
+            {{ form|as_bootstrap }}
+            <button>update plug</button>
+            {% if form.error %}
+                <div class="error">{{ form.error }}</div>
+            {% endif %}
+        </form>
+        {% for sp in form.instance.plug_action_specification.all %}
+            <div>
+                {{ sp.action_specification.name }}: {{ sp.value }}
+                <a href="{% url 'plug:update_specification' pk=sp.id %}">Edit</a>
+            </div>
+        {% endfor %}
+        <a href="{% url 'plug:create_specification' plug_id=form.instance.id %}">Create Specifications</a>
+        {% block extra %}{% endblock %}
+    </div>
+    </div>
+{% endblock %}

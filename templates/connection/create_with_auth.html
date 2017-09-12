@@ -1,0 +1,19 @@
+{% extends 'layouts/base.html' %}
+
+{% block body_base %}
+    <form id="formCreateConnection" class="" action="" method="post" autocomplete="off">
+        <a href="javascript:authorize('{{ authorization_url }}')"
+           style="color:blue;font-size: 16px;">Authorize: {{ connector_name }}</a>
+        {% csrf_token %}
+    </form>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        function authorize(url) {
+            window.location = url;
+        }
+    </script>
+{% endblock %}

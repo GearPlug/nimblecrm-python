@@ -1,28 +1,4 @@
-{% extends 'commons/site_base.html' %}
+{% extends 'gear/create.html' %}
 {% load static %}
-{% load bootstrap_tags %}
-{% load widget_tweaks %}
 
-{% block body %}
-    <div class="box-tool animated fadeInDown">
-        <div class="box-title">
-            <h2>update gear</h2>
-        </div>
-        <div class="panel">
-            <form class="create-gear-form form-horizontal" action="" method="post" autocomplete="off">
-                {% csrf_token %}
-                {{ form|as_bootstrap }}
-                <button id="singlebutton" name="singlebutton">update</button>
-                {% if form.error %}
-                    <div class="error">{{ form.error }}</div>
-                {% endif %}
-            </form>
-        </div>
-        <a href="{% url 'wizard:create_plug' plug_type='source' %}">create SOURCE plug</a>
-        <a href="{% url 'wizard:create_plug' plug_type='target' %}">create TARGET plug</a>
-    </div>
-{% endblock %}
-
-{% block scripts %}
-    {{ block.super }}
-{% endblock %}
+{% block gear_action %}Update{% endblock %}

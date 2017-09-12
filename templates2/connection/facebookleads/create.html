@@ -1,0 +1,112 @@
+{% extends 'connection/create.html' %}
+{% load bootstrap_tags %}
+
+{% block body_content %}
+    <h3 id="status"></h3>
+    <button id="btnLogin">Facebook login</button>
+    <div id="connectionTestResult"></div>
+    <button id="btnTestConnection">test connection</button>
+    <button id="btnCreateConnection">Save connection</button>
+    <div>
+        <form id="formCreateConnection" style="display:none;" class="create-connection-form form-horizontal"
+              action="{% url 'wizard:create_connection' connector_id=1 %}"
+              method="post" autocomplete="off">
+            {% csrf_token %}
+            {{ form|as_bootstrap }}
+            {% if form.error %}
+                <div class="error">{{ form.error }}</div>
+            {% endif %}
+        </form>
+    </div>
+    <div id="fb-root"></div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        function fbLogin() {
+            FB.login(function (response) {
+                console.log(response)
+                if (response.authResponse) {
+                    window.location.reload(false);
+                }
+            }, {scope: 'manage_pages'});
+        }
+
+        function statusChangeCallback(response) {
+            console.log(response)
+            if (response.status === 'connected') {
+                user_access_token = response.authResponse.accessToken;
+                $('h3#status').html('Has autorizado a nuestra apliación!');
+                $('#btnLogin').hide();
+            } else if (response.status === 'not_authorized') {
+                $('#btnLogin').show();
+            } else {
+                $('#btnLogin').show();
+            }
+        }
+        $(document).ready(function () {
+            {% with app_id='1860382657578411' %}
+                window.fbAsyncInit = function () {
+                    FB.init({
+                        appId: '{{ app_id }}',
+                        xfbml: true,
+                        version: 'v2.10'
+                    });
+                    FB.getLoginStatus(function (response) {
+                        statusChangeCallback(response);
+                    });
+                };
+                (function (d, s, id) {
+                    var js, fjs = d.getElementsByTagName(s)[0];
+                    if (d.getElementById(id)) return;
+                    js = d.createElement(s);
+                    js.id = id;
+                    js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.10&appId={{ app_id }}";
+                    fjs.parentNode.insertBefore(js, fjs);
+                }(document, 'script', 'facebook-jssdk'));
+            {% endwith %}
+
+            $('button#btnLogin').click(function () {
+                fbLogin();
+            });
+            $('button#btnTestConnection').click(function () {
+                console.log("test")
+                $('form#formCreateConnection').attr('action', "{% url 'connection:test' connector_id=connector_id %}");
+                $('form#formCreateConnection').attr('is_ajax', true);
+                $('form#formCreateConnection').submit();
+
+            });
+
+            $('button#btnCreateConnection').click(function () {
+                console.log("create")
+                $('form#formCreateConnection').attr('action', "{% url 'connection:create' connector_id=connector_id %}");
+                $('form#formCreateConnection').attr('is_ajax', false);
+                $('form#formCreateConnection').submit();
+            });
+            $('form#formCreateConnection').submit(function () {
+                $(this).find('input#id_name').val('Facebook Leads Connection');
+                $(this).find('input#id_token').val(user_access_token);
+                if ($(this).attr('is_ajax') == true || $(this).attr('is_ajax') == 'true') {
+                    console.log("ajax")
+                    var url = $(this).attr('action');
+                    var data = $(this).serialize();
+                    console.log(data)
+                    console.log(url)
+                    $.ajax({
+                        method: "POST",
+                        url: url,
+                        data: $(this).serialize(),
+                    }).done(function (response) {
+                        if (response.data == true || response.data == 'true') {
+                            $('button#btnCreateConnection').prop("disabled", false);
+                            $('div#connectionTestResult').html('Connection is valid.');
+                        }
+                    });
+                    return false;
+                }
+            })
+
+        })
+    </script>
+{% endblock %}

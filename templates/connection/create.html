@@ -1,12 +1,58 @@
-{% extends 'commons/site_base.html' %}
+{% extends 'layouts/base.html' %}
 {% load static %}
-{% load bootstrap_tags %}
 
-{% block body %}
-    <div>
-        {% block body_title %}
-            new connection: {{ connection }}
-        {% endblock %}
-    </div>
-    {% block body_content %}{% endblock %}
+New Connection: {% block connector_name %}{{ connector_name }}{% endblock %}
+
+{% block body_base %}
+    <form id="formCreateConnection" class="" action="" method="post" autocomplete="off" data-ajax="false">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <br/>
+        <button id="btnTestConnection">Test connection</button>
+        <div id="connectionTestResult">Waiting for test</div>
+        <br/>
+        <button id="btnCreateConnection" disabled="disabled">Create connection</button>
+        {% if form.error %}
+            <div class="error">{{ form.error }}</div>
+        {% endif %}
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            $('button#btnTestConnection').click(function () {
+                $('form#formCreateConnection').attr('action', "{% url 'connection:test' connector_id=connector_id %}");
+                $('form#formCreateConnection').attr('data-ajax', true);
+            });
+
+            $('button#btnCreateConnection').click(function () {
+                $('form#formCreateConnection').attr('action', "{% url 'connection:create' connector_id=connector_id %}");
+                $('form#formCreateConnection').attr('data-ajax', false);
+            });
+
+            $('form#formCreateConnection').submit(function () {
+                if ($(this).attr('data-ajax') == 'true') {
+                    $.ajax({
+                        method: "POST",
+                        url: $(this).attr('action'),
+                        data: $(this).serialize(),
+                    }).done(function (response) {
+                        if (response.test == true) {
+                            $('button#btnCreateConnection').prop("disabled", false);
+                            $('div#connectionTestResult').html('Connection is valid.');
+                        } else if (response.test == false) {
+                            $('button#btnCreateConnection').prop("disabled", true);
+                            $('div#connectionTestResult').html('Connection is invalid.');
+                        } else {
+                            $('button#btnCreateConnection').prop("disabled", true);
+                            $('div#connectionTestResult').html('Unexpected error.');
+                        }
+                    });
+                    return false;
+                }
+            });
+        });
+    </script>
 {% endblock %}

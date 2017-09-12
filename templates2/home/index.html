@@ -1,0 +1,48 @@
+{% extends "commons/anonymous_base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block head_title %}{% trans "Log in" %}{% endblock %}
+
+{% block body %}
+    <div class="login-home">
+        <div class="loginpage">
+            <div class="login-page">
+                <div class="form col-sm-4 col-sm-offset-3">
+                    <form class="login-form form-horizontal" action="{% url "account_login" %}" method="post"
+                          autocomplete="off">
+                        {% csrf_token %}
+                        <div class="logo">
+                            <img src="{% static 'img/Logo_Login_Gear_Plug.png' %}">
+                        </div>
+                        <p>Enter your e-mail acount and your password to sign in</p>
+                        {{ form.login }}
+                        {{ form.password }}
+                        <button id="singlebutton" name="singlebutton">Login</button>
+                        {% if form.error %}
+                            <div class="error">{{ form.error }}</div>
+                        {% endif %}
+                        <p class="message">Not registered? <a href="{% url 'account_signup' %}">Create an account</a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block styles %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'css/validationEngine.jquery.css' %}">
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script src="{% static 'js/jquery.validationEngine.js' %}"></script>
+    <script src="{% static 'js/jquery.validationEngine-es.js' %}"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("form").validationEngine();
+        });
+    </script>
+{% endblock %}

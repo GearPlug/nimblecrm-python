@@ -1,0 +1,29 @@
+{% extends 'connection/create.html' %}
+{% load bootstrap_tags %}
+
+{% block body_content %}
+    <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
+          method="post" autocomplete="off">
+        <a href="javascript:auth('{{ google_auth_url }}')">Google Auth</a>
+        {% csrf_token %}
+    </form>
+    {{ request.session.google_credentials }}
+{% endblock %}
+
+
+{% block scripts %}
+    {{ block.super }}
+
+    <script type="application/javascript">
+        function auth(url) {
+            var thisIsAnObject = {foo: 'bar'};
+            var win = window.open(url, 'GoogleAuth', 'width=972,height=660,modal=yes,alwaysRaised=yes');
+            win.myVariable = thisIsAnObject;
+            var checkConnect = setInterval(function () {
+                if (!win || !win.closed) return;
+                clearInterval(checkConnect);
+                window.location.reload();
+            }, 100);
+        }
+    </script>
+{% endblock %}

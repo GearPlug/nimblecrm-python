@@ -1,62 +1,34 @@
-{% extends 'commons/site_base.html' %}
+{% extends 'layouts/site_base.html' %}
 {% load static %}
 
-{% block scripts %}
-    {{ block.super }}
-    <script>
-        $(document).ready(function () {
-            $('select#spreadsheet').on('change', function () {
-                getSpreadsheetInfo($(this).val())
-            });
+{% block content %}
+    {# USER INFO #}
+    <div class="col-md-12 dashboard_border">
+        <div class="col-md-4">
+            User: {{ request.user }}
+        </div>
+        <div class="col-md-4">
+            Connectors and Credits Information
+        </div>
+        <div class="col-md-4">
+            Availability graph
+        </div>
+    </div>
 
-            $('#sheet-selector').on('change', 'select#sheet', function () {
-                getSpreadsheetValues($('select#spreadsheet option:selected').val(), $(this).val())
-            })
-        });
-
-        function getSpreadsheetInfo(_id) {
-            var url = '/account/async/spreadsheet/info/ID/'.replace('ID', _id);
-            var callback = function (response) {
-                if (response.Success == true) {
-                    $('#sheet-selector').html(response.sheets)
-                }
-            };
-            getData(url, callback);
-        }
-
-        function getSpreadsheetValues(_id, sheet_id) {
-            var url = '/account/async/spreadsheet/values/ID/SHEET/'.replace('ID', _id).replace('SHEET', sheet_id);
-            var callback = function (response) {
-                if (response.Success == true) {
-                    $('#column-count').text(response.Data.ColumnCount);
-                    $('#row-count').text(response.Data.RowCount);
-                    $('#table').html(response.Data.Table)
-                }
-            };
-            getData(url, callback);
-        }
-
-        function getData(url, callback) {
-            $.ajax({
-                url: url,
-                type: 'GET',
-                success: function (response) {
-                    callback(response);
-                }
-            });
-        }
-    </script>
-{% endblock %}
-
-{% block body %}
-    DASHBOARD MAIN
-    <select id="spreadsheet">
-        {% for s in sheets %}
-            <option value="{{ s.0 }}">{{ s.1 }}</option>
+    {# GROUPS (CARPETAS) #}
+    <div class="col-md-12 dashboard_border">
+        Groups:
+        <br />
+        {% for group in gear_groups %}
+            {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=4%}
         {% endfor %}
-    </select>
-    <div id="sheet-selector"></div>
-    COLUMNAS <span id="column-count"></span>
-    FILAS <span id="row-count"></span>
-    <div id="table"></div>
+    </div>
+    {# GEARS "MAS USADOS" #}
+    <div class="col-md-12 dashboard_border">
+        Gears:
+        <br />
+        {% for gear in used_gears %}
+            {% include 'gear/snippets/gear_small.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
+        {% endfor %}
+    </div>
 {% endblock %}

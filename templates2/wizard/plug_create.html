@@ -1,0 +1,71 @@
+{% extends 'commons/site_base.html' %}
+{% load static %}
+{% load bootstrap_tags %}
+
+{% block body %}
+    <div class="box-tool">
+        <div class="box-title">
+            <h2>new plug</h2>
+        </div>
+
+        <form class="create-gear-form form-horizontal" action="" method="post" autocomplete="off" id="create-plug">
+            <div class="panel">
+                <div class="container">
+                    {% csrf_token %}
+                    {{ form|as_bootstrap }}
+                    <button id="singlebutton" name="singlebutton">Create gear</button>
+                    {% if form.error %}
+                        <div class="error">{{ form.error }}</div>
+                    {% endif %}
+                    Connection id:
+                    {% if request.session.source_connection_id %}
+                        {{ request.session.source_connection_id }}
+                    {% elif request.session.target_connection_id %}
+                        {{ request.session.target_connection_id }}
+                    {% endif %}
+                </div>
+            </div>
+            <div id="action_list">Action:</div>
+            <br>
+            <div id="specification_list"></div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            {% if request.session.source_connection_id != None %}
+                $('select#id_connection').val({{ request.session.source_connection_id }});
+            {% elif request.session.target_connection_id %}
+                $('select#id_connection').val({{ request.session.target_connection_id }});
+            {% endif %}
+            var url_actions = "{% url 'plug:action_list' %}";
+            $.ajax({method: "POST", url: url_actions, data: {type: '{{ plug_type }}',}})
+                .done(function (response) {
+                    var actions = response;
+                    var selectList = document.createElement("select");
+                    selectList.id = "action_list_selector";
+                    selectList.name = "action-id";
+                    $('#action_list').append(selectList);
+                    var options_str = '<option value="">--------------</option>';
+                    actions.forEach(function (a) {
+                        options_str += '<option value="' + a.id + '">' + a.name + '</option>';
+                    })
+                    $('#action_list_selector').html(options_str);
+                });
+
+            $(document).on('change', '#action_list_selector', function () {
+                var value = $(this).val();
+                var url_specifications = "{% url 'plug:action_specification_list' action_id=123 %}".replace(/123/, value.toString());
+                if (value != '') {
+                    $.ajax({method: "POST", url: url_specifications, data: {pk: value}})
+                        .done(function (response) {
+                            $('#specification_list').html(response);
+                        })
+                }
+            })
+        })
+    </script>
+{% endblock %}

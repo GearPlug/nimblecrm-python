@@ -1,0 +1,38 @@
+{% block body %}
+    {% for o in object_list %}
+        <div class="specification" id="speicification-container-{{ o.id }}">
+            {{ o.name }}:
+            <select data-name="{{ o.name|slugify|lower }}" data-id="{{ o.id }}" name="specification-{{ o.id }}"
+                    class="specification_select" is-loaded="false">
+                <option>---------</option>
+            </select>
+        </div><br>
+    {% endfor %}
+{% endblock %}
+
+
+{% block scripts %}
+{#    {{ block.super }}#}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            $(document).on('click', 'select.specification_select', function () {
+                var select = $(this);
+                var is_loaded = $(select).attr('is-loaded');
+                if (is_loaded == false || is_loaded == 'false') {
+                    var url = "{% url 'plug:action_specification_options' %}";
+                    $.ajax({
+                        method: "POST",
+                        url: url,
+                        data: {
+                            connection_id: {% if request.session.source_connection_id %}{{ request.session.source_connection_id }}{% elif request.session.target_connection_id %}{{ request.session.target_connection_id }}{% endif %},
+                            action_specification_id: $(select).attr('data-id')
+                        }
+                    }).done(function (response) {
+                        $(select).html(response).trigger('change');
+                        $(select).attr('is-loaded', true);
+                    });
+                }
+            });
+        })
+    </script>
+{% endblock %}

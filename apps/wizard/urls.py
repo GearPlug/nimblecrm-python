@@ -1,36 +1,60 @@
 from django.conf.urls import url
-from apps.wizard.views import CreateGearView, CreatePlugView, CreateConnectionView, TestPlugView, \
-    ActionSpecificationsView, CreateGearMapView, ListConnectorView, ListConnectionView, ActionListView, MSSQLFieldList, \
-    ListGearView, GoogleDriveSheetList, GoogleSheetsWorksheetList, SugarCRMModuleList, MySQLFieldList, UpdateGearView, \
-    PostgreSQLFieldList, FacebookPageList, FacebookFormList, MailChimpListsList
+from apps.wizard.views import JiraWebhookEvent, JiraProjectList, \
+     PaypalWebhookEvent, \
+     ZohoCRMModuleList, YouTubeWebhookEvent, \
+    YouTubeChannelsList, ShopifyList, ShopifyWebhookEvent#, SalesforceSObjectList, SalesforceEventList
+
+from apps.connection.views import ListConnectionView, ListConnectorView, CreateConnectionView
+from apps.gear.views import ListGearView, CreateGearView, UpdateGearView, CreateGearMapView
+from apps.plug.views import ActionListView, ActionSpecificationsListView, CreatePlugView, TestPlugView
 
 urlpatterns = [
+    # GEAR LIST
+    url(r'^gear/list/$', ListGearView.as_view(), name='gear_list'),
+    # GEAR CREATE OR UPDATE
     url(r'^gear/create/$', CreateGearView.as_view(), name='gear_create'),
     url(r'^gear/update/(?P<pk>\d+)/$', UpdateGearView.as_view(), name='gear_update'),
-    url(r'^gear/list/$', ListGearView.as_view(), name='gear_list'),
-    url(r'gear/map/(?P<gear_id>\d+)/$', CreateGearMapView.as_view(), name='create_gear_map'),
+    # CONNECTOR LIST
     url(r'^connector/list/(?P<type>(source|target)+)/$', ListConnectorView.as_view(), name='connector_list'),
-    url(r'connection/create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create_connection'),
+    # CONNECTION LIST
     url(r'^connection/list/(?P<connector_id>\d+)/(?P<type>(source|target)+)/$', ListConnectionView.as_view(),
         name='connection_list'),
+    # CONNECTION CREATE
+    url(r'^connection/create/(?P<connector_id>\d+)/$', CreateConnectionView.as_view(), name='create_connection'),
+    # PLUG CREATE
     url(r'^plug/create/(?P<plug_type>(source|target)+)/$', CreatePlugView.as_view(), name='plug_create'),
-    url('^plug/test/(?P<pk>\d+)/$', TestPlugView.as_view(), name='plug_test'),
+    # PLUG ACTION LIST (AJAX)
+    url(r'^plug/action/(?P<pk>\d+)/specifications/$', ActionSpecificationsListView.as_view(),
+        name='action_specifications'),
+    # PLUG ACTION SPECIFICATION LIST (AJAX)
     url(r'^plug/action/list/$', ActionListView.as_view(), name='action_list'),
-    url(r'^plug/action/(?P<pk>\d+)/specifications/$', ActionSpecificationsView.as_view(), name='action_specifications'),
-    # PLUG CREATION ASYNC
-    # GoogleSheets
-    url(r"async/google/drive/sheets/list/", GoogleDriveSheetList.as_view(), name='async_google_drive_sheets'),
-    url(r"async/google/sheet/worksheets/", GoogleSheetsWorksheetList.as_view(), name='async_google_sheet_worksheets'),
-    # SugarCRM
-    url(r"async/sugarcrm/module/list/", SugarCRMModuleList.as_view(), name='async_sugarcrm_modules'),
-    # MySQL
-    url(r"async/mysql/field/list/", MySQLFieldList.as_view(), name='async_mysql_fields'),
-    url(r"async/mssql/field/list/", MSSQLFieldList.as_view(), name='async_mssql_fields'),
-    # PostgreSQL
-    url(r"async/postgresql/field/list/", PostgreSQLFieldList.as_view(), name='async_postgresql_fields'),
-    # Facebook
-    url(r"async/facebook/page/list/", FacebookPageList.as_view(), name='async_facebook_pages'),
-    url(r"async/facebook/form/list/", FacebookFormList.as_view(), name='async_facebook_forms'),
-    # MailChimp
-    url(r'async/mailchimp/lists/list/', MailChimpListsList.as_view(), name='async_mailchimp_lists'),
+    # PLUG TEST
+    url('^plug/test/(?P<pk>\d+)/$', TestPlugView.as_view(), name='plug_test'),
+    # GEAR MAP
+    url(r'^gear/map/(?P<gear_id>\d+)/$', CreateGearMapView.as_view(), name='create_gear_map'),
+
+    # PLUG CREATION SPECIFICS FOR CONNECTOR
+    # Jira
+    url(r"async/jira/field/list/", JiraProjectList.as_view(), name='async_jira_projects'),
+    url(r'jira/webhook/event/', JiraWebhookEvent.as_view(), name='jira_webhook_event'),
+    # GetResponse
+
+    # Shopify
+    url(r"async/shopify/topic/list/", ShopifyList.as_view(), name='async_shopify_topic_list'),
+    url(r'shopify/webhook/event/(?P<plug_id>\d+)/', ShopifyWebhookEvent.as_view(),
+        name='shopify_webhook_event'),
+
+    # Paypal
+    url(r'paypal/webhook/event/', PaypalWebhookEvent.as_view(), name='paypal_webhook_event'),
+
+    # YouTube
+    url(r"async/youtube/channels/list/", YouTubeChannelsList.as_view(), name='async_youtube_channels'),
+    url(r'youtube/webhook/event/', YouTubeWebhookEvent.as_view(), name='youtube_webhook_event'),
+
+    # ZohoCRM
+    url(r"async/zohocrm/module/list/", ZohoCRMModuleList.as_view(), name='async_zohorcrm_modules'),
+
+    # Salesforce
+    # url(r"async/salesforce/sobjects/list/", SalesforceSObjectList.as_view(), name='async_salesforce_sobjects'),
+    # url(r"async/salesforce/event/list/", SalesforceEventList.as_view(), name='async_salesforce_events'),
 ]

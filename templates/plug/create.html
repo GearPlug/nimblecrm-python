@@ -1,22 +1,54 @@
-{% extends 'commons/site_base.html' %}
+{% extends "layouts/site_base.html" %}
 {% load static %}
-{% load bootstrap_tags %}
 
-{% block body %}
-<div class="box-tool animated fadeInDown">
-<div class="box-title">
-<h2>new plug</h2>
-</div>
-<div class="panel">
-    <form class="create-plug-form form-horizontal" action="" method="post" autocomplete="off">
+{% block content %}
+    <form class="" action="" method="post" autocomplete="off" id="create-plug">
         {% csrf_token %}
-        {{ form|as_bootstrap }}
-        <button id="singlebutton" name="singlebutton">Create plug</button>
+        <div style="display:none;">{{ form }}</div>
         {% if form.error %}
-        <div class="error">{{ form.error }}</div>
+            <div class="error">{{ form.error }}</div>
         {% endif %}
+        <div id="action_list">Action:</div>
+        <br>
+        <div id="specification_list"></div>
+
+        <button id="singlebutton" name="singlebutton">Create Plug</button>
     </form>
-    {% block extra %}{% endblock %}
-</div>
-</div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            function create_select(id, name, options) {
+                var selectList = document.createElement("select");
+                selectList.id = id;
+                selectList.name = name;
+                $(selectList).html(options)
+                return selectList;
+            }
+            {% if request.session.source_connection_id != None %}
+                $('select#id_connection').val({{ request.session.source_connection_id }});
+            {% elif request.session.target_connection_id %}
+                $('select#id_connection').val({{ request.session.target_connection_id }});
+            {% endif %}
+            $.ajax({method: "POST", url: "{% url 'plug:actions' %}", data: {type: '{{ plug_type }}',}})
+                .done(function (response) {
+                    console.log(response)
+                    var select = create_select("action_list_selector", "action-id", response);
+                    $('#action_list').append(select);
+                });
+
+            $(document).on('change', '#action_list_selector', function () {
+                var value = $(this).val();
+                var url_specifications = "{% url 'plug:action_specifications' action_id=123 %}".replace(/123/, value.toString());
+                if (value != '') {
+                    $.ajax({method: "POST", url: url_specifications, data: {pk: value}})
+                        .done(function (response) {
+                            $('#specification_list').html(response);
+                        })
+                }
+            })
+        })
+    </script>
 {% endblock %}

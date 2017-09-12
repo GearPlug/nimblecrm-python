@@ -3,18 +3,22 @@ from datetime import timedelta
 # List of modules to import when celery starts.
 CELERY_IMPORTS = ('apiconnector.celery',)
 
-## Broker settings.
-# BROKER_URL = 'redis://localhost:6379/0'
-BROKER_URL = 'amqp://guest:guest@localhost:5672//'
+# Broker settings
+# BROKER_URL = 'sqs://AKIAIWBWN7I5X2OEKRAQ:nhLbsWGf74NNq+bKC49USY7b3bzsNLEClvVGRAYi@'
+# BROKER_TRANSPORT_OPTIONS = {
+#     # 'region': 'us-east-1',
+#     'polling_interval': 60,
+# }
+BROKER_URL = 'redis://localhost:6379'
+CELERY_DEFAULT_QUEUE = 'grplug0'
+SQS_QUEUE_NAME = 'grplug0'
 
-## Using the database to store task state and results.
-# CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'amqp://guest:guest@localhost:5672//'
-
+# Using the database to store task state and results.
+# CELERY_RESULT_BACKEND = 'sqs://AKIAIWBWN7I5X2OEKRAQ:nhLbsWGf74NNq+bKC49USY7b3bzsNLEClvVGRAYi@'
 CELERYBEAT_SCHEDULE = {
     'update-plugs-1-minutes': {
-        'task': 'apps.gp.tasks.update_gears',
-        'schedule': timedelta(minutes=1, ),  # , seconds=30
+        'task': 'apps.gp.tasks.update_all_gears',
+        'schedule': timedelta(seconds=40, ),  # , seconds=30
     },
 }
 

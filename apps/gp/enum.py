@@ -1,27 +1,81 @@
 from enum import Enum
 from django.apps import apps
-from apps.gp.controllers import FacebookController, MySQLController, SugarCRMController, MailChimpController, \
-    GoogleSpreadSheetsController, PostgreSQLController, MSSQLController
+from apps.gp.controllers.utils import dynamic_import
 
 
 class ConnectorEnum(Enum):
-    Facebook = 1
-    MySQL = 2
-    SugarCRM = 3
-    MailChimp = 4
-    GoogleSpreadSheets = 5
-    PostgreSQL = 6
-    MSSQL = 7
+    FacebookLeads = 1, 'lead', 'special'
+    MySQL = 2, 'database', 'form'
+    SugarCRM = 3, 'crm', 'form'
+    MailChimp = 4, 'email_marketing', 'authorization'
+    GoogleSpreadSheets = 5, 'ofimatic', 'authorization'
+    PostgreSQL = 6, 'database', 'form'
+    MSSQL = 7, 'database', 'form'
+    Slack = 8, 'im', 'authorization'
+    JIRA = 9, 'project_management', 'form'
+    Bitbucket = 10, 'repository', 'form'
+    GoogleForms = 11, 'lead', 'authorization'
+    Twitter = 12, 'social', 'authorization'
+    GetResponse = 13, 'email_marketing'
+    GoogleContacts = 14, 'directory', 'authorization'
+    SurveyMonkey = 15, 'lead', 'authorization'
+    GoogleCalendar = 16, 'ofimatic', 'authorization'
+    MercadoLibre = 17, 'ecomerce', 'special'
+    AmazonSellerCentral = 18, 'ecomerce'
+    PayU = 19, 'ecomerce'
+    Gmail = 20, 'email', 'authorization'
+    Ebay = 21, 'ecomerce'
+    WooComerce = 22, 'ecomerce'
+    Instagram = 23, 'social', 'authorization'
+    YouTube = 24, 'social', 'authorization'
+    Vimeo = 25, 'social'
+    ZohoCRM = 26, 'crm'
+    WunderList = 27, 'ofimatic', 'authorization'
+    SMS = 28, 'im'
+    SMTP = 29, 'email'
+    Evernote = 30, 'ofimatic', 'authorization'
+    Salesforce = 31, 'crm'
+    Vtiger = 32, 'crm'
+    ProsperWorks = 33, 'crm'
+    HubSpot = 34, 'crm'
+    PipeDrive = 35, 'crm'
+    DynamicCRM = 36, 'crm'
+    FreshDesk = 37, 'crm'
+    AgileCRM = 38, 'crm'
+    GitLab = 39, 'repository', 'authorization'
+    Shopify = 40, 'ecomerce', 'special'
+    Dropbox = 41, '', 'authorization'
+    Magento = 42, 'ecomerce'
+    Asana = 43, 'project_management', 'authorization'
+    Mandrill = 44, 'email_marketing'
+    ActiveCampaign = 45, 'crm', 'form'
+
+    def __new__(cls, *args, **kwargs):
+        obj = object.__new__(cls)
+        obj._value_ = args[0]
+        obj.category = args[1]
+        try:
+            obj.connection_type = args[2]
+        except:
+            obj.connection_type = 'form'
+        return obj
 
     def get_connector_data(connector):
-        connector = ConnectorEnum.get_connector(connector)
-        return ConnectorEnum.get_model(connector), ConnectorEnum.get_fields(connector)
+        return ConnectorEnum.get_model(connector), ConnectorEnum.get_fields(
+            connector)
 
-    def get_connector(connector_id):
-        connector_id = int(connector_id)
-        for field in ConnectorEnum:
-            if connector_id == int(field.value):
-                return field
+    def get_connector(connector_id=None, name=None):
+        if connector_id is not None:
+            if isinstance(connector_id, ConnectorEnum):
+                connector_id = connector_id.value
+            connector_id = int(connector_id)
+            for field in ConnectorEnum:
+                if connector_id == int(field.value):
+                    return field
+        elif name is not None and isinstance(name, str):
+            for field in ConnectorEnum:
+                if name.lower() == field.name.lower():
+                    return field
 
     def get_connector_list():
         return [field for field in ConnectorEnum]
@@ -35,73 +89,26 @@ class ConnectorEnum(Enum):
         return apps.get_model('gp', '%sConnection' % connector.name)
 
     def get_controller(connector):
-        if connector == ConnectorEnum.Facebook:
-            return FacebookController
-        elif connector == ConnectorEnum.MySQL:
-            return MySQLController
-        elif connector == ConnectorEnum.SugarCRM:
-            return SugarCRMController
-        elif connector == ConnectorEnum.MailChimp:
-            return MailChimpController
-        elif connector == ConnectorEnum.GoogleSpreadSheets:
-            return GoogleSpreadSheetsController
-        elif connector == ConnectorEnum.PostgreSQL:
-            return PostgreSQLController
-        elif connector == ConnectorEnum.MSSQL:
-            return MSSQLController
-        return None
+        return dynamic_import(connector.name,
+                              path="apps.gp.controllers.{0}".format(
+                                  connector.category), suffix='Controller')
 
 
-class MapField(object):
-    """
-    name = None
-    label = None
-    field_type = None
-    options = None -> choices = None
-    default = None
-    required = False
-    max_length = None
-    """
+class GoogleAPIEnum(Enum):
+    GoogleSpreadSheets = 1, 'https://www.googleapis.com/auth/drive'
+    GoogleForms = 2, 'https://www.googleapis.com/auth/drive'
+    GoogleCalendar = 3, 'https://www.googleapis.com/auth/calendar'
+    Youtube = 4, 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload'
+    GoogleContacts = 5, 'https://www.google.com/m8/feeds/'
+    Gmail = 6, 'https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/pubsub'
 
-    def __init__(self, d, controller=None, **kwargs):
-        if controller == ConnectorEnum.SugarCRM:
-            if 'name' in d:
-                self.name = d['name']
-            if 'label' in d:
-                self.label = d['label']
-            if 'options' in d:
-                if isinstance(d['options'], dict):
-                    self.choices = [(d['options'][choice]['name'], d['options'][choice]['value'])
-                                    for choice in d['options']]
-                    self.choices.insert(0, ('', ''))
-            if 'type' in d:
-                self.field_type = d['type']
-            if 'len' in d:
-                try:
-                    self.max_length = int(d['len'])
-                except:
-                    self.max_length = 200
-                    # print('field %s' % self.attrs)
-        elif controller == ConnectorEnum.MailChimp:
-            if 'tag' in d:
-                self.name = d['tag']
-            if 'name' in d:
-                self.label = d['name']
-            if 'required' in d:
-                self.required = d['required']
-            if 'default_value' in d and d['default_value'] != '':
-                self.default = d['default_value']
-            if 'type' in d:
-                self.field_type = d['type']
-            if 'options' in d:
-                if 'size' in d['options']:
-                    try:
-                        self.max_length = int(d['options']['size'])
-                    except:
-                        pass
-        else:
-            pass
+    def __new__(cls, *args, **kwargs):
+        obj = object.__new__(cls)
+        obj._value_ = args[0]
+        obj.scope = args[1]
+        return obj
 
-    @property
-    def attrs(self):
-        return [key for key, value in self.__dict__.items()]
+    def get_api(name=None):
+        for field in GoogleAPIEnum:
+            if name.lower() == field.name.lower():
+                return field

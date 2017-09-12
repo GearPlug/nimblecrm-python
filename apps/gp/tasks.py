@@ -1,72 +1,88 @@
-from apps.gp.models import Gear, StoredData, GearMapData
+from apps.gp.models import Gear, StoredData, GearMapData, Plug
 from apps.gp.enum import ConnectorEnum
-from apps.gp.controllers import SugarCRMController
 from apiconnector.celery import app
 from django.core.cache import cache
+from django.db.models import ObjectDoesNotExist
 from django.utils import timezone
+
 from collections import OrderedDict
 
 LOCK_EXPIRE = 60 * 1
 
 
+# @app.task(queue="beat")
 @app.task
-def update_gears():
-    print("Starting to update gears...")
-    active_gears = Gear.objects.filter(is_active=True, gear_map__is_active=True).values('id')
-    gear_amount = len(active_gears)
-    try:
-        print("A total of %s gears will be updated." % len(active_gears))
-    except ZeroDivisionError:
-        print("There are no gears to update.")
-        return
-
+def update_all_gears():
+    print("Starting to update all gears...")
+    active_gears = Gear.objects.filter(is_active=True, gear_map__is_active=True).prefetch_related()
+    gear_amount = active_gears.count()
+    print("A total of %s gears will be updated." % gear_amount)
     for gear in active_gears:
-        update_gear.s(gear['id']).apply_async()
-    return True
+        connector = ConnectorEnum.get_connector(gear.source.connection.connector_id)
+        update_plug.s(gear.source.id, gear.id).apply_async(queue=connector.name.lower())  # CON COLAS
+        # update_plug.s(gear.source.id, gear.id).apply_async()  # SIN COLAS
+        print("Assigning plug {0} to queue: {1}.".format(gear.source.id, connector.name.lower()))
 
 
+# @app.task(queue="connector")
 @app.task
-def update_gear(gear_id):
+def update_plug(plug_id, gear_id, **query_params):
+    plug = Plug.objects.get(pk=plug_id)
     gear = Gear.objects.get(pk=gear_id)
-    is_first = True if gear.gear_map.last_sent_stored_data_id is None else False
-    lock_id = 'lock-{0}-gear'.format(gear.target.id)
+    lock_id = 'lock-{0}-gear'.format(plug.id)
     acquire_lock = lambda: cache.add(lock_id, 'true', LOCK_EXPIRE)
     release_lock = lambda: cache.delete(lock_id)
     if acquire_lock():
-        print('Updating gear: %s.' % gear.id)
+        print("Updating Plug: {0} from Gear: {1} as {2}".format(plug_id, gear_id, plug.plug_type))
         try:
-            # SOURCE
-            source_connector = ConnectorEnum.get_connector(gear.source.connection.connector.id)
-            controller_class = ConnectorEnum.get_controller(source_connector)
-            if controller_class == SugarCRMController:
-                controller = controller_class(gear.source.connection.related_connection, gear.source,
-                                              gear.source.plug_specification.all()[0].value)
-            else:
-                controller = controller_class(gear.source.connection.related_connection, gear.source)
-            has_new_data = controller.download_source_data(from_date=gear.gear_map.last_source_update)
-
-            # TARGET
-            target_connector = ConnectorEnum.get_connector(gear.target.connection.connector.id)
-            controller_class = ConnectorEnum.get_controller(target_connector)
-            kwargs = {'connection': gear.source.connection, 'plug': gear.source, }
+            query_params = {'connection': gear.source.connection, 'plug': gear.source, }
             if gear.gear_map.last_sent_stored_data_id is not None:
-                kwargs['id__gt'] = gear.gear_map.last_sent_stored_data_id
-            stored_data = StoredData.objects.filter(**kwargs)
-            if not stored_data:
-                return False
-            target_fields = OrderedDict((data.target_name, data.source_value) for data in
-                                        GearMapData.objects.filter(gear_map=gear.gear_map))
-            source_data = [{'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}}
-                           for item in stored_data.values_list('object_id').distinct()]
-            controller = controller_class(gear.target.connection.related_connection, gear.target)
-            entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
-            gear.gear_map.last_source_update = timezone.now()
-            gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id')[0].id
-            gear.gear_map.save()
+                query_params['id__gt'] = gear.gear_map.last_sent_stored_data_id
+            connector = ConnectorEnum.get_connector(plug.connection.connector.id)
+            controller_class = ConnectorEnum.get_controller(connector)
+            controller = controller_class(connection=plug.connection.related_connection, plug=plug)
+            ping = controller.test_connection()
+            if ping is not True:
+                print("Error en la connection.")
+                return
+            if plug.plug_type.lower() == 'source':
+                try:
+                    if plug.webhook.is_active:
+                        has_new_data = False
+                    else:
+                        has_new_data = True
+                except AttributeError as e:
+                    # print("LAST IS: {}".format(gear.gear_map.last_source_order_by_field_value))
+                    has_new_data = controller.download_source_data(
+                        last_source_record=gear.gear_map.last_source_order_by_field_value)
+                # print("download_result: {}".format(has_new_data))
+                if has_new_data and has_new_data is not True:
+                    gear.gear_map.last_source_order_by_field_value = has_new_data
+                    gear.gear_map.save(update_fields=['last_source_order_by_field_value', ])
+                stored_data = StoredData.objects.filter(**query_params)
+                if stored_data.count() > 0:
+                    target_connector = ConnectorEnum.get_connector(gear.target.connection.connector_id)
+                    # update_plug.s(gear.target.id, gear_id).apply_async()  # SIN COLAS
+                    update_plug.s(gear.target.id, gear_id).apply_async(queue=target_connector.name.lower())  # CON COLAS
+                    print("Assigning plug {0} to queue: {1}.".format(gear.target.id, connector.name.lower()))
+            elif plug.plug_type.lower() == 'target':
+                stored_data = StoredData.objects.filter(**query_params)
+                if stored_data.count() > 0:
+                    target_fields = OrderedDict((data.target_name, data.source_value) for data in
+                                                GearMapData.objects.filter(gear_map=gear.gear_map))
+                    source_data = [
+                        {'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}}
+                        for item in stored_data.values_list('object_id').distinct()]
+                    is_first = gear.gear_map.last_sent_stored_data_id is None
+                    entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
+                    print("Result target: {0}".format(entries))
+                    if entries or connector == ConnectorEnum.MailChimp:
+                        gear.gear_map.last_source_update = timezone.now()
+                        gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id').first().id
+                        gear.gear_map.save(update_fields=['last_source_update', 'last_sent_stored_data_id'])
         except Exception as e:
             raise
             print("Exception in task %s" % gear_id)
-            pass
         finally:
             release_lock()
         return True

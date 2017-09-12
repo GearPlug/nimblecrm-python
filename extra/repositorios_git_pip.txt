@@ -1,0 +1,6 @@
+# mercadolibre
+git+git://github.com/ingmferrer/python-sdk.git
+# sugarcrm
+git+git://github.com/gustav0/sugarcrm.git
+# evernote
+git+git://github.com/evernote/evernote-sdk-python3.git

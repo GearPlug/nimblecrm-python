@@ -1,83 +1,84 @@
-{% extends 'commons/site_base.html' %}
+{% extends 'layouts/site_base.html' %}
 {% load static %}
-{% load bootstrap_tags %}
-{% block body %}
-    <div class="box-tool animated fadeInDown list-panel-control">
-        <div class="box-title">
-            <h2>gear list</h2>
-        </div>
-        <div class="panel clearfix">
-            <h3>Control Panel</h3>
-            <ul>
-                {% for gear in object_list %}
-                    <li>
-                        <div class="name col-md-7 col-sm-4 col-xs-12">
-                            <p>
-                                <img src="{{ gear.source.connection.connector.icon.url }}" height="20" width="20">
-                                <span> > </span>
-                                <img src="{{ gear.target.connection.connector.icon.url }}" height="20" width="20">
-                                {{ gear.name }}
-                            </p>
-                            <div class="tools-re"><a href="javascript:;"><i class="fa fa-wrench" aria-hidden="true"></i></a>
-                            </div>
-                        </div>
-                        <div class="panel-control col-md-5 col-sm-8 col-xs-12">
-                            <p><a href="{% url 'gear:update' pk=gear.id %}" class="edit-btn">
-                                <i class="fa fa-pencil" aria-hidden="true"></i> Editar</a></p>
-                            <p><a href="{% url 'gear:delete' pk=gear.id %}" class="delete-btn">
-                                <i class="fa fa-trash" aria-hidden="true"></i>Eliminar</a></p>
-                            <p><i class="fa fa-link" aria-hidden="true"></i>
-                                <a href="{% url 'gear:toggle' gear_id=gear.id %}" class="toggle-gear-btn">
-                                    {{ gear.is_running }}</a></p>
-                        </div>
-                    </li>
-                {% empty %}
-                    <li class="empty-list">
-                        <div class="List-empty">
-                            <img src="/static/img/warning.png">
-                            <h1>You don't have any gears created</h1>
-                            <p>If you want to create your firts gear. Just click right <a href="/gear/create/">here</a>
-                            </p>
-                        </div>
-                    </li>
+
+{% block content %}
+    {# GRUPOS DE GEARS #}
+    <div class="col-md-12 gear_border_gear">
+        Groups:
+        <br/>
+        {% for group in object_list %}
+            {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=2 %}
+        {% endfor %}
+    </div>
+
+    {# GEARS DE CADA GRUPO #}
+    <div class="col-md-10 gear_border_gear">
+        Gears:
+        <br/>
+        {% for group in object_list %}
+            {# AQUI VA OCULTO #}
+            <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;"
+                 id="group_gear_{{ group.id }}"
+                 data-show="True">
+                <div>
+                    Group: {{ group.name }}&nbsp;
+                    <a href="{% url 'gear:update_group' pk=group.id %}">
+                        <i class="fa fa-wrench" aria-hidden="true"></i>
+                    </a>
+                </div>
+                {% for gear in group.gear.all %}
+                    {% include 'gear/snippets/gear_extend.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
                 {% endfor %}
-            </ul>
-        </div>
+            </div>
+            <br/>
+        {% endfor %}
+    </div>
+
+    <div class="col-md-2">
+        {# CREAR GRUPO DE GEARS #}
+        <a href="{% url 'gear:create_group' %}">New group</a>
+        <br/>
+        {# CREAR GEAR #}
+        <a href="{% url 'gear:create' %}">New gear</a>
     </div>
 {% endblock %}
 
 {% block scripts %}
-    {{ block.super }}
-    <script type="application/javascript"
-            href="{% static 'vendor/bootstrap-switch/js/bootstrap-switch.js' %}"></script>
-    <script type="application/javascript"
-            href="{% static 'vendor/bootstrap/js/bootstrap-switch.js' %}"></script>
-    <script type="application/javascript">
+    <script>
         $(document).ready(function () {
             var is_blocked = false;
-            console.log("Sii");
             $("a.toggle-gear-btn").click(function () {
                 var a = $(this);
                 var url = a.attr('href');
-
                 if (is_blocked == false) {
                     is_blocked = true;
                     $.ajax({
                         method: "POST", url: url
                     }).done(function (response) {
-                        console.log(response.data)
-                        a.html("" + response.data)
+                        if (response.data == true) {
+                            a.html('<i class="fa fa-pause" aria-hidden="true"></i>');
+                        } else if (response.data == false) {
+                            a.html('<i class="fa fa-play" aria-hidden="true"></i>');
+                        } else {
+                            a.html('<i class="fa fa-play" aria-hidden="true"></i>' + '&nbsp;' + response.data);
+                        }
                         is_blocked = false;
                     });
                 }
                 return false;
             });
         })
-        ;
-    </script>
-{% endblock %}
 
-{% block styles %}
-    {{ block.super }}
-    <link href="{% static 'vendor/bootstrap-switch/css/bootstrap3/bootstrap-switch.css' %}" rel="stylesheet">
+        function show_gear(id) {
+            var gear_id = document.getElementById("group_gear_" + id);
+            var data_show = gear_id.getAttribute('data-show');
+            if (data_show == "True") {
+                gear_id.style.display = "none";
+                gear_id.setAttribute('data-show', 'False');
+            } else {
+                gear_id.style.display = "block";
+                gear_id.setAttribute('data-show', 'True');
+            }
+        }
+    </script>
 {% endblock %}
