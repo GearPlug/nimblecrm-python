@@ -294,3 +294,7 @@ class HelpView(LoginRequiredMixin, TemplateView):
 
 class ActivityView(LoginRequiredMixin, TemplateView):
     template_name = 'home/activity.html'
+
+
+class TermsView(LoginRequiredMixin, TemplateView):
+    template_name = 'home/terms.html'

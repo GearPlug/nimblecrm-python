@@ -511,4 +511,16 @@ class ManageConnectionView(LoginRequiredMixin, ListView):
     login_url = '/accounts/login/'
 
     def get_queryset(self):
-        return self.model.objects.filter(user=self.request.user)
+        all_connections = self.model.objects.filter(user=self.request.user)
+        connectors = []
+        for connection in all_connections:
+            if connection.connector.name.lower() not in connectors:
+                connectors.append(connection.connector.name.lower())
+        result = []
+        for connector in connectors:
+            result.append(all_connections.filter(connector__name__iexact=connector))
+        return result
+
+    # def get_context_data(self, **kwargs):
+    #     context = super(ManageConnectionView, self).get_context_data(**kwargs)
+    #     return context
