@@ -251,7 +251,7 @@ class TestConnectionView(LoginRequiredMixin, View):
                 connection_object = Connection.objects.get(
                     pk=request.POST['connection_id']).related_connection
                 controller_class = ConnectorEnum.get_controller(connector)
-                controller = controller_class(connection_object)
+                controller = controller_class(connection=connection_object)
             else:
                 connection_model = ConnectorEnum.get_model(connector)
                 connection_params = {key: str(val)
@@ -259,7 +259,7 @@ class TestConnectionView(LoginRequiredMixin, View):
                 del (connection_params['csrfmiddlewaretoken'])
                 connection_object = connection_model(**connection_params)
                 controller_class = ConnectorEnum.get_controller(connector)
-                controller = controller_class(connection_object)
+                controller = controller_class(connection=connection_object)
             return JsonResponse({'test': controller.test_connection()})
         except Exception as e:
             raise
@@ -511,4 +511,16 @@ class ManageConnectionView(LoginRequiredMixin, ListView):
     login_url = '/accounts/login/'
 
     def get_queryset(self):
-        return self.model.objects.filter(user=self.request.user)
+        all_connections = self.model.objects.filter(user=self.request.user)
+        connectors = []
+        for connection in all_connections:
+            if connection.connector.name.lower() not in connectors:
+                connectors.append(connection.connector.name.lower())
+        result = []
+        for connector in connectors:
+            result.append(all_connections.filter(connector__name__iexact=connector))
+        return result
+
+    # def get_context_data(self, **kwargs):
+    #     context = super(ManageConnectionView, self).get_context_data(**kwargs)
+    #     return context

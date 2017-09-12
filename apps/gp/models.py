@@ -132,7 +132,7 @@ class InstagramConnection(models.Model):
         return self.name
 
 
-class MySQLConnection(models.Model):
+class MySQLConnection(models.Model):  # TODO Encrypt TEST
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mysql')
     name = models.CharField('name', max_length=200)
     host = models.CharField('host', max_length=200)
