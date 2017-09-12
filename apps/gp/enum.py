@@ -31,8 +31,8 @@ class ConnectorEnum(Enum):
     Vimeo = 25, 'social'
     ZohoCRM = 26, 'crm'
     WunderList = 27, 'ofimatic', 'authorization'
-    SMS = 28, 'im'
-    SMTP = 29, 'email'
+    SMS = 28, 'im', None
+    SMTP = 29, 'email', None
     Evernote = 30, 'ofimatic', 'authorization'
     Salesforce = 31, 'crm'
     Vtiger = 32, 'crm'

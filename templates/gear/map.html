@@ -2,11 +2,11 @@
 {% load static %}
 
 {% block content %}
-    MAP: ss
+    MAP:
     <form method="POST" action="" class="">
         {% csrf_token %}
         {{ form.as_p }}
-        <button>Create Map</button>
+        <button>{{ action }} Map</button>
     </form>
 {% endblock %}
 {% block styles %}
