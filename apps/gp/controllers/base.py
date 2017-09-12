@@ -16,22 +16,20 @@ class BaseController(object):
     _connector = None
     _log = logging.getLogger('controller')
 
-    def __init__(self, *args, **kwargs):
-        self.create_connection(*args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        self.create_connection(connection=connection, plug=plug, **kwargs)
 
     def create_connection(self, connection=None, plug=None):
         """
-        El args[0] debe ser la connection (especifica).
-        El args[1] puede ser el Plug o None.
-
-        :param args:
-        :return:
+            :param connection: can be either a base or specific connection.
+            :param plug:
+            :return:
         """
         if connection:
             if isinstance(connection, Connection):
                 connection = connection.related_connection
             self._connection_object = connection
-            self._connector = self._connection_object.connector
+            self._connector = self._connection_object.connection.connector
         if plug:
             self._plug = plug
         return
@@ -48,10 +46,12 @@ class BaseController(object):
     def download_source_data(self, **kwargs):
         if self._connection_object is not None and self._plug is not None:
             try:
-                return self.download_to_stored_data(self._connection_object, self._plug, **kwargs)
+                return self.download_to_stored_data(self._connection_object,
+                                                    self._plug, **kwargs)
             except TypeError:
                 print("CLASS TO FIX: {}".format(self))
-                return self.download_to_stored_data(self._connection_object, self._plug)
+                return self.download_to_stored_data(self._connection_object,
+                                                    self._plug)
 
         else:
             raise ControllerError("There's no active connection or plug.")

@@ -13,7 +13,7 @@ urlpatterns = [
     url(r'create/success/$', CreateConnectionSuccessView.as_view(), name='create_success'),
     # Test Connection
     url(r'^test/(?P<connector_id>\d+)/$', TestConnectionView.as_view(), name="test"),
-    # Connection list
+        # Connection list
     url(r'^list/(?P<connector_id>\d+)/(?P<type>(source|target)+)/$', ListConnectionView.as_view(),
         name='list'),
     # List Connectors

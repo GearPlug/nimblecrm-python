@@ -40,7 +40,7 @@ def update_plug(plug_id, gear_id, **query_params):
                 query_params['id__gt'] = gear.gear_map.last_sent_stored_data_id
             connector = ConnectorEnum.get_connector(plug.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(connector)
-            controller = controller_class(plug.connection.related_connection, plug)
+            controller = controller_class(connection=plug.connection.related_connection, plug=plug)
             ping = controller.test_connection()
             if ping is not True:
                 print("Error en la connection.")
