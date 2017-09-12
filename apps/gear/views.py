@@ -214,13 +214,16 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
                             field.source_value = v
                             field.save(update_fields=['source_value'])
                 except GearMapData.DoesNotExist:
-                    pass
+                    if v != '' or not v.isspace():
+                        GearMapData.objects.create(gear_map=self.gear_map,
+                                                   target_name=f,
+                                                   source_value=v)
         else:
             self.gear_map = GearMap.objects.create(
                 gear_id=self.kwargs['gear_id'], is_active=True)
-            gear_map_data = [GearMapData(gear_map=self.gear_map, target_name=field,
-                                         source_value=form.cleaned_data[field])
-                             for field in form.cleaned_data]
+            gear_map_data = [GearMapData(gear_map=self.gear_map, target_name=f,
+                                         source_value=v) for f, v in
+                             form.cleaned_data.items()]
             GearMapData.objects.bulk_create(gear_map_data)
         self.gear_map.gear.is_active = True
         self.gear_map.gear.save()
