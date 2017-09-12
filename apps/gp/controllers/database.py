@@ -5,7 +5,7 @@ from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apiconnector.celery import app
 from apps.gp.controllers.exception import ControllerError
-from apps.gp.models import StoredData, ActionSpecification, Action, History, PlugActionSpecification, Gear
+from apps.gp.models import StoredData, ActionSpecification, Action, HistoryCount, PlugActionSpecification, Gear
 import MySQLdb
 import copy
 import psycopg2
@@ -107,12 +107,10 @@ class MySQLController(BaseController):
                         'data': [{'name': key, 'value': value} for key, value in item.items() if key != unique.value]}
                        for item in data]
         new_data = []
-        objects = []
+        list_objects = []
         for item in parsed_data:
             unique_value = item['unique']['value']
-            objects.append(unique_value)
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
-            list_objects = []
             if not q.exists():
                 new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
                                        connection=connection_object.connection, plug=plug) for column in item['data']]
@@ -120,8 +118,9 @@ class MySQLController(BaseController):
                                            object_id=unique_value, connection=connection_object.connection, plug=plug))
                 new_data.append(new_item)
                 list_objects.append(unique_value)
+
         store = self._save_stored_data(new_data)
-        self._history(list_objects, "source")
+        #self._history(list_objects, "source")
         return store
 
     def _save_stored_data(self, data):
@@ -151,6 +150,8 @@ class MySQLController(BaseController):
         return insert
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
+        print("send")
+        list_objects=[]
         data_list = get_dict_with_source_data(source_data, target_fields)
         if is_first:
             if data_list:
@@ -179,15 +180,16 @@ class MySQLController(BaseController):
                     raise ControllerError(code=3, controller=ConnectorEnum.MySQL.name,
                                           message='Error selecting all. {}'.format(str(e)))
 
+            list_objects.append(data_list)
+
             try:
                 self._connection.commit()
             except Exception as e:
                 self._connection.rollback()
                 raise ControllerError(code=4, controller=ConnectorEnum.MySQL.name,
                                       message='Error in commit data. {}'.format(str(e)))
-            print("ids", obj_list)
 
-            self._history(data_list, "target")
+            #self._history(list_objects, "target")
             return obj_list
         raise ControllerError("There's no plug")
 
@@ -195,7 +197,7 @@ class MySQLController(BaseController):
         if type is "source":
             print("source")
             user_name = User.objects.get(pk=self._plug.user_id).username
-            gear_id= Gear.objects.get(source_id=self._plug.id)
+            gear_id = Gear.objects.get(source_id=self._plug.id)
             specification_id = self._plug.plug_action_specification.all()
             specifications = {}
             for i in specification_id:
@@ -207,8 +209,9 @@ class MySQLController(BaseController):
                 data = {}
                 for o in obj:
                     data[o.name] = o.value
-                c = History(user_id=self._plug.user.id, user_name=user_name, gear_id=gear_id.id, plug_id_input=self._plug.id, name_input="mysql", action_input=action.name,
-                          specifications_input=specifications, data_input=data)
+                    object_id = o.object_id
+                c = HistoryCount(user_id=self._plug.user.id, user_name=user_name, gear_id=gear_id.id, plug_id_input=self._plug.id, name_input="mysql",
+                                 action_input=action.name, specifications_input=specifications, data_input=data, object_id=object_id)
                 c.save()
         if type is "target":
             print("target")
@@ -220,18 +223,27 @@ class MySQLController(BaseController):
             # for i in specification_id:
             #     name_specification = ActionSpecification.objects.get(id=i.action_specification_id)
             #     specifications[name_specification.name] = i.value
-            gear_id=Gear.objects.get(target_id=self._plug.id)
-            print("gear id", gear_id.id)
+
+            gear_id = Gear.objects.get(target_id=self._plug.id)
             action = Action.objects.get(id=self._plug.action_id)
-            data={}
-            for obj in objects[0]:
-                data[obj]=objects[0][obj]
-            c = History.objects.filter(gear_id=gear_id.id)
-            for cc in c:
-                if cc.plug_id_output is None:
-                    cc.plug_id_output=self._plug.id
-                    #c = History(plug_id_output=self._plug.id, name_output="mysql", action_output=action.name, data_output=data)
-                    cc.save()
+            data = {}
+
+            print("list_objects", list_objects)
+
+            for l in list_objects:
+                for obj in l[0]:
+                    data[obj] = list_objects[0][obj]
+                history = HistoryCount.objects.filter(gear_id=gear_id.id)
+                find = False
+                for c in history:
+                    if (c.plug_id_output is "" and find is False):
+                        find = True
+                        print("here")
+                        c.plug_id_output = self._plug.id
+                        c.name_output = "mysql"
+                        c.action_output = action.name
+                        c.data_output = data
+                        c.save()
         return None
 
     def get_target_fields(self, **kwargs):
@@ -372,7 +384,9 @@ class PostgreSQLController(BaseController):
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
+        print("data list", data_list)
         if is_first:
+            print("primero")
             if data_list:
                 try:
                     data_list = [data_list[-1]]

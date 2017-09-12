@@ -19,8 +19,8 @@ def update_all_gears():
     print("A total of %s gears will be updated." % gear_amount)
     for gear in active_gears:
         connector = ConnectorEnum.get_connector(gear.source.connection.connector_id)
-        update_plug.s(gear.source.id, gear.id).apply_async(queue=connector.name.lower())
-        # update_plug.s(gear.source.id, gear.id).apply_async()
+        #update_plug.s(gear.source.id, gear.id).apply_async(queue=connector.name.lower())
+        update_plug.s(gear.source.id, gear.id).apply_async()
         print("Assigning plug {0} to queue: {1}.".format(gear.source.id, connector.name.lower()))
 
 
@@ -51,14 +51,17 @@ def update_plug(plug_id, gear_id, **kwargs):
             if gear.gear_map.last_sent_stored_data_id is not None:
                 kwargs['id__gt'] = gear.gear_map.last_sent_stored_data_id
             stored_data = StoredData.objects.filter(**kwargs)
+            print(stored_data.query)
+            print(len(stored_data))
             if plug.plug_type.lower() == 'source':
                 has_new_data = controller.download_source_data(from_date=gear.gear_map.last_source_update)
                 pending_data = stored_data.count()
+                print("pending {}".format(pending_data))
                 if pending_data > 0:
                     connector = ConnectorEnum.get_connector(gear.target.connection.connector_id)
-                    update_plug.s(gear.target.id, gear_id).apply_async(queue=connector.name.lower())
+                    # update_plug.s(gear.target.id, gear_id).apply_async(queue=connector.name.lower())
                     print("Assigning plug {0} to queue: {1}.".format(gear.target.id, connector.name.lower()))
-                    # update_plug.s(gear.target.id, gear_id).apply_async()
+                    update_plug.s(gear.target.id, gear_id).apply_async()
             elif plug.plug_type.lower() == 'target':
                 if stored_data:
                     target_connector = ConnectorEnum.get_connector(plug.connection.connector.id)
