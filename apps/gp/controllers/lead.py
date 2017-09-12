@@ -182,8 +182,10 @@ class FacebookLeadsController(BaseController):
                                   message='Unknown error. {}'.format(str(e)))
         try:
             if self._plug is not None:
-                self._page = self._plug.plug_action_specification.filter(action_specification__name='page').first()
-                self._form = self._plug.plug_action_specification.filter(action_specification__name='form').first()
+                self._page = self._plug.plug_action_specification.filter(
+                    action_specification__name='page').first().value
+                self._form = self._plug.plug_action_specification.filter(
+                    action_specification__name='form').first().value
         except Exception as e:
             raise ControllerError(code=1, controller=ConnectorEnum.FacebookLeads,
                                   message='Error asignando los specifications. {}'.format(str(e)))
@@ -232,6 +234,7 @@ class FacebookLeadsController(BaseController):
             raise ControllerError(code=4, controller=ConnectorEnum.FacebookLeads,
                                   message='Invalid Token. {}'.format(str(e)))
         except BaseError as e:
+            raise
             raise ControllerError(code=3, controller=ConnectorEnum.FacebookLeads, message='Error. {}'.format(str(e)))
 
     def get_leadgen(self, leadgen_id):
@@ -337,6 +340,9 @@ class FacebookLeadsController(BaseController):
             if token is not None:
                 app_token = self._client.get_app_token()
                 webhook = Webhook.objects.create(name='facebookleads', plug=self._plug, url='', is_deleted=True)
+                self._client.create_app_subscriptions('page',
+                                                      '{0}/webhook/facebookleads/0/'.format(url),
+                                                      'leadgen', 'token-gearplug-058924', app_token['access_token'])
                 self._client.create_page_subscribed_apps(current_page_id, token)
                 webhook.url = '{0}/webhook/facebookleads/0/'.format(url)
                 webhook.is_active = True
@@ -374,7 +380,10 @@ class FacebookLeadsController(BaseController):
                     try:
                         self.create_connection(plug.connection.related_connection, plug)
                         if self.test_connection():
-                            self.download_source_data(lead=lead)
+                            last_source_record = self.download_source_data(lead=lead)
+                            if last_source_record:
+                                self._plug.gear_source.first().gear_map.last_source_order_by_field_value = last_source_record
+                                self._plug.gear_source.first().gear_map.save(update_fields=['last_source_order_by_field_value'])
                     except Exception as e:
                         print("ERROR: {0}".format(e))
                     if not plug.is_tested:

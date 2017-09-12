@@ -19,8 +19,8 @@ def update_all_gears():
     print("A total of %s gears will be updated." % gear_amount)
     for gear in active_gears:
         connector = ConnectorEnum.get_connector(gear.source.connection.connector_id)
-        # update_plug.s(gear.source.id, gear.id).apply_async(queue=connector.name.lower())  # CON COLAS
-        update_plug.s(gear.source.id, gear.id).apply_async()  # SIN COLAS
+        update_plug.s(gear.source.id, gear.id).apply_async(queue=connector.name.lower())  # CON COLAS
+        # update_plug.s(gear.source.id, gear.id).apply_async()  # SIN COLAS
         print("Assigning plug {0} to queue: {1}.".format(gear.source.id, connector.name.lower()))
 
 
@@ -40,29 +40,30 @@ def update_plug(plug_id, gear_id, **query_params):
                 query_params['id__gt'] = gear.gear_map.last_sent_stored_data_id
             connector = ConnectorEnum.get_connector(plug.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(connector)
-            controller = controller_class(plug.connection.related_connection, plug)
+            controller = controller_class(connection=plug.connection.related_connection, plug=plug)
             ping = controller.test_connection()
             if ping is not True:
                 print("Error en la connection.")
                 return
             if plug.plug_type.lower() == 'source':
                 try:
-                    plug.webhook
-                    has_new_data = False
-                    print("HAS WEBHOOK. DO NOT UPDATE.")
+                    if plug.webhook.is_active:
+                        has_new_data = False
+                    else:
+                        has_new_data = True
                 except AttributeError as e:
-                    print("LAST IS: {}".format(gear.gear_map.last_source_order_by_field_value))
+                    # print("LAST IS: {}".format(gear.gear_map.last_source_order_by_field_value))
                     has_new_data = controller.download_source_data(
                         last_source_record=gear.gear_map.last_source_order_by_field_value)
-                print("download_result: {}".format(has_new_data))
-                if has_new_data:
+                # print("download_result: {}".format(has_new_data))
+                if has_new_data and has_new_data is not True:
                     gear.gear_map.last_source_order_by_field_value = has_new_data
                     gear.gear_map.save(update_fields=['last_source_order_by_field_value', ])
                 stored_data = StoredData.objects.filter(**query_params)
                 if stored_data.count() > 0:
                     target_connector = ConnectorEnum.get_connector(gear.target.connection.connector_id)
-                    update_plug.s(gear.target.id, gear_id).apply_async()  # SIN COLAS
-                    # update_plug.s(gear.target.id, gear_id).apply_async(queue=target_connector.name.lower())  # CON COLAS
+                    # update_plug.s(gear.target.id, gear_id).apply_async()  # SIN COLAS
+                    update_plug.s(gear.target.id, gear_id).apply_async(queue=target_connector.name.lower())  # CON COLAS
                     print("Assigning plug {0} to queue: {1}.".format(gear.target.id, connector.name.lower()))
             elif plug.plug_type.lower() == 'target':
                 stored_data = StoredData.objects.filter(**query_params)

@@ -12,11 +12,13 @@ from apps.gp.enum import ConnectorEnum
 connector = ConnectorEnum.FacebookLeads
 controller_class = ConnectorEnum.get_controller(connector)
 
-plugs = Plug.objects.filter(connection__connector__name__iexact='facebookleads',
-                            connection__connector__action__name__iexact='get leads')
+plugs = Plug.objects.filter(
+    connection__connector__name__iexact='facebookleads',
+    connection__connector__action__name__iexact='get leads')
 for plug in plugs:
     print("\n {}".format(plug))
-    controller = controller_class(plug.connection.related_connection, plug)
+    controller = controller_class(
+        connection=plug.connection.related_connection, plug=plug)
     try:
         plug.webhook
     except AttributeError:

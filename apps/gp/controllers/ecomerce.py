@@ -1,3 +1,4 @@
+import ast
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 import shopify
@@ -11,8 +12,8 @@ from apps.gp.controllers.utils import get_dict_with_source_data
 from magento import MagentoAPI
 import json
 import ast
-from meli_client import meli
 from django.urls import reverse
+from mercadolibre.client import Client as MercadolibreClient
 
 
 class EbayController(BaseController):
@@ -34,12 +35,29 @@ class MercadoLibreController(BaseController):
                 try:
                     self._token = self._connection_object.token
                     self._site = self._connection_object.site
-                    self._client = meli.Meli(client_id=settings.MERCADOLIBRE_CLIENT_ID,
-                                             client_secret=settings.MERCADOLIBRE_CLIENT_SECRET, site_id=self._site)
-                except Exception as e:
-                    print("Error getting the mercadolibre token")
+                except AttributeError as e:
+                    raise ControllerError(code=1, controller=ConnectorEnum.MercadoLibre,
+                                          message='Failed to get the token. \n{}'.format(str(e)))
+            else:
+                raise ControllerError(code=7, controller=ConnectorEnum.MercadoLibre, message='No connection.')
+        try:
+            self._client = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
+                                              client_secret=settings.MERCADOLIBRE_CLIENT_SECRET,
+                                              site=self._site or 'MCO')
+        except Exception as e:
+            raise ControllerError(code=2, controller=ConnectorEnum.MercadoLibre,
+                                  message='Cannot instantiate the client. {}'.format(str(e)))
+        try:
+            self._client.set_token(ast.literal_eval(self._token))
+        except Exception as e:
+            pass
 
     def test_connection(self):
+        if self._client.access_token and not self._client.is_valid_token:
+            new_token = self._client.refresh_token()
+            self._client.set_token(new_token)
+            self._connection_object.token = new_token
+            self._connection_object.save()
         return self.get_me() is not None
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
@@ -59,13 +77,16 @@ class MercadoLibreController(BaseController):
         raise ControllerError("Incomplete.")
 
     def list_product(self, obj):
-        params = {'access_token': self._token}
-        result = self._client.post(path="/items", body=obj, params=params)
-        print(result.json())
-        return result
+        try:
+            return self._client.list_item(**obj)
+        except Exception as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.MercadoLibre, message='Error. {}'.format(str(e)))
 
     def get_target_fields(self, **kwargs):
-        return self.get_fields()
+        try:
+            return self.get_fields()
+        except Exception as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.MercadoLibre, message='Error. {}'.format(str(e)))
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_fields()
@@ -75,37 +96,37 @@ class MercadoLibreController(BaseController):
         return [
             {
                 'name': 'title',
-                'required': False,
+                'required': True,
                 'type': 'text'
             }, {
                 'name': 'category_id',
-                'required': False,
+                'required': True,
                 'type': 'text'
             }, {
                 'name': 'price',
-                'required': False,
+                'required': True,
                 'type': 'text'
             }, {
                 'name': 'currency_id',
-                'required': False,
+                'required': True,
                 'type': 'text'
             }, {
                 'name': 'available_quantity',
-                'required': False,
+                'required': True,
                 'type': 'text'
             }, {
                 'name': 'buying_mode',
-                'required': False,
-                'type': 'coices',
+                'required': True,
+                'type': 'choices',
                 'values': ['buy_it_now']
             }, {
                 'name': 'listing_type_id',
-                'required': False,
+                'required': True,
                 'type': 'choices',
                 'values': [l['id'] for l in self.get_listing_types()]
             }, {
                 'name': 'condition',
-                'required': False,
+                'required': True,
                 'type': 'choices',
                 'values': ['new', 'used', 'not_specified']
             }, {
@@ -118,7 +139,7 @@ class MercadoLibreController(BaseController):
                 'type': 'text'
             }, {
                 'name': 'warranty',
-                'required': False,
+                'required': True,
                 'type': 'text'
             }, {
                 'name': 'pictures',
@@ -129,25 +150,24 @@ class MercadoLibreController(BaseController):
         ]
 
     def get_me(self):
-        params = {'access_token': self._token}
-        return self._client.get(path="/users/me", params=params).json()
+        try:
+            return self._client.me()
+        except Exception as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.MercadoLibre, message='Error. {}'.format(str(e)))
 
     def get_sites(self):
-        params = {'access_token': self._token}
-        return self._client.get(path="/sites", params=params).json()
-
-    def get_categories(self):
-        # No se está utilizando porque no hay forma de saber cuales categorías son "hojas"
-        params = {'access_token': self._token}
-        return self._client.get(path="/sites/{}/categories".format(self._site), params=params).json()
+        try:
+            return self._client.get_sites()
+        except Exception as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.MercadoLibre, message='Error. {}'.format(str(e)))
 
     def get_listing_types(self):
-        params = {'access_token': self._token}
-        return self._client.get(path="/sites/{}/listing_types".format(self._site), params=params).json()
+        try:
+            return self._client.get_listing_types(self._site)
+        except Exception as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.MercadoLibre, message='Error. {}'.format(str(e)))
 
     def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
-        import pprint
-        pprint.pprint(body)
         plugs = Plug.objects.filter(
             action__action_type='source',
             action__connector__name__iexact='mercadolibre',
@@ -161,15 +181,14 @@ class MercadoLibreController(BaseController):
         return HttpResponse(status=200)
 
     def download_to_stored_data(self, connection_object=None, plug=None, event=None, **kwargs):
-        print(event)
         if event is not None:
             _items = []
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                          object_id=None)
+                                          object_id=event['resource'])
             if not q.exists():
                 for k, v in event.items():
                     obj = StoredData(connection=connection_object.connection, plug=plug,
-                                     object_id=None, name=k, value=v or '')
+                                     object_id=event['resource'], name=k, value=v or '')
                     _items.append(obj)
             extra = {}
             for item in _items:

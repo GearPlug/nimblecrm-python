@@ -61,7 +61,8 @@ class ConnectorEnum(Enum):
         return obj
 
     def get_connector_data(connector):
-        return ConnectorEnum.get_model(connector), ConnectorEnum.get_fields(connector)
+        return ConnectorEnum.get_model(connector), ConnectorEnum.get_fields(
+            connector)
 
     def get_connector(connector_id=None, name=None):
         if connector_id is not None:
@@ -88,9 +89,9 @@ class ConnectorEnum(Enum):
         return apps.get_model('gp', '%sConnection' % connector.name)
 
     def get_controller(connector):
-        a = dynamic_import(connector.name, path="apps.gp.controllers.{0}".format(connector.category),
-                           suffix='Controller')
-        return a
+        return dynamic_import(connector.name,
+                              path="apps.gp.controllers.{0}".format(
+                                  connector.category), suffix='Controller')
 
 
 class GoogleAPIEnum(Enum):
