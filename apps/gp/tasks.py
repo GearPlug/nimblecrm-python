@@ -76,11 +76,13 @@ def update_plug(plug_id, gear_id, **query_params):
                         {'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}}
                         for item in stored_data.values_list('object_id').distinct()]
                     is_first = gear.gear_map.last_sent_stored_data_id is None
+                    if is_first:
+                        source_data = [source_data[0], ]
                     entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
-                    print("Result target: {0}".format(entries))
+                    last_sent_data = StoredData.objects.filter(object_id=source_data[-1]['id'], plug=gear.source, connection=gear.source.connection).order_by('id').last()
                     if entries or connector == ConnectorEnum.MailChimp:
                         gear.gear_map.last_source_update = timezone.now()
-                        gear.gear_map.last_sent_stored_data_id = stored_data.order_by('-id').first().id
+                        gear.gear_map.last_sent_stored_data_id = last_sent_data.id
                         gear.gear_map.save(update_fields=['last_source_update', 'last_sent_stored_data_id'])
         except Exception as e:
             raise
