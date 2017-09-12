@@ -8,6 +8,8 @@
 {% block styles %}
     <link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
     <link href="{% static 'css/gear.css' %}" rel="stylesheet">
+    <link href="{% static 'css/help.css' %}" rel="stylesheet">
+    <link href="{% static 'css/terms.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block body_base %}
@@ -35,12 +37,12 @@
                         </div>
                         <div class="col-md-12 border_base">
                             {% block left_menu_1 %}
-                                <i class="fa fa-cogs" aria-hidden="true"></i>&nbsp;<a href="#">Actividad</a>
+                                <i class="fa fa-cogs" aria-hidden="true"></i>&nbsp;<a href="{% url 'home:activity' %}">Actividad</a>
                                 <br>
-                                <i class="fa fa-hand-paper-o" aria-hidden="true"></i>&nbsp;<a href="#">Ayuda</a>
+                                <i class="fa fa-hand-paper-o" aria-hidden="true"></i>&nbsp;<a href="{% url 'home:help' %}">Ayuda</a>
                                 <br>
                                 <i class="fa fa-users" aria-hidden="true"></i>&nbsp;
-                                <a href="#">Administrar conexiones</a>
+                                <a href="{% url 'connection:manage' %}">Administrar conexiones</a>
                             {% endblock %}
                         </div>
                     </div>

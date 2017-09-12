@@ -7,7 +7,7 @@ class ConnectorEnum(Enum):
     FacebookLeads = 1, 'lead', 'special'
     MySQL = 2, 'database', 'form'
     SugarCRM = 3, 'crm', 'form'
-    MailChimp = 4, 'email_marketing', 'form'
+    MailChimp = 4, 'email_marketing', 'authorization'
     GoogleSpreadSheets = 5, 'ofimatic', 'authorization'
     PostgreSQL = 6, 'database', 'form'
     MSSQL = 7, 'database', 'form'
@@ -31,8 +31,8 @@ class ConnectorEnum(Enum):
     Vimeo = 25, 'social'
     ZohoCRM = 26, 'crm'
     WunderList = 27, 'ofimatic', 'authorization'
-    SMS = 28, 'im'
-    SMTP = 29, 'email'
+    SMS = 28, 'im', None
+    SMTP = 29, 'email', None
     Evernote = 30, 'ofimatic', 'authorization'
     Salesforce = 31, 'crm'
     Vtiger = 32, 'crm'
@@ -42,7 +42,7 @@ class ConnectorEnum(Enum):
     DynamicCRM = 36, 'crm'
     FreshDesk = 37, 'crm'
     AgileCRM = 38, 'crm'
-    GitLab = 39, 'repository'
+    GitLab = 39, 'repository', 'authorization'
     Shopify = 40, 'ecomerce', 'special'
     Dropbox = 41, '', 'authorization'
     Magento = 42, 'ecomerce'
@@ -61,7 +61,8 @@ class ConnectorEnum(Enum):
         return obj
 
     def get_connector_data(connector):
-        return ConnectorEnum.get_model(connector), ConnectorEnum.get_fields(connector)
+        return ConnectorEnum.get_model(connector), ConnectorEnum.get_fields(
+            connector)
 
     def get_connector(connector_id=None, name=None):
         if connector_id is not None:
@@ -88,10 +89,9 @@ class ConnectorEnum(Enum):
         return apps.get_model('gp', '%sConnection' % connector.name)
 
     def get_controller(connector):
-        a = dynamic_import(connector.name, path="apps.gp.controllers.{0}".format(connector.category),
-                           suffix='Controller')
-        print(a)
-        return a
+        return dynamic_import(connector.name,
+                              path="apps.gp.controllers.{0}".format(
+                                  connector.category), suffix='Controller')
 
 
 class GoogleAPIEnum(Enum):

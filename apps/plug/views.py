@@ -25,7 +25,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
     fields = ['connection', ]
     template_name = 'plug/create.html'
     success_url = ''
-    login_url = '/account/login/'
+    login_url = '/accounts/login/'
 
     def get_context_data(self, **kwargs):
         context = super(CreatePlugView, self).get_context_data(**kwargs)
@@ -56,17 +56,20 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         # Download data
         c = ConnectorEnum.get_connector(self.object.connection.connector.id)
         controller_class = ConnectorEnum.get_controller(c)
-        controller = controller_class(self.object.connection.related_connection, self.object)
+        controller = controller_class(connection=self.object.connection.related_connection, plug=self.object)
         ping = controller.test_connection()
         if ping:
             if self.object.is_source:
                 if c in [ConnectorEnum.Bitbucket, ConnectorEnum.JIRA, ConnectorEnum.SurveyMonkey,
                          ConnectorEnum.Instagram, ConnectorEnum.YouTube, ConnectorEnum.Shopify,
                          ConnectorEnum.GoogleCalendar, ConnectorEnum.Asana, ConnectorEnum.Salesforce,
-                         ConnectorEnum.Mandrill, ConnectorEnum.FacebookLeads, ConnectorEnum.Gmail]:
+                         ConnectorEnum.Mandrill, ConnectorEnum.FacebookLeads, ConnectorEnum.Gmail,
+                         ConnectorEnum.GitLab, ConnectorEnum.ActiveCampaign]:
                     controller.create_webhook()
                 else:
-                    controller.download_to_stored_data(self.object.connection.related_connection, self.object)
+                    print("voy a descargar")
+                    last_source_record = controller.download_to_stored_data(self.object.connection.related_connection,
+                                                                        self.object, limit=1)
         self.request.session['source_connection_id'] = None
         self.request.session['target_connection_id'] = None
         return HttpResponseRedirect(self.get_success_url())
@@ -143,7 +146,7 @@ class PlugActionSpecificationListView(LoginRequiredMixin, TemplateView):
         connection = Connection.objects.get(pk=connection_id)
         connector = ConnectorEnum.get_connector(connection.connector_id)
         controller_class = ConnectorEnum.get_controller(connector)
-        controller = controller_class(connection.related_connection)
+        controller = controller_class(connection=connection.related_connection)
         ping = controller.test_connection()
         kwargs.update(
             {key: val for key, val in request.POST.items() if key not in ['action_specification_id', 'connection_id']})
@@ -170,21 +173,11 @@ class TestPlugView(TemplateView):
                 sd = StoredData.objects.filter(plug=p, connection=p.connection, object_id=sd_sample.object_id)
                 context['object_list'] = sd
             except Exception:
-                print("Failed. force donwload.")
-                try:
-                    c = ConnectorEnum.get_connector(p.connection.connector.id)
-                    controller_class = ConnectorEnum.get_controller(c)
-                    controller = controller_class(p.connection.related_connection, p)
-                    ping = controller.test_connection()
-                    if ping:
-                        controller.download_to_stored_data(p.connection.related_connection, p)
-                except Exception as e:
-                    print("error")
-                    raise
+                print("Failed. no data.")
         elif p.plug_type == 'target':
             c = ConnectorEnum.get_connector(p.connection.connector.id)
             controller_class = ConnectorEnum.get_controller(c)
-            controller = controller_class(p.connection.related_connection, p)
+            controller = controller_class(connection=p.connection.related_connection, plug=p)
             ping = controller.test_connection()
             if ping:
                 target_fields = [field.name for field in controller.get_mapping_fields()]
@@ -193,15 +186,16 @@ class TestPlugView(TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        # Download data
         p = Plug.objects.get(pk=self.kwargs.get('pk'))
         c = ConnectorEnum.get_connector(p.connection.connector.id)
         controller_class = ConnectorEnum.get_controller(c)
-        controller = controller_class(p.connection.related_connection, p)
+        controller = controller_class(connection=p.connection.related_connection, plug=p)
         if p.plug_type == 'source':
             ping = controller.test_connection()
-            print("PING: %s" % ping)
             if ping:
-                data_list = controller.download_to_stored_data(p.connection.related_connection, p)
+                try:
+                    last_source_record = controller.download_to_stored_data(p.connection.related_connection, p, limit=1)
+                except Exception as e:
+                    print("Test Failed. Probably the webhook hasn\'t received any data.")
         context = self.get_context_data()
         return super(TestPlugView, self).render_to_response(context)
