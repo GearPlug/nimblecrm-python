@@ -1,9 +1,11 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
-from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification, Plug
+from apps.gp.models import StoredData, ActionSpecification, Webhook, \
+    PlugActionSpecification, Plug
 from apps.gp.enum import ConnectorEnum
 from facebookmarketing.client import Client
-from facebookmarketing.exceptions import UnknownError, InvalidOauth20AccessTokenError, BaseError
+from facebookmarketing.exceptions import UnknownError, \
+    InvalidOauth20AccessTokenError, BaseError
 from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponse
@@ -20,28 +22,31 @@ class GoogleFormsController(BaseController):
     _credential = None
     _spreadsheet_id = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        BaseController.__init__(self, connection=connection, plug=plug,
+                                **kwargs)
 
-    def create_connection(self, *args, **kwargs):
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(GoogleFormsController, self).create_connection(
+            connection=connection, plug=plug)
         credentials_json = None
-        if args:
-            super(GoogleFormsController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    credentials_json = self._connection_object.credentials_json
-                    if self._plug is not None:
-                        try:
-                            self._spreadsheet_id = self._plug.plug_action_specification.get(
-                                action_specification__name__iexact='form').value
-                        except Exception as e:
-                            print("Error asignando los specifications GoogleForms 2")
-                except Exception as e:
-                    print("Error getting the GoogleForms attributes 1")
-                    print(e)
-                    credentials_json = None
+        if self._connection_object is not None:
+            try:
+                credentials_json = self._connection_object.credentials_json
+                if self._plug is not None:
+                    try:
+                        self._spreadsheet_id = self._plug.plug_action_specification.get(
+                            action_specification__name__iexact='form').value
+                    except Exception as e:
+                        print(
+                            "Error asignando los specifications GoogleForms 2")
+            except Exception as e:
+                print("Error getting the GoogleForms attributes 1")
+                print(e)
+                credentials_json = None
         if credentials_json is not None:
-            self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
+            self._credential = GoogleClient.OAuth2Credentials.from_json(
+                json.dumps(credentials_json))
 
     def test_connection(self):
         try:
@@ -63,7 +68,8 @@ class GoogleFormsController(BaseController):
             self._credential.refresh(httplib2.Http())
             self._upate_connection_object_credentials()
 
-    def download_to_stored_data(self, connection_object, plug, *args, **kwargs):
+    def download_to_stored_data(self, connection_object, plug, *args,
+                                **kwargs):
         if plug is None:
             plug = self._plug
         if not self._spreadsheet_id:
@@ -71,11 +77,16 @@ class GoogleFormsController(BaseController):
         sheet_values = self.get_worksheet_values()
         new_data = []
         for idx, item in enumerate(sheet_values[1:]):
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=idx + 1)
+            q = StoredData.objects.filter(
+                connection=connection_object.connection, plug=plug,
+                object_id=idx + 1)
             if not q.exists():
                 for idx2, cell in enumerate(item):
-                    new_data.append(StoredData(name=sheet_values[0][idx2], value=cell, object_id=idx + 1,
-                                               connection=connection_object.connection, plug=plug))
+                    new_data.append(
+                        StoredData(name=sheet_values[0][idx2], value=cell,
+                                   object_id=idx + 1,
+                                   connection=connection_object.connection,
+                                   plug=plug))
         if new_data:
             field_count = len(sheet_values)
             extra = {'controller': 'google_forms'}
@@ -84,12 +95,16 @@ class GoogleFormsController(BaseController):
                     item.save()
                     if (i + 1) % field_count == 0:
                         extra['status'] = 's'
-                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                        self._log.info(
+                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                                item.object_id, item.plug.id,
+                                item.connection.id), extra=extra)
                 except:
                     extra['status'] = 'f'
-                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+                    self._log.info(
+                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                            item.object_id, item.name, item.plug.id,
+                            item.connection.id), extra=extra)
             # raise IndexError("hola")
             return True
         return False
@@ -100,14 +115,16 @@ class GoogleFormsController(BaseController):
         drive_service = discovery.build('drive', 'v3', http=http_auth)
         files = drive_service.files().list().execute()
         sheet_list = tuple(
-            f for f in files['files'] if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet')
+            f for f in files['files'] if 'mimeType' in f and f[
+                'mimeType'] == 'application/vnd.google-apps.spreadsheet')
         return sheet_list
 
     def get_worksheet_list(self, sheet_id):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
-        result = sheets_service.spreadsheets().get(spreadsheetId=sheet_id).execute()
+        result = sheets_service.spreadsheets().get(
+            spreadsheetId=sheet_id).execute()
         worksheet_list = tuple(i['properties'] for i in result['sheets'])
         return worksheet_list
 
@@ -116,8 +133,9 @@ class GoogleFormsController(BaseController):
         http_auth = credential.authorize(httplib2.Http())
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
         range = self.get_worksheet_list(self._spreadsheet_id)
-        res = sheets_service.spreadsheets().values().get(spreadsheetId=self._spreadsheet_id,
-                                                         range=range[0]['title']).execute()
+        res = sheets_service.spreadsheets().values().get(
+            spreadsheetId=self._spreadsheet_id,
+            range=range[0]['title']).execute()
         values = res['values']
         if from_row is None and limit is None:
             return values
@@ -136,12 +154,16 @@ class GoogleFormsController(BaseController):
     def get_target_fields(self, **kwargs):
         return self.get_worksheet_first_row(**kwargs)
 
-    def get_action_specification_options(self, action_specification_id, **kwargs):
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+    def get_action_specification_options(self, action_specification_id,
+                                         **kwargs):
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
         if action_specification.name.lower() == 'form':
-            return tuple({'id': p['id'], 'name': p['name']} for p in self.get_sheet_list())  # TODO SOLO CARGAR FORMS
+            return tuple({'id': p['id'], 'name': p['name']} for p in
+                         self.get_sheet_list())  # TODO SOLO CARGAR FORMS
         else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
 
 
 class FacebookLeadsController(BaseController):
@@ -160,25 +182,32 @@ class FacebookLeadsController(BaseController):
     _form = None
     _client = None
 
-    def __init__(self, *args):
-        super(FacebookLeadsController, self).__init__(*args)
+    def __init__(self, connection=None, plug=None):
+        super(FacebookLeadsController, self).__init__(connection=connection,
+                                                      plug=plug)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(FacebookLeadsController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token = self._connection_object.token
-                except AttributeError as e:
-                    raise ControllerError(code=1, controller=ConnectorEnum.FacebookLeads,
-                                          message='Failed to get the token. \n{}'.format(str(e)))
-            else:
-                raise ControllerError(code=7, controller=ConnectorEnum.FacebookLeads, message='No connection.')
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(FacebookLeadsController, self).create_connection(
+            connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+            except AttributeError as e:
+                raise ControllerError(code=1,
+                                      controller=ConnectorEnum.FacebookLeads,
+                                      message='Failed to get the token. \n{}'.format(
+                                          str(e)))
+        else:
+            raise ControllerError(code=7,
+                                  controller=ConnectorEnum.FacebookLeads,
+                                  message='No connection.')
         try:
-            self._client = Client(settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET, 'v2.10')
+            self._client = Client(settings.FACEBOOK_APP_ID,
+                                  settings.FACEBOOK_APP_SECRET, 'v2.10')
             self._client.set_access_token(self._token)
         except UnknownError as e:
-            raise ControllerError(code=2, controller=ConnectorEnum.FacebookLeads,
+            raise ControllerError(code=2,
+                                  controller=ConnectorEnum.FacebookLeads,
                                   message='Unknown error. {}'.format(str(e)))
         try:
             if self._plug is not None:
@@ -187,8 +216,10 @@ class FacebookLeadsController(BaseController):
                 self._form = self._plug.plug_action_specification.filter(
                     action_specification__name='form').first().value
         except Exception as e:
-            raise ControllerError(code=1, controller=ConnectorEnum.FacebookLeads,
-                                  message='Error asignando los specifications. {}'.format(str(e)))
+            raise ControllerError(code=1,
+                                  controller=ConnectorEnum.FacebookLeads,
+                                  message='Error asignando los specifications. {}'.format(
+                                      str(e)))
 
     def test_connection(self):
         try:
@@ -206,36 +237,47 @@ class FacebookLeadsController(BaseController):
             self._client.set_access_token(self._token)
             return self._token
         except BaseError as e:
-            raise ControllerError(code=3, controller=ConnectorEnum.FacebookLeads, message='Error. {}'.format(str(e)))
+            raise ControllerError(code=3,
+                                  controller=ConnectorEnum.FacebookLeads,
+                                  message='Error. {}'.format(str(e)))
 
     def get_account(self):
         try:
             return self._client.get_account()
         except InvalidOauth20AccessTokenError as e:
-            raise ControllerError(code=4, controller=ConnectorEnum.FacebookLeads,
+            raise ControllerError(code=4,
+                                  controller=ConnectorEnum.FacebookLeads,
                                   message='Invalid Token. {}'.format(str(e)))
         except BaseError as e:
             raise
-            raise ControllerError(code=3, controller=ConnectorEnum.FacebookLeads, message='Error. {}'.format(str(e)))
+            raise ControllerError(code=3,
+                                  controller=ConnectorEnum.FacebookLeads,
+                                  message='Error. {}'.format(str(e)))
 
     def get_pages(self):
         try:
             return self._client.get_pages()
         except InvalidOauth20AccessTokenError as e:
-            raise ControllerError(code=4, controller=ConnectorEnum.FacebookLeads,
+            raise ControllerError(code=4,
+                                  controller=ConnectorEnum.FacebookLeads,
                                   message='Invalid Token. {}'.format(str(e)))
         except BaseError as e:
-            raise ControllerError(code=3, controller=ConnectorEnum.FacebookLeads, message='Error. {}'.format(str(e)))
+            raise ControllerError(code=3,
+                                  controller=ConnectorEnum.FacebookLeads,
+                                  message='Error. {}'.format(str(e)))
 
     def get_leads(self, form_id, from_date=None):
         try:
             return self._client.get_ad_leads(form_id, from_date)
         except InvalidOauth20AccessTokenError as e:
-            raise ControllerError(code=4, controller=ConnectorEnum.FacebookLeads,
+            raise ControllerError(code=4,
+                                  controller=ConnectorEnum.FacebookLeads,
                                   message='Invalid Token. {}'.format(str(e)))
         except BaseError as e:
             raise
-            raise ControllerError(code=3, controller=ConnectorEnum.FacebookLeads, message='Error. {}'.format(str(e)))
+            raise ControllerError(code=3,
+                                  controller=ConnectorEnum.FacebookLeads,
+                                  message='Error. {}'.format(str(e)))
 
     def get_leadgen(self, leadgen_id):
         try:
@@ -248,29 +290,46 @@ class FacebookLeadsController(BaseController):
         try:
             return self._client.get_ad_account_leadgen_forms(page_id)
         except InvalidOauth20AccessTokenError as e:
-            raise ControllerError(code=4, controller=ConnectorEnum.FacebookLeads,
+            raise ControllerError(code=4,
+                                  controller=ConnectorEnum.FacebookLeads,
                                   message='Invalid Token. {}'.format(str(e)))
         except BaseError as e:
-            raise ControllerError(code=3, controller=ConnectorEnum.FacebookLeads, message='Error. {}'.format(str(e)))
+            raise ControllerError(code=3,
+                                  controller=ConnectorEnum.FacebookLeads,
+                                  message='Error. {}'.format(str(e)))
 
-    def download_to_stored_data(self, connection_object, plug, lead=None, from_date=None, **kwargs):
+    def download_to_stored_data(self, connection_object, plug, lead=None,
+                                from_date=None, **kwargs):
         if lead is not None:
-            aditional_data = {'leadgen_id': lead['value']['leadgen_id'], 'page_id': lead['value']['page_id'],
-                              'form_id': lead['value']['form_id'], 'adgroup_id': lead['value']['adgroup_id'],
-                              'created_time_timestamp': lead['value']['created_time'], }
+            aditional_data = {'leadgen_id': lead['value']['leadgen_id'],
+                              'page_id': lead['value']['page_id'],
+                              'form_id': lead['value']['form_id'],
+                              'adgroup_id': lead['value']['adgroup_id'],
+                              'created_time_timestamp': lead['value'][
+                                  'created_time'], }
             leadgen_id = lead['value']['leadgen_id']
             lead = self.get_leadgen(leadgen_id)
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=leadgen_id)
+            q = StoredData.objects.filter(
+                connection=connection_object.connection, plug=plug,
+                object_id=leadgen_id)
             new_data = []
             if not q.exists():
                 for column in lead['field_data']:
-                    new_data.append(StoredData(name=column['name'], value=column['values'][0], object_id=leadgen_id,
-                                               connection=connection_object.connection, plug=plug))
+                    new_data.append(StoredData(name=column['name'],
+                                               value=column['values'][0],
+                                               object_id=leadgen_id,
+                                               connection=connection_object.connection,
+                                               plug=plug))
                 for k, v in aditional_data.items():
-                    new_data.append(StoredData(name=k, value=v, object_id=leadgen_id,
-                                               connection=connection_object.connection, plug=plug))
-                new_data.append(StoredData(name='created_time', value=lead['created_time'], object_id=leadgen_id,
-                                           connection=connection_object.connection, plug=plug))
+                    new_data.append(
+                        StoredData(name=k, value=v, object_id=leadgen_id,
+                                   connection=connection_object.connection,
+                                   plug=plug))
+                new_data.append(
+                    StoredData(name='created_time', value=lead['created_time'],
+                               object_id=leadgen_id,
+                               connection=connection_object.connection,
+                               plug=plug))
             if new_data:
                 field_count = len(lead['field_data'])
             extra = {'controller': 'facebook'}
@@ -279,25 +338,36 @@ class FacebookLeadsController(BaseController):
                     item.save()
                     if (i + 1) % field_count == 0:
                         extra['status'] = 's'
-                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                        self._log.info(
+                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                                item.object_id, item.plug.id,
+                                item.connection.id), extra=extra)
                 except Exception as e:
                     extra['status'] = 'f'
-                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
-                    raise ControllerError(code=5, controller=ConnectorEnum.FacebookLeads,
-                                          message='Error in download to stored data. {}'.format(str(e)))
+                    self._log.info(
+                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                            item.object_id, item.name, item.plug.id,
+                            item.connection.id), extra=extra)
+                    raise ControllerError(code=5,
+                                          controller=ConnectorEnum.FacebookLeads,
+                                          message='Error in download to stored data. {}'.format(
+                                              str(e)))
             return aditional_data['created_time_timestamp']
         else:
             leads = self.get_leads(self._form, from_date=from_date)
             new_data = []
             leads = leads['data'] if leads else []
             for item in leads:
-                q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
+                q = StoredData.objects.filter(
+                    connection=connection_object.connection, plug=plug,
+                    object_id=item['id'])
                 if not q.exists():
                     for column in item['field_data']:
-                        new_data.append(StoredData(name=column['name'], value=column['values'][0], object_id=item['id'],
-                                                   connection=connection_object.connection, plug=plug))
+                        new_data.append(StoredData(name=column['name'],
+                                                   value=column['values'][0],
+                                                   object_id=item['id'],
+                                                   connection=connection_object.connection,
+                                                   plug=plug))
             if new_data:
                 field_count = len(leads[0]['field_data'])
                 entries = len(new_data) // field_count
@@ -307,43 +377,63 @@ class FacebookLeadsController(BaseController):
                         item.save()
                         if (i + 1) % field_count == 0:
                             extra['status'] = 's'
-                            self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                                item.object_id, item.plug.id, item.connection.id), extra=extra)
+                            self._log.info(
+                                'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                                    item.object_id, item.plug.id,
+                                    item.connection.id), extra=extra)
                     except Exception as e:
                         extra['status'] = 'f'
-                        self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                            item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
-                        raise ControllerError(code=5, controller=ConnectorEnum.FacebookLeads,
-                                              message='Error in download to stored data. {}'.format(str(e)))
+                        self._log.info(
+                            'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                                item.object_id, item.name, item.plug.id,
+                                item.connection.id), extra=extra)
+                        raise ControllerError(code=5,
+                                              controller=ConnectorEnum.FacebookLeads,
+                                              message='Error in download to stored data. {}'.format(
+                                                  str(e)))
                 return True
             return False
         return False
 
-    def get_action_specification_options(self, action_specification_id, **kwargs):
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+    def get_action_specification_options(self, action_specification_id,
+                                         **kwargs):
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
         if action_specification.name.lower() == 'page':
             pages = self.get_pages()
-            return tuple({'id': p['id'], 'name': p['name']} for p in pages['data'])
+            return tuple(
+                {'id': p['id'], 'name': p['name']} for p in pages['data'])
         elif action_specification.name.lower() == 'form':
-            page_id = kwargs.get('page_id', '')[0] if isinstance(kwargs.get('page_id', ''), list) else kwargs.get(
+            page_id = kwargs.get('page_id', '')[0] if isinstance(
+                kwargs.get('page_id', ''), list) else kwargs.get(
                 'page_id', '')
             forms = self.get_forms(page_id)
-            return tuple({'id': p['id'], 'name': p['name']} for p in forms['data'])
+            return tuple(
+                {'id': p['id'], 'name': p['name']} for p in forms['data'])
         else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
 
     def create_webhook(self, url=settings.WEBHOOK_HOST):
-        current_page_id = PlugActionSpecification.objects.get(plug_id=self._plug.id,
-                                                              action_specification__name='page').value
+        current_page_id = PlugActionSpecification.objects.get(
+            plug_id=self._plug.id,
+            action_specification__name='page').value
         try:
             token = self._client.get_page_token(current_page_id)
             if token is not None:
                 app_token = self._client.get_app_token()
-                webhook = Webhook.objects.create(name='facebookleads', plug=self._plug, url='', is_deleted=True)
+                webhook = Webhook.objects.create(name='facebookleads',
+                                                 plug=self._plug, url='',
+                                                 is_deleted=True)
                 self._client.create_app_subscriptions('page',
-                                                      '{0}/webhook/facebookleads/0/'.format(url),
-                                                      'leadgen', 'token-gearplug-058924', app_token['access_token'])
-                self._client.create_page_subscribed_apps(current_page_id, token)
+                                                      '{0}/webhook/facebookleads/0/'.format(
+                                                          url),
+                                                      'leadgen',
+                                                      'token-gearplug-058924',
+                                                      app_token[
+                                                          'access_token'])
+                self._client.create_page_subscribed_apps(current_page_id,
+                                                         token)
                 webhook.url = '{0}/webhook/facebookleads/0/'.format(url)
                 webhook.is_active = True
                 webhook.is_deleted = False
@@ -370,20 +460,26 @@ class FacebookLeadsController(BaseController):
                     continue
                 form_id = lead['value']['form_id']
                 page_id = lead['value']['page_id']
-                plugs_to_update = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=False),
-                                                      plug_action_specification__value__iexact=form_id,
-                                                      plug_action_specification__action_specification__name__iexact='form',
-                                                      action__name='get leads', )
-                plugs_to_update = plugs_to_update.filter(plug_action_specification__value__iexact=page_id,
-                                                         plug_action_specification__action_specification__name__iexact='page')
+                plugs_to_update = Plug.objects.filter(
+                    Q(gear_source__is_active=True) | Q(is_tested=False),
+                    plug_action_specification__value__iexact=form_id,
+                    plug_action_specification__action_specification__name__iexact='form',
+                    action__name='get leads', )
+                plugs_to_update = plugs_to_update.filter(
+                    plug_action_specification__value__iexact=page_id,
+                    plug_action_specification__action_specification__name__iexact='page')
                 for plug in plugs_to_update:
                     try:
-                        self.create_connection(plug.connection.related_connection, plug)
+                        self.create_connection(
+                            plug.connection.related_connection, plug)
                         if self.test_connection():
-                            last_source_record = self.download_source_data(lead=lead)
+                            last_source_record = self.download_source_data(
+                                lead=lead)
                             if last_source_record:
                                 self._plug.gear_source.first().gear_map.last_source_order_by_field_value = last_source_record
-                                self._plug.gear_source.first().gear_map.save(update_fields=['last_source_order_by_field_value'])
+                                self._plug.gear_source.first().gear_map.save(
+                                    update_fields=[
+                                        'last_source_order_by_field_value'])
                     except Exception as e:
                         print("ERROR: {0}".format(e))
                     if not plug.is_tested:
@@ -428,7 +524,8 @@ class SurveyMonkeyController(BaseController):
         lista = self._client.get_surveys()
         return lista['data']
 
-    def download_to_stored_data(self, connection_object, plug, client=None, responses=None):
+    def download_to_stored_data(self, connection_object, plug, client=None,
+                                responses=None):
         if plug is None:
             plug = self._plug
         if not self._client:
@@ -441,25 +538,34 @@ class SurveyMonkeyController(BaseController):
         new_data = []
         for item in responses:
             response_id = item["id"]
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=response_id)
+            q = StoredData.objects.filter(
+                connection=connection_object.connection, plug=plug,
+                object_id=response_id)
             if not q.exists():
                 details = self.get_response_details(survey_id, response_id)
                 for value in details:
                     if (
                                             value != "page_path" and value != "logic_path" and value != "metadata" and value != "custom_variables"):
-                        new_data.append(StoredData(name=value, value=details[value], object_id=response_id,
-                                                   connection=connection_object.connection, plug=plug))
+                        new_data.append(
+                            StoredData(name=value, value=details[value],
+                                       object_id=response_id,
+                                       connection=connection_object.connection,
+                                       plug=plug))
         if new_data:
             extra = {'controller': 'surveymonkey'}
             for item in new_data:
                 try:
-                    self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                        item.object_id, item.plug.id, item.connection.id), extra=extra)
+                    self._log.info(
+                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            item.object_id, item.plug.id, item.connection.id),
+                        extra=extra)
                     item.save()
                 except:
                     extra['status'] = 'f'
-                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+                    self._log.info(
+                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                            item.object_id, item.name, item.plug.id,
+                            item.connection.id), extra=extra)
         return True
 
     def get_survey_details(self, survey_id):
@@ -468,7 +574,8 @@ class SurveyMonkeyController(BaseController):
             "Authorization": "Bearer %s" % self._token,
             "Content-Type": "application/json"
         })
-        url = "https://api.surveymonkey.net/v3/surveys/%s/details" % (survey_id)
+        url = "https://api.surveymonkey.net/v3/surveys/%s/details" % (
+            survey_id)
 
         return s.get(url)
 
@@ -480,7 +587,8 @@ class SurveyMonkeyController(BaseController):
             "Content-Type": "application/json"
         })
 
-        url = "https://api.surveymonkey.net/v3/surveys/%s/responses" % (survey_id)
+        url = "https://api.surveymonkey.net/v3/surveys/%s/responses" % (
+            survey_id)
         return s.get(url)
 
     def get_response_details(self, survey_id, response_id):
@@ -489,7 +597,8 @@ class SurveyMonkeyController(BaseController):
             "Authorization": "Bearer %s" % self._token,
             "Content-Type": "application/json"
         })
-        url = "https://api.surveymonkey.net/v3/surveys/%s/responses/%s" % (survey_id, response_id)
+        url = "https://api.surveymonkey.net/v3/surveys/%s/responses/%s" % (
+            survey_id, response_id)
         # url = "https://api.surveymonkey.net/v3/collectors/%s/responses/%s/details" % (collector_id, response_id)
         data = s.get(url).__dict__
         data = data["_content"].decode()
@@ -507,7 +616,8 @@ class SurveyMonkeyController(BaseController):
         if action == "read a survey":
             survey_id = self._plug.plug_action_specification.all()[0].value
             survey_id = str(survey_id)
-            webhook = Webhook.objects.create(name='surveymonkey', plug=self._plug, url='')
+            webhook = Webhook.objects.create(name='surveymonkey',
+                                             plug=self._plug, url='')
             plug_id = self._plug.plug_action_specification.all()[0].id
             redirect_uri = "%s/webhook/surveymonkey/%s/" % settings.WEBHOOK_HOST, webhook.id
             s = requests.session()
@@ -528,19 +638,24 @@ class SurveyMonkeyController(BaseController):
                 webhook.url = redirect_uri
                 webhook.generated_id = r.json()["id"]
                 webhook.is_active = True
-                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+                webhook.save(
+                    update_fields=['url', 'generated_id', 'is_active'])
             else:
                 webhook.is_deleted = True
                 webhook.save(update_fields=['is_deleted', ])
             return True
         return False
 
-    def get_action_specification_options(self, action_specification_id, **kwargs):
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+    def get_action_specification_options(self, action_specification_id,
+                                         **kwargs):
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
         if action_specification.name.lower() == 'survey':
-            return [{'name': o['title'], 'id': o['id']} for o in self.get_survey_list()]
+            return [{'name': o['title'], 'id': o['id']} for o in
+                    self.get_survey_list()]
         else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
 
     def do_webhook_process(self, body=None, POST=None, **kwargs):
         responses = []
