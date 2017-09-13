@@ -6,7 +6,7 @@ from apps.gp.map import MapField
 from apiconnector.celery import app
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.models import StoredData, ActionSpecification, Action, \
-    HistoryCount, PlugActionSpecification, Gear
+    HistoryCount, PlugActionSpecification, Gear, GearMap
 import MySQLdb
 import copy
 import psycopg2
@@ -117,6 +117,7 @@ class MySQLController(BaseController):
 
     def download_to_stored_data(self, connection_object, plug,
                                 last_source_record=None, limit=50, **kwargs):
+        print("download")
         order_by = self._plug.plug_action_specification.get(
             action_specification__name__iexact='order by')
         unique = self._plug.plug_action_specification.get(
@@ -144,9 +145,13 @@ class MySQLController(BaseController):
                                        connection=connection_object.connection,
                                        plug=plug) for column in item['data']]
                 new_data.append(new_item)
+
         if new_data:
             new_data.reverse()
             self._save_stored_data(new_data)
+
+            self._history(new_data, "source")
+
             for item in parsed_data:
                 for column in item['data']:
                     if column['name'] == order_by.value:
@@ -184,13 +189,12 @@ class MySQLController(BaseController):
             ",".join('\"{0}\"'.format(i) for i in item.values()))
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
-        print("send")
-        list_objects = []
         data_list = get_dict_with_source_data(source_data, target_fields)
+        object_list = []
         if is_first:
             if data_list:
                 try:
-                    data_list = [data_list[-1]]
+                    data_list = [data_list[0]]
                 except:
                     data_list = []
         if self._plug is not None:
@@ -204,6 +208,7 @@ class MySQLController(BaseController):
                     self._log.info('Item: %s successfully sent.' % (
                         self._cursor.lastrowid), extra=extra)
                     obj_list.append(self._cursor.lastrowid)
+                    self._history(item,"target")
                 except MySQLdb.OperationalError as e:
                     extra['status'] = 'f'
                     self._log.info(
@@ -233,7 +238,7 @@ class MySQLController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def _history(self, list_objects, type):
+    def _history(self, obj, type):
         if type is "source":
             print("source")
             user_name = User.objects.get(pk=self._plug.user_id).username
@@ -242,26 +247,29 @@ class MySQLController(BaseController):
             specifications = {}
             for i in specification_id:
                 name_specification = ActionSpecification.objects.get(
-                    id=i.action_specification_id)
+                id=i.action_specification_id)
                 action = Action.objects.get(id=name_specification.action_id)
                 specifications[name_specification.name] = i.value
-            for objs in list_objects:
-                obj = StoredData.objects.filter(object_id=objs,
-                                                plug_id=self._plug.id)
+
+            for dat in obj:
                 data = {}
-                for o in obj:
+                object_id = StoredData.objects.get(pk=dat[0].id).object_id
+                store = StoredData.objects.filter(object_id=object_id, plug_id=self._plug.id)
+                for o in store:
                     data[o.name] = o.value
-                    object_id = o.object_id
                 c = HistoryCount(user_id=self._plug.user.id,
-                                 user_name=user_name, gear_id=gear_id.id,
-                                 plug_id_input=self._plug.id,
-                                 name_input="mysql",
-                                 action_input=action.name,
-                                 specifications_input=specifications,
-                                 data_input=data, object_id=object_id)
+                                user_name=user_name,
+                                gear_id=gear_id.id,
+                                plug_id_input=self._plug.id,
+                                name_input="mysql",
+                                action_input=action.name,
+                                specifications_input=specifications,
+                                data_input=data,
+                                object_id=object_id)
                 c.save()
         if type is "target":
             print("target")
+            print(obj)
 
             # specification_id = PlugActionSpecification.objects.get(plug_id=1)
             # print("specification_id", specification_id.action_specification_id)
@@ -273,24 +281,23 @@ class MySQLController(BaseController):
 
             gear_id = Gear.objects.get(target_id=self._plug.id)
             action = Action.objects.get(id=self._plug.action_id)
+            map = GearMap.objects.get(gear_id=gear_id.id)
+            store = StoredData.objects.filter(pk__gt=map.last_sent_stored_data_id)
             data = {}
+            for o in obj:
+                data[o] = obj[o]
 
-            print("list_objects", list_objects)
-
-            for l in list_objects:
-                for obj in l[0]:
-                    data[obj] = list_objects[0][obj]
-                history = HistoryCount.objects.filter(gear_id=gear_id.id)
-                find = False
-                for c in history:
-                    if (c.plug_id_output is "" and find is False):
+            find = False
+            for s in store:
+                if s.plug_id==gear_id.source_id and find is False:
+                    history = HistoryCount.objects.get(object_id=s.object_id, gear_id=gear_id.id)
+                    if history.plug_id_output is "" :
                         find = True
-                        print("here")
-                        c.plug_id_output = self._plug.id
-                        c.name_output = "mysql"
-                        c.action_output = action.name
-                        c.data_output = data
-                        c.save()
+                        history.plug_id_output = self._plug.id
+                        history.name_output = "mysql"
+                        history.action_output = action.name
+                        history.data_output = data
+                        history.save()
         return None
 
     def get_target_fields(self, **kwargs):
@@ -465,9 +472,7 @@ class PostgreSQLController(BaseController):
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
-        print("data list", data_list)
         if is_first:
-            print("primero")
             if data_list:
                 try:
                     data_list = [data_list[-1]]
