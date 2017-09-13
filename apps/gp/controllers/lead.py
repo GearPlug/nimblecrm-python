@@ -470,8 +470,7 @@ class FacebookLeadsController(BaseController):
                     plug_action_specification__action_specification__name__iexact='page')
                 for plug in plugs_to_update:
                     try:
-                        self.create_connection(
-                            plug.connection.related_connection, plug)
+                        self.create_connection(connection=plug.connection.related_connection, plug=plug)
                         if self.test_connection():
                             last_source_record = self.download_source_data(
                                 lead=lead)
