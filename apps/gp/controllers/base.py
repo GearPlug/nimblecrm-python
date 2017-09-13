@@ -29,7 +29,10 @@ class BaseController(object):
             if isinstance(connection, Connection):
                 connection = connection.related_connection
             self._connection_object = connection
-            self._connector = self._connection_object.connection.connector
+            try:
+                self._connector = self._connection_object.connection.connector
+            except:
+                self._connector = None
         if plug:
             self._plug = plug
         return

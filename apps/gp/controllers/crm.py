@@ -31,35 +31,36 @@ class SugarCRMController(BaseController):
     _module = None
     __url_end = 'service/v4_1/rest.php'
 
-    def __init__(self, *args, **kwargs):
-        super(SugarCRMController, self).__init__(*args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(SugarCRMController, self).__init__(connection=connection,
+                                                 plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(SugarCRMController, self).create_connection(*args)
-            if self._connection_object is not None:
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(SugarCRMController, self).create_connection(
+            connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._user = self._connection_object.connection_user
+                self._password = self._connection_object.connection_password
+                if not self._connection_object.url.endswith(
+                        '/service/v4_1/rest.php'):
+                    self._url = self._connection_object.url + '/service/v4_1/rest.php'
+                else:
+                    self._url = self._connection_object.url
                 try:
-                    self._user = self._connection_object.connection_user
-                    self._password = self._connection_object.connection_password
-                    if not self._connection_object.url.endswith(
-                            '/service/v4_1/rest.php'):
-                        self._url = self._connection_object.url + '/service/v4_1/rest.php'
-                    else:
-                        self._url = self._connection_object.url
-                    try:
-                        self._module = self._plug.plug_action_specification.get(
-                            action_specification__name__iexact='module').value
-                    except AttributeError as e:
-                        print(
-                            "no module assigned. no plug specified \nMessage: {0}".format(
-                                str(e)))
+                    self._module = self._plug.plug_action_specification.get(
+                        action_specification__name__iexact='module').value
                 except AttributeError as e:
-                    raise ControllerError(code=1,
-                                          controller=ConnectorEnum.SugarCRM,
-                                          message='Error getting the SugarCRM attributes args. {}'.format(
-                                              str(e)))
-            else:
-                raise ControllerError('No connection.')
+                    print(
+                        "no module assigned. no plug specified \nMessage: {0}".format(
+                            str(e)))
+            except AttributeError as e:
+                raise ControllerError(code=1,
+                                      controller=ConnectorEnum.SugarCRM,
+                                      message='Error getting the SugarCRM attributes args. {}'.format(
+                                          str(e)))
+        else:
+            raise ControllerError('No connection.')
         if self._url is not None and self._user is not None and self._password is not None:
             try:
 

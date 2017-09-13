@@ -169,25 +169,24 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
     form_field_list = []
     source_object_list = []
     success_url = reverse_lazy('%s:list' % app_name)
+    exists = False
 
     def get(self, request, *args, **kwargs):
         """
         Define las variables source_object_list y form_field_list, necesarias para el mapeo.
         """
         gear_id = kwargs.pop('gear_id', 0)
-        gear = Gear.objects.filter(pk=gear_id).select_related('source',
-                                                              'target').get(
-            pk=gear_id)
+        gear = Gear.objects.filter(pk=gear_id).select_related(
+            'source', 'target').get(pk=gear_id)
         source_plug = Plug.objects.filter(pk=gear.source.id).select_related(
-            'connection__connector').get(
-            pk=gear.source.id)
+            'connection__connector').get(pk=gear.source.id)
         target_plug = Plug.objects.filter(pk=gear.target.id).select_related(
-            'connection__connector').get(
-            pk=gear.target.id)
+            'connection__connector').get(pk=gear.target.id)
         # Source options
         self.source_object_list = self.get_available_source_fields(source_plug)
         # Target fields
         self.form_field_list = self.get_target_field_list(target_plug)
+        self.gear_map = GearMap.objects.filter(gear=gear).first()
         return super(CreateGearMapView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -199,35 +198,59 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
             'connection__connector').get(
             pk=gear.target.id)
         self.form_field_list = self.get_target_field_list(target_plug)
+        self.gear_map = GearMap.objects.filter(gear=gear).first()
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
 
     def form_valid(self, form, *args, **kwargs):
-        map = GearMap.objects.create(gear_id=self.kwargs['gear_id'],
-                                     is_active=True)
-        map.gear.is_active = True
-        map.gear.save()
-        map_data = []
-        for field in form:
-            if form.cleaned_data[field.name]:
-                map_data.append(
-                    GearMapData(gear_map=map, target_name=field.name,
-                                source_value=form.cleaned_data[field.name]))
-        GearMapData.objects.bulk_create(map_data)
+        if self.gear_map is not None:
+            all_data = GearMapData.objects.filter(gear_map=self.gear_map)
+            for f, v in form.cleaned_data.items():
+                try:
+                    field = all_data.get(target_name=f)
+                    if v == '' or v.isspace():
+                        field.delete()
+                    else:
+                        if field.source_value != v:
+                            field.source_value = v
+                            field.save(update_fields=['source_value'])
+                except GearMapData.DoesNotExist:
+                    if v != '' or not v.isspace():
+                        GearMapData.objects.create(gear_map=self.gear_map,
+                                                   target_name=f,
+                                                   source_value=v)
+        else:
+            self.gear_map = GearMap.objects.create(
+                gear_id=self.kwargs['gear_id'], is_active=True)
+            gear_map_data = [GearMapData(gear_map=self.gear_map, target_name=f,
+                                         source_value=v) for f, v in
+                             form.cleaned_data.items()]
+            GearMapData.objects.bulk_create(gear_map_data)
+        self.gear_map.gear.is_active = True
+        self.gear_map.gear.save()
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
     def form_invalid(self, form, *args, **kwargs):
+        print("fue invalido")
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):
         context = super(CreateGearMapView, self).get_context_data(**kwargs)
         context['source_object_list'] = self.source_object_list
+        context['action'] = 'Create' if self.gear_map is None else 'Update'
         return context
 
     def get_form(self, *args, **kwargs):
         form_class = self.get_form_class()
         form = form_class(extra=self.form_field_list, **self.get_form_kwargs())
         if self.request.method == 'GET':
-            print("Cargar default?")
+            if self.gear_map is not None:
+                all_data = GearMapData.objects.filter(gear_map=self.gear_map)
+                for label, field in form.fields.items():
+                    try:
+                        field.initial = all_data.get(
+                            target_name=label).source_value
+                    except:
+                        pass
         return form
 
     def get_available_source_fields(self, plug):
@@ -254,14 +277,6 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
                 return []
         else:
             return []
-
-
-class GearMapGetSourceData(TemplateViewWithPost):
-    pass
-
-
-class GearMapSendTargetData(TemplateViewWithPost):
-    pass
 
 
 def gear_toggle(request, gear_id):

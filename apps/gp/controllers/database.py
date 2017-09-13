@@ -1,14 +1,17 @@
-from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.utils import get_dict_with_source_data
+from apps.gp.controllers.base import BaseController
+from django.contrib.auth.models import User
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apiconnector.celery import app
 from apps.gp.controllers.exception import ControllerError
-from apps.gp.models import StoredData, ActionSpecification
+from apps.gp.models import StoredData, ActionSpecification, Action, \
+    HistoryCount, PlugActionSpecification, Gear
 import MySQLdb
 import copy
 import psycopg2
 import pymssql
+import json
 
 
 class MySQLController(BaseController):
@@ -126,7 +129,9 @@ class MySQLController(BaseController):
             {'unique': {'name': unique.value, 'value': item[unique.value]},
              'data': [{'name': key, 'value': value} for key, value in
                       item.items()]} for item in data]
+
         new_data = []
+        list_objects = []
         for item in parsed_data:
             unique_value = item['unique']['value']
             q = StoredData.objects.filter(
@@ -179,6 +184,8 @@ class MySQLController(BaseController):
             ",".join('\"{0}\"'.format(i) for i in item.values()))
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
+        print("send")
+        list_objects = []
         data_list = get_dict_with_source_data(source_data, target_fields)
         if is_first:
             if data_list:
@@ -226,8 +233,68 @@ class MySQLController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def get_target_fields(self):
-        return self.describe_table()
+    def _history(self, list_objects, type):
+        if type is "source":
+            print("source")
+            user_name = User.objects.get(pk=self._plug.user_id).username
+            gear_id = Gear.objects.get(source_id=self._plug.id)
+            specification_id = self._plug.plug_action_specification.all()
+            specifications = {}
+            for i in specification_id:
+                name_specification = ActionSpecification.objects.get(
+                    id=i.action_specification_id)
+                action = Action.objects.get(id=name_specification.action_id)
+                specifications[name_specification.name] = i.value
+            for objs in list_objects:
+                obj = StoredData.objects.filter(object_id=objs,
+                                                plug_id=self._plug.id)
+                data = {}
+                for o in obj:
+                    data[o.name] = o.value
+                    object_id = o.object_id
+                c = HistoryCount(user_id=self._plug.user.id,
+                                 user_name=user_name, gear_id=gear_id.id,
+                                 plug_id_input=self._plug.id,
+                                 name_input="mysql",
+                                 action_input=action.name,
+                                 specifications_input=specifications,
+                                 data_input=data, object_id=object_id)
+                c.save()
+        if type is "target":
+            print("target")
+
+            # specification_id = PlugActionSpecification.objects.get(plug_id=1)
+            # print("specification_id", specification_id.action_specification_id)
+            # specifications = {}
+
+            # for i in specification_id:
+            #     name_specification = ActionSpecification.objects.get(id=i.action_specification_id)
+            #     specifications[name_specification.name] = i.value
+
+            gear_id = Gear.objects.get(target_id=self._plug.id)
+            action = Action.objects.get(id=self._plug.action_id)
+            data = {}
+
+            print("list_objects", list_objects)
+
+            for l in list_objects:
+                for obj in l[0]:
+                    data[obj] = list_objects[0][obj]
+                history = HistoryCount.objects.filter(gear_id=gear_id.id)
+                find = False
+                for c in history:
+                    if (c.plug_id_output is "" and find is False):
+                        find = True
+                        print("here")
+                        c.plug_id_output = self._plug.id
+                        c.name_output = "mysql"
+                        c.action_output = action.name
+                        c.data_output = data
+                        c.save()
+        return None
+
+    def get_target_fields(self, **kwargs):
+        return self.describe_table(**kwargs)
 
     def get_mapping_fields(self):
         return [MapField(f, controller=ConnectorEnum.MySQL) for f in
@@ -346,6 +413,7 @@ class PostgreSQLController(BaseController):
     def download_to_stored_data(self, connection_object, plug, **kwargs):
         if plug is None:
             plug = self._plug
+
         data = self.select_all()
         id_list = self.get_primary_keys()
         parsed_data = [{'id': tuple(item[key] for key in id_list),
@@ -397,7 +465,9 @@ class PostgreSQLController(BaseController):
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
+        print("data list", data_list)
         if is_first:
+            print("primero")
             if data_list:
                 try:
                     data_list = [data_list[-1]]

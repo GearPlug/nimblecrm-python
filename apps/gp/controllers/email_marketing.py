@@ -6,7 +6,7 @@ from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
-from apps.gp.models import ActionSpecification, Webhook, StoredData
+from apps.gp.models import ActionSpecification, Webhook, StoredData, Action
 from django.conf import settings
 from mailchimp.client import Client
 from getresponse.client import GetResponse
@@ -50,7 +50,9 @@ class GetResponseController(BaseController):
             extra = {'controller': 'getresponse'}
             for obj in data_list:
                 if status == 'subscribed':
-                    res = self.subscribe_contact(self._plug.plug_action_specification.all()[0].value, obj)
+                    res = self.subscribe_contact(
+                        self._plug.plug_action_specification.all()[0].value,
+                        obj)
                 else:
                     res = self.unsubscribe_contact(obj)
             return
@@ -68,7 +70,8 @@ class GetResponseController(BaseController):
         if 'ipAddress' in obj:
             _dict['ipAddress'] = obj.pop('ipAddress')
         if obj:
-            _dict["customFieldValues"] = [{"customFieldId": k, "value": [v]} for k, v in obj.items()]
+            _dict["customFieldValues"] = [{"customFieldId": k, "value": [v]}
+                                          for k, v in obj.items()]
         self._client.create_contact(_dict)
 
     def unsubscribe_contact(self, obj):
@@ -128,18 +131,23 @@ class GetResponseController(BaseController):
         }]
 
     def get_mapping_fields(self, **kwargs):
-        if self._plug.plug_action_specification.all()[0].action_specification.action.name == 'Unsubscribe':
+        if self._plug.plug_action_specification.all()[
+            0].action_specification.action.name == 'Unsubscribe':
             fields = self.get_unsubscribe_target_fields()
         else:
             fields = self.get_meta()
-        return [MapField(f, controller=ConnectorEnum.GetResponse) for f in fields]
+        return [MapField(f, controller=ConnectorEnum.GetResponse) for f in
+                fields]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
         if action_specification.name.lower() == 'campaign':
-            return tuple({'id': c['id'], 'name': c['name']} for c in self.get_campaigns())
+            return tuple({'id': c['id'], 'name': c['name']} for c in
+                         self.get_campaigns())
         else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
 
 
 class MailChimpController(BaseController):
@@ -147,81 +155,86 @@ class MailChimpController(BaseController):
     MailChimpController Class
     """
     _client = None
-    _token= None
+    _token = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        BaseController.__init__(self, connection=connection, plug=plug,
+                                **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(MailChimpController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token=self._connection_object.token
-                    self._client = Client(access_token=self._token)
-                except Exception as e:
-                    print("Error getting the MailChimp attributes")
-                    self._client = None
-                    self._token= None
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(MailChimpController, self).create_connection(
+            connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+                self._client = Client(access_token=self._token)
+            except Exception as e:
+                print("Error getting the MailChimp attributes")
+                self._client = None
+                self._token = None
 
     def test_connection(self):
-            try:
-                self._client.get_lists()
-                return self._client is not None and self._token is not None
-            except Exception as e:
-                print(e)
-                return self._client is None and self._token is None
+        try:
+            self._client.get_lists()
+            return True
+        except Exception as e:
+            print(e)
+            return False
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
         data_list = get_dict_with_source_data(source_data, target_fields)
-
-        if self._plug is not None:
+        action = Action.objects.get(
+            plug__plug_action_specification=self._plug.plug_action_specification.first())
+        try:
+            status = action.name + "d"
+        except:
             status = None
-            _list = []
-            for specification in self._plug.plug_action_specification.all():
-                if specification.action_specification.action.name == 'subscribe':
-                    status = 'subscribed'
-                elif specification.action_specification.action.name == 'unsubscribe':
-                    status = 'unsubscribed'
-
-            list_id = self._plug.plug_action_specification.all()[0].value
-            for obj in data_list:
-                d = {'email_address': obj.pop('email_address'), 'status': status,
-                     'merge_fields': {key: obj[key] for key in obj.keys()}}
-                _list.append(d)
-
-            extra = {'controller': 'mailchimp'}
-            for item in _list:
-                try:
-                    res=self._client.add_new_list_member(list_id,item)
-                    extra['status'] = "s"
-                    self._log.info('Email: %s  successfully sent. Result: %s.' % (item['email_address'], res['id']),
-                                    extra=extra)
-                    obj_list.append(id)
-                except Exception as e:
-                    print(e)
-                    res = "User already exists"
-                    extra['status'] = 'f'
-                    self._log.error('Email: %s  failed. Result: %s.' % (item['email_address'], res), extra=extra)
-            return obj_list
-        raise ControllerError("Incomplete.")
+        list_id = self._plug.plug_action_specification.filter(
+            action_specification__action=action).first().value
+        _list = [{'email_address': obj.pop('email_address'), 'status': status,
+                  'merge_fields': {key: obj[key] for key in obj.keys()}} for
+                 obj in data_list]
+        extra = {'controller': 'mailchimp'}
+        for item in _list:
+            try:
+                res = self._client.add_new_list_member(list_id, item)
+                extra['status'] = "s"
+                self._log.info(
+                    'Email: %s  successfully sent. Result: %s.' % (
+                        item['email_address'], res['id']),
+                    extra=extra)
+                obj_list.append(res['id'])
+            except Exception as e:
+                print(e)
+                res = "User already exists"
+                extra['status'] = 'f'
+                self._log.error('Email: %s  failed. Result: %s.' % (
+                    item['email_address'], res), extra=extra)
+        return obj_list
 
     def get_target_fields(self, **kwargs):
-        return [{"name": "email_address", "required": True, "type": "varchar", "label": "email"},
-                {"name": "FNAME", "required": False, "type": "varchar", "label": "First Name"},
-                {"name": "LNAME", "required": False, "type": "varchar", "label": "Last Name"},
+        return [{"name": "email_address", "required": True, "type": "varchar",
+                 "label": "email"},
+                {"name": "FNAME", "required": False, "type": "varchar",
+                 "label": "First Name"},
+                {"name": "LNAME", "required": False, "type": "varchar",
+                 "label": "Last Name"},
                 ]
 
     def get_mapping_fields(self, **kwargs):
-        return [MapField(f, controller=ConnectorEnum.MailChimp) for f in self.get_target_fields()]
+        return [MapField(f, controller=ConnectorEnum.MailChimp) for f in
+                self.get_target_fields()]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
         if action_specification.name.lower() == 'list':
-            return tuple({'id': c['id'], 'name': c['name']} for c in self._client.get_lists()['lists'])
+            return tuple({'id': c['id'], 'name': c['name']} for c in
+                         self._client.get_lists()['lists'])
         else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
 
 
 class MandrillController(BaseController):
@@ -238,7 +251,8 @@ class MandrillController(BaseController):
             super(MandrillController, self).create_connection(*args)
             if self._connection_object is not None:
                 try:
-                    self._client = mandrill.Mandrill(self._connection_object.api_key)
+                    self._client = mandrill.Mandrill(
+                        self._connection_object.api_key)
                 except Exception as e:
                     print("Error getting the Mandrill attributes")
                     self._client = None
@@ -269,8 +283,10 @@ class MandrillController(BaseController):
         to_email = obj.pop('to_email')
         obj['to'] = [{'email': to_email}]
         print(obj)
-        result = self._client.messages.send(message=obj, async=False, ip_pool='Main Pool',
-                                            send_at=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        result = self._client.messages.send(message=obj, async=False,
+                                            ip_pool='Main Pool',
+                                            send_at=datetime.datetime.now().strftime(
+                                                '%Y-%m-%d %H:%M:%S'))
         print(result)
 
     def get_meta(self):
@@ -423,16 +439,19 @@ class MandrillController(BaseController):
         return _dict
 
     def get_mapping_fields(self, **kwargs):
-        mfl = [MapField(f, controller=ConnectorEnum.Mandrill) for f in self.get_meta()]
+        mfl = [MapField(f, controller=ConnectorEnum.Mandrill) for f in
+               self.get_meta()]
         return mfl
 
     def get_target_fields(self):
         return self.get_meta()
 
     def get_events(self):
-        return ['send', 'hard_bounce', 'soft_bounce', 'open', 'click', 'spam', 'unsub', 'reject']
+        return ['send', 'hard_bounce', 'soft_bounce', 'open', 'click', 'spam',
+                'unsub', 'reject']
 
-    def download_to_stored_data(self, connection_object=None, plug=None, event=None, **kwargs):
+    def download_to_stored_data(self, connection_object=None, plug=None,
+                                event=None, **kwargs):
         if event is not None:
             _items = []
             # Todo verificar que este ID siempre existe independiente del action
@@ -440,50 +459,62 @@ class MandrillController(BaseController):
             event_id = event.pop('_id')
             msg = event.pop('msg')
             event.update(msg)
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                          object_id=event_id)
+            q = StoredData.objects.filter(
+                connection=connection_object.connection, plug=plug,
+                object_id=event_id)
             if not q.exists():
                 for k, v in event.items():
-                    obj = StoredData(connection=connection_object.connection, plug=plug,
+                    obj = StoredData(connection=connection_object.connection,
+                                     plug=plug,
                                      object_id=event_id, name=k, value=v or '')
                     _items.append(obj)
             extra = {}
             for item in _items:
                 extra['status'] = 's'
                 extra = {'controller': 'mandril'}
-                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                    item.object_id, item.plug.id, item.connection.id), extra=extra)
+                self._log.info(
+                    'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                        item.object_id, item.plug.id, item.connection.id),
+                    extra=extra)
                 item.save()
         return False
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
         if action_specification.name.lower() == 'event':
             return tuple({'id': e, 'name': e} for e in self.get_events())
         else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
 
     def create_webhook(self):
         action = self._plug.action.name
         if action == 'new email':
-            event = self._plug.plug_action_specification.get(action_specification__name='event')
+            event = self._plug.plug_action_specification.get(
+                action_specification__name='event')
 
             # Creacion de Webhook
-            webhook = Webhook.objects.create(name='mandrill', plug=self._plug, url='', expiration='')
+            webhook = Webhook.objects.create(name='mandrill', plug=self._plug,
+                                             url='', expiration='')
 
             # Verificar ngrok para determinar url_base
             url_base = settings.WEBHOOK_HOST
-            url_path = reverse('home:webhook', kwargs={'connector': 'mandrill', 'webhook_id': webhook.id})
+            url_path = reverse('home:webhook', kwargs={'connector': 'mandrill',
+                                                       'webhook_id': webhook.id})
             url = url_base + url_path
 
             try:
                 events = [event.value]
-                response = self._client.webhooks.add(url=url, description='GearPlug Webhook', events=events)
+                response = self._client.webhooks.add(url=url,
+                                                     description='GearPlug Webhook',
+                                                     events=events)
                 # El cliente parsea el response por lo cual siempre viene un diccionario.
                 webhook.url = url
                 webhook.generated_id = response['id']
                 webhook.is_active = True
-                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+                webhook.save(
+                    update_fields=['url', 'generated_id', 'is_active'])
                 return True
             except mandrill.Error as e:
                 webhook.is_deleted = True
