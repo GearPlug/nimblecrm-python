@@ -197,29 +197,26 @@ class FacebookLeadsController(BaseController):
                                       controller=ConnectorEnum.FacebookLeads,
                                       message='Failed to get the token. \n{}'.format(
                                           str(e)))
-        else:
-            raise ControllerError(code=7,
-                                  controller=ConnectorEnum.FacebookLeads,
-                                  message='No connection.')
-        try:
-            self._client = Client(settings.FACEBOOK_APP_ID,
-                                  settings.FACEBOOK_APP_SECRET, 'v2.10')
-            self._client.set_access_token(self._token)
-        except UnknownError as e:
-            raise ControllerError(code=2,
-                                  controller=ConnectorEnum.FacebookLeads,
-                                  message='Unknown error. {}'.format(str(e)))
-        try:
-            if self._plug is not None:
-                self._page = self._plug.plug_action_specification.filter(
-                    action_specification__name='page').first().value
-                self._form = self._plug.plug_action_specification.filter(
-                    action_specification__name='form').first().value
-        except Exception as e:
-            raise ControllerError(code=1,
-                                  controller=ConnectorEnum.FacebookLeads,
-                                  message='Error asignando los specifications. {}'.format(
-                                      str(e)))
+            try:
+                self._client = Client(settings.FACEBOOK_APP_ID,
+                                      settings.FACEBOOK_APP_SECRET, 'v2.10')
+                self._client.set_access_token(self._token)
+            except UnknownError as e:
+                raise ControllerError(code=2,
+                                      controller=ConnectorEnum.FacebookLeads,
+                                      message='Unknown error. {}'.format(
+                                          str(e)))
+            try:
+                if self._plug is not None:
+                    self._page = self._plug.plug_action_specification.filter(
+                        action_specification__name='page').first().value
+                    self._form = self._plug.plug_action_specification.filter(
+                        action_specification__name='form').first().value
+            except Exception as e:
+                raise ControllerError(code=1,
+                                      controller=ConnectorEnum.FacebookLeads,
+                                      message='Error asignando los specifications. {}'.format(
+                                          str(e)))
 
     def test_connection(self):
         try:
@@ -470,7 +467,9 @@ class FacebookLeadsController(BaseController):
                     plug_action_specification__action_specification__name__iexact='page')
                 for plug in plugs_to_update:
                     try:
-                        self.create_connection(connection=plug.connection.related_connection, plug=plug)
+                        self.create_connection(
+                            connection=plug.connection.related_connection,
+                            plug=plug)
                         if self.test_connection():
                             last_source_record = self.download_source_data(
                                 lead=lead)
