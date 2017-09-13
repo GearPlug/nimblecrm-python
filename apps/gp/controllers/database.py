@@ -117,7 +117,6 @@ class MySQLController(BaseController):
 
     def download_to_stored_data(self, connection_object, plug,
                                 last_source_record=None, limit=50, **kwargs):
-        print("download")
         order_by = self._plug.plug_action_specification.get(
             action_specification__name__iexact='order by')
         unique = self._plug.plug_action_specification.get(
@@ -130,9 +129,7 @@ class MySQLController(BaseController):
             {'unique': {'name': unique.value, 'value': item[unique.value]},
              'data': [{'name': key, 'value': value} for key, value in
                       item.items()]} for item in data]
-
         new_data = []
-        list_objects = []
         for item in parsed_data:
             unique_value = item['unique']['value']
             q = StoredData.objects.filter(
@@ -145,13 +142,10 @@ class MySQLController(BaseController):
                                        connection=connection_object.connection,
                                        plug=plug) for column in item['data']]
                 new_data.append(new_item)
-
         if new_data:
             new_data.reverse()
             self._save_stored_data(new_data)
-
             self._history(new_data, "source")
-
             for item in parsed_data:
                 for column in item['data']:
                     if column['name'] == order_by.value:
@@ -190,7 +184,6 @@ class MySQLController(BaseController):
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
-        object_list = []
         if is_first:
             if data_list:
                 try:
@@ -208,7 +201,7 @@ class MySQLController(BaseController):
                     self._log.info('Item: %s successfully sent.' % (
                         self._cursor.lastrowid), extra=extra)
                     obj_list.append(self._cursor.lastrowid)
-                    self._history(item,"target")
+                    self._history(item, "target")
                 except MySQLdb.OperationalError as e:
                     extra['status'] = 'f'
                     self._log.info(
@@ -240,58 +233,48 @@ class MySQLController(BaseController):
 
     def _history(self, obj, type):
         if type is "source":
-            print("source")
             user_name = User.objects.get(pk=self._plug.user_id).username
             gear_id = Gear.objects.get(source_id=self._plug.id)
             specification_id = self._plug.plug_action_specification.all()
             specifications = {}
             for i in specification_id:
                 name_specification = ActionSpecification.objects.get(
-                id=i.action_specification_id)
+                    id=i.action_specification_id)
                 action = Action.objects.get(id=name_specification.action_id)
                 specifications[name_specification.name] = i.value
 
             for dat in obj:
                 data = {}
                 object_id = StoredData.objects.get(pk=dat[0].id).object_id
-                store = StoredData.objects.filter(object_id=object_id, plug_id=self._plug.id)
+                store = StoredData.objects.filter(object_id=object_id,
+                                                  plug_id=self._plug.id)
                 for o in store:
                     data[o.name] = o.value
                 c = HistoryCount(user_id=self._plug.user.id,
-                                user_name=user_name,
-                                gear_id=gear_id.id,
-                                plug_id_input=self._plug.id,
-                                name_input="mysql",
-                                action_input=action.name,
-                                specifications_input=specifications,
-                                data_input=data,
-                                object_id=object_id)
+                                 user_name=user_name,
+                                 gear_id=gear_id.id,
+                                 plug_id_input=self._plug.id,
+                                 name_input="mysql",
+                                 action_input=action.name,
+                                 specifications_input=specifications,
+                                 data_input=data,
+                                 object_id=object_id)
                 c.save()
         if type is "target":
-            print("target")
-            print(obj)
-
-            # specification_id = PlugActionSpecification.objects.get(plug_id=1)
-            # print("specification_id", specification_id.action_specification_id)
-            # specifications = {}
-
-            # for i in specification_id:
-            #     name_specification = ActionSpecification.objects.get(id=i.action_specification_id)
-            #     specifications[name_specification.name] = i.value
-
             gear_id = Gear.objects.get(target_id=self._plug.id)
             action = Action.objects.get(id=self._plug.action_id)
             map = GearMap.objects.get(gear_id=gear_id.id)
-            store = StoredData.objects.filter(pk__gt=map.last_sent_stored_data_id)
+            store = StoredData.objects.filter(
+                pk__gt=map.last_sent_stored_data_id)
             data = {}
             for o in obj:
                 data[o] = obj[o]
-
             find = False
             for s in store:
-                if s.plug_id==gear_id.source_id and find is False:
-                    history = HistoryCount.objects.get(object_id=s.object_id, gear_id=gear_id.id)
-                    if history.plug_id_output is "" :
+                if s.plug_id == gear_id.source_id and find is False:
+                    history = HistoryCount.objects.get(object_id=s.object_id,
+                                                       gear_id=gear_id.id)
+                    if history.plug_id_output is "":
                         find = True
                         history.plug_id_output = self._plug.id
                         history.name_output = "mysql"
