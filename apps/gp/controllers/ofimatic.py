@@ -236,21 +236,18 @@ class GoogleCalendarController(BaseController):
     _connection = None
     _credential = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        BaseController.__init__(self, connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(GoogleCalendarController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    credentials_json = self._connection_object.credentials_json
-                except Exception as e:
-                    print("Error getting the GoogleCalendar attributes 1")
-                    print(e)
-                    credentials_json = None
-        else:
-            credentials_json = None
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        credentials_json = None
+        super(GoogleCalendarController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                credentials_json = self._connection_object.credentials_json
+            except Exception as e:
+                print("Error getting the GoogleCalendar attributes 1")
+                print(e)
         if credentials_json is not None:
             try:
                 self._credential = GoogleClient.OAuth2Credentials.from_json(
