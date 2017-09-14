@@ -30,14 +30,17 @@ class SlackController(BaseController):
                 print("Error getting the Slack Token")
 
     def test_connection(self):
-        """todo"""
-        return self._token is not None and self._slacker is not None
+        if self._token is not None and self._slacker is not None:
+            response = self.get_channel_list()
+            if isinstance(response, tuple):
+                return True
+        return False
 
     def get_channel_list(self):
         response = self._slacker.channels.list()
-        if 'successful' in response.__dict__ and response.__dict__[
-            'successful'] == True:
-            data = json.loads(response.__dict__['raw'])
+        _dict = response.__dict__
+        if 'successful' in _dict and _dict['successful'] is True:
+            data = json.loads(_dict['raw'])
             channel_list = tuple(
                 {'id': c['id'], 'name': c['name']} for c in data['channels'])
             return channel_list
