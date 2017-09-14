@@ -76,7 +76,8 @@ def update_plug(plug_id, gear_id, **query_params):
                                   gear_id).apply_async()  # SIN COLAS
                     # update_plug.s(gear.target.id, gear_id).apply_async(queue=target_connector.name.lower())  # CON COLAS
                     print("Assigning plug {0} to queue: {1}.".format(
-                        gear.target.id, connector.name.lower()))
+                        gear.target.id,
+                        gear.target.connection.connector.name.lower()))
 
             elif plug.plug_type.lower() == 'target':
                 stored_data = StoredData.objects.filter(**query_params)
@@ -98,7 +99,8 @@ def update_plug(plug_id, gear_id, **query_params):
                                                           is_first=is_first)
                     last_sent_data = StoredData.objects.filter(
                         object_id=source_data[-1]['id'], plug=gear.source,
-                        connection=gear.source.connection).order_by('id').last()
+                        connection=gear.source.connection).order_by(
+                        'id').last()
                     if entries or connector == ConnectorEnum.MailChimp:
                         gear.gear_map.last_source_update = timezone.now()
                         gear.gear_map.last_sent_stored_data_id = last_sent_data.id

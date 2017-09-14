@@ -7,25 +7,18 @@
         <div class="col-md-4 card card-container">
             <img id="profile-img" class="profile-img-card" src={% static 'img/gp_logo.png' %}/>
             <p id="profile-name" class="profile-name-card"></p>
-            {{ form.error }}
-            <form class="form-signin" method="post" action="">
+            <form class="form-register" method="post" action="">
                 {% csrf_token %}
                 <span id="reauth-email" class="reauth-email"></span>
-                {{ form.login }}
-                {{ form.password }}
-                {{ form.remember }} <label for="{{ form.remember.auto_id }}">{{ form.remember.label }} </label>
+                <p>Enter your e-mail acount and your password to sign up</p>
+                {{ form }}
                 {% if form.error %}
                     <div class="error">{{ form.error }}</div>
                 {% endif %}
-                <button class="btn btn-lg btn-primary btn-block btn-signin" type="submit">Sign in</button>
+                <button class="btn btn-lg btn-primary btn-block btn-signin" type="submit">Sign up</button>
             </form><!-- /form -->
-            <a href="#" class="forgot-password">
-                Forgot the password?
-            </a>
             <br /><br />
-            <p class="message"> Not registered?
-                <a href="{% url 'account_signup' %}" class="create-account">Create an account</a>
-            </p>
+            <p class="message">Already registered? <a href="{% url 'account_login' %}" class="login-account">Log in</a>
         </div>
         <div class="col-md-4"> &nbsp;</div>
     </div>

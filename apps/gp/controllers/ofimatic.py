@@ -40,7 +40,6 @@ class GoogleSpreadSheetsController(BaseController):
         if self._connection_object is not None:
             try:
                 credentials_json = self._connection_object.credentials_json
-                print("json credentials", credentials_json)
                 if self._plug is not None:
                     try:
                         self._spreadsheet_id = self._plug.plug_action_specification.get(
@@ -740,8 +739,7 @@ class WunderListController(BaseController):
                     task.save()
                     self._log.info(
                         'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                        task.object_id, task.plug.id,
-                        task.connection.id),
+                        task.object_id, task.plug.id, task.connection.id),
                         extra=extra)
                 except Exception as e:
                     extra['status'] = 'f'
