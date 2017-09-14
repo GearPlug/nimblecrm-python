@@ -230,6 +230,9 @@ class FacebookLeadsController(BaseController):
 
     def extend_token(self, token):
         try:
+            if self._client is None:
+                self._client = Client(settings.FACEBOOK_APP_ID,
+                                      settings.FACEBOOK_APP_SECRET, 'v2.10')
             self._token = self._client.extend_token(token)['access_token']
             self._client.set_access_token(self._token)
             return self._token
