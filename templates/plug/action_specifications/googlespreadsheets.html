@@ -16,6 +16,7 @@
                     }
                 }).done(function (response) {
                     $(select).html(response);
+                    $(select).attr('data-is-loaded', true);
                 });
             });
         })
