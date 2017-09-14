@@ -5,7 +5,7 @@
         $(document).ready(function () {
             $(document).on('change', 'select[data-name=spreadsheet]', function () {
                 var select = $('select[data-name=worksheet]');
-                var url = "{% url 'plug:action_specification_options' %}";
+                var url = "{% url 'plug:plug_action_specifications' %}";
                 $.ajax({
                     method: "POST",
                     url: url,
