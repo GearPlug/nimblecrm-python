@@ -1,7 +1,8 @@
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification, Webhook, PlugActionSpecification
+from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification, \
+    Webhook, PlugActionSpecification
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 import httplib2
@@ -28,41 +29,48 @@ class GoogleSpreadSheetsController(BaseController):
     _spreadsheet_id = None
     _worksheet_name = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        BaseController.__init__(self, connection=connection, plug=plug,
+                                **kwargs)
 
-    def create_connection(self, *args, **kwargs):
+    def create_connection(self, connection=None, plug=None, **kwargs):
         credentials_json = None
-        if args:
-            super(GoogleSpreadSheetsController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    credentials_json = self._connection_object.credentials_json
-                    if self._plug is not None:
-                        try:
-                            self._spreadsheet_id = self._plug.plug_action_specification.get(
-                                action_specification__name__iexact='spreadsheet').value
-                            self._worksheet_name = self._plug.plug_action_specification.get(
-                                action_specification__name__iexact='worksheet').value
-                        except Exception as e:
-                            print(
-                                "Error asignando los specifications GoogleSpreadSheets 2")
-                except Exception as e:
-                    print("Error getting the GoogleSpreadSheets attributes 1")
-                    print(e)
-                    credentials_json = None
-        files = None
+        super(GoogleSpreadSheetsController, self).create_connection(
+            connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                credentials_json = self._connection_object.credentials_json
+                print("json credentials", credentials_json)
+                if self._plug is not None:
+                    try:
+                        self._spreadsheet_id = self._plug.plug_action_specification.get(
+                            action_specification__name__iexact='spreadsheet').value
+                        self._worksheet_name = self._plug.plug_action_specification.get(
+                            action_specification__name__iexact='worksheet').value
+                    except Exception as e:
+                        print(
+                            "Error asignando los specifications GoogleSpreadSheets 2")
+            except Exception as e:
+                print("Error getting the GoogleSpreadSheets attributes 1")
+                print(e)
+                credentials_json = None
         if credentials_json is not None:
             self._credential = GoogleClient.OAuth2Credentials.from_json(
                 json.dumps(credentials_json))
 
     def test_connection(self):
         try:
+            print(1)
             self._refresh_token()
+            print(2)
             http_auth = self._credential.authorize(httplib2.Http())
+            print(3)
             drive_service = discovery.build('drive', 'v3', http=http_auth)
+            print(4)
             files = drive_service.files().list().execute()
+            print(5)
         except Exception as e:
+            raise
             print("Error Test connection GoogleSpreadSheets")
             files = None
         return files is not None
@@ -73,10 +81,14 @@ class GoogleSpreadSheetsController(BaseController):
 
     def _refresh_token(self, token=''):
         if self._credential.access_token_expired:
+            print("ha expirado")
             self._credential.refresh(httplib2.Http())
+            print("refresh")
             self._upate_connection_object_credentials()
+            print("refresco token")
 
-    def download_to_stored_data(self, connection_object, plug, *args, **kwargs):
+    def download_to_stored_data(self, connection_object, plug, *args,
+                                **kwargs):
         if plug is None:
             plug = self._plug
         if not self._spreadsheet_id or not self._worksheet_name:
@@ -85,11 +97,15 @@ class GoogleSpreadSheetsController(BaseController):
         new_data = []
         for idx, item in enumerate(sheet_values[1:]):
             q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug, object_id=idx + 1)
+                connection=connection_object.connection, plug=plug,
+                object_id=idx + 1)
             if not q.exists():
                 for idx2, cell in enumerate(item):
-                    new_data.append(StoredData(name=sheet_values[0][idx2], value=cell, object_id=idx + 1,
-                                               connection=connection_object.connection, plug=plug))
+                    new_data.append(
+                        StoredData(name=sheet_values[0][idx2], value=cell,
+                                   object_id=idx + 1,
+                                   connection=connection_object.connection,
+                                   plug=plug))
         if new_data:
             field_count = len(sheet_values)
             extra = {'controller': 'google_spreadsheets'}
@@ -98,12 +114,16 @@ class GoogleSpreadSheetsController(BaseController):
                     item.save()
                     if (i + 1) % field_count == 0:
                         extra['status'] = 's'
-                        self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            item.object_id, item.plug.id, item.connection.id), extra=extra)
+                        self._log.info(
+                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                                item.object_id, item.plug.id,
+                                item.connection.id), extra=extra)
                 except:
                     extra['status'] = 'f'
-                    self._log.info('Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                        item.object_id, item.name, item.plug.id, item.connection.id), extra=extra)
+                    self._log.info(
+                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
+                            item.object_id, item.name, item.plug.id,
+                            item.connection.id), extra=extra)
             # raise IndexError("hola")
             return True
         return False
@@ -145,14 +165,16 @@ class GoogleSpreadSheetsController(BaseController):
         drive_service = discovery.build('drive', 'v3', http=http_auth)
         files = drive_service.files().list().execute()
         sheet_list = tuple(
-            f for f in files['files'] if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet')
+            f for f in files['files'] if 'mimeType' in f and f[
+                'mimeType'] == 'application/vnd.google-apps.spreadsheet')
         return sheet_list
 
     def get_worksheet_list(self, sheet_id):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
-        result = sheets_service.spreadsheets().get(spreadsheetId=sheet_id).execute()
+        result = sheets_service.spreadsheets().get(
+            spreadsheetId=sheet_id).execute()
         worksheet_list = tuple(i['properties'] for i in result['sheets'])
         return worksheet_list
 
@@ -160,8 +182,9 @@ class GoogleSpreadSheetsController(BaseController):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
-        res = sheets_service.spreadsheets().values().get(spreadsheetId=self._spreadsheet_id,
-                                                         range='{0}'.format(self._worksheet_name)).execute()
+        res = sheets_service.spreadsheets().values().get(
+            spreadsheetId=self._spreadsheet_id,
+            range='{0}'.format(self._worksheet_name)).execute()
         values = res['values']
         if from_row is None and limit is None:
             return values
@@ -198,17 +221,22 @@ class GoogleSpreadSheetsController(BaseController):
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_worksheet_first_row()
-        return [MapField({"name": f}, controller=ConnectorEnum.GoogleSpreadSheets) for f in fields]
+        return [
+            MapField({"name": f}, controller=ConnectorEnum.GoogleSpreadSheets)
+            for f in fields]
 
-    def get_action_specification_options(self, action_specification_id, **kwargs):
+    def get_action_specification_options(self, action_specification_id,
+                                         **kwargs):
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
         print("GSS->", action_specification.name, kwargs)
         if action_specification.name.lower() == 'spreadsheet':
-            return tuple({'id': p['id'], 'name': p['name']} for p in self.get_sheet_list())
+            return tuple({'id': p['id'], 'name': p['name']} for p in
+                         self.get_sheet_list())
         elif action_specification.name.lower() == 'worksheet':
 
-            return tuple({'id': p['title'], 'name': p['title']} for p in self.get_worksheet_list(**kwargs))
+            return tuple({'id': p['title'], 'name': p['title']} for p in
+                         self.get_worksheet_list(**kwargs))
         else:
             raise ControllerError(
                 "That specification doesn't belong to an action in this connector.")
@@ -235,9 +263,11 @@ class GoogleCalendarController(BaseController):
             credentials_json = None
         if credentials_json is not None:
             try:
-                self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
+                self._credential = GoogleClient.OAuth2Credentials.from_json(
+                    json.dumps(credentials_json))
                 http_auth = self._credential.authorize(httplib2.Http())
-                self._connection = discovery.build('calendar', 'v3', http=http_auth)
+                self._connection = discovery.build('calendar', 'v3',
+                                                   http=http_auth)
             except Exception as e:
                 print("Error getting the GoogleCalendar attributes 2")
                 print(e)
@@ -263,23 +293,28 @@ class GoogleCalendarController(BaseController):
             self._credential.refresh(httplib2.Http())
             self._upate_connection_object_credentials()
 
-    def download_to_stored_data(self, connection_object=None, plug=None, events=None, **kwargs):
+    def download_to_stored_data(self, connection_object=None, plug=None,
+                                events=None, **kwargs):
         if events is not None:
             _items = []
             for event in events:
-                q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                              object_id=event['id'])
+                q = StoredData.objects.filter(
+                    connection=connection_object.connection, plug=plug,
+                    object_id=event['id'])
                 if not q.exists():
                     for k, v in event.items():
-                        obj = StoredData(connection=connection_object.connection, plug=plug,
-                                         object_id=event['id'], name=k, value=v or '')
+                        obj = StoredData(
+                            connection=connection_object.connection, plug=plug,
+                            object_id=event['id'], name=k, value=v or '')
                         _items.append(obj)
             extra = {}
             for item in _items:
                 extra['status'] = 's'
                 extra = {'controller': 'googlecalendar'}
-                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                    item.object_id, item.plug.id, item.connection.id), extra=extra)
+                self._log.info(
+                    'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                        item.object_id, item.plug.id, item.connection.id),
+                    extra=extra)
                 item.save()
         return False
 
@@ -326,7 +361,8 @@ class GoogleCalendarController(BaseController):
                 event['end'] = {'timeZone': end_timezone}
             else:
                 event['end']['timeZone'] = end_timezone
-        return self._connection.events().insert(calendarId=calendar_id, body=event).execute()
+        return self._connection.events().insert(calendarId=calendar_id,
+                                                body=event).execute()
 
     def _parse_datetime(self, datetime):
         return parse(datetime).strftime('%Y-%m-%dT%H:%M:%S%z')
@@ -343,27 +379,32 @@ class GoogleCalendarController(BaseController):
     def create_webhook(self):
         url = 'https://www.googleapis.com/calendar/v3/calendars/{}/events/watch'.format(
             self._plug.plug_action_specification.all()[0].value)
-        webhook = Webhook.objects.create(name='googlecalendar', plug=self._plug, url='')
+        webhook = Webhook.objects.create(name='googlecalendar',
+                                         plug=self._plug, url='')
         headers = {
-            'Authorization': 'Bearer {}'.format(self._connection_object.credentials_json['access_token']),
+            'Authorization': 'Bearer {}'.format(
+                self._connection_object.credentials_json['access_token']),
             'Content-Type': 'application/json'
         }
 
         body = {
             "id": webhook.id,
             "type": "web_hook",
-            "address": "{0}/webhook/googlecalendar/{1}/".format(settings.WEBHOOK_HOST, webhook.id),
+            "address": "{0}/webhook/googlecalendar/{1}/".format(
+                settings.WEBHOOK_HOST, webhook.id),
         }
         r = requests.post(url, headers=headers, json=body)
         if r.status_code in [200, 201]:
             data = r.json()
             # GooglePushWebhook.objects.create(connection=self._connection_object.connection, channel_id=data['id'],
             #                                  resource_id=data['resourceId'], expiration=data['expiration'])
-            webhook.url = "{0}/webhook/googlecalendar/{1}/".format(settings.WEBHOOK_HOST, webhook.id)
+            webhook.url = "{0}/webhook/googlecalendar/{1}/".format(
+                settings.WEBHOOK_HOST, webhook.id)
             webhook.generated_id = data['resourceId']
             webhook.is_active = True
             webhook.expiration = data['expiration']
-            webhook.save(update_fields=['url', 'generated_id', 'is_active', 'expiration'])
+            webhook.save(update_fields=['url', 'generated_id', 'is_active',
+                                        'expiration'])
         else:
             webhook.is_deleted = True
             webhook.save(update_fields=['is_deleted', ])
@@ -371,7 +412,8 @@ class GoogleCalendarController(BaseController):
         return False
 
     def get_events(self, limit=10):
-        calendar_id = self._plug.plug_action_specification.get(action_specification__name__iexact='calendar').value
+        calendar_id = self._plug.plug_action_specification.get(
+            action_specification__name__iexact='calendar').value
         eventsResult = self._connection.events().list(
             calendarId=calendar_id, maxResults=limit, singleEvents=True,
             orderBy='updated').execute()
@@ -416,15 +458,19 @@ class GoogleCalendarController(BaseController):
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_meta()
-        return [MapField(f, controller=ConnectorEnum.GoogleCalendar) for f in fields]
+        return [MapField(f, controller=ConnectorEnum.GoogleCalendar) for f in
+                fields]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
         calendar_list = self._connection.calendarList().list().execute()
         if action_specification.name.lower() == "calendar":
-            return tuple({"name": c["summary"], "id": c["id"]} for c in calendar_list['items'])
+            return tuple({"name": c["summary"], "id": c["id"]} for c in
+                         calendar_list['items'])
         else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
 
 
 class EvernoteController(BaseController):
@@ -457,18 +503,23 @@ class EvernoteController(BaseController):
         print(notes)
         new_data = []
         for item in notes:
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                          object_id=item['id'])
+            q = StoredData.objects.filter(
+                connection=connection_object.connection, plug=plug,
+                object_id=item['id'])
             if not q.exists():
                 for column in item:
-                    new_data.append(StoredData(name=column, value=item[column], object_id=item['id'],
-                                               connection=connection_object.connection, plug=plug))
+                    new_data.append(StoredData(name=column, value=item[column],
+                                               object_id=item['id'],
+                                               connection=connection_object.connection,
+                                               plug=plug))
         extra = {}
         for item in new_data:
             extra['status'] = 's'
             extra = {'controller': 'evernote'}
-            self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                item.object_id, item.plug.id, item.connection.id), extra=extra)
+            self._log.info(
+                'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                    item.object_id, item.plug.id, item.connection.id),
+                extra=extra)
             item.save()
         return False
 
@@ -559,8 +610,9 @@ class WunderListController(BaseController):
             'X-Access-Token': self._token,
             'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
         }
-        response = requests.get('http://a.wunderlist.com/api/v1/tasks/{0}'.format(str(id)),
-                                headers=headers)
+        response = requests.get(
+            'http://a.wunderlist.com/api/v1/tasks/{0}'.format(str(id)),
+            headers=headers)
         return response.json()
 
     def create_task(self, **kwargs):
@@ -568,19 +620,23 @@ class WunderListController(BaseController):
         _title = str(kwargs['title'])
 
         data = {'list_id': _list_id, 'title': _title}
-        headers = {'Content-type': 'application/json', 'Accept': 'text/plain', 'X-Access-Token': self._token,
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain',
+                   'X-Access-Token': self._token,
                    'X-Client-ID': settings.WUNDERLIST_CLIENT_ID}
 
-        response = requests.post('http://a.wunderlist.com/api/v1/tasks', data=json.dumps(data), headers=headers)
+        response = requests.post('http://a.wunderlist.com/api/v1/tasks',
+                                 data=json.dumps(data), headers=headers)
         return response
 
     def update_task(self):
 
         data = {'list_id': self._list_id, 'title': self._title}
-        headers = {'Content-type': 'application/json', 'Accept': 'text/plain', 'X-Access-Token': self._token,
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain',
+                   'X-Access-Token': self._token,
                    'X-Client-ID': settings.WUNDERLIST_CLIENT_ID}
 
-        response = requests.post('http://a.wunderlist.com/api/v1/tasks', data=json.dumps(data), headers=headers)
+        response = requests.post('http://a.wunderlist.com/api/v1/tasks',
+                                 data=json.dumps(data), headers=headers)
         return response
         pass
 
@@ -588,7 +644,8 @@ class WunderListController(BaseController):
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
         if action_specification.name.lower() == 'list':
-            return tuple({'id': l['id'], 'name': l['title']} for l in self.get_lists())
+            return tuple(
+                {'id': l['id'], 'name': l['title']} for l in self.get_lists())
         else:
             raise ControllerError(
                 "That specification doesn't belong to an action in this connector.")
@@ -601,7 +658,9 @@ class WunderListController(BaseController):
             webhook = Webhook.objects.create(
                 name='wunderlist', plug=self._plug, url='')
             url_base = settings.WEBHOOK_HOST
-            url_path = reverse('home:webhook', kwargs={'connector': 'wunderlist', 'webhook_id': webhook.id})
+            url_path = reverse('home:webhook',
+                               kwargs={'connector': 'wunderlist',
+                                       'webhook_id': webhook.id})
             headers = {
                 'X-Access-Token': self._token,
                 'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
@@ -613,12 +672,14 @@ class WunderListController(BaseController):
                 'configuration': ''
             }
             response = requests.post(
-                'http://a.wunderlist.com/api/v1/webhooks', headers=headers, data=body_data)
+                'http://a.wunderlist.com/api/v1/webhooks', headers=headers,
+                data=body_data)
             if response.status_code == 201:
                 webhook.generated_id = response.json()['id']
                 webhook.url = response.json()['url']
                 webhook.is_active = True
-                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+                webhook.save(
+                    update_fields=['url', 'generated_id', 'is_active'])
         return True
 
     def list_webhooks(self):
@@ -634,7 +695,8 @@ class WunderListController(BaseController):
                 'list_id': int(list_id.value),
             }
             response = requests.get(
-                'http://a.wunderlist.com/api/v1/webhooks', headers=headers, data=body_data)
+                'http://a.wunderlist.com/api/v1/webhooks', headers=headers,
+                data=body_data)
             return (response.json())
 
     # Metodo de borrado de webhooks, utilizacion manual.
@@ -649,10 +711,13 @@ class WunderListController(BaseController):
                 body_data = {
                     'revision': 0,
                 }
-                response = requests.delete('http://a.wunderlist.com/api/v1/webhooks/{0}'.format(str(wh['id'])),
-                                           headers=headers, data=body_data)
+                response = requests.delete(
+                    'http://a.wunderlist.com/api/v1/webhooks/{0}'.format(
+                        str(wh['id'])),
+                    headers=headers, data=body_data)
 
-    def download_to_stored_data(self, connection_object=None, plug=None, task=None, **kwargs):
+    def download_to_stored_data(self, connection_object=None, plug=None,
+                                task=None, **kwargs):
         if task is not None:
             task_id = task['subject']['id']
             q = StoredData.objects.filter(
@@ -674,13 +739,16 @@ class WunderListController(BaseController):
                     extra = {'controller': 'wunderlist'}
                     task.save()
                     self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (task.object_id, task.plug.id,
-                                                                                        task.connection.id),
+                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                        task.object_id, task.plug.id,
+                        task.connection.id),
                         extra=extra)
                 except Exception as e:
                     extra['status'] = 'f'
-                    self._log.info('Item ID: %s, Connection: %s, Plug: %s failed.' % (
-                        task.object_id, task.plug.id, task.connection.id), extra=extra)
+                    self._log.info(
+                        'Item ID: %s, Connection: %s, Plug: %s failed.' % (
+                            task.object_id, task.plug.id, task.connection.id),
+                        extra=extra)
             return True
         return False
 
@@ -695,7 +763,8 @@ class WunderListController(BaseController):
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_target_fields()
-        return [MapField(f, controller=ConnectorEnum.WunderList) for f in fields]
+        return [MapField(f, controller=ConnectorEnum.WunderList) for f in
+                fields]
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
@@ -706,7 +775,8 @@ class WunderListController(BaseController):
                 task = self.create_task(**item)
                 if task.status_code in [200, 201]:
                     extra['status'] = 's'
-                    self._log.info('Item: %s successfully sent.' % (task.json()['data']['name']), extra=extra)
+                    self._log.info('Item: %s successfully sent.' % (
+                    task.json()['data']['name']), extra=extra)
                     obj_list.append(task)
                 else:
                     extra['status'] = 'f'
