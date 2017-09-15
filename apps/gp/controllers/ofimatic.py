@@ -126,9 +126,12 @@ class GoogleSpreadSheetsController(BaseController):
         for field in first_row:
             for k in target_fields.keys():
                 if k == field:
+                    if target_fields[k] == '':
+                        target_fields[k] = ' '
                     ordered_target_fields[k] = target_fields[k]
                     break
-        data_list = get_dict_with_source_data(source_data,ordered_target_fields)
+        data_list = get_dict_with_source_data(source_data,
+                                              ordered_target_fields)
         if is_first:
             if data_list:
                 try:
@@ -373,8 +376,9 @@ class GoogleCalendarController(BaseController):
         return calendars
 
     def create_webhook(self):
+        calendar_id = self._plug.plug_action_specification.first().value
         url = 'https://www.googleapis.com/calendar/v3/calendars/{}/events/watch'.format(
-            self._plug.plug_action_specification.all()[0].value)
+            calendar_id)
         webhook = Webhook.objects.create(name='googlecalendar',
                                          plug=self._plug, url='')
         headers = {
