@@ -47,8 +47,7 @@ class GoogleSpreadSheetsController(BaseController):
                         self._worksheet_name = self._plug.plug_action_specification.get(
                             action_specification__name__iexact='worksheet').value
                     except Exception as e:
-                        print(
-                            "Error asignando los specifications GoogleSpreadSheets 2")
+                        print("Error asignando los specifications GoogleSpreadSheets 2")
             except Exception as e:
                 print("Error getting the GoogleSpreadSheets attributes 1")
                 print(e)
@@ -59,15 +58,10 @@ class GoogleSpreadSheetsController(BaseController):
 
     def test_connection(self):
         try:
-            print(1)
-            self._refresh_token()
-            print(2)
-            http_auth = self._credential.authorize(httplib2.Http())
-            print(3)
-            drive_service = discovery.build('drive', 'v3', http=http_auth)
-            print(4)
-            files = drive_service.files().list().execute()
-            print(5)
+           self._refresh_token()
+           http_auth = self._credential.authorize(httplib2.Http())
+           drive_service = discovery.build('drive', 'v3', http=http_auth)
+           files = drive_service.files().list().execute()
         except Exception as e:
             raise
             print("Error Test connection GoogleSpreadSheets")
@@ -80,11 +74,9 @@ class GoogleSpreadSheetsController(BaseController):
 
     def _refresh_token(self, token=''):
         if self._credential.access_token_expired:
-            print("ha expirado")
-            self._credential.refresh(httplib2.Http())
-            print("refresh")
-            self._upate_connection_object_credentials()
-            print("refresco token")
+           response = self._credential.refresh(httplib2.Http())
+           self._upate_connection_object_credentials()
+
 
     def download_to_stored_data(self, connection_object, plug, *args,
                                 **kwargs):
