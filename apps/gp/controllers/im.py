@@ -2,7 +2,8 @@ from django.http import JsonResponse, HttpResponse
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import StoredData, PlugActionSpecification, ActionSpecification
+from apps.gp.models import StoredData, PlugActionSpecification, \
+    ActionSpecification
 from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 from slacker import Slacker
@@ -14,18 +15,19 @@ class SlackController(BaseController):
     _token = None
     _slacker = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        BaseController.__init__(self, connection=connection, plug=plug,
+                                **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(SlackController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token = self._connection_object.token
-                    self._slacker = Slacker(self._token)
-                except Exception as e:
-                    print("Error getting the Slack Token")
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(SlackController, self).create_connection(
+            connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+                self._slacker = Slacker(self._token)
+            except Exception as e:
+                print("Error getting the Slack Token")
 
     def test_connection(self):
         """todo"""
@@ -33,9 +35,11 @@ class SlackController(BaseController):
 
     def get_channel_list(self):
         response = self._slacker.channels.list()
-        if 'successful' in response.__dict__ and response.__dict__['successful'] == True:
+        if 'successful' in response.__dict__ and response.__dict__[
+            'successful'] == True:
             data = json.loads(response.__dict__['raw'])
-            channel_list = tuple({'id': c['id'], 'name': c['name']} for c in data['channels'])
+            channel_list = tuple(
+                {'id': c['id'], 'name': c['name']} for c in data['channels'])
             return channel_list
 
         else:
@@ -80,8 +84,9 @@ class SlackController(BaseController):
             extra = {'controller': 'slack'}
             for specification in self._plug.plug_action_specification.all():
                 try:
-                    target = PlugActionSpecification.objects.get(plug=self._plug,
-                                                                 action_specification=specification.action_specification)
+                    target = PlugActionSpecification.objects.get(
+                        plug=self._plug,
+                        action_specification=specification.action_specification)
                 except Exception as e:
                     raise
             for obj in data_list:
@@ -92,36 +97,47 @@ class SlackController(BaseController):
             return
         raise ControllerError("Incomplete.")
 
-    def download_to_stored_data(self, connection_object=None, plug=None, event=None, **kwargs):
+    def download_to_stored_data(self, connection_object=None, plug=None,
+                                event=None, **kwargs):
         if event is not None:
             new_message = None
             if 'type' in event and event['event']['type'] == 'message':
-                print(event['event_id'], event['event_time'], event['event']['text'])
-                q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                              object_id=event['event_id'])
+                print(event['event_id'], event['event_time'],
+                      event['event']['text'])
+                q = StoredData.objects.filter(
+                    connection=connection_object.connection, plug=plug,
+                    object_id=event['event_id'])
                 if not q.exists():
-                    new_message = StoredData(connection=connection_object.connection, plug=plug,
-                                             object_id=event['event_id'], name=event['event']['type'],
-                                             value=event['event']['text'])
+                    new_message = StoredData(
+                        connection=connection_object.connection, plug=plug,
+                        object_id=event['event_id'],
+                        name=event['event']['type'],
+                        value=event['event']['text'])
                 extra = {}
                 if new_message is not None:
                     extra['status'] = 's'
                     extra = {'controller': 'google_spreadsheets'}
-                    self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                        new_message.object_id, new_message.plug.id, new_message.connection.id), extra=extra)
+                    self._log.info(
+                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            new_message.object_id, new_message.plug.id,
+                            new_message.connection.id), extra=extra)
                     new_message.save()
             return new_message is not None
         return False
 
     def get_mapping_fields(self, **kwargs):
-        return [MapField(f, controller=ConnectorEnum.Slack) for f in self.get_target_fields()]
+        return [MapField(f, controller=ConnectorEnum.Slack) for f in
+                self.get_target_fields()]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
         if action_specification.name.lower() == 'channel':
-            return tuple({'id': c['id'], 'name': c['name']} for c in self.get_channel_list())
+            return tuple({'id': c['id'], 'name': c['name']} for c in
+                         self.get_channel_list())
         else:
-            raise ControllerError("That specification doesn't belong to an action in this connector.")
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
 
     def do_webhook_process(self, body=None, POST=None, **kwargs):
         """
@@ -133,17 +149,21 @@ class SlackController(BaseController):
             response = HttpResponse(status=200)
             event = body['event']
             if event['type'] == "message":
-                regular_query = {'action_specification__action__action_type': 'source',
-                                 'action_specification__action__connector__name__iexact': 'slack',
-                                 'plug__gear_source__is_active': True,
-                                 'value': event['channel'], }
-                testing_plugs_query = {'action_specification__action__action_type': 'source',
-                                       'action_specification__action__connector__name__iexact': 'slack',
-                                       'plug__gear_source__is_active': False,
-                                       'plug__is_tested': False,
-                                       'value': event['channel'], }
-                channel_list = PlugActionSpecification.objects.filter(**regular_query)
-                test_channel_list = PlugActionSpecification.objects.filter(**testing_plugs_query)
+                regular_query = {
+                    'action_specification__action__action_type': 'source',
+                    'action_specification__action__connector__name__iexact': 'slack',
+                    'plug__gear_source__is_active': True,
+                    'value': event['channel'], }
+                testing_plugs_query = {
+                    'action_specification__action__action_type': 'source',
+                    'action_specification__action__connector__name__iexact': 'slack',
+                    'plug__gear_source__is_active': False,
+                    'plug__is_tested': False,
+                    'value': event['channel'], }
+                channel_list = PlugActionSpecification.objects.filter(
+                    **regular_query)
+                test_channel_list = PlugActionSpecification.objects.filter(
+                    **testing_plugs_query)
                 for channel in channel_list:
                     self._connection_object, self._plug = channel.plug.connection.related_connection, channel.plug
                     self.download_source_data(event=body)
