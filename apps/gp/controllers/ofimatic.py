@@ -19,6 +19,7 @@ from evernote.api.client import EvernoteClient
 import wunderpy2
 import evernote.edam.type.ttypes as Types
 from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
+from collections import OrderedDict
 from evernote.edam.type.ttypes import NoteSortOrder
 from django.conf import settings
 import re
@@ -120,12 +121,21 @@ class GoogleSpreadSheetsController(BaseController):
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
-        data_list = get_dict_with_source_data(source_data, target_fields)
+        first_row = self.get_worksheet_first_row()
+        ordered_target_fields = OrderedDict()
+        for field in first_row:
+            for k in target_fields.keys():
+                if k == field:
+                    if target_fields[k] == '':
+                        target_fields[k] = ' '
+                    ordered_target_fields[k] = target_fields[k]
+                    break
+        data_list = get_dict_with_source_data(source_data,
+                                              ordered_target_fields)
         if is_first:
             if data_list:
                 try:
                     data_list = [data_list[0]]
-                    print('data: ', data_list)
                 except:
                     data_list = []
         if self._plug is not None:
@@ -237,11 +247,13 @@ class GoogleCalendarController(BaseController):
     _credential = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
-        BaseController.__init__(self, connection=connection, plug=plug, **kwargs)
+        BaseController.__init__(self, connection=connection, plug=plug,
+                                **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
         credentials_json = None
-        super(GoogleCalendarController, self).create_connection(connection=connection, plug=plug)
+        super(GoogleCalendarController, self).create_connection(
+            connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
                 credentials_json = self._connection_object.credentials_json
@@ -364,8 +376,9 @@ class GoogleCalendarController(BaseController):
         return calendars
 
     def create_webhook(self):
+        calendar_id = self._plug.plug_action_specification.first().value
         url = 'https://www.googleapis.com/calendar/v3/calendars/{}/events/watch'.format(
-            self._plug.plug_action_specification.all()[0].value)
+            calendar_id)
         webhook = Webhook.objects.create(name='googlecalendar',
                                          plug=self._plug, url='')
         headers = {
