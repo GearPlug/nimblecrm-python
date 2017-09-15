@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from importlib import import_module
 
 def get_dict_with_source_data(source_data, target_fields, include_id=False):
-    pattern = re.compile("^(\%\%\S+\%\%)$")
+    pattern = re.compile("^(\%\%[\S+ ]+\%\%)$")
     valid_map = OrderedDict()
     result = []
     for field in target_fields:
