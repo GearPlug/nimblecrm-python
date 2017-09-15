@@ -427,6 +427,7 @@ class MercadoLibreConnection(models.Model):
              ('MPE', 'Peru'), ('MPT', 'Portugal'), ('MRD', 'Republica Dominicana'))
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mercadolibre')
     name = models.CharField('name', max_length=200)
+    user_id = models.CharField('user_id', max_length=200)
     token = models.CharField('token', max_length=300)
     site = models.CharField(max_length=3, choices=SITES)
 

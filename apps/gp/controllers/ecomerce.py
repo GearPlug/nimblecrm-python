@@ -25,21 +25,22 @@ class MercadoLibreController(BaseController):
     _site = None
     _client = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(MercadoLibreController, self).__init__(connection=connection, plug=plug,
+                                                     **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(MercadoLibreController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token = self._connection_object.token
-                    self._site = self._connection_object.site
-                except AttributeError as e:
-                    raise ControllerError(code=1, controller=ConnectorEnum.MercadoLibre,
-                                          message='Failed to get the token. \n{}'.format(str(e)))
-            else:
-                raise ControllerError(code=7, controller=ConnectorEnum.MercadoLibre, message='No connection.')
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(MercadoLibreController, self).create_connection(connection=connection,
+                                                              plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+                self._site = self._connection_object.site
+            except AttributeError as e:
+                raise ControllerError(code=1, controller=ConnectorEnum.MercadoLibre,
+                                      message='Failed to get the token. \n{}'.format(str(e)))
+        else:
+            raise ControllerError(code=7, controller=ConnectorEnum.MercadoLibre, message='No connection.')
         try:
             self._client = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
                                               client_secret=settings.MERCADOLIBRE_CLIENT_SECRET,
