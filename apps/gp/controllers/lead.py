@@ -304,9 +304,10 @@ class FacebookLeadsController(BaseController):
             aditional_data = {'leadgen_id': lead['value']['leadgen_id'],
                               'page_id': lead['value']['page_id'],
                               'form_id': lead['value']['form_id'],
-                              'adgroup_id': lead['value']['adgroup_id'],
                               'created_time_timestamp': lead['value'][
                                   'created_time'], }
+            if 'adgroup_id' in lead['value']:
+                aditional_data['adgroup_id'] = lead['value']['adgroup_id']
             leadgen_id = lead['value']['leadgen_id']
             lead = self.get_leadgen(leadgen_id)
             q = StoredData.objects.filter(

@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from apps.gp.models import Connection, FacebookLeadsConnection, Plug, Action, ActionSpecification, \
-    PlugActionSpecification
+    PlugActionSpecification, Gear, StoredData, GearMap
 from apps.gp.controllers.lead import FacebookLeadsController
 from facebookmarketing.client import Client as FacebookClient
 from apps.gp.enum import ConnectorEnum
@@ -57,13 +57,29 @@ class FacebookControllerTestCases(TestCase):
         _dict5 = {
             'plug': cls.plug,
             'action_specification': specification2,
-            'value': '1838698066366754'
+            'value': '270207053469727'
         }
         PlugActionSpecification.objects.create(**_dict5)
+
+        _dict6 = {
+            'name': 'Gear 1',
+            'user': cls.user,
+            'source': cls.plug,
+            'is_active': True
+        }
+        cls.gear = Gear.objects.create(**_dict6)
+
+        _dict7 = {
+            'gear': cls.gear
+        }
+
+        cls.gear_map = GearMap.objects.create(**_dict7)
 
     def setUp(self):
         # self.client = Client()
         self.controller = FacebookLeadsController(self.plug.connection.related_connection, self.plug)
+
+        self.hook = {'entry': [{'id': '299300463551366', 'changes': [{'value': {'form_id': '270207053469727', 'page_id': '299300463551366', 'created_time': 1505494516, 'leadgen_id': '270800420077057'}, 'field': 'leadgen'}], 'time': 1505494516}], 'object': 'page'}
 
     def test_controller(self):
         self.assertIsInstance(self.controller._connection_object, FacebookLeadsConnection)
@@ -79,3 +95,10 @@ class FacebookControllerTestCases(TestCase):
     def test_get_pages(self):
         result = self.controller.get_pages()
         self.assertIsInstance(result, dict)
+
+    def test_do_webhook_process(self):
+        result = self.controller.do_webhook_process(self.hook, POST=True)
+        self.assertEqual(result.status_code, 200)
+
+        count = StoredData.objects.count()
+        self.assertNotEqual(count, 0)

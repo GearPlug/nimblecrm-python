@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
-from apps.gp.models import Connection, MercadoLibreConnection, Plug, Action
+from apps.gp.models import Connection, MercadoLibreConnection, Plug, Action, \
+    ActionSpecification, PlugActionSpecification, Gear, StoredData
 from apps.gp.controllers.ecomerce import MercadoLibreController
 from mercadolibre.client import Client as MercadoLibreClient
 from apps.gp.enum import ConnectorEnum
@@ -12,7 +13,8 @@ class MercadolibreControllerTestCases(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.user = User.objects.create(username='ingmferrer', email='ingferrermiguel@gmail.com',
+        cls.user = User.objects.create(username='ingmferrer',
+                                       email='ingferrermiguel@gmail.com',
                                        password='nopass100realnofake')
         _dict = {
             'user': cls.user,
@@ -20,7 +22,8 @@ class MercadolibreControllerTestCases(TestCase):
         }
         cls.connection = Connection.objects.create(**_dict)
 
-        token = {'expires_in': 21600, 'token_type': 'bearer', 'refresh_token': 'TG-59b16412e4b089ad60aee3ff-268958406',
+        token = {'expires_in': 21600, 'token_type': 'bearer',
+                 'refresh_token': 'TG-59b16412e4b089ad60aee3ff-268958406',
                  'expires_at': 1504819315.0165474,
                  'access_token': 'APP_USR-1063986061828245-090711-8ccf0fb702e67077dde1166a4ce647b6__J_N__-268958406',
                  'user_id': 268958406, 'scope': 'offline_access read write'}
@@ -33,10 +36,13 @@ class MercadolibreControllerTestCases(TestCase):
             'site': 'MCO'
 
         }
-        cls.mercadolibre_connection = MercadoLibreConnection.objects.create(**_dict2)
+        cls.mercadolibre_connection = MercadoLibreConnection.objects.create(
+            **_dict2)
 
-        action = Action.objects.get(connector_id=ConnectorEnum.MercadoLibre.value, action_type='target',
-                                    name='list product', is_active=True)
+        action = Action.objects.get(
+            connector_id=ConnectorEnum.MercadoLibre.value,
+            action_type='source',
+            name='created_orders', is_active=True)
 
         _dict3 = {
             'name': 'PlugTest',
@@ -49,12 +55,28 @@ class MercadolibreControllerTestCases(TestCase):
         }
         cls.plug = Plug.objects.create(**_dict3)
 
+        _dict4 = {
+            'name': 'Gear 1',
+            'user': cls.user,
+            'source': cls.plug,
+            'is_active': True
+        }
+        cls.gear = Gear.objects.create(**_dict4)
+
     def setUp(self):
         # self.client = Client()
-        self.controller = MercadoLibreController(self.plug.connection.related_connection, self.plug)
+        self.controller = MercadoLibreController(
+            self.plug.connection.related_connection, self.plug)
+
+        self.hook = {"resource": "/orders/1469747931", "user_id": 268958406,
+                     "topic": "created_orders",
+                     "application_id": 1063986061828245, "attempts": 1,
+                     "sent": "2017-09-06T15:43:17.717Z",
+                     "received": "2017-09-06T15:43:17.700Z"}
 
     def test_controller(self):
-        self.assertIsInstance(self.controller._connection_object, MercadoLibreConnection)
+        self.assertIsInstance(self.controller._connection_object,
+                              MercadoLibreConnection)
         self.assertIsInstance(self.controller._plug, Plug)
         # Error 1
         # self.assertIsInstance(self.controller._connector, ConnectorEnum.MercadoLibre)
@@ -81,3 +103,10 @@ class MercadolibreControllerTestCases(TestCase):
     def test_get_listing_types(self):
         result = self.controller.get_listing_types()
         self.assertIsInstance(result, list)
+
+    def test_do_webhook_process(self):
+        result = self.controller.do_webhook_process(self.hook)
+        self.assertEqual(result.status_code, 200)
+
+        count = StoredData.objects.count()
+        self.assertNotEqual(count, 0)
