@@ -524,3 +524,10 @@ class ManageConnectionView(LoginRequiredMixin, ListView):
     # def get_context_data(self, **kwargs):
     #     context = super(ManageConnectionView, self).get_context_data(**kwargs)
     #     return context
+
+    def power_connection(self):
+        if self.model.is_active is True:
+            self.model.is_active = False
+        else:
+            self.model.is_active = True
+

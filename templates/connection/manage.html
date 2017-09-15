@@ -1,6 +1,5 @@
 {% extends 'layouts/site_base.html' %}
 {% load static %}
-
 {% block content %}
     {% for connections in object_list %}
         <div class="col-md-12" data-connector-id="{{ connections.0.connector.id }}">
@@ -12,7 +11,7 @@
                 <hr>
             </div>
             {% for connection in connections %}
-                {% include 'connection/snippets/connector_state.html' with c=connection.related_connection %}
+                {% include 'connection/snippets/connector_state.html' with c=connection %}
             {% endfor %}
         </div>
     {% endfor %}

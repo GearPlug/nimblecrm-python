@@ -1,12 +1,17 @@
 <div class="col-md-4">
+    {% block content %}
     Cuentas:
     <br />
-    {{ c.name }}
+    {{ c.related_connection.name }}
 </div>
 <div class="col-md-4">
     Estado:
     <br />
-    <i class="fa fa-check-square" aria-hidden="true"></i> &nbsp; <i class="fa fa-minus-square" aria-hidden="true"></i>
+    {% if c.is_active == True%}
+        <i class="fa fa-check-square" aria-hidden="true"></i>&nbsp;
+    {% else %}
+        <i class="fa fa-minus-square" aria-hidden="true"></i>
+    {% endif %}
 </div>
 <div class="col-md-4">
     Acción:
@@ -18,5 +23,11 @@
         {% else %}
             <i class="fa fa-play" aria-hidden="true"></i>
         {% endif %}
+        {% if c.is_active %}
+            <a href="manage"><i class="fa fa-power-off" aria-hidden="true"></i></a>
+        {% else %}
+            <a href="#"><i class="fa fa-power-off" aria-hidden="False"></i></a>
+        {% endif %}
     </a>
+{% endblock %}
 </div>
