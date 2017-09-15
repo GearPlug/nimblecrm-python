@@ -30,14 +30,17 @@ class SlackController(BaseController):
                 print("Error getting the Slack Token")
 
     def test_connection(self):
-        """todo"""
-        return self._token is not None and self._slacker is not None
+        if self._token is not None and self._slacker is not None:
+            response = self.get_channel_list()
+            if isinstance(response, tuple):
+                return True
+        return False
 
     def get_channel_list(self):
         response = self._slacker.channels.list()
-        if 'successful' in response.__dict__ and response.__dict__[
-            'successful'] == True:
-            data = json.loads(response.__dict__['raw'])
+        _dict = response.__dict__
+        if 'successful' in _dict and _dict['successful'] is True:
+            data = json.loads(_dict['raw'])
             channel_list = tuple(
                 {'id': c['id'], 'name': c['name']} for c in data['channels'])
             return channel_list
@@ -102,8 +105,6 @@ class SlackController(BaseController):
         if event is not None:
             new_message = None
             if 'type' in event and event['event']['type'] == 'message':
-                print(event['event_id'], event['event_time'],
-                      event['event']['text'])
                 q = StoredData.objects.filter(
                     connection=connection_object.connection, plug=plug,
                     object_id=event['event_id'])
@@ -116,7 +117,7 @@ class SlackController(BaseController):
                 extra = {}
                 if new_message is not None:
                     extra['status'] = 's'
-                    extra = {'controller': 'google_spreadsheets'}
+                    extra = {'controller': 'slack'}
                     self._log.info(
                         'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
                             new_message.object_id, new_message.plug.id,

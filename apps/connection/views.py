@@ -151,7 +151,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             context['authorization_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = api.name.lower()
         elif connector == ConnectorEnum.Slack:
-            context['authorization_url'] = settings.SLACK_PERMISSIONS_URL
+            context['authorization_url'] = settings.SLACK_PERMISSIONS_URL + '&redirect_uri={0}{1}'.format(settings.CURRENT_HOST, reverse('connection:slack_auth'))
         elif connector == ConnectorEnum.Twitter:
             flow = tweepy.OAuthHandler(settings.TWITTER_CLIENT_ID, settings.TWITTER_CLIENT_SECRET)
             context['authorization_url'] = flow.get_authorization_url()
@@ -325,7 +325,7 @@ class SlackAuthView(View):
         if code:
             slack = Slacker("")
             auth_client = slack.oauth.access(client_id=settings.SLACK_CLIENT_ID,
-                                             client_secret=settings.SLACK_CLIENT_SECRET, code=code)
+                                             client_secret=settings.SLACK_CLIENT_SECRET, code=code, redirect_uri=settings.CURRENT_HOST + reverse('connection:slack_auth'))
             data = json.loads(auth_client.raw)
             token = data['access_token'] if 'access_token' in data else None
             request.session['connection_data'] = {'token': token, }
