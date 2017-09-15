@@ -105,8 +105,6 @@ class SlackController(BaseController):
         if event is not None:
             new_message = None
             if 'type' in event and event['event']['type'] == 'message':
-                print(event['event_id'], event['event_time'],
-                      event['event']['text'])
                 q = StoredData.objects.filter(
                     connection=connection_object.connection, plug=plug,
                     object_id=event['event_id'])
@@ -119,7 +117,7 @@ class SlackController(BaseController):
                 extra = {}
                 if new_message is not None:
                     extra['status'] = 's'
-                    extra = {'controller': 'google_spreadsheets'}
+                    extra = {'controller': 'slack'}
                     self._log.info(
                         'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
                             new_message.object_id, new_message.plug.id,
