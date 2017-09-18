@@ -3,8 +3,9 @@ import re
 import xml.etree.ElementTree as ET
 from importlib import import_module
 
+
 def get_dict_with_source_data(source_data, target_fields, include_id=False):
-    pattern = re.compile("^(\%\%\S+\%\%)$")
+    pattern = re.compile("^(\%\%[\S+ ]+\%\%)$")
     valid_map = OrderedDict()
     result = []
     for field in target_fields:
@@ -45,7 +46,8 @@ def _recursive_xml_to_dict(lista):
     for e in lista:
         result = regex.match(e.tag)
         if result is not None:  # and result.group(5) != 'link':
-            dict_e = {'tag': result.group(2), 'attrib': e.attrib, 'text': e.text, 'content': _recursive_xml_to_dict(e)}
+            dict_e = {'tag': result.group(2), 'attrib': e.attrib,
+                      'text': e.text, 'content': _recursive_xml_to_dict(e)}
             lista_dict.append(dict_e)
     return lista_dict
 

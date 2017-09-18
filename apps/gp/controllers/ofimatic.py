@@ -1,4 +1,4 @@
-from apps.gp.controllers.base import BaseController
+from apps.gp.controllers.base import BaseController, GoogleBaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification, \
@@ -25,14 +25,14 @@ from django.conf import settings
 import re
 
 
-class GoogleSpreadSheetsController(BaseController):
+class GoogleSpreadSheetsController(GoogleBaseController):
     _credential = None
     _spreadsheet_id = None
     _worksheet_name = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
-        BaseController.__init__(self, connection=connection, plug=plug,
-                                **kwargs)
+        GoogleBaseController.__init__(self, connection=connection, plug=plug,
+                                      **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
         credentials_json = None
@@ -59,13 +59,12 @@ class GoogleSpreadSheetsController(BaseController):
 
     def test_connection(self):
         try:
-           self._refresh_token()
-           http_auth = self._credential.authorize(httplib2.Http())
-           drive_service = discovery.build('drive', 'v3', http=http_auth)
-           files = drive_service.files().list().execute()
-        except Exception as e:
-            raise
-            print("Error Test connection GoogleSpreadSheets")
+            self._refresh_token()
+            http_auth = self._credential.authorize(httplib2.Http())
+            drive_service = discovery.build('drive', 'v3', http=http_auth)
+            files = drive_service.files().list().execute()
+        except GoogleClient.HttpAccessTokenRefreshError:
+            self._report_broken_token()
             files = None
         return files is not None
 
@@ -77,7 +76,6 @@ class GoogleSpreadSheetsController(BaseController):
         if self._credential.access_token_expired:
            response = self._credential.refresh(httplib2.Http())
            self._upate_connection_object_credentials()
-
 
     def download_to_stored_data(self, connection_object, plug, *args,
                                 **kwargs):
@@ -243,13 +241,13 @@ class GoogleSpreadSheetsController(BaseController):
                 "That specification doesn't belong to an action in this connector.")
 
 
-class GoogleCalendarController(BaseController):
+class GoogleCalendarController(GoogleBaseController):
     _connection = None
     _credential = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
-        BaseController.__init__(self, connection=connection, plug=plug,
-                                **kwargs)
+        GoogleBaseController.__init__(self, connection=connection, plug=plug,
+                                      **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
         credentials_json = None
@@ -259,39 +257,23 @@ class GoogleCalendarController(BaseController):
             try:
                 credentials_json = self._connection_object.credentials_json
             except Exception as e:
-                print("Error getting the GoogleCalendar attributes 1")
-                print(e)
+                print("Error GoogleCalendar attributes {}".format(e))
         if credentials_json is not None:
-            try:
-                self._credential = GoogleClient.OAuth2Credentials.from_json(
-                    json.dumps(credentials_json))
-                http_auth = self._credential.authorize(httplib2.Http())
-                self._connection = discovery.build('calendar', 'v3',
-                                                   http=http_auth)
-            except Exception as e:
-                print("Error getting the GoogleCalendar attributes 2")
-                print(e)
-                self._credential = None
+            self._credential = GoogleClient.OAuth2Credentials.from_json(
+                json.dumps(credentials_json))
 
     def test_connection(self):
         try:
             self._refresh_token()
             calendar_list = self._connection.calendarList().list().execute()
             calendars = calendar_list['items']
+        except GoogleClient.HttpAccessTokenRefreshError:
+            self._report_broken_token()
+            calendars = None
         except Exception as e:
-            # raise
             print("Error Test connection GoogleCalendar")
             calendars = None
         return calendars is not None
-
-    def _upate_connection_object_credentials(self):
-        self._connection_object.credentials_json = self._credential.to_json()
-        self._connection_object.save()
-
-    def _refresh_token(self):
-        if self._credential.access_token_expired:
-            self._credential.refresh(httplib2.Http())
-            self._upate_connection_object_credentials()
 
     def download_to_stored_data(self, connection_object=None, plug=None,
                                 events=None, **kwargs):
