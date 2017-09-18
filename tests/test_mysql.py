@@ -1,12 +1,14 @@
-from django.test import TestCase
+import os
 import sqlite3
-import sys, types
+from django.test import TestCase
 from django.contrib.auth.models import User
-from apps.gp.models import Connection, ConnectorEnum, MySQLConnection, Plug, Action, StoredData, PlugActionSpecification, ActionSpecification
+from apps.gp.models import Connection, MySQLConnection, Plug, Action, StoredData, PlugActionSpecification, \
+    ActionSpecification
 from apps.gp.controllers.database import MySQLController
 from MySQLdb.connections import Connection as MyConnection
 from MySQLdb.cursors import Cursor as MyCursor
 from apps.gp.enum import ConnectorEnum
+
 
 class MysqlControllerTestCases(TestCase):
     fixtures = ['gp_base.json']
@@ -24,7 +26,12 @@ class MysqlControllerTestCases(TestCase):
         _dict2 = {
             'connection': cls.connection,
             'name': 'ConnectionTest',
-            'token': 'localhost',
+            'host': os.environ.get('TEST_MYSQL_HOST'),
+            'database': os.environ.get('TEST_MYSQL_DATABASE'),
+            'table': os.environ.get('TEST_MYSQL_TABLE'),
+            'port': os.environ.get('TEST_MYSQL_PORT'),
+            'connection_user': os.environ.get('TEST_MYSQL_CONNECTION_USER'),
+            'connection_password': os.environ.get('TEST_MYSQL_CONNECTION_PASSWORD')
         }
         cls.mysql_connection = MySQLConnection.objects.create(**_dict2)
 
@@ -84,31 +91,28 @@ class MysqlControllerTestCases(TestCase):
         connection = self.controller._connection_object.connection
         plug = self.controller._plug
 
-        # print(type(connection))
-        # print(plug)
-
         result1 = self.controller.download_source_data()
         self.assertTrue(result1)
         count1 = StoredData.objects.filter(connection=connection, plug=plug).count()
 
         result2 = self.controller.download_source_data()
-        self.assertTrue(result2)
+        self.assertFalse(result2)
         count2 = StoredData.objects.filter(connection=connection, plug=plug).count()
 
         self.assertEqual(count1, count2)
 
     def test_insert(self):
-        item = {"LastName": "Perez", "FirstName": "Pedro", "Address": "Cll 123", "City": "Bogota"}
-        sql=self.controller._get_insert_statement(item)
-        self.assertRaises(Exception,self.valid_query(sql.replace('table2', "Persons")))
+        item = {'LastName': 'Perez', 'FirstName': 'Pedro', 'Address': 'Cll 123', 'City': 'Bogota'}
+        sql = self.controller._get_insert_statement(item)
+        self.assertRaises(Exception, self.valid_query(sql.replace(os.environ.get('TEST_MYSQL_TABLE'), 'Persons')))
 
-    def valid_query(self,sql):
+    def valid_query(self, sql):
         create = "CREATE TABLE Persons ( " \
-                "PersonID int, " \
-                "LastName varchar(255), " \
-                "FirstName varchar(255), " \
-                "Address varchar(255), " \
-                "City varchar(255));"
+                 "PersonID int, " \
+                 "LastName varchar(255), " \
+                 "FirstName varchar(255), " \
+                 "Address varchar(255), " \
+                 "City varchar(255));"
         temp_db = sqlite3.connect(":memory:")
         temp_db.execute(create)
         try:
@@ -120,4 +124,3 @@ class MysqlControllerTestCases(TestCase):
     def test_get_action_specification_options(self):
         self.assertTrue(isinstance(self.controller.get_action_specification_options(1), tuple))
         self.assertTrue(isinstance(self.controller.get_action_specification_options(42), tuple))
-
