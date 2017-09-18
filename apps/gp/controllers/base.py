@@ -1,6 +1,7 @@
-import logging
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.models import Connection
+import logging
+import httplib2
 
 logger = logging.getLogger('controller')
 
@@ -77,3 +78,18 @@ class BaseController(object):
     @property
     def connector(self):
         return self._connector
+
+
+class GoogleBaseController(BaseController):
+    def _upate_connection_object_credentials(self):
+        self._connection_object.credentials_json = self._credential.to_json()
+        self._connection_object.save(update_fields=['credentials_json'])
+
+    def _refresh_token(self, token=''):
+        if self._credential.access_token_expired:
+            self._credential.refresh(httplib2.Http())
+            self._upate_connection_object_credentials()
+
+    def _report_broken_token(self, scale=None):
+        print("IMPOSIBLE REFRESCAR EL TOKEN!!!! NOTIFICAR AL USUARIO.")
+

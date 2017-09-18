@@ -15,6 +15,7 @@ django-braces==1.11.0
 django-cors-headers==2.0.2
 django-debug-toolbar==1.8
 django-oauth-toolkit==0.12.0
+django-smtp-ssl==1.0
 django-uwsgi==0.1.6
 djangorestframework==3.6.2
 docopt==0.4.0
