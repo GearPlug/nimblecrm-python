@@ -16,18 +16,14 @@
 <div class="col-md-4">
     Acción:
     <br />
-    <a href="#"><i class="fa fa-wrench" aria-hidden="true"></i></a>
+    <a href="{% url "connection:update" pk=c.id %}"><i class="fa fa-wrench" aria-hidden="true"></i></a>
     <a class="toggle-gear-btn" href="#">
         {% if gear.is_running %}
             <i class="fa fa-pause" aria-hidden="true"></i>
         {% else %}
             <i class="fa fa-play" aria-hidden="true"></i>
         {% endif %}
-        {% if c.is_active %}
-            <a href="manage"><i class="fa fa-power-off" aria-hidden="true"></i></a>
-        {% else %}
-            <a href="#"><i class="fa fa-power-off" aria-hidden="False"></i></a>
-        {% endif %}
+        <a href="{% url "connection:connection_toggle" %}"><i class="fa fa-power-off" aria-hidden="true"></i></a>
     </a>
 {% endblock %}
 </div>
