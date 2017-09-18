@@ -1,4 +1,4 @@
-from apps.gp.controllers.base import BaseController
+from apps.gp.controllers.base import BaseController, GoogleBaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.models import StoredData, ActionSpecification, Webhook, \
     PlugActionSpecification, Plug
@@ -18,12 +18,12 @@ import time
 import surveymonty
 
 
-class GoogleFormsController(BaseController):
+class GoogleFormsController(GoogleBaseController):
     _credential = None
     _spreadsheet_id = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
-        BaseController.__init__(self, connection=connection, plug=plug,
+        GoogleBaseController.__init__(self, connection=connection, plug=plug,
                                 **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
@@ -43,7 +43,6 @@ class GoogleFormsController(BaseController):
             except Exception as e:
                 print("Error getting the GoogleForms attributes 1")
                 print(e)
-                credentials_json = None
         if credentials_json is not None:
             self._credential = GoogleClient.OAuth2Credentials.from_json(
                 json.dumps(credentials_json))
@@ -54,19 +53,13 @@ class GoogleFormsController(BaseController):
             http_auth = self._credential.authorize(httplib2.Http())
             drive_service = discovery.build('drive', 'v3', http=http_auth)
             files = drive_service.files().list().execute()
+        except GoogleClient.HttpAccessTokenRefreshError:
+            files = None
+            self._report_broken_token()
         except Exception as e:
-            print("Error Test connection GoogleForms")
+            print("Error Test GoogleForms. Message: {}".format(str(e)))
             files = None
         return files is not None
-
-    def _upate_connection_object_credentials(self):
-        self._connection_object.credentials_json = self._credential.to_json()
-        self._connection_object.save()
-
-    def _refresh_token(self, token=''):
-        if self._credential.access_token_expired:
-            self._credential.refresh(httplib2.Http())
-            self._upate_connection_object_credentials()
 
     def download_to_stored_data(self, connection_object, plug, *args,
                                 **kwargs):
