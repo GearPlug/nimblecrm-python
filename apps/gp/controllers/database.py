@@ -184,7 +184,6 @@ class MySQLController(BaseController):
             ",".join('\"{0}\"'.format(i) for i in item.values()))
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
-        print("send")
         list_objects = []
         data_list = get_dict_with_source_data(source_data, target_fields)
         if is_first:
