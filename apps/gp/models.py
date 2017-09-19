@@ -158,6 +158,7 @@ class PostgreSQLConnection(models.Model):
     name = models.CharField('name', max_length=200)
     host = models.CharField('host', max_length=200)
     database = models.CharField('database', max_length=200)
+    schema = models.CharField('schema', max_length=200)
     table = models.CharField('table', max_length=200)
     port = models.CharField('port', max_length=7)
     connection_user = models.CharField('user', max_length=60)

@@ -129,9 +129,7 @@ class MySQLController(BaseController):
             {'unique': {'name': unique.value, 'value': item[unique.value]},
              'data': [{'name': key, 'value': value} for key, value in
                       item.items()]} for item in data]
-
         new_data = []
-        list_objects = []
         for item in parsed_data:
             unique_value = item['unique']['value']
             q = StoredData.objects.filter(
@@ -184,8 +182,6 @@ class MySQLController(BaseController):
             ",".join('\"{0}\"'.format(i) for i in item.values()))
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
-        print("send")
-        list_objects = []
         data_list = get_dict_with_source_data(source_data, target_fields)
         if is_first:
             if data_list:
@@ -261,22 +257,9 @@ class MySQLController(BaseController):
                                  data_input=data, object_id=object_id)
                 c.save()
         if type is "target":
-            print("target")
-
-            # specification_id = PlugActionSpecification.objects.get(plug_id=1)
-            # print("specification_id", specification_id.action_specification_id)
-            # specifications = {}
-
-            # for i in specification_id:
-            #     name_specification = ActionSpecification.objects.get(id=i.action_specification_id)
-            #     specifications[name_specification.name] = i.value
-
             gear_id = Gear.objects.get(target_id=self._plug.id)
             action = Action.objects.get(id=self._plug.action_id)
             data = {}
-
-            print("list_objects", list_objects)
-
             for l in list_objects:
                 for obj in l[0]:
                     data[obj] = list_objects[0][obj]
@@ -303,10 +286,7 @@ class MySQLController(BaseController):
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
-        if action_specification.name.lower() == 'order by':
-            return tuple({'id': c['name'], 'name': c['name']} for c in
-                         self.describe_table())
-        elif action_specification.name.lower() == 'unique':
+        if action_specification.name.lower() in ['order by', 'unique']:
             return tuple({'id': c['name'], 'name': c['name']} for c in
                          self.describe_table())
         else:
@@ -317,6 +297,7 @@ class MySQLController(BaseController):
 class PostgreSQLController(BaseController):
     _connection = None
     _database = None
+    _schema = None
     _table = None
     _cursor = None
 
@@ -330,6 +311,7 @@ class PostgreSQLController(BaseController):
         if self._connection_object is not None:
             try:
                 self._database = self._connection_object.database
+                self._schema = self._connection_object.schema
                 self._table = self._connection_object.table
                 host = self._connection_object.host
                 port = self._connection_object.port
@@ -338,10 +320,9 @@ class PostgreSQLController(BaseController):
             except Exception as e:
                 print("Error getting the PostgreSQL attributes args")
             try:
-                self._connection = psycopg2.connect(host=host, port=int(port),
-                                                    user=user,
-                                                    password=password,
-                                                    database=self._database)
+                self._connection = psycopg2.connect(
+                    host=host, port=int(port), user=user, password=password,
+                    database=self._database)
                 self._cursor = self._connection.cursor()
             except Exception as e:
                 self._connection = None
@@ -358,11 +339,11 @@ class PostgreSQLController(BaseController):
         try:
             self._cursor.execute(
                 "SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.columns WHERE table_schema= %s AND table_name = %s",
-                self._table.split('.'))
+                (self._schema, self._table))
             return [{'name': item[0], 'type': item[1],
                      'null': 'YES' == item[2]} for item in self._cursor]
         except Exception as e:
-            raise ControllerError(code=9999, controller=self.connector,
+            raise ControllerError(code=9999, controller=self._connector,
                                   message="Error describing table. {0}".format(
                                       str(e)))
 
@@ -370,7 +351,7 @@ class PostgreSQLController(BaseController):
         try:
             self._cursor.execute(
                 "SELECT c.column_name FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name where c.table_schema = %s and tc.table_name = %s",
-                self._table.split('.'))
+                (self._schema, self._table))
             return [item[0] for item in self._cursor]
         except Exception as e:
             raise ControllerError(code=9999, controller=self.connector,
@@ -378,29 +359,18 @@ class PostgreSQLController(BaseController):
                                       str(e)))
 
     def select_all(self, limit=100, unique=None, order_by=None, gt=None):
-        select = 'SELECT * FROM `{0}`.`{1}`'.format(self._database,
-                                                    self._table)
+        select = 'SELECT * FROM {0}.{1}.{2}'.format(
+            self._database, self._schema, self._table)
         if gt is not None:
-            select += ' WHERE `{0}` > "{1}" '.format(order_by.value, gt)
+            select += ' WHERE {0} > \'{1}\''.format(order_by.value, gt)
         if unique is not None:
-            select += 'GROUP BY `{0}` '.format(unique.value)
+            select += ' GROUP BY {0}'.format(unique.value)
         if order_by is not None:
-            select += 'ORDER BY `{0}` DESC '.format(order_by.value)
+            select += ' ORDER BY {0} DESC'.format(order_by.value)
         if limit is not None and isinstance(limit, int):
-            select += 'LIMIT {0}'.format(limit)
-
-    def select_all(self, limit=100, unique=None, order_by=None, gt=None):
-        select = 'SELECT * FROM `{0}`.`{1}`'.format(self._database,
-                                                    self._table)
-        if gt is not None:
-            select += ' WHERE `{0}` > "{1}" '.format(order_by.value, gt)
-        if unique is not None:
-            select += 'GROUP BY `{0}` '.format(unique.value)
-        if order_by is not None:
-            select += 'ORDER BY `{0}` DESC '.format(order_by.value)
-        if limit is not None and isinstance(limit, int):
-            select += 'LIMIT {0}'.format(limit)
+            select += ' LIMIT {0}'.format(limit)
         try:
+            print(select)
             self._cursor.execute(select)
             cursor_select_all = [item for item in self._cursor]
             cursor_describe = self.describe_table()
@@ -409,65 +379,78 @@ class PostgreSQLController(BaseController):
                     cursor_select_all]
         except Exception as e:
             print(e)
+            return []
 
-    def download_to_stored_data(self, connection_object, plug, **kwargs):
-        if plug is None:
-            plug = self._plug
-
-        data = self.select_all()
-        id_list = self.get_primary_keys()
-        parsed_data = [{'id': tuple(item[key] for key in id_list),
-                        'data': [{'name': key, 'value': item[key]} for key in
-                                 item.keys() if key not in id_list]}
-                       for item in data]
+    def download_to_stored_data(self, connection_object, plug,
+                                last_source_record=None, limit=50, **kwargs):
+        order_by = self._plug.plug_action_specification.get(
+            action_specification__name__iexact='order by')
+        unique = self._plug.plug_action_specification.get(
+            action_specification__name__iexact='unique')
+        query_params = {'unique': unique, 'order_by': order_by, 'limit': limit}
+        if last_source_record is not None:
+            query_params['gt'] = last_source_record
+        data = self.select_all(**query_params)
+        parsed_data = [
+            {'unique': {'name': unique.value, 'value': item[unique.value]},
+             'data': [{'name': key, 'value': value} for key, value in
+                      item.items()]} for item in data]
         new_data = []
         for item in parsed_data:
-            try:
-                id_item = item['id'][0]
-            except IndexError:
-                id_item = None
+            unique_value = item['unique']['value']
             q = StoredData.objects.filter(
                 connection=connection_object.connection, plug=plug,
-                object_id=id_item)
+                object_id=unique_value)
             if not q.exists():
-                for column in item['data']:
-                    new_data.append(
-                        StoredData(name=column['name'], value=column['value'],
-                                   object_id=id_item,
-                                   connection=connection_object.connection,
-                                   plug=plug))
+                new_item = [StoredData(name=column['name'],
+                                       value=column['value'] or '',
+                                       object_id=unique_value,
+                                       connection=connection_object.connection,
+                                       plug=plug) for column in item['data']]
+                new_data.append(new_item)
         if new_data:
-            field_count = len(parsed_data[0]['data'])
-            extra = {'controller': 'postgresql'}
-            for i, item in enumerate(new_data):
-                try:
-                    item.save()
-                    if (i + 1) % field_count == 0:
-                        extra['status'] = 's'
-                        self._log.info(
-                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                                item.object_id, item.plug.id,
-                                item.connection.id), extra=extra)
-                except:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                            item.object_id, item.name, item.plug.id,
-                            item.connection.id), extra=extra)
-            return True
+            new_data.reverse()
+            self._save_stored_data(new_data)
+            for item in parsed_data:
+                for column in item['data']:
+                    if column['name'] == order_by.value:
+                        return column['value']
         return False
 
+    def _save_stored_data(self, data):  # TODO: ASYNC METHOD
+        for item in data:
+            self._save_row(item)
+        return True
+
+    def _save_row(self, item):  # TODO: ASYNC METHOD
+        extra = {'controller': 'postgresql', 'status': 's'}
+        try:
+            for stored_data in item:
+                stored_data.save()
+            self._log.info(
+                'Item ID: {0}, Connection: {1}, Plug: {2} successfully stored.'.format(
+                    stored_data.object_id, stored_data.connection.id,
+                    stored_data.plug.id), extra=extra)
+        except Exception as e:
+            extra['status'] = 'f'
+            self._log.info(
+                'Item ID: {0}, Field: {1}, Connection: {2}, '
+                'Plug:{3} failed to save.'.format(
+                    stored_data.object_id, stored_data.name,
+                    stored_data.connection.id, stored_data.plug.id, ),
+                extra=extra)
+            raise ControllerError(
+                code=4, controller=ConnectorEnum.PostgreSQL.name,
+                message='Error in save row. {}'.format(str(e)))
+
     def _get_insert_statement(self, item):
-        insert = """INSERT INTO %s (%s) VALUES (%s)""" % (
-            self._table, """,""".join(item.keys()),
-            """,""".join("""\'%s\'""" % i for i in item.values()))
-        return insert
+        return """INSERT INTO {0}.{1} ({2}) VALUES ({3})""".format(
+            self._schema, self._table, ",".join(item.keys()),
+            ",".join('\'{0}\''.format(i) for i in item.values()))
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
-        print("data list", data_list)
         if is_first:
-            print("primero")
             if data_list:
                 try:
                     data_list = [data_list[-1]]
@@ -481,15 +464,21 @@ class PostgreSQLController(BaseController):
                     insert = self._get_insert_statement(item)
                     self._cursor.execute(insert)
                     extra['status'] = 's'
-                    # Lastrowid not working.
+                    fetch = self._cursor.fetchone()
+                    #TODO : no se obtiene el fetch del cursor. REVISAR.
                     self._log.info('Item: %s successfully sent.' % (
-                        self._cursor.lastrowid), extra=extra)
-                    obj_list.append(self._cursor.lastrowid)
+                        fetch), extra=extra)
+                    obj_list.append(fetch)
+                except psycopg2.ProgrammingError:
+                    print("Problema en el insert del Item: {0}.".format(item))
+                    # TODO: MARCAR COMO ENVIADO Y NOTIFICAR AL USER
+                    obj_list.append(-1)
                 except Exception as e:
                     print(e)
                     extra['status'] = 'f'
                     self._log.info(
-                        'Item: %s failed to send.' % (self._cursor.lastrowid),
+                        'Item: %s failed to send.' % (
+                            item),
                         extra=extra)
             try:
                 self._connection.commit()
@@ -499,13 +488,13 @@ class PostgreSQLController(BaseController):
         raise ControllerError("There's no plug")
 
     def get_mapping_fields(self, **kwargs):
-        return [item['name'] for item in self.describe_table() if
-                item['name'] not in self.get_primary_keys()]
+        return [MapField(f, controller=ConnectorEnum.PostgreSQL) for f in
+                self.describe_table()]
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
-        if action_specification.name.lower() == 'order by':
+        if action_specification.name.lower() in ['order by', 'unique']:
             return tuple({'id': c['name'], 'name': c['name']} for c in
                          self.describe_table())
         else:
