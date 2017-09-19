@@ -75,6 +75,7 @@ class Connection(models.Model):
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
     is_deleted = models.BooleanField('is deleted', default=False)
+    is_active = models.BooleanField('is active', default=True)
 
     @property
     def name(self):
