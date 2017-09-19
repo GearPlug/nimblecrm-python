@@ -135,7 +135,7 @@ class SugarCRMController(BaseController):
             if not q.exists():
                 for k, v in item['name_value_list'].items():
                     new_data.append(
-                        StoredData(name=k, value=v, object_id=item['id'],
+                        StoredData(name=k, value=v or '', object_id=item['id'],
                                    connection=connection_object.connection,
                                    plug=plug))
         if new_data:
@@ -179,7 +179,7 @@ class SugarCRMController(BaseController):
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (res['id']),
                                    extra=extra)
-                    obj_list.append(id)
+                    obj_list.append(res['id'])
                 except Exception as e:
                     extra['status'] = 'f'
                     self._log.info('Item: %s failed to send.' % (res['id']),

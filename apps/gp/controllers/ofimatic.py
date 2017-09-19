@@ -68,14 +68,6 @@ class GoogleSpreadSheetsController(GoogleBaseController):
             files = None
         return files is not None
 
-    def _upate_connection_object_credentials(self):
-        self._connection_object.credentials_json = self._credential.to_json()
-        self._connection_object.save()
-
-    def _refresh_token(self, token=''):
-        if self._credential.access_token_expired:
-           response = self._credential.refresh(httplib2.Http())
-           self._upate_connection_object_credentials()
 
     def download_to_stored_data(self, connection_object, plug, *args,
                                 **kwargs):
