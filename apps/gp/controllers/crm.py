@@ -1223,18 +1223,17 @@ class ActiveCampaignController(BaseController):
     _host = None
     _key = None
 
-    def __init__(self, *args, **kwargs):
-        super(ActiveCampaignController, self).__init__(*args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(ActiveCampaignController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(ActiveCampaignController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._host = self._connection_object.host
-                    self._key = self._connection_object.connection_access_key
-                except Exception as e:
-                    print(e)
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(ActiveCampaignController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._host = self._connection_object.host
+                self._key = self._connection_object.connection_access_key
+            except Exception as e:
+                print(e)
 
     def get_account_info(self):
         self.create_connection()
