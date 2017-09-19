@@ -21,22 +21,22 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
         cls.user = User.objects.create(username='test',
                                        email='lyrubiano5@gmail.com',
                                        password='Prueba#2017')
-        _dict = {
+        _dict_user = {
             'user': cls.user,
             'connector_id': ConnectorEnum.GoogleSpreadSheets.value
         }
 
-        cls.connection = Connection.objects.create(**_dict)
+        cls.connection = Connection.objects.create(**_dict_user)
 
         credentials = json.loads(os.environ.get('TEST_GOOGLESHEETS_CREDENTIALS'))
 
-        _dict2 = {
+        _dict_connection = {
             'connection': cls.connection,
             'name': 'ConnectionTest',
             'credentials_json': credentials,
         }
         cls.googlesheets_connection = GoogleSpreadSheetsConnection.objects.create(
-            **_dict2)
+            **_dict_connection)
 
         action_source = Action.objects.get(
             connector_id=ConnectorEnum.GoogleSpreadSheets.value,
@@ -47,7 +47,7 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
             action_type='target', name='set row',
             is_active=True)
 
-        _dict3 = {
+        _dict_plug_source = {
             'name': 'PlugTestSource',
             'connection': cls.connection,
             'action': action_source,
@@ -56,9 +56,9 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
             'is_active': True
 
         }
-        cls.plug_source = Plug.objects.create(**_dict3)
+        cls.plug_source = Plug.objects.create(**_dict_plug_source)
 
-        _dict4 = {
+        _dict_plug_target = {
             'name': 'PlugTestTarget',
             'connection': cls.connection,
             'action': action_target,
@@ -67,7 +67,7 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
             'is_active': True
         }
 
-        cls.plug_target = Plug.objects.create(**_dict4)
+        cls.plug_target = Plug.objects.create(**_dict_plug_target)
 
         cls.specification1 = ActionSpecification.objects.get(
             action=action_source, name='spreadsheet')
@@ -79,41 +79,41 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
         cls.specification4 = ActionSpecification.objects.get(
             action=action_target, name='worksheet')
 
-        _dict5 = {
+        _dict_action_specification_source_1= {
             'plug': cls.plug_source,
             'action_specification': cls.specification1,
             'value': os.environ.get('TEST_GOOGLESHEETS_SHEET')
         }
 
         cls.plug_action_specificaion_source_1 = PlugActionSpecification.objects.create(
-            **_dict5)
+            **_dict_action_specification_source_1)
 
-        _dict6 = {
+        _dict_action_specification_source_2 = {
             'plug': cls.plug_source,
             'action_specification': cls.specification2,
             'value': os.environ.get('TEST_GOOGLESHEETS_WORKSHEET')
         }
 
         cls.plug_action_specificaion_source_2 = PlugActionSpecification.objects.create(
-            **_dict6)
+            **_dict_action_specification_source_2)
 
-        _dict7 = {
+        _dict_action_specification_target_1 = {
             'plug': cls.plug_target,
             'action_specification': cls.specification3,
             'value': os.environ.get('TEST_GOOGLESHEETS_SHEET')
         }
 
         cls.plug_action_specificaion_target_1 = PlugActionSpecification.objects.create(
-            **_dict7)
+            **_dict_action_specification_target_1)
 
-        _dict8 = {
+        _dict_action_specification_target_2 = {
             'plug': cls.plug_target,
             'action_specification': cls.specification4,
             'value': os.environ.get('TEST_GOOGLESHEETS_WORKSHEET')
         }
 
         cls.plug_action_specificaion_target_2 = PlugActionSpecification.objects.create(
-            **_dict8)
+            **_dict_action_specification_target_2)
 
     def setUp(self):
         self.controller_source = GoogleSpreadSheetsController(
@@ -143,18 +143,8 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
         self.assertEqual(self.controller_target._worksheet_name, os.environ.get('TEST_GOOGLESHEETS_WORKSHEET'))
 
     def test_test_connection(self):
-        self.controller_source._credential.token_expiry=False
         result_source = self.controller_source.test_connection()
         self.assertTrue(result_source)
-
-    def test_z_refresh_token(self):
-        field = GoogleSpreadSheetsConnection.objects.get(id=self.googlesheets_connection.id)
-        token = field.credentials_json["access_token"]
-        datetime_object = datetime.strptime('Jun 1 2005  1:33PM','%b %d %Y %I:%M%p')
-        self.controller_source._credential.token_expiry = datetime_object
-        self.controller_source._refresh_token()
-        field = GoogleSpreadSheetsConnection.objects.get(id=self.googlesheets_connection.id)
-        self.assertNotEqual(token,field.credentials_json["access_token"])
 
     def test_column_string(self):
         result = self.controller_source.colnum_string(10)
