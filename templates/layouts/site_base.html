@@ -45,6 +45,11 @@
                                 <a href="{% url 'connection:manage' %}">Administrar conexiones</a>
                             {% endblock %}
                         </div>
+                        <div class="col-md-12 border_base">
+                            {% block logout %}
+                                <i class="fa fa-sign-out" aria-hidden="true"></i>&nbsp;<a href="{% url 'account_logout' %}">Logout</a>
+                            {% endblock %}
+                        </div>
                     </div>
                 {% endblock %}
                 <div class="col-md-10">{% block content %}{% endblock %}</div>
