@@ -20,6 +20,16 @@ class MapField(object):
             self.required = False
             self.field_type = 'text'
             self.max_length = 200
+        elif controller == ConnectorEnum.PostgreSQL:
+            if 'name' in d:
+                self.name = d['name']
+                self.label = d['name']
+            self.required = False
+            if 'type' in d:
+                self.field_type = d['type']
+            else:
+                self.field_type = 'text'
+                self.max_length = 200
         elif controller == ConnectorEnum.SugarCRM:
             if 'name' in d:
                 self.name = d['name']
@@ -27,7 +37,8 @@ class MapField(object):
                 self.label = d['label']
             if 'options' in d:
                 if isinstance(d['options'], dict):
-                    self.choices = [(d['options'][choice]['name'], d['options'][choice]['value'])
+                    self.choices = [(d['options'][choice]['name'],
+                                     d['options'][choice]['value'])
                                     for choice in d['options']]
                     self.choices.insert(0, ('', ''))
             if 'type' in d:
@@ -70,7 +81,9 @@ class MapField(object):
                 # self.field_type = d['schema']['type']
                 self.field_type = 'text'
             if 'allowedValues' in d and d['allowedValues']:
-                self.choices = [(choice['id'], '{} ({})'.format(choice['name'], choice['id'])) for choice in
+                self.choices = [(choice['id'], '{} ({})'.format(choice['name'],
+                                                                choice['id']))
+                                for choice in
                                 d['allowedValues']]
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
@@ -164,7 +177,8 @@ class MapField(object):
                 self.name = d['name']
             if 'label' in d:
                 self.label = d['label']
-            if d['name'] == "dealname" or d['name'] == "name" or d['name'] == "firstname":
+            if d['name'] == "dealname" or d['name'] == "name" or d[
+                'name'] == "firstname":
                 self.required = d['name']
             if 'type' in d:
                 self.field_type = d['type']
@@ -298,10 +312,12 @@ class MapField(object):
             if 'label' in d:
                 self.label = d['label']
             if 'default' in d or 'default_value' in d:
-                self.default = d['default'] if 'default' in d else d['default_value']
+                self.default = d['default'] if 'default' in d else d[
+                    'default_value']
             if 'options' in d:
                 if isinstance(d['options'], dict):
-                    self.choices = [(d['options'][choice]['name'], d['options'][choice]['value'])
+                    self.choices = [(d['options'][choice]['name'],
+                                     d['options'][choice]['value'])
                                     for choice in d['options']]
                     self.choices.insert(0, ('', ''))
             self.required = False
