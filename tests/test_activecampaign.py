@@ -5,12 +5,10 @@ from django.contrib.auth.models import User
 from apps.gp.controllers.crm import ActiveCampaignController
 from apps.gp.models import Connection, ActiveCampaignConnection, Action, Plug, ActionSpecification, PlugActionSpecification
 
-
 class ActiveCampaignControllerTestCases(TestCase):
     fixtures = ['gp_base.json']
 
     @classmethod
-
     def setUpTestData(cls):
 
         cls.user = User.objects.create(username='test',
@@ -25,18 +23,19 @@ class ActiveCampaignControllerTestCases(TestCase):
         _dict_connection = {
             'connection': cls.connection,
             'name': 'ConnectionTest',
-            'token': os.environ.get('TEST_ACTIVECAMPAIGN_TOKEN'),
+            'host': os.environ.get('TEST_ACTIVECAMPAIGN_HOST'),
+            'connection_access_key': os.environ.get('TEST_ACTIVECAMPAIGN_KEY'),
         }
         cls.activecampaign_connection = ActiveCampaignConnection.objects.create(**_dict_connection)
 
         action_source = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value,
                                     action_type='source',
-                                    name='pendiente',
+                                    name='new contact',
                                     is_active=True)
 
         action_target = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value,
                                             action_type='target',
-                                            name='pendiente',
+                                            name='create contact',
                                             is_active=True)
 
         _dict_plug_source = {
@@ -84,6 +83,16 @@ class ActiveCampaignControllerTestCases(TestCase):
         cls.plug_action_specificaion_target = PlugActionSpecification.objects.create(
             **_dict_plug_action_specification_target)
 
-        def setUp(self):
-            self.controller_source = ActiveCampaignController(self.plug.connection.related_connection, self.plug_source)
-            self.controller_target = ActiveCampaignController(self.plug.connection.related_connection, self.plug_target)
+    def setUp(self):
+        self.controller_source = ActiveCampaignController(self.plug_source.connection.related_connection, self.plug_source)
+        self.controller_target = ActiveCampaignController(self.plug_target.connection.related_connection, self.plug_target)
+
+    def test_controller(self):
+        print("host", self.controller_source)
+        #self.assertIsInstance(self.controller_source._connection_object, ActiveCampaignConnection)
+        # self.assertIsInstance(self.controller_source._plug, Plug)
+        # self.assertIsInstance(self.controller_target._plug, Plug)
+        # self.assertTrue(self.controller_source._host)
+        # self.assertTrue(self.controller_target._host)
+        # self.assertTrue(self.controller_source._key)
+        # self.assertTrue(self.controller_target._key)
