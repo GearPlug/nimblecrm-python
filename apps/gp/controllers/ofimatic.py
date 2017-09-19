@@ -48,8 +48,7 @@ class GoogleSpreadSheetsController(GoogleBaseController):
                         self._worksheet_name = self._plug.plug_action_specification.get(
                             action_specification__name__iexact='worksheet').value
                     except Exception as e:
-                        print(
-                            "Error asignando los specifications GoogleSpreadSheets 2")
+                        print("Error asignando los specifications GoogleSpreadSheets 2")
             except Exception as e:
                 print("Error getting the GoogleSpreadSheets attributes 1")
                 print(e)
@@ -67,10 +66,8 @@ class GoogleSpreadSheetsController(GoogleBaseController):
         except GoogleClient.HttpAccessTokenRefreshError:
             self._report_broken_token()
             files = None
-        except Exception as e:
-            print("Error Test connection GoogleSpreadSheets")
-            files = None
         return files is not None
+
 
     def download_to_stored_data(self, connection_object, plug, *args,
                                 **kwargs):
@@ -718,8 +715,7 @@ class WunderListController(BaseController):
                     task.save()
                     self._log.info(
                         'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            task.object_id, task.plug.id,
-                            task.connection.id),
+                        task.object_id, task.plug.id, task.connection.id),
                         extra=extra)
                 except Exception as e:
                     extra['status'] = 'f'
@@ -754,7 +750,7 @@ class WunderListController(BaseController):
                 if task.status_code in [200, 201]:
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (
-                        task.json()['data']['name']), extra=extra)
+                    task.json()['data']['name']), extra=extra)
                     obj_list.append(task)
                 else:
                     extra['status'] = 'f'
