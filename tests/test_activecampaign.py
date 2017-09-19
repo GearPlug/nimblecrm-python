@@ -1,4 +1,5 @@
 import os
+from apps.gp.map import MapField
 from django.test import TestCase
 from apps.gp.enum import ConnectorEnum
 from django.contrib.auth.models import User
@@ -29,9 +30,9 @@ class ActiveCampaignControllerTestCases(TestCase):
         cls.activecampaign_connection = ActiveCampaignConnection.objects.create(**_dict_connection)
 
         action_source = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value,
-                                    action_type='source',
-                                    name='new contact',
-                                    is_active=True)
+                                            action_type='source',
+                                            name='new contact',
+                                            is_active=True)
 
         action_target = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value,
                                             action_type='target',
@@ -62,13 +63,13 @@ class ActiveCampaignControllerTestCases(TestCase):
 
         cls.plug_target = Plug.objects.create(**_dict_plug_target)
 
-        cls.specification_source = ActionSpecification.objects.get(action=action_source, name=os.environ.get('TEST_ACTIVECAMPAIGN_LIST'))
-        cls.specification_target = ActionSpecification.objects.get(action=action_target, name='TEST_ACTIVECAMPAIGN_LIST')
+        cls.specification_source = ActionSpecification.objects.get(action=action_source, name='list')
+        cls.specification_target = ActionSpecification.objects.get(action=action_target, name='list')
 
         _dict_plug_action_specification_source = {
             'plug': cls.plug_source,
             'action_specification': cls.specification_source,
-            'value': os.environ.get('TEST_ACTIVECAMPAIGN_SHEET')
+            'value': os.environ.get('TEST_ACTIVECAMPAIGN_LIST')
         }
 
         cls.plug_action_specificaion_source = PlugActionSpecification.objects.create(
@@ -77,7 +78,7 @@ class ActiveCampaignControllerTestCases(TestCase):
         _dict_plug_action_specification_target = {
             'plug': cls.plug_target,
             'action_specification': cls.specification_target,
-            'value': os.environ.get('TEST_ACTIVECAMPAIGN_SHEET')
+            'value': os.environ.get('TEST_ACTIVECAMPAIGN_LIST')
         }
 
         cls.plug_action_specificaion_target = PlugActionSpecification.objects.create(
@@ -87,12 +88,51 @@ class ActiveCampaignControllerTestCases(TestCase):
         self.controller_source = ActiveCampaignController(self.plug_source.connection.related_connection, self.plug_source)
         self.controller_target = ActiveCampaignController(self.plug_target.connection.related_connection, self.plug_target)
 
-    def test_controller(self):
-        print("host", self.controller_source)
-        #self.assertIsInstance(self.controller_source._connection_object, ActiveCampaignConnection)
-        # self.assertIsInstance(self.controller_source._plug, Plug)
-        # self.assertIsInstance(self.controller_target._plug, Plug)
-        # self.assertTrue(self.controller_source._host)
-        # self.assertTrue(self.controller_target._host)
-        # self.assertTrue(self.controller_source._key)
-        # self.assertTrue(self.controller_target._key)
+    def _get_fields(self):
+        return [{'name': 'email', 'type': 'varchar', 'required': True},
+                {'name': 'first_name', 'type': 'varchar', 'required': False},
+                {'name': 'last_name', 'type': 'varchar', 'required': False},
+                {'name': 'phone', 'type': 'varchar', 'required': False},
+                {'name': 'orgname', 'type': 'varchar', 'required': False},
+                ]
+
+    # def test_controller(self):
+    #     self.assertIsInstance(self.controller_source._connection_object, ActiveCampaignConnection)
+    #     self.assertIsInstance(self.controller_source._plug, Plug)
+    #     self.assertIsInstance(self.controller_target._plug, Plug)
+    #     self.assertTrue(self.controller_source._host)
+    #     self.assertTrue(self.controller_target._host)
+    #     self.assertTrue(self.controller_source._key)
+    #     self.assertTrue(self.controller_target._key)
+
+    # def test_get_account_info(self):
+    #     result=self.controller_source.get_account_info()
+    #     self.assertTrue(result)
+
+    # def test_get_lists(self):
+    #     list = ""
+    #     result = self.controller_source.get_lists()
+    #     print(result)
+    #     for i in result:
+    #         if i['id'] == os.environ.get('TEST_ACTIVECAMPAIGN_LIST'):
+    #             list =  i['id']
+    #     self.assertEqual(list,os.environ.get('TEST_ACTIVECAMPAIGN_LIST'))
+
+    # def test_get_action_specification_options(self):
+    #     action_specification_id = self.specification_target.id
+    #     result = self.controller_target.get_action_specification_options(action_specification_id)
+    #     list = ""
+    #     for i in result:
+    #         if i['id'] == os.environ.get('TEST_ACTIVECAMPAIGN_LIST'):
+    #             list = i['id']
+    #     self.assertIsInstance(result, tuple)
+    #     self.assertEqual(list, os.environ.get('TEST_ACTIVECAMPAIGN_LIST'))
+
+    # def test_get_mapping_fields(self):
+    #     result = self.controller_target.get_mapping_fields()
+    #     self.assertIsInstance(result, list)
+    #     self.assertIsInstance(result[0], MapField)
+
+    def test_get_target_fiels(self):
+        result = self.controller_target.get_target_fields()
+        self.assertEqual(result, self._get_fields())

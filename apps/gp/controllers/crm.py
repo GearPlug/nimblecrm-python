@@ -1423,3 +1423,15 @@ class ActiveCampaignController(BaseController):
                             extra=extra)
             return True
         return False
+
+    def view_list(self):
+        id = self._plug.plug_action_specification.all()[0].value
+        params = [
+            ('api_action', "list_view"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('id', id),
+        ]
+        url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=url, params=params)
+        return r.json()
