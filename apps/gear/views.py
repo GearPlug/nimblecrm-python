@@ -226,7 +226,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
                 gear_id=self.kwargs['gear_id'], is_active=True)
             gear_map_data = [GearMapData(gear_map=self.gear_map, target_name=f,
                                          source_value=v) for f, v in
-                             form.cleaned_data.items()]
+                             form.cleaned_data.items() if v is not None]
             GearMapData.objects.bulk_create(gear_map_data)
         self.gear_map.gear.is_active = True
         self.gear_map.gear.save()
