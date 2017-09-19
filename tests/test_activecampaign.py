@@ -16,18 +16,18 @@ class ActiveCampaignControllerTestCases(TestCase):
         cls.user = User.objects.create(username='test',
                                        email='lyrubiano5@gmail.com',
                                        password='Prueba#2017')
-        _dict = {
+        _dict_user = {
             'user': cls.user,
             'connector_id': ConnectorEnum.ActiveCampaign.value
         }
-        cls.connection = Connection.objects.create(**_dict)
+        cls.connection = Connection.objects.create(**_dict_user)
 
-        _dict2 = {
+        _dict_connection = {
             'connection': cls.connection,
             'name': 'ConnectionTest',
             'token': os.environ.get('TEST_ACTIVECAMPAIGN_TOKEN'),
         }
-        cls.activecampaign_connection = ActiveCampaignConnection.objects.create(**_dict2)
+        cls.activecampaign_connection = ActiveCampaignConnection.objects.create(**_dict_connection)
 
         action_source = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value,
                                     action_type='source',
@@ -39,7 +39,7 @@ class ActiveCampaignControllerTestCases(TestCase):
                                             name='pendiente',
                                             is_active=True)
 
-        _dict3 = {
+        _dict_plug_source = {
             'name': 'PlugTest',
             'connection': cls.connection,
             'action': action_source,
@@ -49,9 +49,9 @@ class ActiveCampaignControllerTestCases(TestCase):
 
         }
 
-        cls.plug_source = Plug.objects.create(**_dict3)
+        cls.plug_source = Plug.objects.create(**_dict_plug_source)
 
-        _dict4 = {
+        _dict_plug_target = {
             'name': 'PlugTest',
             'connection': cls.connection,
             'action': action_target,
@@ -61,31 +61,29 @@ class ActiveCampaignControllerTestCases(TestCase):
 
         }
 
-        cls.plug_target = Plug.objects.create(**_dict4)
+        cls.plug_target = Plug.objects.create(**_dict_plug_target)
 
         cls.specification_source = ActionSpecification.objects.get(action=action_source, name=os.environ.get('TEST_ACTIVECAMPAIGN_LIST'))
         cls.specification_target = ActionSpecification.objects.get(action=action_target, name='TEST_ACTIVECAMPAIGN_LIST')
 
-        _dict5 = {
+        _dict_plug_action_specification_source = {
             'plug': cls.plug_source,
             'action_specification': cls.specification_source,
             'value': os.environ.get('TEST_ACTIVECAMPAIGN_SHEET')
         }
 
         cls.plug_action_specificaion_source = PlugActionSpecification.objects.create(
-            **_dict5)
+            **_dict_plug_action_specification_source)
 
-        _dict6 = {
+        _dict_plug_action_specification_target = {
             'plug': cls.plug_target,
             'action_specification': cls.specification_target,
             'value': os.environ.get('TEST_ACTIVECAMPAIGN_SHEET')
         }
 
         cls.plug_action_specificaion_target = PlugActionSpecification.objects.create(
-            **_dict6)
+            **_dict_plug_action_specification_target)
 
         def setUp(self):
             self.controller_source = ActiveCampaignController(self.plug.connection.related_connection, self.plug_source)
             self.controller_target = ActiveCampaignController(self.plug.connection.related_connection, self.plug_target)
-            self._token = os.environ.get('token')
-            self._client = Client(access_token=self._token)
