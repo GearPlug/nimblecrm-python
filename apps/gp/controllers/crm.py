@@ -1276,14 +1276,13 @@ class ActiveCampaignController(BaseController):
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
         try:
-            if action_specification.name.lower() == 'lists':
+            if action_specification.name.lower() == 'list':
                 for i in self.get_lists():
                     return tuple({'id': i['id'], 'name': i['name']} for i in
                                  self.get_lists())
             else:
-                raise ControllerError(
-                    "That specification doesn't belong to an action in this connector."
-                )
+                raise ControllerError("That specification doesn't belong "
+                                      "to an action in this connector.")
         except Exception as e:
             print(e)
 
@@ -1300,9 +1299,8 @@ class ActiveCampaignController(BaseController):
                 action_specification__name='lists')
 
             # Creacion de Webhook
-            webhook = Webhook.objects.create(name='activecampaign',
-                                             plug=self._plug,
-                                             url='', expiration='')
+            webhook = Webhook.objects.create(name='activecampaign', url='',
+                                             plug=self._plug, expiration='')
 
             # Verificar ngrok para determinar url_base
             url_base = settings.WEBHOOK_HOST
