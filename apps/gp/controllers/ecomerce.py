@@ -11,6 +11,7 @@ from apps.gp.map import MapField
 from apps.gp.controllers.utils import get_dict_with_source_data
 from magento import MagentoAPI
 import json
+from django.db.models import Q
 import ast
 from django.urls import reverse
 from mercadolibre.client import Client as MercadolibreClient
@@ -39,19 +40,17 @@ class MercadoLibreController(BaseController):
             except AttributeError as e:
                 raise ControllerError(code=1, controller=ConnectorEnum.MercadoLibre,
                                       message='Failed to get the token. \n{}'.format(str(e)))
-        else:
-            raise ControllerError(code=7, controller=ConnectorEnum.MercadoLibre, message='No connection.')
-        try:
-            self._client = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
-                                              client_secret=settings.MERCADOLIBRE_CLIENT_SECRET,
-                                              site=self._site or 'MCO')
-        except Exception as e:
-            raise ControllerError(code=2, controller=ConnectorEnum.MercadoLibre,
-                                  message='Cannot instantiate the client. {}'.format(str(e)))
-        try:
-            self._client.set_token(ast.literal_eval(self._token))
-        except Exception as e:
-            pass
+            try:
+                self._client = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
+                                                  client_secret=settings.MERCADOLIBRE_CLIENT_SECRET,
+                                                  site=self._site or 'MCO')
+            except Exception as e:
+                raise ControllerError(code=2, controller=ConnectorEnum.MercadoLibre,
+                                      message='Cannot instantiate the client. {}'.format(str(e)))
+            try:
+                self._client.set_token(ast.literal_eval(self._token))
+            except Exception as e:
+                pass
 
     def test_connection(self):
         if self._client.access_token and not self._client.is_valid_token:
@@ -169,14 +168,12 @@ class MercadoLibreController(BaseController):
             raise ControllerError(code=3, controller=ConnectorEnum.MercadoLibre, message='Error. {}'.format(str(e)))
 
     def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
-        plugs = Plug.objects.filter(
-            action__action_type='source',
-            action__connector__name__iexact='mercadolibre',
-            action__name=body['topic'],
-            connection__connection_mercadolibre__user_id=body['user_id'])
-        for plug in plugs:
-            self._connection_object, self._plug = plug.connection.related_connection, plug
-            self.create_connection(self._connection_object, self._plug)
+        plugs_to_update = Plug.objects.filter(
+            Q(gear_source__is_active=True) | Q(is_tested=False),
+            connection__connection_mercadolibre__user_id=body['user_id'],
+            action__name=body['topic'])
+        for plug in plugs_to_update:
+            self.create_connection(connection=plug.connection.related_connection, plug=plug)
             if self.test_connection():
                 self.download_source_data(event=body)
         return HttpResponse(status=200)
