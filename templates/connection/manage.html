@@ -18,3 +18,34 @@
         <br>
     {% endfor %}
 {% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        function popUp(url) {
+            var win = window.open(url, 'Update Connection', 'width=972,height=660,modal=yes,alwaysRaised=yes');
+            var checkConnect = setInterval(function () {
+                if (!win || !win.closed) return;
+                clearInterval(checkConnect);
+                window.location.reload();
+            }, 100);
+        }
+
+        $('.testConnectionButton').click(function (e) {
+            var button = $(this);
+            var connector_id = 1;
+            $.ajax({
+                method: "POST",
+                url: "{% url 'connection:test' connector_id=1 %}",
+                data: {connection_id: $(button).attr('connection_id')},
+            }).done(function (response) {
+                if (response.test == true)
+                    $(button).css('background-color', 'green');
+                else
+                    $(button).css('background-color', 'red');
+
+            });
+            return false;
+        })
+    </script>
+{% endblock %}
