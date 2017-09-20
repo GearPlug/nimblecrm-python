@@ -99,9 +99,9 @@ class IncomingWebhook(View):
         if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey,
                          ConnectorEnum.Gmail,
                          ConnectorEnum.FacebookLeads,
-                         ConnectorEnum.MercadoLibre]:
-            response = controller.do_webhook_process(body=body,
-                                                     POST=request.POST)
+                         ConnectorEnum.MercadoLibre,
+                         ConnectorEnum.JIRA]:
+            response = controller.do_webhook_process(body=body, POST=request.POST)
             return response
         # ASANA
         elif connector == ConnectorEnum.Asana:
@@ -127,22 +127,6 @@ class IncomingWebhook(View):
                         if ping:
                             controller.download_source_data(event=event)
             response.status_code = 200
-        elif connector == ConnectorEnum.JIRA:
-            data = json.loads(request.body.decode('utf-8'))
-            issue = data['issue']
-            project_list = PlugActionSpecification.objects.filter(
-                action_specification__action__action_type='source',
-                action_specification__action__connector__name__iexact="jira",
-                action_specification__name__iexact='project_id',
-                value=issue['fields']['project']['id'], )
-            controller_class = ConnectorEnum.get_controller(connector)
-            for project in project_list:
-                controller = controller_class(
-                    connection=project.plug.connection.related_connection,
-                    plug=project.plug)
-                ping = controller.test_connection()
-                if ping:
-                    controller.download_source_data(issue=issue)
         elif connector == ConnectorEnum.WunderList:
             response = HttpResponse(status=200)
             controller_class = ConnectorEnum.get_controller(connector)
