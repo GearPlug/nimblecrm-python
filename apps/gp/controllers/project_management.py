@@ -54,8 +54,9 @@ class JIRAController(BaseController):
         if self._plug is not None:
             for obj in data_list:
                 res = self.create_issue(self._plug.plug_action_specification.all()[0].value, obj)
+                obj_list.append(res.id)
             extra = {'controller': 'jira'}
-            return
+            return obj_list
         raise ControllerError("Incomplete.")
 
     def download_to_stored_data(self, connection_object=None, plug=None, issue=None, **kwargs):
