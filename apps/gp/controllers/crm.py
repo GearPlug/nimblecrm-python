@@ -1366,14 +1366,13 @@ class ActiveCampaignController(BaseController):
             obj_list = []
             extra = {'controller': 'activecampaign'}
             for item in data_list:
-                print(item)
                 try:
                     response = self.create_user(item)
                     self._log.info(
                         'Item: %s successfully sent.' % (
                             list(item.items())[0][1]),
                         extra=extra)
-                    obj_list.append(id)
+                    obj_list.append(response['subscriber_id'])
                 except Exception as e:
                     print(e)
                     extra['status'] = 'f'
@@ -1388,7 +1387,6 @@ class ActiveCampaignController(BaseController):
                                 data=None, **kwargs):
         new_data = []
         if data is not None:
-            print("data", data)
             contact_id = data[0]['contact[id]']
             object_id = int(contact_id)
             q = StoredData.objects.filter(object_id=object_id,
