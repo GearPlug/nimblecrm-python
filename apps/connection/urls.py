@@ -4,7 +4,7 @@ from apps.connection.views import CreateConnectionView, ListConnectionView, List
     GoogleAuthView, SlackAuthView, TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, \
     ShopifyAuthView, EvernoteAuthView, AsanaAuthView, MercadoLibreAuthView, WunderListAuthView, HubspotAuthView, \
     AjaxMercadoLibrePostSiteView, GitLabAuthView, AjaxMercadoLibrePostSiteView, ManageConnectionView, MailchimpAuthView, \
-    GitLabAuthView, connection_toggle, ConnectionUpdateView  # ,AJAXGetSurveyListView
+    GitLabAuthView, connection_toggle, UpdateConnectionView  # ,AJAXGetSurveyListView
 
 urlpatterns = [
     # Create Connection
@@ -21,7 +21,7 @@ urlpatterns = [
 
     url(r'manage/', ManageConnectionView.as_view(), name="manage"),
     url(r'connection_toggle/', connection_toggle, name='connection_toggle'),
-    url(r'update/(?P<pk>\d+)/', ConnectionUpdateView.as_view(), name='update'),
+    url(r'update/(?P<pk>\d+)/', UpdateConnectionView.as_view(), name='update'),
 
     # Auth Callbacks
     url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),
