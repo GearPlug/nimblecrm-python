@@ -153,9 +153,9 @@ class ActiveCampaignControllerTestCases(TestCase):
     def test_create_user(self):
         data = {"email": os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
         result_create = self.controller_target.create_user(data)
+        self.assertEqual('Contact added', result_create['result_message'])
         id = result_create['subscriber_id']
         result_delete = self.controller_target.delete_contact(id)
-        self.assertEqual('Contact added', result_create['result_message'])
         self.assertEqual('Contact deleted', result_delete['result_message'])
 
     def test_create_webhook(self):
@@ -191,8 +191,8 @@ class ActiveCampaignControllerTestCases(TestCase):
         data = {'email': os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
         source_data = [{'id': 1, 'data': data}]
         result = self.controller_target.send_stored_data(source_data, target_fields, is_first=True)
+        self.assertNotEqual(result, [])
         contact = self.controller_target.view_contact(result[0])
-        delete = self.controller_target.delete_contact(result[0])
         self.assertEqual(contact['email'], os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL'))
+        delete = self.controller_target.delete_contact(result[0])
         self.assertEqual(delete['result_code'], 1)
-        self.assertIsInstance(result, list)
