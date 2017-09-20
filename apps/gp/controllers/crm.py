@@ -1293,10 +1293,9 @@ class ActiveCampaignController(BaseController):
 
     def create_webhook(self):
         action = self._plug.action.name
-        if action == 'Detect contact creation':
+        if action == 'new contact':
             selected_list = self._plug.plug_action_specification.get(
-                action_specification__name='lists')
-
+                action_specification__name='list')
             # Creacion de Webhook
             webhook = Webhook.objects.create(name='activecampaign', url='',
                                              plug=self._plug, expiration='')
@@ -1315,13 +1314,14 @@ class ActiveCampaignController(BaseController):
             post_array = {
                 "name": "GearPlug WebHook",
                 "url": url,
-                "lists": selected_list,
+                "lists": selected_list.value,
                 "action": "subscribe",
                 "init": "admin"
             }
             final_url = "{0}/admin/api.php".format(self._host)
             r = requests.post(url=final_url, data=post_array, params=params)
             if r.status_code == 200 or r.status_code == 201:
+
                 webhook.url = url_base + url_path
                 webhook.generated_id = r.json()['id']
                 webhook.is_active = True
@@ -1388,6 +1388,7 @@ class ActiveCampaignController(BaseController):
                                 data=None, **kwargs):
         new_data = []
         if data is not None:
+            print("data", data)
             contact_id = data[0]['contact[id]']
             object_id = int(contact_id)
             q = StoredData.objects.filter(object_id=object_id,
@@ -1424,14 +1425,46 @@ class ActiveCampaignController(BaseController):
             return True
         return False
 
-    def view_list(self):
-        id = self._plug.plug_action_specification.all()[0].value
+    def view_contact(self, id):
         params = [
-            ('api_action', "list_view"),
+            ('api_action', "contact_view"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('id',id),
+        ]
+        url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=url, params=params)
+        return r.json()
+
+    def delete_webhooks(self, id):
+        params = [
+            ('api_action', "webhook_delete"),
             ('api_key', self._key),
             ('api_output', 'json'),
             ('id', id),
         ]
-        url = "{0}/admin/api.php".format(self._host)
-        r = requests.post(url=url, params=params)
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, params=params)
+        return r.json()
+
+    def delete_contact(self, id):
+        params = [
+            ('api_action', "contact_delete"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('id', id),
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, params=params)
+        return r.json()
+
+    def list_webhooks(self, id):
+        params = [
+            ('api_action', "webhook_view"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('id', id),
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, params=params)
         return r.json()

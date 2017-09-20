@@ -1,10 +1,13 @@
 import os
+import pprint
 from apps.gp.map import MapField
 from django.test import TestCase
 from apps.gp.enum import ConnectorEnum
 from django.contrib.auth.models import User
 from apps.gp.controllers.crm import ActiveCampaignController
-from apps.gp.models import Connection, ActiveCampaignConnection, Action, Plug, ActionSpecification, PlugActionSpecification
+from apps.gp.models import Connection, ActiveCampaignConnection, Action, Plug, ActionSpecification, PlugActionSpecification, Webhook, \
+                            StoredData
+
 
 class ActiveCampaignControllerTestCases(TestCase):
     fixtures = ['gp_base.json']
@@ -96,6 +99,13 @@ class ActiveCampaignControllerTestCases(TestCase):
                 {'name': 'orgname', 'type': 'varchar', 'required': False},
                 ]
 
+    def _get_contact(self):
+        return [{'initiated_by': 'admin', 'contact[id]': '14', 'contact[email]': 'contact@hotmail.com',
+                 'contact[tags]': '', 'list': '0', 'contact[orgname]': '', 'orgname': '',
+                 'contact[first_name]': 'contact', 'initiated_from': 'admin', 'contact[phone]': '1245',
+                 'date_time': '2017-09-20T11:46:29-05:00', 'contact[last_name]': 'new',
+                 'contact[ip]': '0.0.0.0', 'type': 'subscribe'}]
+
     # def test_controller(self):
     #     self.assertIsInstance(self.controller_source._connection_object, ActiveCampaignConnection)
     #     self.assertIsInstance(self.controller_source._plug, Plug)
@@ -133,6 +143,36 @@ class ActiveCampaignControllerTestCases(TestCase):
     #     self.assertIsInstance(result, list)
     #     self.assertIsInstance(result[0], MapField)
 
-    def test_get_target_fiels(self):
-        result = self.controller_target.get_target_fields()
-        self.assertEqual(result, self._get_fields())
+    # def test_get_target_fiels(self):
+    #     result = self.controller_target.get_target_fields()
+    #     self.assertEqual(result, self._get_fields())
+
+    # def test_create_user(self):
+    #     data = {"email": os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
+    #     result_create = self.controller_target.create_user(data)
+    #     id = result_create['subscriber_id']
+    #     result_delete = self.controller_target.delete_contact(id)
+    #     self.assertEqual('Contact added', result_create['result_message'])
+    #     self.assertEqual('Contact deleted', result_delete['result_message'])
+    #
+    # def test_create_webhook(self):
+    #     count_start = Webhook.objects.filter(plug= self.plug_source).count()
+    #     result = self.controller_source.create_webhook()
+    #     count_end = Webhook.objects.filter(plug=self.plug_source).count()
+    #     webhook = Webhook.objects.last()
+    #     deleted = self.controller_source.delete_webhooks(webhook.generated_id)
+    #     self.assertEqual(count_start+1,count_end)
+    #     self.assertTrue(result)
+    #     self.assertEqual('Webhook deleted', deleted['result_message'])
+
+    def test_download_to_stored_data(self):
+        # count_start = StoredData.objects.filter(connection=self.connection, plug=self.plug_source).count()
+        # data = {"email": os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
+        # result_create_contact = self.controller_target.create_user(data)
+        # pprint.pprint(result_create_contact)
+        # result_view_contact = self.controller_target.view_contact(result_create_contact['subscriber_id'])
+        # pprint.pprint(result_view_contact)
+        # list = self.controller_source.get_lists()
+        # pprint.pprint(list)
+        list = self.controller_source.list_webhooks(13)
+        pprint.pprint(list)
