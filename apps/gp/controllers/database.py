@@ -306,8 +306,7 @@ class PostgreSQLController(BaseController):
                                                    plug=plug, **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
-        super(PostgreSQLController, self).create_connection(
-            connection=connection, plug=plug)
+        super(PostgreSQLController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
                 self._database = self._connection_object.database
@@ -318,15 +317,17 @@ class PostgreSQLController(BaseController):
                 user = self._connection_object.connection_user
                 password = self._connection_object.connection_password
             except Exception as e:
-                print("Error getting the PostgreSQL attributes args")
-            try:
-                self._connection = psycopg2.connect(
-                    host=host, port=int(port), user=user, password=password,
-                    database=self._database)
-                self._cursor = self._connection.cursor()
-            except Exception as e:
-                self._connection = None
-                self._cursor = None
+                raise ControllerError(code=1, controller=ConnectorEnum.PostgreSQL.name,
+                                      message='Error getting the PostgreSQL attributes args. {}'.format(str(e)))
+        else:
+            raise ControllerError('No connection.')
+        try:
+            self._connection = psycopg2.connect(host=host, port=int(port), user=user, password=password,
+                                                database=self._database)
+            self._cursor = self._connection.cursor()
+        except psycopg2.OperationalError as e:
+            raise ControllerError(code=2, controller=ConnectorEnum.PostgreSQL.name,
+                                  message='Error instantiating the PostgreSQL client. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -340,12 +341,15 @@ class PostgreSQLController(BaseController):
             self._cursor.execute(
                 "SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.columns WHERE table_schema= %s AND table_name = %s",
                 (self._schema, self._table))
-            return [{'name': item[0], 'type': item[1],
-                     'null': 'YES' == item[2]} for item in self._cursor]
+            return [{'name': item[0], 'type': item[1], 'null': 'YES' == item[2]} for item in self._cursor]
+        except psycopg2.OperationalError as e:
+            raise ControllerError(code=2, controller=ConnectorEnum.PostgreSQL.name,
+                                  message='Error describing table. {}'.format(str(e)))
+        except psycopg2.ProgrammingError as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.PostgreSQL.name,
+                                  message='Error describing table. {}'.format(str(e)))
         except Exception as e:
-            raise ControllerError(code=9999, controller=self._connector,
-                                  message="Error describing table. {0}".format(
-                                      str(e)))
+            raise ControllerError("Unexpected Exception. Please report this error: {}".format(str(e)))
 
     def get_primary_keys(self):
         try:
@@ -354,9 +358,7 @@ class PostgreSQLController(BaseController):
                 (self._schema, self._table))
             return [item[0] for item in self._cursor]
         except Exception as e:
-            raise ControllerError(code=9999, controller=self.connector,
-                                  message="Error describing table. {0}".format(
-                                      str(e)))
+            raise ControllerError("Unexpected Exception. Please report this error: {}".format(str(e)))
 
     def select_all(self, limit=100, unique=None, order_by=None, gt=None):
         select = 'SELECT * FROM {0}.{1}.{2}'.format(
@@ -370,43 +372,33 @@ class PostgreSQLController(BaseController):
         if limit is not None and isinstance(limit, int):
             select += ' LIMIT {0}'.format(limit)
         try:
-            print(select)
             self._cursor.execute(select)
             cursor_select_all = [item for item in self._cursor]
             cursor_describe = self.describe_table()
-            return [{column['name']: item[i] for i, column in
-                     enumerate(cursor_describe)} for item in
-                    cursor_select_all]
-        except Exception as e:
-            print(e)
-            return []
+            return [{column['name']: item[i] for i, column in enumerate(cursor_describe)} for item in cursor_select_all]
+        except psycopg2.OperationalError as e:
+            raise ControllerError(code=2, controller=ConnectorEnum.PostgreSQL.name,
+                                  message='Error describing table. {}'.format(str(e)))
+        except psycopg2.ProgrammingError as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.PostgreSQL.name,
+                                  message='Error describing table. {}'.format(str(e)))
 
-    def download_to_stored_data(self, connection_object, plug,
-                                last_source_record=None, limit=50, **kwargs):
-        order_by = self._plug.plug_action_specification.get(
-            action_specification__name__iexact='order by')
-        unique = self._plug.plug_action_specification.get(
-            action_specification__name__iexact='unique')
+    def download_to_stored_data(self, connection_object, plug, last_source_record=None, limit=50, **kwargs):
+        order_by = self._plug.plug_action_specification.get(action_specification__name__iexact='order by')
+        unique = self._plug.plug_action_specification.get(action_specification__name__iexact='unique')
         query_params = {'unique': unique, 'order_by': order_by, 'limit': limit}
         if last_source_record is not None:
             query_params['gt'] = last_source_record
         data = self.select_all(**query_params)
-        parsed_data = [
-            {'unique': {'name': unique.value, 'value': item[unique.value]},
-             'data': [{'name': key, 'value': value} for key, value in
-                      item.items()]} for item in data]
+        parsed_data = [{'unique': {'name': unique.value, 'value': item[unique.value]},
+                        'data': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
         new_data = []
         for item in parsed_data:
             unique_value = item['unique']['value']
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=unique_value)
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
-                new_item = [StoredData(name=column['name'],
-                                       value=column['value'] or '',
-                                       object_id=unique_value,
-                                       connection=connection_object.connection,
-                                       plug=plug) for column in item['data']]
+                new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
+                                       connection=connection_object.connection, plug=plug) for column in item['data']]
                 new_data.append(new_item)
         if new_data:
             new_data.reverse()
@@ -427,24 +419,20 @@ class PostgreSQLController(BaseController):
         try:
             for stored_data in item:
                 stored_data.save()
-            self._log.info(
-                'Item ID: {0}, Connection: {1}, Plug: {2} successfully stored.'.format(
-                    stored_data.object_id, stored_data.connection.id,
-                    stored_data.plug.id), extra=extra)
+                self._log.info(
+                    'Item ID: {0}, Connection: {1}, Plug: {2} successfully stored.'.format(
+                        stored_data.object_id, stored_data.connection.id, stored_data.plug.id), extra=extra)
         except Exception as e:
             extra['status'] = 'f'
             self._log.info(
-                'Item ID: {0}, Field: {1}, Connection: {2}, '
-                'Plug:{3} failed to save.'.format(
-                    stored_data.object_id, stored_data.name,
-                    stored_data.connection.id, stored_data.plug.id, ),
+                'Item ID: {0}, Field: {1}, Connection: {2}, Plug:{3} failed to save.'.format(
+                    stored_data.object_id, stored_data.name, stored_data.connection.id, stored_data.plug.id),
                 extra=extra)
-            raise ControllerError(
-                code=4, controller=ConnectorEnum.PostgreSQL.name,
-                message='Error in save row. {}'.format(str(e)))
+            raise ControllerError(code=4, controller=ConnectorEnum.PostgreSQL.name,
+                                  message='Error in save row. {}'.format(str(e)))
 
     def _get_insert_statement(self, item):
-        return """INSERT INTO {0}.{1} ({2}) VALUES ({3})""".format(
+        return """INSERT INTO {0}.{1} ({2}) VALUES ({3}) RETURNING id""".format(
             self._schema, self._table, ",".join(item.keys()),
             ",".join('\'{0}\''.format(i) for i in item.values()))
 
@@ -454,7 +442,7 @@ class PostgreSQLController(BaseController):
             if data_list:
                 try:
                     data_list = [data_list[-1]]
-                except:
+                except Exception as e:
                     data_list = []
         if self._plug is not None:
             obj_list = []
@@ -464,22 +452,19 @@ class PostgreSQLController(BaseController):
                     insert = self._get_insert_statement(item)
                     self._cursor.execute(insert)
                     extra['status'] = 's'
-                    fetch = self._cursor.fetchone()
-                    #TODO : no se obtiene el fetch del cursor. REVISAR.
-                    self._log.info('Item: %s successfully sent.' % (
-                        fetch), extra=extra)
+                    fetch = self._cursor.fetchone()[0]
+                    # TODO : no se obtiene el fetch del cursor. REVISAR.
+                    self._log.info('Item: %s successfully sent.' % (fetch), extra=extra)
                     obj_list.append(fetch)
                 except psycopg2.ProgrammingError:
+                    raise
                     print("Problema en el insert del Item: {0}.".format(item))
                     # TODO: MARCAR COMO ENVIADO Y NOTIFICAR AL USER
                     obj_list.append(-1)
                 except Exception as e:
                     print(e)
                     extra['status'] = 'f'
-                    self._log.info(
-                        'Item: %s failed to send.' % (
-                            item),
-                        extra=extra)
+                    self._log.info('Item: %s failed to send.' % (item), extra=extra)
             try:
                 self._connection.commit()
             except:
@@ -488,18 +473,15 @@ class PostgreSQLController(BaseController):
         raise ControllerError("There's no plug")
 
     def get_mapping_fields(self, **kwargs):
-        return [MapField(f, controller=ConnectorEnum.PostgreSQL) for f in
-                self.describe_table()]
+        return [MapField(f, controller=ConnectorEnum.PostgreSQL) for f in self.describe_table()]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(
-            pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() in ['order by', 'unique']:
             return tuple({'id': c['name'], 'name': c['name']} for c in
                          self.describe_table())
         else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector.")
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
     def get_target_fields(self, **kwargs):
         return self.describe_table(**kwargs)
