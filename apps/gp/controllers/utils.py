@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from django.utils.html import escape
 import re
 import xml.etree.ElementTree as ET
 from importlib import import_module
@@ -17,8 +18,9 @@ def get_dict_with_source_data(source_data, target_fields, include_id=False):
             kw = valid_map[field].split(' ')
             values = []
             for i, w in enumerate(kw):
-                if w in ['%%%%%s%%%%' % k for k in obj['data'].keys()]:
-                    values.append(obj['data'][w.replace('%', '')])
+                w = html_decode(w)
+                if w in ['%%{0}%%'.format(k) for k in obj['data'].keys()]:
+                    values.append(obj['data'][w.replace('%%', '')])
                 elif pattern.match(w):
                     values.append('')
                 else:
@@ -55,3 +57,20 @@ def _recursive_xml_to_dict(lista):
 def dynamic_import(name, path='', prefix='', suffix=""):
     mod = import_module(path)
     return getattr(mod, prefix + name + suffix)
+
+
+def html_decode(s):
+    """
+    Returns the ASCII decoded version of the given HTML string. This does
+    NOT remove normal HTML tags like <p>.
+    """
+    htmlCodes = (
+        ("'", '&#39;'),
+        ('"', '&quot;'),
+        ('>', '&gt;'),
+        ('<', '&lt;'),
+        ('&', '&amp;')
+    )
+    for code in htmlCodes:
+        s = s.replace(code[1], code[0])
+    return s
