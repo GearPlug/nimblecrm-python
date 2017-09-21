@@ -97,47 +97,32 @@ LOGGING = {
         }
     },
     'handlers': {
-        'controller.file': {
-            'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'log/controller/general.log'),
-            'maxBytes': 1024 * 1024 * 5,  # 5 MB
-            'backupCount': 50,
-            'formatter': 'verbose',
-        },
-        'request.file': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'log/django/request.log'),
-            'maxBytes': 1024 * 1024 * 5,  # 5 MB
-            'backupCount': 2,
-            'formatter': 'server',
-        },
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
-        },
-        'console.server': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'server',
-        },
-        'controller': {
-            'level': 'INFO',
-            'class': 'apps.gp.handlers.DBHandler',
-            'model': 'apps.gp.models.ControllerLog',
-            'expiry': 86400,
-            'formatter': 'server',
-        },
-    },
-    'loggers': {
-        'django.server': {
-            'handlers': ['request.file', ],
-            'level': 'INFO',
-            'propagate': True,
-        },
-    },
-}
+            'controller.file': {
+                'level': 'INFO',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join(BASE_DIR, 'log/controller/general.log'),
+                'maxBytes': 1024 * 1024 * 5,  # 5 MB
+                'backupCount': 50,
+                'formatter': 'verbose',
+            },
+            'request.file': {
+                'level': 'DEBUG',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join(BASE_DIR, 'log/django/request.log'),
+                'maxBytes': 1024 * 1024 * 5,  # 5 MB
+                'backupCount': 2,
+                'formatter': 'server',
 
+            },
+            'controller': {
+                'level': 'INFO',
+                'class': 'apps.gp.handlers.DBHandler',
+                'model': 'apps.gp.models.ControllerLog',
+                'expiry': 86400,
+                'formatter': 'server',
+            }
+        },
+}
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
