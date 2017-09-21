@@ -96,3 +96,9 @@ MAILCHIMP_CLIENT_ID = os.environ.get('MAILCHIMP_CLIENT_ID')
 MAILCHIMP_CLIENT_SECRET = os.environ.get('MAILCHIMP_CLIENT_SECRET')
 MAILCHIMP_REDIRECT_URL = '{0}/connection/auth-callback/mailchimp/'.format(CURRENT_HOST)
 MAILCHIMP_ACCESS_TOKEN_URI = 'https://login.mailchimp.com/oauth2/token'
+
+# InfusionSoft
+INFUSIONSOFT_CLIENT_ID = os.environ.get('INFUSIONSOFT_CLIENT_ID')
+INFUSIONSOFT_CLIENT_SECRET = os.environ.get('INFUSIONSOFT_CLIENT_SECRET')
+INFUSIONSOFT_AUTHORIZATION_URL = "https://signin.infusionsoft.com/app/oauth/authorize?"
+INFUSIONSOFT_REDIRECT_URL = '{0}/connection/auth-callback/infusionsoft/'.format(CURRENT_HOST)

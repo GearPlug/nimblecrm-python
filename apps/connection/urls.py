@@ -4,7 +4,7 @@ from apps.connection.views import CreateConnectionView, ListConnectionView, List
     GoogleAuthView, SlackAuthView, TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, \
     ShopifyAuthView, EvernoteAuthView, AsanaAuthView, MercadoLibreAuthView, WunderListAuthView, HubspotAuthView, \
     AjaxMercadoLibrePostSiteView, GitLabAuthView, AjaxMercadoLibrePostSiteView, ManageConnectionView, MailchimpAuthView, \
-    GitLabAuthView, connection_toggle, UpdateConnectionView  # ,AJAXGetSurveyListView
+    GitLabAuthView, connection_toggle, UpdateConnectionView, InfusionSoftAuthView  # ,AJAXGetSurveyListView
 
 urlpatterns = [
     # Create Connection
@@ -13,9 +13,8 @@ urlpatterns = [
     url(r'create/success/$', CreateConnectionSuccessView.as_view(), name='create_success'),
     # Test Connection
     url(r'^test/(?P<connector_id>\d+)/$', TestConnectionView.as_view(), name="test"),
-        # Connection list
-    url(r'^list/(?P<connector_id>\d+)/(?P<type>(source|target)+)/$', ListConnectionView.as_view(),
-        name='list'),
+    # Connection list
+    url(r'^list/(?P<connector_id>\d+)/(?P<type>(source|target)+)/$', ListConnectionView.as_view(), name='list'),
     # List Connectors
     url(r'^list/connector/(?P<type>(source|target)+)/$', ListConnectorView.as_view(), name='connector_list'),
 
@@ -39,14 +38,14 @@ urlpatterns = [
     url(r'^auth-callback/mercadolibre/', MercadoLibreAuthView.as_view(), name="mercadolibre_auth"),
     url(r'^auth-callback/gitlab/', GitLabAuthView.as_view(), name="gitlab_auth"),
     url(r'^auth-callback/mailchimp/', MailchimpAuthView.as_view(), name="mailchimp_auth"),
+    url(r'^auth-callback/infusionsoft/', InfusionSoftAuthView.as_view(), name="infusionsoft_auth"),
 
     # Create Authorizated Connection
     url(r'^create/authorizated/', CreateTokenAuthorizedConnectionView.as_view(),
         name="create_token_authorized_connection"),
 
     # MercadoLibre
-    url(r"^ajax/mercadolibre/post/site/$", AjaxMercadoLibrePostSiteView.as_view(),
-        name="ajax_mercadolibre_post_site"),
+    url(r"^ajax/mercadolibre/post/site/$", AjaxMercadoLibrePostSiteView.as_view(), name="ajax_mercadolibre_post_site"),
 
     # AuthSuccess
     url(r'^auth/success/$', AuthSuccess.as_view(), name="auth_sucess"),

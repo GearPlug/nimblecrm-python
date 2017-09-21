@@ -17,6 +17,7 @@ from requests_oauthlib import OAuth2Session
 from slacker import Slacker
 import json
 import urllib
+from urllib.parse import urlencode
 import requests
 from evernote.api.client import EvernoteClient
 from mercadolibre.client import Client as MercadolibreClient
@@ -207,6 +208,15 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             authorization_url, state = oauth.authorization_url(
                 'https://gitlab.com/oauth/authorize?response_type=code&client_id={0}&redirect_uri={1}&state=1234'.format(
                     settings.GITLAB_CLIENT_ID, settings.GITLAB_REDIRECT_URL))
+            context['authorization_url'] = authorization_url
+        elif connector == ConnectorEnum.InfusionSoft:
+            data = {
+                "client_id": settings.INFUSIONSOFT_CLIENT_ID,
+                "redirect_uri": settings.INFUSIONSOFT_REDIRECT_URL,
+                "response_type": "code",
+                "scope": "full|gn389.infusionsoft.com"
+            }
+            authorization_url = '%s%s' % (settings.INFUSIONSOFT_AUTHORIZATION_URL, urlencode(data))
             context['authorization_url'] = authorization_url
         return context
 
@@ -470,6 +480,24 @@ class MailchimpAuthView(View):
             raise
         return redirect(reverse('connection:create_token_authorized_connection'))
 
+class InfusionSoftAuthView(View):
+    def get(self, request, *args, **kwargs):
+        code = request.GET.get('code', '')
+        oauth = OAuth2Session(client_id=settings.INFUSIONSOFT_CLIENT_ID,
+                              redirect_uri=settings.INFUSIONSOFT_REDIRECT_URL)
+        token = oauth.fetch_token('https://api.infusionsoft.com/token',
+                                  code=code,
+                                  authorization_response=settings.INFUSIONSOFT_REDIRECT_URL,
+                                  client_id=settings.INFUSIONSOFT_CLIENT_ID,
+                                  client_secret=settings.INFUSIONSOFT_CLIENT_SECRET, )
+        self.request.session['connection_data'] = {
+            'token': token['access_token'],
+            'refresh_token': token['refresh_token'],
+            'token_expiration_time': token['expires_at']}
+        print('data de conexion', self.request.session['connection_data'])
+        self.request.session['connector_name'] = ConnectorEnum.InfusionSoft.name
+        return redirect(
+            reverse('connection:create_token_authorized_connection'))
 
 # NPI
 class AjaxMercadoLibrePostSiteView(View):

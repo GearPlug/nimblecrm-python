@@ -64,7 +64,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
                          ConnectorEnum.Instagram, ConnectorEnum.YouTube, ConnectorEnum.Shopify,
                          ConnectorEnum.GoogleCalendar, ConnectorEnum.Asana, ConnectorEnum.Salesforce,
                          ConnectorEnum.Mandrill, ConnectorEnum.FacebookLeads, ConnectorEnum.Gmail,
-                         ConnectorEnum.GitLab, ConnectorEnum.ActiveCampaign]:
+                         ConnectorEnum.GitLab, ConnectorEnum.ActiveCampaign,ConnectorEnum.InfusionSoft]:
                     controller.create_webhook()
                 else:
                     print("voy a descargar")
