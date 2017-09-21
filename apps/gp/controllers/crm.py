@@ -1293,10 +1293,9 @@ class ActiveCampaignController(BaseController):
 
     def create_webhook(self):
         action = self._plug.action.name
-        if action == 'Detect contact creation':
+        if action == 'new contact':
             selected_list = self._plug.plug_action_specification.get(
-                action_specification__name='lists')
-
+                action_specification__name='list')
             # Creacion de Webhook
             webhook = Webhook.objects.create(name='activecampaign', url='',
                                              plug=self._plug, expiration='')
@@ -1315,13 +1314,14 @@ class ActiveCampaignController(BaseController):
             post_array = {
                 "name": "GearPlug WebHook",
                 "url": url,
-                "lists": selected_list,
+                "lists": selected_list.value,
                 "action": "subscribe",
                 "init": "admin"
             }
             final_url = "{0}/admin/api.php".format(self._host)
             r = requests.post(url=final_url, data=post_array, params=params)
             if r.status_code == 200 or r.status_code == 201:
+
                 webhook.url = url_base + url_path
                 webhook.generated_id = r.json()['id']
                 webhook.is_active = True
@@ -1366,14 +1366,13 @@ class ActiveCampaignController(BaseController):
             obj_list = []
             extra = {'controller': 'activecampaign'}
             for item in data_list:
-                print(item)
                 try:
                     response = self.create_user(item)
                     self._log.info(
                         'Item: %s successfully sent.' % (
                             list(item.items())[0][1]),
                         extra=extra)
-                    obj_list.append(id)
+                    obj_list.append(response['subscriber_id'])
                 except Exception as e:
                     print(e)
                     extra['status'] = 'f'
@@ -1423,3 +1422,47 @@ class ActiveCampaignController(BaseController):
                             extra=extra)
             return True
         return False
+
+    def view_contact(self, id):
+        params = [
+            ('api_action', "contact_view"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('id',id),
+        ]
+        url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=url, params=params)
+        return r.json()
+
+    def delete_webhooks(self, id):
+        params = [
+            ('api_action', "webhook_delete"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('id', id),
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, params=params)
+        return r.json()
+
+    def delete_contact(self, id):
+        params = [
+            ('api_action', "contact_delete"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('id', id),
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, params=params)
+        return r.json()
+
+    def list_webhooks(self, id):
+        params = [
+            ('api_action', "webhook_view"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('id', id),
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, params=params)
+        return r.json()
