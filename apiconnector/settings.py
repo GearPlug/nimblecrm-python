@@ -2,8 +2,8 @@ try:
     from .local_settings import *
 except ImportError as e:
     from .production_settings import *
-
 import os
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
@@ -16,18 +16,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
-    # 3rd
-
     # Accounts
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-
     # Debug
     'debug_toolbar',
-
     # GRPLUG
-    # 'apps.wizard',
     'apps.home',
     'apps.gear',
     'apps.plug',
@@ -170,97 +165,3 @@ AUTHENTICATION_BACKENDS = [
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_EMAIL_REQUIRED = True
 LOGIN_REDIRECT_URL = '/dashboard/'
-
-# SETTINGS CENTRALIZADOS
-
-# Facebook
-FACEBOOK_APP_ID = '1860382657578411'
-FACEBOOK_APP_SECRET = '3ce16acabb2efeda4336e4e5f9576d8b'
-FACEBOOK_GRAPH_VERSION = '2.10'
-
-
-# Slack
-SLACK_CLIENT_ID = '129041278545.209366736883'
-SLACK_CLIENT_SECRET = '8a78615be489b8314702c0d67f159ddd'
-SLACK_PERMISSIONS_URL = 'https://slack.com/oauth/authorize?client_id={0}&scope=team:read,channels:read,chat:write:bot,im:history,im:read'.format(
-    SLACK_CLIENT_ID)
-
-# Google
-GOOGLE_CLIENT_ID = '278354320502-6ptllif5k11cn8uskm8aotp6fqb2g7dr.apps.googleusercontent.com'
-GOOGLE_CLIENT_SECRET = 'LgJ2hrSVu_lmAJkJhwzgfiDG'
-GOOGLE_AUTH_CALLBACK_URL = '{0}/connection/auth-callback/google/'.format(CURRENT_HOST)
-
-# Twitter
-TWITTER_CLIENT_ID = '72ceIxo0vh6IUvPEzRLwU63dK'
-TWITTER_CLIENT_SECRET = 'oRpX6077A1spuOl36JVgupAwhF2ZuYmfL9Dk1WB3OxqkCNtw0N'
-
-# SurveyMonkey
-SURVEYMONKEY_CLIENT_ID = "aSrDRChrQjqy--JCMHiPDw"
-SURVEYMONKEY_CLIENT_SECRET = "99572991333427996854184255528563883257"
-SURVEYMONKEY_API_BASE = "https://api.surveymonkey.net"
-SURVEYMONKEY_AUTH_CODE_ENDPOINT = "/oauth/authorize"
-SURVEYMONKEY_ACCESS_TOKEN_ENDPOINT = "/oauth/token"
-SURVEYMONKEY_REDIRECT_URI = "{0}/connection/auth-callback/surveymonkey/".format(CURRENT_HOST)
-
-# Instagram
-INSTAGRAM_CLIENT_ID = '17e2105451294cd6a372233f25e2c6ec'
-INSTAGRAM_CLIENT_SECRET = '6f8a7fb1ac0c4cada3c01d88561d35f6'
-INSTAGRAM_AUTH_URL = '{0}/connection/auth-callback/instagram/'.format(CURRENT_HOST)
-INSTAGRAM_SCOPE = ['basic']
-INSTAGRAM_AUTH_REDIRECT_URL = 'connection:instagram_auth_success_create_connection'
-
-# YouTube
-YOUTUBE_API_KEY = 'XXXXXXXXXXXX'
-
-# SalesForce
-SALESFORCE_CLIENT_ID = '3MVG9CEn_O3jvv0w0NDdh1QNjan9zEmgVh3F6Mxsuyq4NUo.InTWMLG4ayz5mlCxTw7eWvlKR.PmtOdTladnW'
-SALESFORCE_CLIENT_SECRET = '1338285709176181412'
-SALESFORCE_REQUEST_TOKEN_URL = 'https://login.salesforce.com/services/oauth2/token'
-SALESFORCE_ACCESS_TOKEN_URL = 'https://login.salesforce.com/services/oauth2/token'
-SALESFORCE_AUTHORIZE_URL = 'https://login.salesforce.com/services/oauth2/authorize'
-SALESFORCE_REDIRECT_URI = '{0}/connection/auth-callback/salesforce/'.format(CURRENT_HOST)
-
-# Hubspot
-HUBSPOT_REDIRECT_URI = "{0}/connection/auth-callback/hubspot/".format(CURRENT_HOST)
-HUBSPOT_CLIENT_ID = "633af850-f08a-42e5-a6e7-da65a177bcd5"
-HUBSPOT_CLIENT_SECRET = "94e688b7-9390-4b59-a6df-151eac348e89"
-
-# Evernote
-EVERNOTE_CONSUMER_KEY = "ltorres-6238"
-EVERNOTE_CONSUMER_SECRET = "a4673a77baca5424"
-EVERNOTE_REDIRECT_URL = "{0}/connection/auth-callback/evernote/".format(CURRENT_HOST)
-
-# Shopify
-SHOPIFY_API_KEY = "0eef989bfc56004265e4a8c4e699fd2e"
-SHOPIFY_API_KEY_SECRET = "aa53f3fcd4f635317e3c67b61a067356"
-SHOPIFY_REDIRECT_URI = "{0}/connection/auth-callback/shopify/".format(CURRENT_HOST)
-SHOPIFY_SCOPE = "read_products, write_products, read_orders, read_customers, write_orders, write_customers"
-
-# Asana
-ASANA_CLIENT_ID = '385400269218379'
-ASANA_CLIENT_SECRET = 'b06634b490e0408d8f575e38a2d7e7f3'
-ASANA_REDIRECT_URL = '{0}/connection/auth-callback/asana/'.format(CURRENT_HOST)
-ASANA_WEBHOOK_URL = ''
-
-# Mercadolibre
-MERCADOLIBRE_CLIENT_ID = '1063986061828245'
-MERCADOLIBRE_CLIENT_SECRET = 'MyDv8rmoWjJneTgkxEhp3QRONbUp3CPV'
-MERCADOLIBRE_REDIRECT_URL = '{0}/connection/auth-callback/mercadolibre/'.format(CURRENT_HOST)
-
-# Wunderlist
-WUNDERLIST_CLIENT_ID = 'c68a87efca8b22d50fee'
-WUNDERLIST_CLIENT_SECRET = '8a60113066eb052463be8e1d7414edb8a2f57d2f4cd118b82fb201820c8c'
-WUNDERLIST_REDIRECT_URL = '{0}/connection/auth-callback/wunderlist/'.format(CURRENT_HOST)
-
-# GitLab
-GITLAB_CLIENT_ID = '2307f61e924130b563f9f27e7543ada8d12e64456c90ff2e3028f24e58515cf4'
-GITLAB_CLIENT_SECRET = '621c8147e8f9c281db80143a7cf64fd14a6c0e58e990a38cc0c37855cafa41ff'
-GITLAB_REDIRECT_URL = '{0}/connection/auth-callback/gitlab/'.format(CURRENT_HOST)
-GITLAB_REFRESH_URL = "https://gitlab.com/oauth/token"
-GITLAB_PROTECT_URL = "https://gitlab.com/api/v4/user"
-
-# Wunderlist
-MAILCHIMP_CLIENT_ID = '130614039674'
-MAILCHIMP_CLIENT_SECRET = 'ec67ed08c77c04752b168fcc9b732485596d68e4709d9920af'
-MAILCHIMP_REDIRECT_URL = '{0}/connection/auth-callback/mailchimp/'.format(CURRENT_HOST)
-MAILCHIMP_ACCESS_TOKEN_URI = 'https://login.mailchimp.com/oauth2/token'
