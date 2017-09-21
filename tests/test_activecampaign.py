@@ -1,5 +1,4 @@
 import os
-import pprint
 from apps.gp.map import MapField
 from django.test import TestCase
 from collections import OrderedDict
@@ -7,8 +6,7 @@ from apps.gp.enum import ConnectorEnum
 from django.contrib.auth.models import User
 from apps.gp.controllers.crm import ActiveCampaignController
 from apps.gp.models import Connection, ActiveCampaignConnection, Action, Plug, ActionSpecification, \
-    PlugActionSpecification, Webhook, \
-    StoredData
+    PlugActionSpecification, Webhook, StoredData, Gear, GearMap, GearMapData
 
 
 class ActiveCampaignControllerTestCases(TestCase):
@@ -16,78 +14,97 @@ class ActiveCampaignControllerTestCases(TestCase):
 
     @classmethod
     def setUpTestData(cls):
+        cls.user = User.objects.create(username='test', email='lyrubiano5@gmail.com', password='Prueba#2017')
 
-        cls.user = User.objects.create(username='test',
-                                       email='lyrubiano5@gmail.com',
-                                       password='Prueba#2017')
-        _dict_user = {
+        connection = {
             'user': cls.user,
             'connector_id': ConnectorEnum.ActiveCampaign.value
         }
-        cls.connection = Connection.objects.create(**_dict_user)
+        cls.connection_source = Connection.objects.create(**connection)
 
-        _dict_connection = {
-            'connection': cls.connection,
-            'name': 'ConnectionTest',
+        sugar_connection1 = {
+            'connection': cls.connection_source,
+            'name': 'ConnectionTest Source',
             'host': os.environ.get('TEST_ACTIVECAMPAIGN_HOST'),
             'connection_access_key': os.environ.get('TEST_ACTIVECAMPAIGN_KEY'),
         }
-        cls.activecampaign_connection = ActiveCampaignConnection.objects.create(**_dict_connection)
+        cls.activecampaign_connection_source = ActiveCampaignConnection.objects.create(**sugar_connection1)
 
-        action_source = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value,
-                                           action_type='source',
-                                           name='new contact',
-                                           is_active=True)
+        cls.connection_target = Connection.objects.create(**connection)
 
-        action_target = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value,
-                                           action_type='target',
-                                           name='create contact',
-                                           is_active=True)
+        sugar_connection2 = {
+            'connection': cls.connection_target,
+            'name': 'ConnectionTest Target',
+            'host': os.environ.get('TEST_ACTIVECAMPAIGN_HOST'),
+            'connection_access_key': os.environ.get('TEST_ACTIVECAMPAIGN_KEY'),
+        }
+        cls.activecampaign_connection_target = ActiveCampaignConnection.objects.create(**sugar_connection2)
 
-        _dict_plug_source = {
-            'name': 'PlugTest',
-            'connection': cls.connection,
+        action_source = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value, action_type='source',
+                                           name='new contact', is_active=True)
+
+        activecampaign_plug_source = {
+            'name': 'PlugTest Source',
+            'connection': cls.connection_source,
             'action': action_source,
             'plug_type': 'source',
             'user': cls.user,
             'is_active': True
-
         }
+        cls.plug_source = Plug.objects.create(**activecampaign_plug_source)
 
-        cls.plug_source = Plug.objects.create(**_dict_plug_source)
+        action_target = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value, action_type='target',
+                                           name='create contact', is_active=True)
 
-        _dict_plug_target = {
-            'name': 'PlugTest',
-            'connection': cls.connection,
+        active_campaign_plug_target = {
+            'name': 'PlugTest Target',
+            'connection': cls.connection_target,
             'action': action_target,
             'plug_type': 'target',
             'user': cls.user,
             'is_active': True
-
         }
-
-        cls.plug_target = Plug.objects.create(**_dict_plug_target)
+        cls.plug_target = Plug.objects.create(**active_campaign_plug_target)
 
         cls.specification_source = ActionSpecification.objects.get(action=action_source, name='list')
         cls.specification_target = ActionSpecification.objects.get(action=action_target, name='list')
 
-        _dict_plug_action_specification_source = {
+        action_specification1 = {
             'plug': cls.plug_source,
             'action_specification': cls.specification_source,
             'value': os.environ.get('TEST_ACTIVECAMPAIGN_LIST')
         }
 
-        cls.plug_action_specificaion_source = PlugActionSpecification.objects.create(
-            **_dict_plug_action_specification_source)
+        PlugActionSpecification.objects.create(**action_specification1)
 
-        _dict_plug_action_specification_target = {
+        action_specification2 = {
             'plug': cls.plug_target,
             'action_specification': cls.specification_target,
             'value': os.environ.get('TEST_ACTIVECAMPAIGN_LIST')
         }
 
-        cls.plug_action_specificaion_target = PlugActionSpecification.objects.create(
-            **_dict_plug_action_specification_target)
+        PlugActionSpecification.objects.create(**action_specification2)
+
+        gear = {
+            'name': 'Gear 1',
+            'user': cls.user,
+            'source': cls.plug_source,
+            'target': cls.plug_target,
+            'is_active': True
+        }
+        cls.gear = Gear.objects.create(**gear)
+        cls.gear_map = GearMap.objects.create(gear=cls.gear)
+
+        map_data_1 = {'target_name': 'email', 'source_value': '%%contact[email]%%', 'gear_map': cls.gear_map}
+        map_data_2 = {'target_name': 'first_name', 'source_value': '%%contact[first_name]%%', 'gear_map': cls.gear_map}
+        map_data_3 = {'target_name': 'last_name', 'source_value': '%%contact[last_name]%%', 'gear_map': cls.gear_map}
+        map_data_4 = {'target_name': 'phone', 'source_value': '%%contact[phone]%%', 'gear_map': cls.gear_map}
+        map_data_5 = {'target_name': 'orgname', 'source_value': '%%orgname%%', 'gear_map': cls.gear_map}
+        GearMapData.objects.create(**map_data_1)
+        GearMapData.objects.create(**map_data_2)
+        GearMapData.objects.create(**map_data_3)
+        GearMapData.objects.create(**map_data_4)
+        GearMapData.objects.create(**map_data_5)
 
     def setUp(self):
         self.controller_source = ActiveCampaignController(self.plug_source.connection.related_connection,
@@ -95,20 +112,24 @@ class ActiveCampaignControllerTestCases(TestCase):
         self.controller_target = ActiveCampaignController(self.plug_target.connection.related_connection,
                                                           self.plug_target)
 
-    def _get_fields(self):
-        return [{'name': 'email', 'type': 'varchar', 'required': True},
-                {'name': 'first_name', 'type': 'varchar', 'required': False},
-                {'name': 'last_name', 'type': 'varchar', 'required': False},
-                {'name': 'phone', 'type': 'varchar', 'required': False},
-                {'name': 'orgname', 'type': 'varchar', 'required': False},
-                ]
+        self.hook = {'contact[tags]': [''], 'contact[phone]': ['325 7048546'], 'initiated_from': ['admin'],
+                     'contact[orgname]': ['Organization1'], 'contact[first_name]': ['Miguel'],
+                     'contact[ip]': ['0.0.0.0'], 'contact[email]': [os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')],
+                     'initiated_by': ['admin'], 'orgname': ['Organization1'], 'type': ['subscribe'], 'list': ['0'],
+                     'date_time': ['2017-09-21T11:33:13-05:00'], 'contact[last_name]': ['Ferrer'],
+                     'contact[id]': ['36']}
 
-    def _get_contact(self):
-        return [{'initiated_by': 'admin', 'contact[id]': '14', 'contact[email]': 'contact@hotmail.com',
-                 'contact[tags]': '', 'list': '0', 'contact[orgname]': '', 'orgname': '',
-                 'contact[first_name]': 'contact', 'initiated_from': 'admin', 'contact[phone]': '1245',
-                 'date_time': '2017-09-20T11:46:29-05:00', 'contact[last_name]': 'new',
-                 'contact[ip]': '0.0.0.0', 'type': 'subscribe'}]
+    def _get_fields(self):
+        return [
+            {'name': 'email', 'type': 'varchar', 'required': True},
+            {'name': 'first_name', 'type': 'varchar', 'required': False},
+            {'name': 'last_name', 'type': 'varchar', 'required': False},
+            {'name': 'phone', 'type': 'varchar', 'required': False},
+            {'name': 'orgname', 'type': 'varchar', 'required': False},
+        ]
+
+    def _clean_data(self, POST):
+        return {k: v[0] for k, v in POST.items() if type(v) == list and len(v) < 2}
 
     def test_controller(self):
         self.assertIsInstance(self.controller_source._connection_object, ActiveCampaignConnection)
@@ -124,22 +145,22 @@ class ActiveCampaignControllerTestCases(TestCase):
         self.assertTrue(result)
 
     def test_get_lists(self):
-        list = ""
+        _list = None
         result = self.controller_source.get_lists()
         for i in result:
             if i['id'] == os.environ.get('TEST_ACTIVECAMPAIGN_LIST'):
-                list = i['id']
-        self.assertEqual(list, os.environ.get('TEST_ACTIVECAMPAIGN_LIST'))
+                _list = i['id']
+        self.assertEqual(_list, os.environ.get('TEST_ACTIVECAMPAIGN_LIST'))
 
     def test_get_action_specification_options(self):
         action_specification_id = self.specification_target.id
         result = self.controller_target.get_action_specification_options(action_specification_id)
-        list = ""
+        _list = None
         for i in result:
             if i['id'] == os.environ.get('TEST_ACTIVECAMPAIGN_LIST'):
-                list = i['id']
+                _list = i['id']
         self.assertIsInstance(result, tuple)
-        self.assertEqual(list, os.environ.get('TEST_ACTIVECAMPAIGN_LIST'))
+        self.assertEqual(_list, os.environ.get('TEST_ACTIVECAMPAIGN_LIST'))
 
     def test_get_mapping_fields(self):
         result = self.controller_target.get_mapping_fields()
@@ -154,8 +175,8 @@ class ActiveCampaignControllerTestCases(TestCase):
         data = {"email": os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
         result_create = self.controller_target.create_user(data)
         self.assertEqual('Contact added', result_create['result_message'])
-        id = result_create['subscriber_id']
-        result_delete = self.controller_target.delete_contact(id)
+        _id = result_create['subscriber_id']
+        result_delete = self.controller_target.delete_contact(_id)
         self.assertEqual('Contact deleted', result_delete['result_message'])
 
     def test_create_webhook(self):
@@ -169,28 +190,34 @@ class ActiveCampaignControllerTestCases(TestCase):
         self.assertEqual('Webhook deleted', deleted['result_message'])
 
     def test_download_to_stored_data(self):
-        count_start = StoredData.objects.filter(connection=self.connection, plug=self.plug_source).count()
-        data = self._get_contact()
-        data[0]["email"] = os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')
-        count_data = 0
-        for i in data[0]:
-            count_data = count_data + 1
-        result = self.controller_source.download_source_data(data=data)
-        count_end = StoredData.objects.filter(connection=self.connection, plug=self.plug_source).count()
-        store = StoredData.objects.filter(connection=self.connection, plug=self.plug_source)
-        value = None
-        for i in store:
-            if i.value == os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL'):
-                value = i.value
-        self.assertEqual(value, os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL'))
+        count_start = StoredData.objects.filter(connection=self.connection_source, plug=self.plug_source).count()
+        data = self.hook
+        data["email"] = os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')
+        count_data = len(self._clean_data(self.hook))
+        self.controller_source.create_webhook()
+        webhook = Webhook.objects.last()
+        result = self.controller_source.do_webhook_process(POST=self.hook, webhook_id=webhook.id)
+
+        count_end = StoredData.objects.filter(connection=self.connection_source, plug=self.plug_source).count()
+        store = StoredData.objects.filter(connection=self.connection_source, plug=self.plug_source)
         self.assertEqual(count_end, count_start + count_data)
         self.assertTrue(result)
 
     def test_send_stored_data(self):
-        target_fields = OrderedDict([(f['name'], "%%{0}%%".format(f['name'])) for f in self._get_fields()])
-        data = {'email': os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
-        source_data = [{'id': 1, 'data': data}]
-        result = self.controller_target.send_stored_data(source_data, target_fields, is_first=True)
+        self.controller_source.create_webhook()
+        webhook = Webhook.objects.last()
+        result1 = self.controller_source.do_webhook_process(POST=self.hook, webhook_id=webhook.id)
+        self.assertIsNotNone(result1)
+        query_params = {'connection': self.gear.source.connection, 'plug': self.gear.source}
+        is_first = self.gear_map.last_sent_stored_data_id is None
+        if not is_first:
+            query_params['id__gt'] = self.gear.gear_map.last_sent_stored_data_id
+        stored_data = StoredData.objects.filter(**query_params)
+        target_fields = OrderedDict(
+            (data.target_name, data.source_value) for data in GearMapData.objects.filter(gear_map=self.gear_map))
+        source_data = [{'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}} for
+                       item in stored_data.values_list('object_id').distinct()]
+        result = self.controller_target.send_stored_data(source_data, target_fields, is_first=is_first)
         self.assertNotEqual(result, [])
         contact = self.controller_target.view_contact(result[0])
         self.assertEqual(contact['email'], os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL'))

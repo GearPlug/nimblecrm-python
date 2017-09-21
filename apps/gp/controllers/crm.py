@@ -3,6 +3,7 @@ import os
 import string
 import urllib.error
 import urllib.request
+from django.shortcuts import HttpResponse
 from hashlib import md5
 from urllib import parse
 from urllib.parse import urlparse
@@ -1361,7 +1362,6 @@ class ActiveCampaignController(BaseController):
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
-
         if self._plug is not None:
             obj_list = []
             extra = {'controller': 'activecampaign'}
@@ -1387,18 +1387,16 @@ class ActiveCampaignController(BaseController):
                                 data=None, **kwargs):
         new_data = []
         if data is not None:
-            contact_id = data[0]['contact[id]']
+            contact_id = data['contact[id]']
             object_id = int(contact_id)
             q = StoredData.objects.filter(object_id=object_id,
                                           connection=connection_object.id,
                                           plug=plug.id)
             if not q.exists():
-                for i in data:
-                    for k, v in i.items():
-                        new_data.append(StoredData(name=k, value=v or '',
-                                                   object_id=object_id,
-                                                   connection=connection_object.connection,
-                                                   plug=plug))
+                for k, v in data.items():
+                    new_data.append(
+                        StoredData(name=k, value=v or '', object_id=object_id, connection=connection_object.connection,
+                                   plug=plug))
             if new_data:
                 field_count = len(data)
                 extra = {'controller': 'activecampaign'}
@@ -1428,7 +1426,7 @@ class ActiveCampaignController(BaseController):
             ('api_action', "contact_view"),
             ('api_key', self._key),
             ('api_output', 'json'),
-            ('id',id),
+            ('id', id),
         ]
         url = "{0}/admin/api.php".format(self._host)
         r = requests.post(url=url, params=params)
@@ -1466,3 +1464,15 @@ class ActiveCampaignController(BaseController):
         final_url = "{0}/admin/api.php".format(self._host)
         r = requests.post(url=final_url, params=params)
         return r.json()
+
+    def do_webhook_process(self, body=None, POST=None, webhook_id=None, **kwargs):
+        clean_data = {k: v[0] for k, v in POST.items() if type(v) == list and len(v) < 2}
+        webhook = Webhook.objects.get(pk=webhook_id)
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            if not webhook.plug.is_tested:
+                webhook.plug.is_tested = True
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+            if self.test_connection():
+                self.download_source_data(data=clean_data)
+                webhook.plug.save()
+        return HttpResponse(status=200)
