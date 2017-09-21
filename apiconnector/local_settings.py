@@ -7,10 +7,12 @@ ALLOWED_HOSTS = [CURRENT_HOST, '*', ]
 INTERNAL_IPS = ['127.0.0.1', ]
 WEBHOOK_HOST = CURRENT_HOST
 
-#EMAIL
+# EMAIL
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
+EMAIL_HOST_USER = 'usuario@gmail.com'
+EMAIL_HOST_PASSWORD = 'password-de-gmail'
+DEFAULT_FROM_EMAIL = 'noreply@grplug.com'
+CONTACT_EMAIL = ['support@grplug.com']
