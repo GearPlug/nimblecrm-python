@@ -1,3 +1,4 @@
+import re
 import json
 import os
 import string
@@ -1387,7 +1388,7 @@ class ActiveCampaignController(BaseController):
                                 data=None, **kwargs):
         new_data = []
         if data is not None:
-            contact_id = data['contact[id]']
+            contact_id = data['id']
             object_id = int(contact_id)
             q = StoredData.objects.filter(object_id=object_id,
                                           connection=connection_object.id,
@@ -1466,7 +1467,17 @@ class ActiveCampaignController(BaseController):
         return r.json()
 
     def do_webhook_process(self, body=None, POST=None, webhook_id=None, **kwargs):
-        clean_data = {k: v[0] for k, v in POST.items() if type(v) == list and len(v) < 2}
+        formatted = {k: v[0] for k, v in POST.items() if type(v) == list and len(v) < 2}
+        expr = '\[(.*?)\]'
+        clean_data = {}
+        for k, v in formatted.items():
+            m = re.search(expr, k)
+            if m:
+                key = m.group(1)
+            else:
+                key = k
+            if key not in clean_data:
+                clean_data[key] = v
         webhook = Webhook.objects.get(pk=webhook_id)
         if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
             if not webhook.plug.is_tested:

@@ -1,4 +1,5 @@
 import os
+import re
 from apps.gp.map import MapField
 from django.test import TestCase
 from collections import OrderedDict
@@ -95,10 +96,10 @@ class ActiveCampaignControllerTestCases(TestCase):
         cls.gear = Gear.objects.create(**gear)
         cls.gear_map = GearMap.objects.create(gear=cls.gear)
 
-        map_data_1 = {'target_name': 'email', 'source_value': '%%contact[email]%%', 'gear_map': cls.gear_map}
-        map_data_2 = {'target_name': 'first_name', 'source_value': '%%contact[first_name]%%', 'gear_map': cls.gear_map}
-        map_data_3 = {'target_name': 'last_name', 'source_value': '%%contact[last_name]%%', 'gear_map': cls.gear_map}
-        map_data_4 = {'target_name': 'phone', 'source_value': '%%contact[phone]%%', 'gear_map': cls.gear_map}
+        map_data_1 = {'target_name': 'email', 'source_value': '%%email%%', 'gear_map': cls.gear_map}
+        map_data_2 = {'target_name': 'first_name', 'source_value': '%%first_name%%', 'gear_map': cls.gear_map}
+        map_data_3 = {'target_name': 'last_name', 'source_value': '%%last_name%%', 'gear_map': cls.gear_map}
+        map_data_4 = {'target_name': 'phone', 'source_value': '%%phone%%', 'gear_map': cls.gear_map}
         map_data_5 = {'target_name': 'orgname', 'source_value': '%%orgname%%', 'gear_map': cls.gear_map}
         GearMapData.objects.create(**map_data_1)
         GearMapData.objects.create(**map_data_2)
@@ -129,7 +130,18 @@ class ActiveCampaignControllerTestCases(TestCase):
         ]
 
     def _clean_data(self, POST):
-        return {k: v[0] for k, v in POST.items() if type(v) == list and len(v) < 2}
+        formatted = {k: v[0] for k, v in POST.items() if type(v) == list and len(v) < 2}
+        expr = '\[(.*?)\]'
+        clean_data = {}
+        for k, v in formatted.items():
+            m = re.search(expr, k)
+            if m:
+                key = m.group(1)
+            else:
+                key = k
+            if key not in clean_data:
+                clean_data[key] = v
+        return clean_data
 
     def test_controller(self):
         self.assertIsInstance(self.controller_source._connection_object, ActiveCampaignConnection)
