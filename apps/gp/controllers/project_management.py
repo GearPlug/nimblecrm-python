@@ -263,13 +263,13 @@ class AsanaController(BaseController):
 
     def get_user_information(self):
         # Headers para Request de usuario principal
-        headers_1 = {#     data = {'resource', project.value,
-        #             'target', url_base + url_path}
-        #
-        #     response = requests.post('https://app.asana.com/api/1.0/webhooks',
-        #                              headers=headers, data=data)
-        #     print("response", response.json())
-        #     print("code", response.status_code)
+        headers_1 = {  # data = {'resource', project.value,
+            #             'target', url_base + url_path}
+            #
+            #     response = requests.post('https://app.asana.com/api/1.0/webhooks',
+            #                              headers=headers, data=data)
+            #     print("response", response.json())
+            #     print("code", response.status_code)
             'Authorization': 'Bearer {0}'.format(self._token),
         }
         # Request para obtener datos de usuario creador de la tarea
@@ -313,7 +313,6 @@ class AsanaController(BaseController):
             else:
                 raise ControllerError(code=1, message="No projects in this workspace")
 
-
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
@@ -329,7 +328,6 @@ class AsanaController(BaseController):
                 "That specification doesn't belong to an action in this connector.")
 
     def create_webhook(self):
-        print("create webhook")
         action = self._plug.action.name
         if action == 'new task created':
             project = self._plug.plug_action_specification.get(
@@ -343,10 +341,9 @@ class AsanaController(BaseController):
                 'Authorization': 'Bearer {}'.format(self._token),
             }
             data = [('resource', int(project.value)),
-                     ('target', url_base + url_path)]
+                    ('target', url_base + url_path)]
             response = requests.post('https://app.asana.com/api/1.0/webhooks',
                                      headers=headers, data=data)
-            print("response", response.json())
             if response.status_code == 201:
                 webhook.url = url_base + url_path
                 webhook.generated_id = response.json()['data']['id']
@@ -427,9 +424,9 @@ class AsanaController(BaseController):
                         for k, v in value.items():
                             task_stored_data.append(
                                 StoredData(connection=connection_object.connection,
-                                       plug=plug, object_id=event_resource,
-                                       name='{0}_{1}'.format(key, k),
-                                       value=v or ''))
+                                           plug=plug, object_id=event_resource,
+                                           name='{0}_{1}'.format(key, k),
+                                           value=v or ''))
             extra = {}
             for task in task_stored_data:
                 try:
@@ -485,10 +482,6 @@ class AsanaController(BaseController):
         raise ControllerError("There's no plug")
 
     def do_webhook_process(self, body=None, POST=None, META=None, **kwargs):
-        print("body", body)
-        print("post", POST)
-        print("meta", META)
-
         if 'HTTP_X_HOOK_SECRET' in META:
             response = HttpResponse()
             response['X-Hook-Secret'] = META['HTTP_X_HOOK_SECRET']
