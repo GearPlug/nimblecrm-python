@@ -9,6 +9,7 @@ from apps.gp.models import GearGroup, Gear, PlugActionSpecification, Plug, \
     Webhook, Connector
 from apps.gp.enum import ConnectorEnum
 import json
+import pprint
 
 
 class DashBoardView(LoginRequiredMixin, TemplateView):
@@ -96,34 +97,13 @@ class IncomingWebhook(View):
         except Exception as e:
             print(e)
             body = None
-        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey,ConnectorEnum.Gmail,ConnectorEnum.FacebookLeads,ConnectorEnum.MercadoLibre,ConnectorEnum.JIRA, ConnectorEnum.InfusionSoft]:
-            response = controller.do_webhook_process(body=body, POST=request.POST,META=request.META, webhook_id=kwargs['webhook_id'])
+        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Gmail,
+                         ConnectorEnum.FacebookLeads, ConnectorEnum.MercadoLibre, ConnectorEnum.JIRA,
+                         ConnectorEnum.InfusionSoft, ConnectorEnum.Asana]:
+            response = controller.do_webhook_process(body=body, POST=request.POST, META=request.META,
+                                                     webhook_id=kwargs['webhook_id'])
 
             return response
-        # ASANA
-        elif connector == ConnectorEnum.Asana:
-            if 'HTTP_X_HOOK_SECRET' in request.META:
-                response['X-Hook-Secret'] = request.META[
-                    'HTTP_X_HOOK_SECRET']
-                return response
-            decoded_events = json.loads(request.body.decode("utf-8"))
-            events = decoded_events['events']
-            controller_class = ConnectorEnum.get_controller(connector)
-            for event in events:
-                if event['type'] == 'task' and event['action'] == 'added':
-                    project_list = PlugActionSpecification.objects.filter(
-                        action_specification__action__action_type='source',
-                        action_specification__action__connector__name__iexact='asana',
-                        action_specification__name__iexact='project',
-                        value=event['parent'])
-                    for project in project_list:
-                        controller = controller_class(
-                            project.plug.connection.related_connection,
-                            project.plug)
-                        ping = controller.test_connection()
-                        if ping:
-                            controller.download_source_data(event=event)
-            response.status_code = 200
         elif connector == ConnectorEnum.WunderList:
             response = HttpResponse(status=200)
             controller_class = ConnectorEnum.get_controller(connector)

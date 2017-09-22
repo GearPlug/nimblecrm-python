@@ -14,6 +14,7 @@ from jira import JIRA
 import time
 import datetime
 import json
+import pprint
 
 
 class JIRAController(BaseController):
@@ -211,13 +212,15 @@ class AsanaController(BaseController):
     #             print('NO PROJECT IN WORKSPACE ', ws['id'])
     #     print(proj_list)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(AsanaController, self).create_connection(*args)
-            if self._connection_object is not None:
-                self._token = self._connection_object.token
-                self._refresh_token = self._connection_object.refresh_token
-                self._token_expiration_timestamp = self._connection_object.token_expiration_timestamp
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(AsanaController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(AsanaController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            self._token = self._connection_object.token
+            self._refresh_token = self._connection_object.refresh_token
+            self._token_expiration_timestamp = self._connection_object.token_expiration_timestamp
 
     def test_connection(self):
         if self.is_token_expired():
@@ -229,7 +232,6 @@ class AsanaController(BaseController):
         return float(self._token_expiration_timestamp) < time.time()
 
     def refresh_token(self):
-        print('REFRESH')
         try:
             # Data para la peticion de nuevo token
             data_refresh_token = [
@@ -253,7 +255,6 @@ class AsanaController(BaseController):
                   self._connection_object.token_expiration_timestamp)
             # print('time', time.time(), type(time.time()))
             self._connection_object.save()
-            print('save??')
             self._token = self._connection_object.token
             return self._token
         except Exception as e:
@@ -262,7 +263,13 @@ class AsanaController(BaseController):
 
     def get_user_information(self):
         # Headers para Request de usuario principal
-        headers_1 = {
+        headers_1 = {#     data = {'resource', project.value,
+        #             'target', url_base + url_path}
+        #
+        #     response = requests.post('https://app.asana.com/api/1.0/webhooks',
+        #                              headers=headers, data=data)
+        #     print("response", response.json())
+        #     print("code", response.status_code)
             'Authorization': 'Bearer {0}'.format(self._token),
         }
         # Request para obtener datos de usuario creador de la tarea
@@ -301,18 +308,11 @@ class AsanaController(BaseController):
             r_list_proj = requests.get(aa_url, headers=headers_list_proj,
                                        params=params_proj)
             temp_data_3 = r_list_proj.json()
-            # for i in temp_data_3['data']:
-            #     p_dict.append(i)
-            try:
-                # p_dict = {ws['id'] : r_list_proj.json()['data'][0]}
-                p_dict = {'id': r_list_proj.json()['data'][0]['id'],
-                          'name': r_list_proj.json()['data'][0]['name']}
-            except Exception as e:
-                print('NO PROJECTS IN THIS WORKSPACE: ', ws['name'])
-            print(p_dict)
-        projects_list.append(p_dict)
-        print(projects_list)
-        return (projects_list)
+            if temp_data_3['data']:
+                return temp_data_3['data']
+            else:
+                raise ControllerError(code=1, message="No projects in this workspace")
+
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(
@@ -329,8 +329,9 @@ class AsanaController(BaseController):
                 "That specification doesn't belong to an action in this connector.")
 
     def create_webhook(self):
+        print("create webhook")
         action = self._plug.action.name
-        if action == 'read created task':
+        if action == 'new task created':
             project = self._plug.plug_action_specification.get(
                 action_specification__name='project')
             # Creacion de Webhook
@@ -339,12 +340,13 @@ class AsanaController(BaseController):
             url_base = settings.WEBHOOK_HOST
             url_path = reverse('home:webhook', kwargs={'connector': 'asana', 'webhook_id': webhook.id})
             headers = {
-                'Authorization': 'Bearer {}'.format(self._token)
+                'Authorization': 'Bearer {}'.format(self._token),
             }
             data = [('resource', int(project.value)),
-                    ('target', url_base + url_path), ]
+                     ('target', url_base + url_path)]
             response = requests.post('https://app.asana.com/api/1.0/webhooks',
                                      headers=headers, data=data)
+            print("response", response.json())
             if response.status_code == 201:
                 webhook.url = url_base + url_path
                 webhook.generated_id = response.json()['data']['id']
@@ -421,9 +423,10 @@ class AsanaController(BaseController):
                                        plug=plug, object_id=event_resource,
                                        name=k, value=v or ''))
                 for key, value in task_data['memberships'][0].items():
-                    for k, v in value.items():
-                        task_stored_data.append(
-                            StoredData(connection=connection_object.connection,
+                    if key == 'project':
+                        for k, v in value.items():
+                            task_stored_data.append(
+                                StoredData(connection=connection_object.connection,
                                        plug=plug, object_id=event_resource,
                                        name='{0}_{1}'.format(key, k),
                                        value=v or ''))
@@ -480,3 +483,28 @@ class AsanaController(BaseController):
                     self._log.info('Item: failed to send.', extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
+
+    def do_webhook_process(self, body=None, POST=None, META=None, **kwargs):
+        print("body", body)
+        print("post", POST)
+        print("meta", META)
+
+        if 'HTTP_X_HOOK_SECRET' in META:
+            response = HttpResponse()
+            response['X-Hook-Secret'] = META['HTTP_X_HOOK_SECRET']
+            response.status_code = 200
+            return response
+        events = body['events']
+        for event in events:
+            if event['type'] == 'task' and event['action'] == 'added':
+                plugs_list = Plug.objects.filter(
+                    Q(gear_source__is_active=True) | Q(is_tested=False),
+                    plug_action_specification__value__iexact=event['parent'],
+                    plug_action_specification__action_specification__name__iexact='project',
+                    action__name='new task created', )
+
+                for plug in plugs_list:
+                    self.create_connection(connection=plug.connection.related_connection, plug=plug)
+                    if self.test_connection():
+                        self.download_source_data(event=event)
+        return HttpResponse(status=200)
