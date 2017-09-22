@@ -493,6 +493,15 @@ class GitLabConnection(models.Model):
     def __str__(self):
         return self.name
 
+class InfusionSoftConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_infusionsoft')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+    refresh_token = models.CharField('refresh token', max_length=300)
+    token_expiration_time = models.CharField('token expiration time', max_length=300)
+
+    def __str__(self):
+        return self.name
 
 class ActiveCampaignConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE,

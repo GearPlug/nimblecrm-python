@@ -50,6 +50,7 @@ class ConnectorEnum(Enum):
     Mandrill = 44, 'email_marketing'
     ActiveCampaign = 45, 'crm', 'form'
     TypeForm = 46, 'lead', 'form'
+    InfusionSoft = 47, 'crm', 'authorization'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)

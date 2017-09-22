@@ -39,6 +39,8 @@ New Connection: {% block connector_name %}{{ connector_name }}{% endblock %}
                         url: $(this).attr('action'),
                         data: $(this).serialize(),
                     }).done(function (response) {
+                        console.log(response)
+                        console.log(response.test)
                         if (response.test == true) {
                             $('button#btnUpdateConnection').prop("disabled", false);
                             $('div#connectionTestResult').html('Connection is valid.');

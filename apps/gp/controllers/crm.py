@@ -2,6 +2,7 @@ import re
 import json
 import os
 import string
+import base64
 import urllib.error
 import urllib.request
 from django.shortcuts import HttpResponse
@@ -11,6 +12,7 @@ from urllib.parse import urlparse
 from dateutil.parser import parse
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 from simple_salesforce import Salesforce
 from simple_salesforce.login import SalesforceAuthenticationFailed
 from sugarcrm.client import Client as SugarClient
@@ -18,10 +20,13 @@ from sugarcrm.exception import BaseError, WrongParameter, InvalidLogin
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import ActionSpecification
-from apps.gp.models import StoredData, Webhook
+from apps.gp.models import ActionSpecification, Plug, PlugActionSpecification, StoredData, Webhook
 from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
+from django.conf import settings
+from django.http import HttpResponse
+import time
+
 import requests
 
 
@@ -1487,3 +1492,355 @@ class ActiveCampaignController(BaseController):
                 self.download_source_data(data=clean_data)
                 webhook.plug.save()
         return HttpResponse(status=200)
+
+
+class InfusionSoftController(BaseController):
+    _token = None
+    _refresh_token = None
+    _token_expiration_time = None
+    _actual_time = time.time()
+
+    def __init__(self, *args, **kwargs):
+        super(InfusionSoftController, self).__init__(*args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(InfusionSoftController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._token = self._connection_object.token
+                    self._refresh_token = self._connection_object.refresh_token
+                    self._token_expiration_time = self._connection_object.token_expiration_time
+                except Exception as e:
+                    print(e)
+
+    def test_connection(self):
+        if self.is_token_expired():
+            self.refresh_token()
+        information = ''
+        return information is not None
+
+    def is_token_expired(self):
+        try:
+            return float(self._token_expiration_time) > self._actual_time
+        except Exception as e:
+            print(e)
+            return False
+
+    def refresh_token(self):
+        string_to_encode = (str(settings.INFUSIONSOFT_CLIENT_ID + ':' + settings.INFUSIONSOFT_CLIENT_SECRET)).encode(
+            'utf-8')
+        encoded = base64.b64encode(string_to_encode)
+        auth_string = 'basic' + str(encoded)
+        headers = {
+            "Accept": "application/json, */*",
+            "Authorization": "{0}".format(auth_string)
+        }
+        data = {
+            "grant_type": 'refresh_token',
+            "refresh_token": self._refresh_token,
+        }
+        try:
+            response = requests.post(
+                'https://api.infusionsoft.com/token',
+                headers=headers,
+                json=data
+            )
+
+            self._token = response.json()['access_token']
+            self._refresh_token = response.json()['refresh_token']
+            self._token_expiration_time = response.json()['expires_at']
+
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_contact(self, id):
+        if self.is_token_expired() == True:
+            self._refresh_token
+        headers = {
+            "Accept": "application/json, */*",
+            "Authorization": "Bearer {0}".format(self._token)
+        }
+        try:
+            response = requests.get('https://api.infusionsoft.com/crm/rest/v1/contacts/{0}'.format(str(id)),
+                                    headers=headers)
+            return response.json()
+        except Exception as e:
+            print(e)
+            return False
+
+    def create_update_contact(self, **kwargs):
+        if self.is_token_expired() == True:
+            self._refresh_token
+        headers = {
+            "Accept": "application/json, */*",
+            "Authorization": "Bearer {0}".format(self._token)
+        }
+        data = {"addresses": [
+            {
+                "field": "BILLING",
+                "line1": kwargs['addresses'],
+            }
+        ],
+            "email_addresses": [
+                {
+                    "email": kwargs['email_addresses'],
+                    "field": "EMAIL1"
+                }
+            ],
+            "phone_numbers": [
+                {
+                    "field": "PHONE1",
+                    "number": kwargs['phone_numbers'],
+                }
+            ],
+            "family_name": kwargs['family_name'],
+            "given_name": kwargs['given_name'],
+            "duplicate_option": "Email",
+        }
+        try:
+            response = requests.put(
+                "https://api.infusionsoft.com/crm/rest/v1/contacts",
+                headers=headers,
+                json=data
+            )
+            return response
+        except Exception as e:
+            print(e)
+            return False
+
+    def create_webhook(self):
+        if self.is_token_expired() == True:
+            self._refresh_token
+        action = self._plug.action.name
+        if action == 'Detect actions in Contacts':
+            option = self._plug.plug_action_specification.get(
+                action_specification__name='contact action')
+
+            # Creacion de Webhook
+            webhook = Webhook.objects.create(name='infusionsoft', plug=self._plug, url='', is_active=False, )
+
+            # Verificar ngrok para determinar url_base
+            url_base = settings.WEBHOOK_HOST
+            url_path = reverse('home:webhook', kwargs={'connector': 'infusionsoft', 'webhook_id': webhook.id})
+            hookUrl = url_base + url_path
+            headers = {
+                "Accept": "application/json, */*",
+                'Authorization': 'Bearer {}'.format(self._token)
+            }
+            data = {
+                "eventKey": str(option.value),
+                "hookUrl": str(hookUrl)
+            }
+            response = requests.post("https://api.infusionsoft.com/crm/rest/v1/hooks",
+                                     headers=headers, json=data)
+
+            try:
+                r = response.json()
+            except Exception as e:
+                r = {'status': 'Unverified'}
+                print(e)
+            if response.status_code in [201, 200] and r['status'].lower() == 'verified':
+                webhook.url = url_base + url_path
+                webhook.generated_id = response.json()['key']
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            else:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
+            return True
+
+        elif action == 'Detect actions in Opportunities':
+            option = self._plug.plug_action_specification.get(
+                action_specification__name='opportunity action')
+
+            # Creacion de Webhook
+            webhook = Webhook.objects.create(name='infusionsoft',
+                                             plug=self._plug, url='')
+
+            # Verificar ngrok para determinar url_base
+            url_base = settings.WEBHOOK_HOST
+            url_path = reverse('home:webhook',
+                               kwargs={'connector': 'infusionsoft',
+                                       'webhook_id': webhook.id})
+            hookUrl = url_base + url_path
+            headers = {
+                "Accept": "application/json, */*",
+                'Authorization': 'Bearer {}'.format(self._token)
+            }
+            data = {
+                "eventKey": str(option.value),
+                "hookUrl": str(hookUrl)
+            }
+            response = requests.post(
+                "https://api.infusionsoft.com/crm/rest/v1/hooks",
+                headers=headers, json=data)
+            try:
+                r = response.json()
+            except Exception as e:
+                r = {'status': 'Unverified'}
+                print(e)
+            if response.status_code in [201, 200] and r['status'].lower() == 'verified':
+                webhook.url = url_base + url_path
+                webhook.generated_id = response.json()['key']
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            else:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
+            return True
+
+        return False
+
+    def do_webhook_process(self, body=None, GET=None, POST=None, META=None, webhook_id=None, **kwargs):
+        response = HttpResponse(status=400)
+        if POST is not None:
+            if 'HTTP_X_HOOK_SECRET' in META:
+                response.status_code = 200
+                response['X-Hook-Secret'] = META['HTTP_X_HOOK_SECRET']
+                return response
+
+            if body['object_keys'][0]['id'] is not None:
+                object_id = body['object_keys'][0]['id']
+                event_key = body['event_key']
+                try:
+                    plug = Plug.objects.get(Q(gear_source__is_active=True) | Q(is_tested=False),
+                                            plug_type__iexact='source',
+                                            connection__connector__name__iexact='infusionsoft',
+                                            plug_action_specification__value__iexact=event_key,
+                                            webhook__id=webhook_id, )
+                except Exception as e:
+                    print(e)
+                    plug = None
+                if plug:
+                    self.create_connection(plug.connection.related_connection, plug)
+                    if self.test_connection():
+                        try:
+                            contact = self.get_contact(object_id)
+                        except Exception as e:
+                            print(e)
+                        self.download_source_data(contact=contact)
+        return response
+
+    def hooks_types(self):
+        if self.is_token_expired() == True:
+            self._refresh_token
+
+        headers = {
+            "Accept": "application/json, */*",
+            "Authorization": "Bearer {0}".format(self._token)
+        }
+        response = requests.get(
+            "https://api.infusionsoft.com/crm/rest/v1/hooks/event_keys",
+            headers=headers)
+        event_keys = response.json()
+        return event_keys
+
+    def get_action_specification_options(self, action_specification_id):
+        if self.is_token_expired() == True:
+            self._refresh_token
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
+        if action_specification.name.lower() == 'contact action':
+            options = []
+            opt = self.hooks_types()
+            for i in opt:
+                if 'contact' in i:
+                    options.append(i)
+            return tuple(
+                {'id': k, 'name': k.replace('.', ' ')} for k in options
+            )
+        elif action_specification.name.lower() == 'opportunity action':
+            options = []
+            opt = self.hooks_types()
+            for i in opt:
+                if 'opportunity' in i:
+                    options.append(i)
+            return tuple(
+                {'id': k, 'name': k.replace('.', ' ')} for k in options
+            )
+        else:
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
+
+    def download_to_stored_data(self, connection_object=None, plug=None,
+                                contact=None, **kwargs):
+        if self.is_token_expired() == True:
+            self._refresh_token
+        if contact is not None:
+            contact_id = contact['id']
+            q = StoredData.objects.filter(
+                connection=connection_object.connection, plug=plug,
+                object_id=contact_id)
+            contact_data = []
+
+            flat_contacts = {}
+
+            for k, v in contact.items():
+                if type(v) == dict:
+                    for x, z in v.items():
+                        flat_contacts['{0}_{1}'.format(k, x)] = z
+                else:
+                    flat_contacts[k] = v
+
+            if not q.exists():
+                for k, v in flat_contacts.items():
+                    contact_data.append(
+                        StoredData(connection=connection_object.connection, plug=plug, object_id=contact_id, name=k,
+                                   value=v or ''))
+            extra = {}
+            for data in contact_data:
+                try:
+                    extra['status'] = 's'
+                    extra = {'controller': 'infusionSoft'}
+                    data.save()
+                    self._log.info(
+                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            data.object_id, data.plug.id,
+                            data.connection.id),
+                        extra=extra)
+                except Exception as e:
+                    extra['status'] = 'f'
+                    self._log.info(
+                        'Item ID: %s, Connection: %s, Plug: %s failed.' % (
+                            data.object_id, data.plug.id,
+                            data.connection.id),
+                        extra=extra)
+            return True
+        return False
+
+    def get_target_fields(self, **kwargs):
+        return [{'name': 'given_name', 'type': 'text', 'required': False},
+                {'name': 'family_name', 'type': 'text', 'required': False},
+                {'name': 'middle_name', 'type': 'text', 'required': False},
+                {'name': 'id', 'type': 'text', 'required': False},
+                {'name': 'date_created', 'type': 'text', 'required': False},
+                {'name': 'phone_numbers', 'type': 'text', 'required': True},
+                {'name': 'addresses', 'type': 'text', 'required': False},
+                {'name': 'email_addresses', 'type': 'text', 'required': True},
+                {'name': 'company_company_name', 'type': 'text', 'required': False},
+                {'name': 'company_id', 'type': 'text', 'required': False}]
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.InfusionSoft) for f in fields]
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if self._plug is not None:
+            obj_list = []
+            extra = {'controller': 'InfusionSoft'}
+            for item in data_list:
+                task = self.create_update_contact(**item)
+                if task.status_code in [200, 201]:
+                    extra['status'] = 's'
+                    print(task.json())
+                    self._log.info('Item: %s successfully sent.' % (
+                        task.json()['given_name']), extra=extra)
+                    obj_list.append(task)
+                else:
+                    extra['status'] = 'f'
+                    self._log.info('Item: failed to send.', extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")
