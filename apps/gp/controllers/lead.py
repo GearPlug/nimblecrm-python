@@ -9,6 +9,7 @@ from facebookmarketing.exceptions import UnknownError, \
 from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponse
+from django.core.urlresolvers import reverse
 from apiclient import discovery
 from oauth2client import client as GoogleClient
 import httplib2
@@ -16,6 +17,7 @@ import json
 import requests
 import time
 import surveymonty
+from typeform.client import Client as TypeformClient
 
 
 class GoogleFormsController(GoogleBaseController):
@@ -666,3 +668,79 @@ class SurveyMonkeyController(BaseController):
             if self.test_connection():
                 self.download_source_data(event=body)
         return HttpResponse(status=200)
+
+
+class TypeFormController(BaseController):
+    _client = None
+
+    def __init__(self, connection=None, plug=None, **kwargs):
+        BaseController.__init__(self, connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(TypeFormController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._client = TypeformClient(self._connection_object.api_key)
+            except Exception as e:
+                print("Error getting the Typeform attributes")
+                self._client = None
+
+    def test_connection(self):
+        try:
+            self._client = TypeformClient(self._connection_object.api_key)
+            return self._client is not None
+        except Exception as e:
+            print("error typeform test connection")
+            print(e)
+            return None
+
+    def create_webhook(self):
+        action = self._plug.action.name
+        if action.lower() == 'new answer':
+            # creación de webhook
+            webhook = Webhook.objects.create(name='typeform', plug=self._plug, url='', expiration='')
+            url_base = settings.WEBHOOK_HOST
+            url_path = reverse('home:webhook', kwargs={'connector': 'typeform', 'webhook_id': webhook.id})
+            webhook.url = url_base + url_path
+            webhook.generated_id = webhook.id
+            webhook.is_active = False
+            webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            return True
+        return False
+
+    def do_webhook_process(self, body=None, GET=None, POST=None, META=None, webhook_id=None, **kwargs):
+        response = HttpResponse(status=400)
+        print('Do', response)
+        print('code', response.status_code)
+        print('body', body)
+        # if POST is not None:
+        #     if 'HTTP_X_HOOK_SECRET' in META:
+        #         response.status_code = 200
+        #         response['X-Hook-Secret'] = META['HTTP_X_HOOK_SECRET']
+        #         return response
+        #
+        #     if body['object_keys'][0]['id'] is not None:
+        #         object_id = body['object_keys'][0]['id']
+        #         event_key = body['event_key']
+        #         try:
+        #             plug = Plug.objects.get(Q(gear_source__is_active=True) | Q(is_tested=False),
+        #                                     plug_type__iexact='source',
+        #                                     connection__connector__name__iexact='infusionsoft',
+        #                                     plug_action_specification__value__iexact=event_key,
+        #                                     webhook__id=webhook_id, )
+        #         except Exception as e:
+        #             print(e)
+        #             plug = None
+        #         if plug:
+        #             self.create_connection(plug.connection.related_connection, plug)
+        #             if self.test_connection():
+        #                 try:
+        #                     contact = self.get_contact(object_id)
+        #                 except Exception as e:
+        #                     print(e)
+        #                 self.download_source_data(contact=contact)
+        return response
+
+    def download_to_stored_data(self, connection_object=None, plug=None, answer=None, **kwargs):
+        print('holi')
+        pass

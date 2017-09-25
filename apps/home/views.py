@@ -96,7 +96,9 @@ class IncomingWebhook(View):
         except Exception as e:
             print(e)
             body = None
-        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey,ConnectorEnum.Gmail,ConnectorEnum.FacebookLeads,ConnectorEnum.MercadoLibre,ConnectorEnum.JIRA, ConnectorEnum.InfusionSoft]:
+        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey,ConnectorEnum.Gmail,
+                         ConnectorEnum.FacebookLeads,ConnectorEnum.MercadoLibre,ConnectorEnum.JIRA, ConnectorEnum.InfusionSoft,
+                         ConnectorEnum.TypeForm,]:
             response = controller.do_webhook_process(body=body, POST=request.POST,META=request.META, webhook_id=kwargs['webhook_id'])
 
             return response
