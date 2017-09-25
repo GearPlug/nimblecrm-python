@@ -99,43 +99,12 @@ class IncomingWebhook(View):
             body = None
         if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Gmail,
                          ConnectorEnum.FacebookLeads, ConnectorEnum.MercadoLibre, ConnectorEnum.JIRA,
-                         ConnectorEnum.InfusionSoft, ConnectorEnum.Asana]:
+                         ConnectorEnum.InfusionSoft, ConnectorEnum.Asana, ConnectorEnum.WunderList]:
             response = controller.do_webhook_process(body=body, POST=request.POST, META=request.META,
                                                      webhook_id=kwargs['webhook_id'])
 
             return response
-        elif connector == ConnectorEnum.WunderList:
-            response = HttpResponse(status=200)
-            controller_class = ConnectorEnum.get_controller(connector)
-            task = json.loads(request.body.decode("utf-8"))
-            if 'operation' in task:
-                kwargs = {
-                    'action_specification__action__action_type': 'source',
-                    'action_specification__action__connector__name__iexact': 'wunderlist',
-                    'action_specification__name__iexact': 'list',
-                    'value': task['subject']['parents'][0]['id']}
-                if task['operation'] == 'create':
-                    kwargs[
-                        'action_specification__action__name__iexact'] = 'new task'
-                    print('se creo una tarea')
-                elif task['operation'] == 'update':
-                    if 'completed' in task['data'] and task['data'][
-                        'completed'] == True:
-                        print('se completo una tarea')
-                        kwargs[
-                            'action_specification__action__name__iexact'] = 'completed task'
-                try:
-                    specification_list = PlugActionSpecification.objects.filter(
-                        **kwargs)
-                except Exception as e:
-                    specification_list = []
-                for s in specification_list:
-                    controller = controller_class(
-                        connection=s.plug.connection.related_connection,
-                        plug=s.plug)
-                    ping = controller.test_connection()
-                    if ping:
-                        controller.download_source_data(task=task)
+
         elif connector == ConnectorEnum.GoogleCalendar:
             webhook_id = kwargs.pop('webhook_id', None)
             w = Webhook.objects.get(pk=webhook_id)

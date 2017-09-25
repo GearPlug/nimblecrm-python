@@ -2,7 +2,8 @@ from apps.gp.controllers.base import BaseController, GoogleBaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification, \
-    Webhook, PlugActionSpecification
+    Webhook, PlugActionSpecification, Plug
+from django.db.models import Q
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 import httplib2
@@ -23,6 +24,7 @@ from collections import OrderedDict
 from evernote.edam.type.ttypes import NoteSortOrder
 from django.conf import settings
 import re
+from django.shortcuts import HttpResponse
 
 
 class GoogleSpreadSheetsController(GoogleBaseController):
@@ -558,11 +560,13 @@ class WunderListController(BaseController):
     _api = wunderpy2.WunderApi()
     _client = None
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(WunderListController, self).create_connection(*args)
-            if self._connection_object is not None:
-                self._token = self._connection_object.token
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(WunderListController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(WunderListController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            self._token = self._connection_object.token
 
     def test_connection(self):
         self._client = self._api.get_client(
@@ -572,7 +576,6 @@ class WunderListController(BaseController):
             return self._token is not None
         except Exception as e:
             return self._token is None
-        return True
 
     def get_lists(self):
         response = self._client.authenticated_request(
@@ -627,9 +630,8 @@ class WunderListController(BaseController):
 
     def create_webhook(self):
         action = self._plug.action.name
-        if action == 'completed task':
-            list_id = self._plug.plug_action_specification.get(
-                action_specification__name='task list')
+        if action == 'completed task' or action == "new task":
+            list_id = self._plug.plug_action_specification.get(action_specification__name='list')
             webhook = Webhook.objects.create(
                 name='wunderlist', plug=self._plug, url='')
             url_base = settings.WEBHOOK_HOST
@@ -757,3 +759,21 @@ class WunderListController(BaseController):
                     self._log.info('Item: failed to send.', extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
+
+    def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
+        webhook= Webhook.objects.get(pk=webhook_id)
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            if not webhook.plug.is_tested:
+                webhook.plug.is_tested = True
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+            action_name = webhook.plug.action.name
+            if self.test_connection():
+                if body['operation'] == 'create' and action_name == 'new task':
+                    self.download_source_data(task=body)
+                    webhook.plug.save()
+                elif body['operation'] == 'update' and action_name == 'completed task':
+                    if 'completed' in body['data'] and body['data']['completed'] == True:
+                        self.download_source_data(task=body)
+                        webhook.plug.save()
+        return HttpResponse(status=200)
+
