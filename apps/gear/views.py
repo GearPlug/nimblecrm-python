@@ -255,14 +255,18 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
     def get_available_source_fields(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
         if c == ConnectorEnum.GoogleContacts:
-            self.google_contacts_controller.create_connection(
-                plug.connection.related_connection, plug)
-            return ['%%{0}%%'.format(field) for field in
-                    self.google_contacts_controller.get_contact_fields()]
+            self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
+            return ['%%{0}%%'.format(field) for field in self.google_contacts_controller.get_contact_fields()]
+        if c == ConnectorEnum.ActiveCampaign:
+            controller_class = ConnectorEnum.get_controller(c)
+            active_campaign_controller = controller_class()
+            active_campaign_controller.create_connection(connection=plug.connection.related_connection, plug=plug)
+            l1 = ['%%{0}%%'.format(field) for field in active_campaign_controller.get_custom_fields()]
+            l2 = ['%%{0}%%'.format(item['name']) for item in
+                  StoredData.objects.filter(plug=plug, connection=plug.connection).values('name').distinct()]
+            return l1 + l2
         return ['%%{0}%%'.format(item['name']) for item in
-                StoredData.objects.filter(plug=plug,
-                                          connection=plug.connection).values(
-                    'name').distinct()]
+                StoredData.objects.filter(plug=plug, connection=plug.connection).values('name').distinct()]
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)

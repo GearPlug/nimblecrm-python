@@ -1256,6 +1256,21 @@ class ActiveCampaignController(BaseController):
         else:
             return False
 
+    def get_custom_fields(self):
+        self.create_connection()
+        params = [
+            ('api_action', "list_field_view"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('ids', 'all')
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.get(url=final_url, params=params)
+        if r.status_code == 200:
+            result = r.json()
+            return [v['perstag'] for (k, v) in result.items() if k not in ['result_code', 'result_output', 'result_message']]
+        return []
+
     def get_lists(self):
         params = [
             ('api_action', "list_list"),
