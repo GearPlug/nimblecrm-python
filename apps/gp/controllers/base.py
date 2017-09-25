@@ -1,8 +1,9 @@
 from apps.gp.controllers.exception import ControllerError
-from apps.gp.models import Connection
+from apps.gp.models import Connection, DownloadHistory
 from django.core.serializers import serialize
 import logging
 import httplib2
+import json
 
 logger = logging.getLogger('controller')
 
@@ -52,9 +53,14 @@ class BaseController(object):
         if self._connection_object is not None and self._plug is not None:
             try:
                 result = self.download_to_stored_data(self._connection_object, self._plug, **kwargs)
-                serialized_connection = serialize('json', [self._connection_object, ])[0]
-                del serialized_connection['model']
-
+                if isinstance(result, bool) and result is False:
+                    return False
+                serialized_connection = serialize('json', [self._connection_object, ])
+                for item in result['downloaded_data']:
+                    dh = DownloadHistory(gear_id=str(self._plug.gear_source.first().id), plug_id=str(self._plug.id),
+                                         connection=serialized_connection, raw=json.dumps(item['raw']),
+                                         saved_data=json.dumps(item['data']['fields']))
+                    dh.save()
                 return result['last_source_record']
             except TypeError:
                 raise

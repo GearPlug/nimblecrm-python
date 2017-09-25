@@ -97,13 +97,12 @@ class MySQLController(BaseController):
         :param limit:
         :param kwargs:  ????  #TODO: CHECK
         :return: DEBE RETORNAR una lista de "dict's" en el formato:
-        {'donwload_data':[
-            {'raw': '(%all_data_received_in_str_format)',
-            'data': {'unique': {'name': (%stored_data_unique_field_name), 'value': (%stored_data_object_id),
-                     'fields': [{'name': (%stored_data_name), 'value': (%stored_data_value), ]
-                    },
-            'is_stored': True | False}]
-         'last_source_record':(%last_order_by_value)},:
+        {'downloaded_data':[
+            {"raw": "(%all_data_received_in_str_format)" # -> formato json,
+             "data": {"unique": {"name": (%stored_data_unique_field_name), "value": (%stored_data_object_id),
+                     "fields": [{"name": (%stored_data_name), "value": (%stored_data_value), ]} # -> formato json,
+             "is_stored": True | False}]
+         "last_source_record":(%last_order_by_value)},:
         """
         order_by = self._plug.plug_action_specification.get(action_specification__name__iexact='order by')
         unique = self._plug.plug_action_specification.get(action_specification__name__iexact='unique')
@@ -134,7 +133,7 @@ class MySQLController(BaseController):
                 obj_data = None
                 for i in data:
                     if obj_id in i.values():
-                        obj_raw = str(i)
+                        obj_raw = i
                         break
                 data.remove(i)
                 for i in parsed_data:
@@ -152,7 +151,7 @@ class MySQLController(BaseController):
                     if column['name'] == order_by.value:
                         obj_last_source_record = column['value']
                         break
-            return {'donwload_data': result_list, 'last_source_record': obj_last_source_record}
+            return {'downloaded_data': result_list, 'last_source_record': obj_last_source_record}
         return False
 
     def _save_row(self, item):  # TODO: ASYNC METHOD
