@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from django.utils.html import escape
 import re
 import xml.etree.ElementTree as ET
 from importlib import import_module

@@ -176,12 +176,11 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         Define las variables source_object_list y form_field_list, necesarias para el mapeo.
         """
         gear_id = kwargs.pop('gear_id', 0)
-        gear = Gear.objects.filter(pk=gear_id).select_related(
-            'source', 'target').get(pk=gear_id)
-        source_plug = Plug.objects.filter(pk=gear.source.id).select_related(
-            'connection__connector').get(pk=gear.source.id)
-        target_plug = Plug.objects.filter(pk=gear.target.id).select_related(
-            'connection__connector').get(pk=gear.target.id)
+        gear = Gear.objects.filter(pk=gear_id).select_related('source', 'target').get(pk=gear_id)
+        source_plug = Plug.objects.filter(pk=gear.source.id).select_related('connection__connector').get(
+            pk=gear.source.id)
+        target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
+            pk=gear.target.id)
         # Source options
         self.source_object_list = self.get_available_source_fields(source_plug)
         # Target fields
@@ -191,11 +190,8 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
 
     def post(self, request, *args, **kwargs):
         gear_id = kwargs.pop('gear_id', 0)
-        gear = Gear.objects.filter(pk=gear_id).select_related('source',
-                                                              'target').get(
-            pk=gear_id)
-        target_plug = Plug.objects.filter(pk=gear.target.id).select_related(
-            'connection__connector').get(
+        gear = Gear.objects.filter(pk=gear_id).select_related('source', 'target').get(pk=gear_id)
+        target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
             pk=gear.target.id)
         self.form_field_list = self.get_target_field_list(target_plug)
         self.gear_map = GearMap.objects.filter(gear=gear).first()
@@ -208,7 +204,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
                 try:
                     try:
                         field = all_data.get(target_name=f)
-                        if v == '' or v.isspace():
+                        if isinstance(v, str) and (v == '' or v.isspace()):
                             field.delete()
                         else:
                             if field.source_value != v:
@@ -225,8 +221,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         else:
             self.gear_map = GearMap.objects.create(
                 gear_id=self.kwargs['gear_id'], is_active=True)
-            gear_map_data = [GearMapData(gear_map=self.gear_map, target_name=f,
-                                         source_value=v) for f, v in
+            gear_map_data = [GearMapData(gear_map=self.gear_map, target_name=f, source_value=v) for f, v in
                              form.cleaned_data.items() if v is not None]
             GearMapData.objects.bulk_create(gear_map_data)
         self.gear_map.gear.is_active = True
