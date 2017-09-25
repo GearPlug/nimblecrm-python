@@ -481,7 +481,7 @@ class AsanaController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def do_webhook_process(self, body=None, POST=None, META=None, **kwargs):
+    def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
         if 'HTTP_X_HOOK_SECRET' in META:
             response = HttpResponse()
             response['X-Hook-Secret'] = META['HTTP_X_HOOK_SECRET']
@@ -490,14 +490,11 @@ class AsanaController(BaseController):
         events = body['events']
         for event in events:
             if event['type'] == 'task' and event['action'] == 'added':
-                plugs_list = Plug.objects.filter(
-                    Q(gear_source__is_active=True) | Q(is_tested=False),
-                    plug_action_specification__value__iexact=event['parent'],
-                    plug_action_specification__action_specification__name__iexact='project',
-                    action__name='new task created', )
-
-                for plug in plugs_list:
-                    self.create_connection(connection=plug.connection.related_connection, plug=plug)
+                webhook = Webhook.objects.get(pk=webhook_id)
+                if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+                    if not webhook.plug.is_tested:
+                        webhook.plug.is_tested = True
+                    self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
                     if self.test_connection():
                         self.download_source_data(event=event)
         return HttpResponse(status=200)
