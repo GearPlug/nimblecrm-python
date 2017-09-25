@@ -1,5 +1,6 @@
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.models import Connection
+from django.core.serializers import serialize
 import logging
 import httplib2
 
@@ -50,8 +51,13 @@ class BaseController(object):
     def download_source_data(self, **kwargs):
         if self._connection_object is not None and self._plug is not None:
             try:
-                return self.download_to_stored_data(self._connection_object, self._plug, **kwargs)
+                result = self.download_to_stored_data(self._connection_object, self._plug, **kwargs)
+                serialized_connection = serialize('json', [self._connection_object, ])[0]
+                del serialized_connection['model']
+
+                return result['last_source_record']
             except TypeError:
+                raise
                 return self.download_to_stored_data(self._connection_object, self._plug)
 
         else:

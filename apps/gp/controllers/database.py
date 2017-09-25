@@ -90,6 +90,21 @@ class MySQLController(BaseController):
                                   message='Error selecting all. {}'.format(str(e)))
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, limit=50, **kwargs):
+        """
+        :param connection_object:
+        :param plug:
+        :param last_source_record: IF the value is not None the download will ask for data after the value  recived.
+        :param limit:
+        :param kwargs:  ????  #TODO: CHECK
+        :return: DEBE RETORNAR una lista de "dict's" en el formato:
+        {'donwload_data':[
+            {'raw': '(%all_data_received_in_str_format)',
+            'data': {'unique': {'name': (%stored_data_unique_field_name), 'value': (%stored_data_object_id),
+                     'fields': [{'name': (%stored_data_name), 'value': (%stored_data_value), ]
+                    },
+            'is_stored': True | False}]
+         'last_source_record':(%last_order_by_value)},:
+        """
         order_by = self._plug.plug_action_specification.get(action_specification__name__iexact='order by')
         unique = self._plug.plug_action_specification.get(action_specification__name__iexact='unique')
         query_params = {'unique': unique, 'order_by': order_by, 'limit': limit}
@@ -97,45 +112,67 @@ class MySQLController(BaseController):
             query_params['gt'] = last_source_record
         data = self.select_all(**query_params)
         parsed_data = [{'unique': {'name': unique.value, 'value': item[unique.value]},
-                        'data': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
+                        'fields': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
         new_data = []
         for item in parsed_data:
             unique_value = item['unique']['value']
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
                 new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
-                                       connection=connection_object.connection, plug=plug) for column in item['data']]
+                                       connection=connection_object.connection, plug=plug) for column in item['fields']]
                 new_data.append(new_item)
         # TODO: NEW WAY
+        obj_last_source_record = None
+        result_list = []
         if new_data:
+            data.reverse()
+            parsed_data.reverse()
             new_data.reverse()
-            self._save_stored_data(new_data)
-            for item in parsed_data:
-                for column in item['data']:
+            for item in new_data:
+                obj_id = item[0].object_id
+                obj_raw = None
+                obj_data = None
+                for i in data:
+                    if obj_id in i.values():
+                        obj_raw = str(i)
+                        break
+                data.remove(i)
+                for i in parsed_data:
+                    if obj_id == i['unique']['value']:
+                        obj_data = i
+                        break
+                parsed_data.remove(i)
+                is_stored, object_id = self._save_row(item)
+                if object_id != obj_id:
+                    print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id))
+                    # TODO: CHECK RAISE
+                result_list.append({'id': object_id, 'raw': obj_raw, 'is_stored': is_stored, 'data': obj_data})
+            for item in result_list:
+                for column in item['data']['fields']:
                     if column['name'] == order_by.value:
-                        return column['value']
+                        obj_last_source_record = column['value']
+                        break
+            return {'donwload_data': result_list, 'last_source_record': obj_last_source_record}
         return False
-
-    def _save_stored_data(self, data):  # TODO: ASYNC METHOD
-        for item in data:
-            self._save_row(item)
-        return True
 
     def _save_row(self, item):  # TODO: ASYNC METHOD
         extra = {'controller': 'mysql', 'status': 's'}
         try:
             for stored_data in item:
                 stored_data.save()
-            self._log.info(
-                'Item ID: {0}, Connection: {1}, Plug: {2} successfully stored.'
-                ''.format(stored_data.object_id, stored_data.plug.id, stored_data.connection.id), extra=extra)
+            self._log.info('Item ID: {0}, Connection: {1}, Plug: {2} successfully stored.'
+                           ''.format(stored_data.object_id, stored_data.plug.id, stored_data.connection.id),
+                           extra=extra)
+            return True, stored_data.object_id
         except Exception as e:
+            raise
             extra['status'] = 'f'
             self._log.info('Item ID: {0}, Field: {1}, Connection: {2}, Plug:{3} failed'
                            ' to save.'.format(stored_data.object_id, stored_data.name, stored_data.connection.id,
                                               stored_data.plug.id), extra=extra)
-            raise ControllerError(code=4, controller=ConnectorEnum.MySQL.name,
-                                  message='Error in save row. {}'.format(str(e)))
+            return False, item[0].object_id
+            # raise ControllerError(code=4, controller=ConnectorEnum.MySQL.name,
+            #                       message='Error in save row. {}'.format(str(e)))
 
     def _get_insert_statement(self, item):
         return """INSERT INTO `{0}`({1}) VALUES ({2})""".format(self._table, ",".join(item.keys()),
