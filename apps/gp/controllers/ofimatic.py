@@ -70,7 +70,6 @@ class GoogleSpreadSheetsController(GoogleBaseController):
             files = None
         return files is not None
 
-
     def download_to_stored_data(self, connection_object, plug, *args,
                                 **kwargs):
         if plug is None:
@@ -84,12 +83,14 @@ class GoogleSpreadSheetsController(GoogleBaseController):
                 connection=connection_object.connection, plug=plug,
                 object_id=idx + 1)
             if not q.exists():
-                for idx2, cell in enumerate(item):
-                    new_data.append(
-                        StoredData(name=sheet_values[0][idx2], value=cell,
-                                   object_id=idx + 1,
-                                   connection=connection_object.connection,
-                                   plug=plug))
+                try:
+                    for idx2, cell in enumerate(item):
+                        new_data.append(StoredData(name=sheet_values[0][idx2], value=cell, object_id=idx + 1,
+                                                   connection=connection_object.connection, plug=plug))
+                except IndexError as e:
+                    raise ControllerError(code=0, controller=self.connector,
+                                          message='Los valores no corresponden con los campos existentes.'.format(
+                                              str(e)))
         if new_data:
             field_count = len(sheet_values)
             extra = {'controller': 'google_spreadsheets'}
@@ -178,6 +179,7 @@ class GoogleSpreadSheetsController(GoogleBaseController):
         res = sheets_service.spreadsheets().values().get(
             spreadsheetId=self._spreadsheet_id,
             range='{0}'.format(self._worksheet_name)).execute()
+        # TODO try para ver si llego la data. Sino levantar error de mala configuracion en la hoja de calculo
         values = res['values']
         if from_row is None and limit is None:
             return values
@@ -717,7 +719,7 @@ class WunderListController(BaseController):
                     task.save()
                     self._log.info(
                         'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                        task.object_id, task.plug.id, task.connection.id),
+                            task.object_id, task.plug.id, task.connection.id),
                         extra=extra)
                 except Exception as e:
                     extra['status'] = 'f'
@@ -752,7 +754,7 @@ class WunderListController(BaseController):
                 if task.status_code in [200, 201]:
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (
-                    task.json()['data']['name']), extra=extra)
+                        task.json()['data']['name']), extra=extra)
                     obj_list.append(task)
                 else:
                     extra['status'] = 'f'
