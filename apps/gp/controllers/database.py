@@ -96,13 +96,7 @@ class MySQLController(BaseController):
         :param last_source_record: IF the value is not None the download will ask for data after the value  recived.
         :param limit:
         :param kwargs:  ????  #TODO: CHECK
-        :return: DEBE RETORNAR una lista de "dict's" en el formato:
-        {'downloaded_data':[
-            {"raw": "(%all_data_received_in_str_format)" # -> formato json,
-             "data": {"unique": {"name": (%stored_data_unique_field_name), "value": (%stored_data_object_id),
-                     "fields": [{"name": (%stored_data_name), "value": (%stored_data_value), ]} # -> formato json,
-             "is_stored": True | False}]
-         "last_source_record":(%last_order_by_value)},:
+        :return:
         """
         order_by = self._plug.plug_action_specification.get(action_specification__name__iexact='order by')
         unique = self._plug.plug_action_specification.get(action_specification__name__iexact='unique')
@@ -177,44 +171,38 @@ class MySQLController(BaseController):
         return """INSERT INTO `{0}`({1}) VALUES ({2})""".format(self._table, ",".join(item.keys()),
                                                                 ",".join('\"{0}\"'.format(i) for i in item.values()))
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
+    def send_stored_data(self, data_list):
+        obj_list = []
+        extra = {'controller': 'mysql'}
+        result_list = []
+        for item in data_list:
+            obj_result = {'data': dict(item)}
             try:
-                data_list = [data_list[-1]]
-            except IndexError:
-                data_list = []
-            except Exception as e:
-                raise ControllerError("Unexpected Exception. Please report this error: {}".format(str(e)))
-        if self._plug is not None:
-            obj_list = []
-            extra = {'controller': 'mysql'}
-            for item in data_list:
-                try:
-                    insert = self._get_insert_statement(item)
-                    self._cursor.execute(insert)
-                    extra['status'] = 's'
-                    self._log.info('Item: %s successfully sent.' % (self._cursor.lastrowid), extra=extra)
-                    obj_list.append(self._cursor.lastrowid)
-                except MySQLdb.OperationalError as e:
-                    extra['status'] = 'f'
-                    self._log.info('Item: %s failed to send.' % (self._cursor.lastrowid), extra=extra)
-                    raise ControllerError(code=2, controller=ConnectorEnum.MySQL.name,
-                                          message='Error selecting all. {}'.format(str(e)))
-                except MySQLdb.ProgrammingError as e:
-                    extra['status'] = 'f'
-                    self._log.info('Item: %s failed to send.' % (self._cursor.lastrowid), extra=extra)
-                    raise ControllerError(code=3, controller=ConnectorEnum.MySQL.name,
-                                          message='Error selecting all. {}'.format(str(e)))
-            try:
-                self._connection.commit()
-            except Exception as e:
-                self._connection.rollback()
-                raise ControllerError(code=4, controller=ConnectorEnum.MySQL.name,
-                                      message='Error in commit data. {}'.format(str(e)))
-            # TODO: NEW WAY
-            return obj_list
-        raise ControllerError("There's no plug")
+                insert = self._get_insert_statement(item)
+                self._cursor.execute(insert)
+                obj_result['response'] = "Succesfully inserted item with id {0}.".format(self._cursor.lastrowid)
+                obj_result['sent'] = True
+                obj_result['identifier'] = self._cursor.lastrowid
+            except MySQLdb.OperationalError as e:
+                obj_result['response'] = "Failed to insert item."
+                obj_result['sent'] = False
+                obj_result['identifier'] = None
+                raise ControllerError(code=2, controller=ConnectorEnum.MySQL.name,
+                                      message='Error insert. {}'.format(str(e)))
+            except MySQLdb.ProgrammingError as e:
+                obj_result['response'] = "Failed to insert item."
+                obj_result['sent'] = False
+                obj_result['identifier'] = None
+                raise ControllerError(code=3, controller=ConnectorEnum.MySQL.name,
+                                      message='Error insert. {}'.format(str(e)))
+            obj_list.append(obj_result)
+        try:
+            self._connection.commit()
+        except Exception as e:
+            self._connection.rollback()
+            raise ControllerError(code=4, controller=ConnectorEnum.MySQL.name,
+                                  message='Error in commit data. {}'.format(str(e)))
+        return obj_list
 
     def get_target_fields(self, **kwargs):
         return self.describe_table(**kwargs)

@@ -1,5 +1,6 @@
 from apps.gp.controllers.exception import ControllerError
-from apps.gp.models import Connection, DownloadHistory
+from apps.gp.controllers.utils import get_dict_with_source_data
+from apps.gp.models import Connection, DownloadHistory, SendHistory
 from django.core.serializers import serialize
 import logging
 import httplib2
@@ -50,31 +51,74 @@ class BaseController(object):
         raise ControllerError('Not implemented yet.')
 
     def download_source_data(self, **kwargs):
+        """
+        El SEND_STORED_DATA DEBE RETORNAR UNA LISTA CON DICTs (uno por cada dato enviado) CON ESTE FORMATO:
+        {'downloaded_data':[
+            {"raw": "(%all_data_received_in_str_format)" # -> formato json,
+             "data": {"unique": {"name": (%stored_data_unique_field_name), "value": (%stored_data_object_id),
+                     "fields": [{"name": (%stored_data_name), "value": (%stored_data_value), ]} # -> formato json,
+             "is_stored": True | False}]
+         "last_source_record":(%last_order_by_value)},:
+        :return: last_source_record
+        """
         if self._connection_object is not None and self._plug is not None:
             try:
                 result = self.download_to_stored_data(self._connection_object, self._plug, **kwargs)
-                if isinstance(result, bool) and result is False:
-                    return False
-                serialized_connection = serialize('json', [self._connection_object, ])
-                for item in result['downloaded_data']:
-                    dh = DownloadHistory(gear_id=str(self._plug.gear_source.first().id), plug_id=str(self._plug.id),
-                                         connection=serialized_connection, raw=json.dumps(item['raw']),
-                                         saved_data=json.dumps(item['data']['fields']))
-                    dh.save()
-                return result['last_source_record']
+                try:
+                    if isinstance(result, bool) and result is False:
+                        return result
+                    serialized_connection = serialize('json', [self._connection_object, ])
+                    for item in result['downloaded_data']:
+                        print(self.connector)
+                        DownloadHistory.objects.create(gear_id=str(self._plug.gear_source.first().id),
+                                                       plug_id=str(self._plug.id), connection=serialized_connection,
+                                                       raw=json.dumps(item['raw']),
+                                                       saved_data=json.dumps(item['data']['fields']),
+                                                       connector=self.connector)
+                    return result['last_source_record']
+                except:
+                    print("NO REGISTRO DATA")
+                    return result
             except TypeError:
-                raise
                 return self.download_to_stored_data(self._connection_object, self._plug)
+        raise ControllerError(code=0, controller=self.connector.name,
+                              message="Please check you're using a valid connection and a valid plug.")
 
-        else:
-            raise ControllerError("There's no active connection or plug.")
-
-    def send_target_data(self, *args, **kwargs):
+    def send_target_data(self, source_data, target_fields, is_first=False, **kwargs):
+        """
+        El SEND_STORED_DATA DEBE RETORNAR UNA LISTA CON DICTs (uno por cada dato enviado) CON ESTE FORMATO:
+        {'data': {(%dict del metodo 'get_dict_with_source_data')},
+         'response': (%mensaje del resultado),
+         'sent': True|False,
+         'identifier': (%identificador del dato enviado. Ej: ID.)
+        }
+        """
         if self._connection_object is not None and self._plug is not None:
+            data_list = get_dict_with_source_data(source_data, target_fields)
+            if is_first:
+                try:
+                    data_list = [data_list[-1]]
+                except IndexError:
+                    data_list = []
+                except Exception as e:
+                    raise ControllerError(message="Unexpected Exception. Please report this error: {}.".format(str(e)))
+            print("DATALIST: len={}.".format(len(data_list)))
             try:
-                return self.send_stored_data(self._connection_object, self._plug, **kwargs)
+                result = self.send_stored_data(data_list, **kwargs)
+                serialized_connection = serialize('json', [self._connection_object, ])
+                for item in result:
+                    SendHistory.objects.create(connector=self.connector, gear_id=str(self._plug.gear_target.first().id),
+                                               plug_id=str(self._plug.id), connection=serialized_connection,
+                                               data=json.dumps(item['data']), response=item['response'],
+                                               sent=item['sent'], identifier=item['identifier'])
+
+                return [i['identifier'] for i in result]
+            except KeyError:
+                return result
             except TypeError:
-                return self.send_stored_data(self._connection_object, self._plug)
+                return self.send_stored_data(source_data, target_fields, **kwargs)
+        raise ControllerError(code=0, controller=self.connector.name,
+                              message="Please check you're using a valid connection and a valid plug.")
 
     def get_target_fields(self, **kwargs):
         raise ControllerError('Not implemented yet.')
