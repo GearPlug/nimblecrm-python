@@ -224,46 +224,47 @@ class ShopifyController(BaseController):
     def test_connection(self):
         try:
             session = shopify.Session("https://" + self._shop_url, self._token)
+            shopify.ShopifyResource.activate_session(session)
             return self._token and self._shop_url is not None
         except Exception as e:
             print(e)
             return self._token and self._shop_url is None
 
-    def download_to_stored_data(self, connection_object, plug, list=None):
+    def download_to_stored_data(self, connection_object, plug, data=None):
         if plug is None:
             plug = self._plug
+
         action = plug.action.name
         session = shopify.Session("https://" + self._shop_url, self._token)
         shopify.ShopifyResource.activate_session(session)
 
-        if list is None:
-            list = []
-            if action == 'new customer':
-                list2 = shopify.Customer.find()
-            elif action == 'new product':
-                list2 = shopify.Product.find()
-            elif action == 'new order':
-                list2 = shopify.Order.find()
-            for l in list2:
-                m = re.findall(r'\d+', str(l))
-                list.append(m[0])
+        # Codigo para traer todos los productos, ordenes, o clientes
+        # if list is None:
+        #     list = []
+        #     if action == 'new customer':
+        #         list2 = shopify.Customer.find()
+        #     elif action == 'new product':
+        #         list2 = shopify.Product.find()
+        #     elif action == 'new order':
+        #         list2 = shopify.Order.find()
+        #     for l in list2:
+        #         m = re.findall(r'\d+', str(l))
+        #        list.append(m[0])
 
         new_data = []
-        for item in list:
-            id_field = int(item)
-            print("item", item, type(item))
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id_field)
-            if not q.exists():
-                if action == 'new customer':
-                    details = shopify.Customer.find(id_field)
-                elif action == 'new product':
-                    details = shopify.Product.find(id_field)
-                elif action == 'new order':
-                    details = shopify.Order.find(id_field)
-                for value in details.attributes:
-                    information = details.attributes[value] or ''
-                    new_data.append(StoredData(name=value, value=information, object_id=id_field,
-                                               connection=connection_object.connection, plug=plug))
+        id_field = data["id"]
+        q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id_field)
+        if not q.exists():
+            if action == 'new customer':
+                details = shopify.Customer.find(id_field)
+            elif action == 'new product':
+                details = shopify.Product.find(id_field)
+            elif action == 'new order':
+                details = shopify.Order.find(id_field)
+            for value in details.attributes:
+                information = details.attributes[value] or ''
+                new_data.append(StoredData(name=value, value=information, object_id=id_field,
+                                           connection=connection_object.connection, plug=plug))
         if new_data:
             extra = {'controller': 'shopify'}
             for item in new_data:
@@ -280,9 +281,9 @@ class ShopifyController(BaseController):
     def create_webhook(self):
         action = self._plug.action.name
         webhook = Webhook.objects.create(name='shopify', plug=self._plug, url='')
-        url_path = reverse('home:webhook', kwargs={'connector': 'shopify', 'webhook_id': webhook.id})
+        redirect_uri = "{0}/webhook/shopify/{1}/".format(settings.CURRENT_HOST, webhook.id)
         session = shopify.Session("https://" + self._shop_url, self._token)
-        url_base = settings.WEBHOOK_HOST
+        shopify.ShopifyResource.activate_session(session)
         if action == 'new product':
             topic = 'products'
         elif action == 'new customer':
@@ -291,17 +292,15 @@ class ShopifyController(BaseController):
             topic = 'orders'
         new_webhook = shopify.Webhook()
         new_webhook.topic = topic + "/create"
-        new_webhook.address = url_base + url_path
+        new_webhook.address = redirect_uri
         new_webhook.format = "json"
         success = new_webhook.save()
-        shopify.ShopifyResource.activate_session(session)
         if success == True:
-            webhook.url = url_base + url_path
+            webhook.url = redirect_uri
             webhook.is_active = True
             id = re.findall(r'\d+', str(self.get_list_webhooks()[-1]))
             webhook.generated_id = id[0]
             webhook.save(update_fields=['url', 'generated_id', 'is_active'])
-            print("Se creo el webhook shopify")
             return True
         else:
             webhook.is_deleted = True
@@ -404,6 +403,17 @@ class ShopifyController(BaseController):
                     find = True
             if find is False: values[i['name']] = ""
         return values
+
+    def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
+        webhook= Webhook.objects.get(pk=webhook_id)
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            if not webhook.plug.is_tested:
+                webhook.plug.is_tested = True
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+            if self.test_connection():
+                self.download_source_data(data=body)
+                webhook.plug.save()
+        return HttpResponse(status=200)
 
 
 class MagentoController(BaseController):
