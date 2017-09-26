@@ -12,6 +12,7 @@ from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
 from django.conf import settings
 from django.urls import reverse
+from django.http import HttpResponse
 
 
 class BitbucketController(BaseController):
@@ -237,8 +238,8 @@ class GitLabController(BaseController):
     _token = None
     _refresh_token = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(GitLabController, self).__init__(connection=connection, plug=plug, **kwargs)
 
     def do_get(self, url, data=None):
         bearer = 'Bearer {0}'.format(self._token)
@@ -282,12 +283,11 @@ class GitLabController(BaseController):
             print(e)
             return False
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(GitLabController, self).create_connection(*args)
-            if self._connection_object is not None:
-                self._token = self._connection_object.token
-                self._refresh_token = self._connection_object.refresh_token
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(GitLabController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            self._token = self._connection_object.token
+            self._refresh_token = self._connection_object.refresh_token
 
     def test_connection(self):
         try:
@@ -375,15 +375,13 @@ class GitLabController(BaseController):
 
     def create_webhook(self):
         action = self._plug.action.name
-        if action == 'Detect Issue Creation':
+        if action == 'new issue':
             project = self._plug.plug_action_specification.get(
                 action_specification__name='project')
             # Creacion de Webhook
             webhook = Webhook.objects.create(name='gitlab', plug=self._plug,url='')
-            # Verificar ngrok para determinar url_base
-            url_base = settings.WEBHOOK_HOST
-            url_path = reverse('home:webhook', kwargs={'connector': 'gitlab','webhook_id': webhook.id})
-            url_listen_webhook = url_base + url_path
+            redirect_uri = "{0}/webhook/gitlab/{1}/".format(settings.CURRENT_HOST, webhook.id)
+            url_listen_webhook = redirect_uri
 
             project = project.value
             params = (
@@ -397,7 +395,7 @@ class GitLabController(BaseController):
                 self.refresh_token()
             try:
                 if response.status_code == 201 or response.status_code == 200:
-                    webhook.url = url_base + url_path
+                    webhook.url = redirect_uri
                     webhook.generated_id = response.json()['id']
                     webhook.is_active = True
                     webhook.save(update_fields=['url', 'generated_id', 'is_active'])
@@ -451,3 +449,14 @@ class GitLabController(BaseController):
                 {'id': p['id'], 'name': p['name']} for p in self.get_projects())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
+
+    def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
+        webhook= Webhook.objects.get(pk=webhook_id)
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            if not webhook.plug.is_tested:
+                webhook.plug.is_tested = True
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+            if self.test_connection():
+                self.download_source_data(issue=body)
+                webhook.plug.save()
+        return HttpResponse(status=200)

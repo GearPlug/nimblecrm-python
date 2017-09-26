@@ -100,7 +100,8 @@ class IncomingWebhook(View):
         if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Gmail,
                          ConnectorEnum.FacebookLeads, ConnectorEnum.MercadoLibre, ConnectorEnum.JIRA,
                          ConnectorEnum.InfusionSoft, ConnectorEnum.Asana, ConnectorEnum.WunderList,
-                         ConnectorEnum.GoogleCalendar, ConnectorEnum.SurveyMonkey, ConnectorEnum.Shopify]:
+                         ConnectorEnum.GoogleCalendar, ConnectorEnum.SurveyMonkey, ConnectorEnum.Shopify,
+                         ConnectorEnum.GitLab]:
             response = controller.do_webhook_process(body=body, POST=request.POST, META=request.META,
                                                      webhook_id=kwargs['webhook_id'])
 
@@ -132,52 +133,6 @@ class IncomingWebhook(View):
                     controller.download_source_data(data=clean_data)
                     w.plug.save()
                 response.status_code = 200
-        elif connector == ConnectorEnum.GitLab:
-            response = HttpResponse(status=200)
-            issues = request.body.decode("utf-8")
-            issues = json.loads(issues)
-            data = []
-            issue_id = issues['object_attributes']["id"]
-            issue_title = issues['object_attributes']["title"]
-            issue_creation_date = issues['object_attributes']["created_at"]
-            issue_author_id = issues['object_attributes']["author_id"]
-            issue_description = issues['object_attributes']["description"]
-            issue_project_id = issues['object_attributes']["project_id"]
-            issue_state = issues['object_attributes']["state"]
-            issue_url = issues['object_attributes']["url"]
-            data.append({'name': issue_title,
-                         'id': issue_id,
-                         'created_at': issue_creation_date,
-                         'author': issue_author_id,
-                         'description': issue_description,
-                         'project': issue_project_id,
-                         'state': issue_state,
-                         'url': issue_url
-                         })
-
-            webhook_id = kwargs.pop('webhook_id', None)
-            webhook_id = int(webhook_id)
-            try:
-                w = Webhook.objects.get(pk=webhook_id)
-            except Exception as e:
-                print(e)
-                return response
-            gear = w.plug.gear_source.first()
-            if (gear is not None and gear.is_active) or not w.plug.is_tested:
-                if not w.plug.is_tested:
-                    w.plug.is_tested = True
-                controller_class = ConnectorEnum.get_controller(connector)
-                controller = controller_class(
-                    connection=w.plug.connection.related_connection, plug=w.plug)
-                ping = controller.test_connection()
-                if ping:
-                    controller.download_source_data(issue=data)
-                    try:
-                        w.plug.save()
-                    except Exception as e:
-                        print(e)
-        return response
-
 
 class HelpView(LoginRequiredMixin, TemplateView):
     template_name = 'home/help.html'
