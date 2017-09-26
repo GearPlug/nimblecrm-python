@@ -209,25 +209,25 @@ class PayUController(BaseController):
 class ShopifyController(BaseController):
     _token = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(ShopifyController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(ShopifyController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token = self._connection_object.token
-                    self._shop_url = self._connection_object.shop_url
-                except Exception as e:
-                    print("Error getting the shopify token")
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(ShopifyController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+                self._shop_url = self._connection_object.shop_url
+            except Exception as e:
+                print("Error getting the shopify token")
 
     def test_connection(self):
         try:
             session = shopify.Session("https://" + self._shop_url, self._token)
             return self._token and self._shop_url is not None
-        except:
-            raise ControllerError("TODO")
+        except Exception as e:
+            print(e)
+            return self._token and self._shop_url is None
 
     def download_to_stored_data(self, connection_object, plug, list=None):
         if plug is None:
