@@ -99,24 +99,12 @@ class IncomingWebhook(View):
             body = None
         if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Gmail,
                          ConnectorEnum.FacebookLeads, ConnectorEnum.MercadoLibre, ConnectorEnum.JIRA,
-                         ConnectorEnum.InfusionSoft, ConnectorEnum.Asana, ConnectorEnum.WunderList]:
+                         ConnectorEnum.InfusionSoft, ConnectorEnum.Asana, ConnectorEnum.WunderList,
+                         ConnectorEnum.GoogleCalendar]:
             response = controller.do_webhook_process(body=body, POST=request.POST, META=request.META,
                                                      webhook_id=kwargs['webhook_id'])
 
             return response
-
-        elif connector == ConnectorEnum.GoogleCalendar:
-            webhook_id = kwargs.pop('webhook_id', None)
-            w = Webhook.objects.get(pk=webhook_id)
-            controller_class = ConnectorEnum.get_controller(connector)
-            controller = controller_class(
-                connection=w.plug.connection.related_connection,
-                plug=w.plug)
-            ping = controller.test_connection()
-            if ping:
-                events = controller.get_events()
-                controller.download_source_data(events=events)
-                response.status_code = 200
         elif connector == ConnectorEnum.SurveyMonkey:
             responses = []
             data = request.body.decode('utf-8')

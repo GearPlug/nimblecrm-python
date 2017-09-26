@@ -488,23 +488,18 @@ class SurveyMonkeyController(BaseController):
     _token = None
     _client = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None):
+        BaseController.__init__(self, connection=connection, plug=plug)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(SurveyMonkeyController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token = self._connection_object.token
-                    self._client = surveymonty.Client(self._token)
-                except Exception as e:
-                    print("Error getting the surveymonkey token")
-                    print(e)
-        elif kwargs:
-            host = kwargs.pop('token', None)
-            self._client = surveymonty.Client(self._token)
-        return self._token is not None and self._client is not None
+    def create_connection(self, connection=None, plug=None):
+        super(SurveyMonkeyController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+                self._client = surveymonty.Client(self._token)
+            except Exception as e:
+                print("Error getting the surveymonkey token")
+                print(e)
 
     def test_connection(self):
         try:
