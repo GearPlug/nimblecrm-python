@@ -81,12 +81,14 @@ class GoogleSpreadSheetsController(GoogleBaseController):
                 connection=connection_object.connection, plug=plug,
                 object_id=idx + 1)
             if not q.exists():
-                for idx2, cell in enumerate(item):
-                    new_data.append(
-                        StoredData(name=sheet_values[0][idx2], value=cell,
-                                   object_id=idx + 1,
-                                   connection=connection_object.connection,
-                                   plug=plug))
+                try:
+                    for idx2, cell in enumerate(item):
+                        new_data.append(StoredData(name=sheet_values[0][idx2], value=cell, object_id=idx + 1,
+                                                   connection=connection_object.connection, plug=plug))
+                except IndexError as e:
+                    raise ControllerError(code=0, controller=self.connector,
+                                          message='Los valores no corresponden con los campos existentes.'.format(
+                                              str(e)))
         if new_data:
             field_count = len(sheet_values)
             extra = {'controller': 'google_spreadsheets'}
