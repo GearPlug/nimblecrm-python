@@ -464,6 +464,7 @@ class GoogleCalendarController(GoogleBaseController):
             if self.test_connection():
                 events = self.get_events()
                 self.download_source_data(events=events)
+                webhook.plug.save()
         return HttpResponse(status=200)
 
 

@@ -515,32 +515,29 @@ class SurveyMonkeyController(BaseController):
         return lista['data']
 
     def download_to_stored_data(self, connection_object, plug, client=None,
-                                responses=None):
-        if plug is None:
-            plug = self._plug
-        if not self._client:
-            return False
+                                response=None):
+         # Codigo para traer historial de respuestas
+        # if responses == None:
+        #     responses = self.get_responses().__dict__["_content"].decode()
+        #     responses = json.loads(responses)["data"]
 
-        if responses == None:
-            responses = self.get_responses().__dict__["_content"].decode()
-            responses = json.loads(responses)["data"]
-        survey_id = self._plug.plug_action_specification.all()[0].value
+        print("dato de survey monkey")
+        survey_id = response['resources']['survey_id']
         new_data = []
-        for item in responses:
-            response_id = item["id"]
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=response_id)
-            if not q.exists():
-                details = self.get_response_details(survey_id, response_id)
-                for value in details:
-                    if (
-                                            value != "page_path" and value != "logic_path" and value != "metadata" and value != "custom_variables"):
-                        new_data.append(
-                            StoredData(name=value, value=details[value],
-                                       object_id=response_id,
-                                       connection=connection_object.connection,
-                                       plug=plug))
+        response_id = response["object_id"]
+        q = StoredData.objects.filter(
+            connection=connection_object.connection, plug=plug,
+            object_id=response_id)
+        if not q.exists():
+            details = self.get_response_details(survey_id, response_id)
+            for value in details:
+                if (
+                                        value != "page_path" and value != "logic_path" and value != "metadata" and value != "custom_variables"):
+                    new_data.append(
+                        StoredData(name=value, value=details[value],
+                                   object_id=response_id,
+                                   connection=connection_object.connection,
+                                   plug=plug))
         if new_data:
             extra = {'controller': 'surveymonkey'}
             for item in new_data:
@@ -604,22 +601,21 @@ class SurveyMonkeyController(BaseController):
     def create_webhook(self):
         action = self._plug.action.name
         if action == "read a survey":
-            survey_id = self._plug.plug_action_specification.all()[0].value
-            survey_id = str(survey_id)
+            survey_id = self._plug.plug_action_specification.get(action_specification__name='survey')
             webhook = Webhook.objects.create(name='surveymonkey',
                                              plug=self._plug, url='')
-            plug_id = self._plug.plug_action_specification.all()[0].id
-            redirect_uri = "%s/webhook/surveymonkey/%s/" % settings.WEBHOOK_HOST, webhook.id
+
+            redirect_uri = "{0}/webhook/surveymonkey/{1}/".format(settings.CURRENT_HOST, webhook.id)
             s = requests.session()
             s.headers.update({
                 "Authorization": "Bearer %s" % self._token,
                 "Content-Type": "application/json"
             })
             payload = {
-                "name": "Webhook_prueba",
+                "name": "Webhook_survey",
                 "event_type": "response_completed",
                 "object_type": "survey",
-                "object_ids": [survey_id],
+                "object_ids": [survey_id.value],
                 "subscription_url": redirect_uri
             }
             url = "https://api.surveymonkey.net/v3/webhooks"
@@ -647,17 +643,13 @@ class SurveyMonkeyController(BaseController):
             raise ControllerError(
                 "That specification doesn't belong to an action in this connector.")
 
-    def do_webhook_process(self, body=None, POST=None, **kwargs):
-        responses = []
-        survey = {'id': body['object_id']}
-        responses.append(survey)
-        survey_list = PlugActionSpecification.objects.filter(
-            action_specification__action__action_type='source',
-            action_specification__action__connector__name__iexact="SurveyMonkey",
-            value=body['resources']['survey_id']
-        )
-        for survey in survey_list:
-            self._connection_object, self._plug = survey.plug.connection.related_connection, survey.plug
+    def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
+        webhook = Webhook.objects.get(pk=webhook_id)
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            if not webhook.plug.is_tested:
+                webhook.plug.is_tested = True
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
             if self.test_connection():
-                self.download_source_data(event=body)
+                self.download_source_data(response=body)
+                webhook.plug.save()
         return HttpResponse(status=200)

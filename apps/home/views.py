@@ -100,31 +100,11 @@ class IncomingWebhook(View):
         if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Gmail,
                          ConnectorEnum.FacebookLeads, ConnectorEnum.MercadoLibre, ConnectorEnum.JIRA,
                          ConnectorEnum.InfusionSoft, ConnectorEnum.Asana, ConnectorEnum.WunderList,
-                         ConnectorEnum.GoogleCalendar]:
+                         ConnectorEnum.GoogleCalendar, ConnectorEnum.SurveyMonkey]:
             response = controller.do_webhook_process(body=body, POST=request.POST, META=request.META,
                                                      webhook_id=kwargs['webhook_id'])
 
             return response
-        elif connector == ConnectorEnum.SurveyMonkey:
-            responses = []
-            data = request.body.decode('utf-8')
-            data = json.loads(data)
-            survey = {'id': data['object_id']}
-            responses.append(survey)
-            qs = PlugActionSpecification.objects.filter(
-                action_specification__action__action_type='source',
-                action_specification__action__connector__name__iexact="SurveyMonkey",
-                value=data['resources']['survey_id']
-            )
-            for plug_action_specification in qs:
-                controller_class = ConnectorEnum.get_controller(connector)
-                controller = controller_class(
-                    connection=plug_action_specification.plug.connection.related_connection,
-                    plug=plug_action_specification.plug)
-                ping = controller.test_connection
-                if ping:
-                    controller.download_source_data(responses=responses)
-            response.status_code = 200
         elif connector == ConnectorEnum.Shopify:
             data = []
             fields = request.body.decode('utf-8')
