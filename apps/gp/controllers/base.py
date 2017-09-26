@@ -69,7 +69,6 @@ class BaseController(object):
                         return result
                     serialized_connection = serialize('json', [self._connection_object, ])
                     for item in result['downloaded_data']:
-                        print(self.connector)
                         DownloadHistory.objects.create(gear_id=str(self._plug.gear_source.first().id),
                                                        plug_id=str(self._plug.id), connection=serialized_connection,
                                                        raw=json.dumps(item['raw']),
@@ -102,7 +101,6 @@ class BaseController(object):
                     data_list = []
                 except Exception as e:
                     raise ControllerError(message="Unexpected Exception. Please report this error: {}.".format(str(e)))
-            print("DATALIST: len={}.".format(len(data_list)))
             try:
                 result = self.send_stored_data(data_list, **kwargs)
                 serialized_connection = serialize('json', [self._connection_object, ])
