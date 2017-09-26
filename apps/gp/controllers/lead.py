@@ -18,6 +18,7 @@ import requests
 import time
 import surveymonty
 from typeform.client import Client as TypeformClient
+import pprint
 
 
 class GoogleFormsController(GoogleBaseController):
@@ -695,6 +696,7 @@ class TypeFormController(BaseController):
             return None
 
     def create_webhook(self):
+        print('Create_webhhok')
         action = self._plug.action.name
         if action.lower() == 'new answer':
             # creación de webhook
@@ -702,17 +704,51 @@ class TypeFormController(BaseController):
             url_base = settings.WEBHOOK_HOST
             url_path = reverse('home:webhook', kwargs={'connector': 'typeform', 'webhook_id': webhook.id})
             webhook.url = url_base + url_path
-            webhook.generated_id = webhook.id
+            webhook.generated_id = webhook.id #este no es el id event
             webhook.is_active = False
             webhook.save(update_fields=['url', 'generated_id', 'is_active'])
             return True
         return False
 
     def do_webhook_process(self, body=None, GET=None, POST=None, META=None, webhook_id=None, **kwargs):
+        print('Do_webhook_process')
+
+        webhook = Webhook.objects.get(pk=webhook_id)
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            if not webhook.plug.is_tested:
+                webhook.plug.is_tested = True
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+            if self.test_connection():
+                self.download_source_data(answer=body)
+                webhook.plug.save()
+        return HttpResponse(status=200)
+
+
+
+
         response = HttpResponse(status=400)
-        print('Do', response)
-        print('code', response.status_code)
-        print('body', body)
+        pprint.pprint(body)
+        form_id = body['form_response']['form_id']
+        try:
+            plug = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=False), plug_type__iexact="source",
+                                       action__name__iexact="new answer",
+                                       plug_action_specification__value__iexact=form_id)
+        except Exception as e:
+            print(e)
+            plug = None
+        if plug:
+            print('Entro a Plug')
+            # self.create_connection(plug.connection.related_connection, plug)
+            # if self.test_connection():
+            #     try:
+            #         answers = self._client.get_form_answers(form_id)
+            #     except Exception as e:
+            #         print(e)
+            #     self.download_source_data(answer=answers)
+        # print('Este es el body', body['form_response']['form_id'])
+        # self._client = TypeformClient(self._connection_object.api_key)
+        # print(self._client.get_forms())
+        # print(self._client.get_forms())
         # if POST is not None:
         #     if 'HTTP_X_HOOK_SECRET' in META:
         #         response.status_code = 200
@@ -744,3 +780,12 @@ class TypeFormController(BaseController):
     def download_to_stored_data(self, connection_object=None, plug=None, answer=None, **kwargs):
         print('holi')
         pass
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() == 'form':
+            forms = self._client.get_forms()
+            print(forms)
+            return tuple({'id': f['id'], 'name': f['name']} for f in forms)
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
