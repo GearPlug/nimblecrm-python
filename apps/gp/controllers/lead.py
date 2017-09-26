@@ -521,7 +521,6 @@ class SurveyMonkeyController(BaseController):
         #     responses = self.get_responses().__dict__["_content"].decode()
         #     responses = json.loads(responses)["data"]
 
-        print("dato de survey monkey")
         survey_id = response['resources']['survey_id']
         new_data = []
         response_id = response["object_id"]
