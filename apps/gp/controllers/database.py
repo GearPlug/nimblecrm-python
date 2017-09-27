@@ -149,23 +149,12 @@ class MySQLController(BaseController):
         return False
 
     def _save_row(self, item):  # TODO: ASYNC METHOD
-        extra = {'controller': 'mysql', 'status': 's'}
         try:
             for stored_data in item:
                 stored_data.save()
-            self._log.info('Item ID: {0}, Connection: {1}, Plug: {2} successfully stored.'
-                           ''.format(stored_data.object_id, stored_data.plug.id, stored_data.connection.id),
-                           extra=extra)
             return True, stored_data.object_id
         except Exception as e:
-            raise
-            extra['status'] = 'f'
-            self._log.info('Item ID: {0}, Field: {1}, Connection: {2}, Plug:{3} failed'
-                           ' to save.'.format(stored_data.object_id, stored_data.name, stored_data.connection.id,
-                                              stored_data.plug.id), extra=extra)
             return False, item[0].object_id
-            # raise ControllerError(code=4, controller=ConnectorEnum.MySQL.name,
-            #                       message='Error in save row. {}'.format(str(e)))
 
     def _get_insert_statement(self, item):
         return """INSERT INTO `{0}`({1}) VALUES ({2})""".format(self._table, ",".join(item.keys()),
@@ -173,8 +162,6 @@ class MySQLController(BaseController):
 
     def send_stored_data(self, data_list):
         obj_list = []
-        extra = {'controller': 'mysql'}
-        result_list = []
         for item in data_list:
             obj_result = {'data': dict(item)}
             try:
@@ -187,21 +174,18 @@ class MySQLController(BaseController):
                 obj_result['response'] = "Failed to insert item."
                 obj_result['sent'] = False
                 obj_result['identifier'] = None
-                raise ControllerError(code=2, controller=ConnectorEnum.MySQL.name,
-                                      message='Error insert. {}'.format(str(e)))
             except MySQLdb.ProgrammingError as e:
                 obj_result['response'] = "Failed to insert item."
                 obj_result['sent'] = False
                 obj_result['identifier'] = None
-                raise ControllerError(code=3, controller=ConnectorEnum.MySQL.name,
-                                      message='Error insert. {}'.format(str(e)))
             obj_list.append(obj_result)
         try:
             self._connection.commit()
         except Exception as e:
             self._connection.rollback()
-            raise ControllerError(code=4, controller=ConnectorEnum.MySQL.name,
-                                  message='Error in commit data. {}'.format(str(e)))
+            for obj in obj_list:
+                obj['sent'] = False
+                obj['identifier'] = None
         return obj_list
 
     def get_target_fields(self, **kwargs):
@@ -308,6 +292,16 @@ class PostgreSQLController(BaseController):
                                   message='Error describing table. {}'.format(str(e)))
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, limit=50, **kwargs):
+        """
+            El DOWNLOAD_TO_STORED_DATA DEBE RETORNAR UNA LISTA CON DICTs (uno por cada dato enviado) CON ESTE FORMATO:
+            {'downloaded_data':[
+                {"raw": "(%all_data_received_in_str_format)" # -> formato json,
+                 "data": {"unique": {"name": (%stored_data_unique_field_name), "value": (%stored_data_object_id),
+                         "fields": [{"name": (%stored_data_name), "value": (%stored_data_value), ]} # -> formato json,
+                 "is_stored": True | False}]
+             "last_source_record":(%last_order_by_value)},:
+            :return: last_source_record
+            """
         order_by = self._plug.plug_action_specification.get(action_specification__name__iexact='order by')
         unique = self._plug.plug_action_specification.get(action_specification__name__iexact='unique')
         query_params = {'unique': unique, 'order_by': order_by, 'limit': limit}
@@ -315,86 +309,90 @@ class PostgreSQLController(BaseController):
             query_params['gt'] = last_source_record
         data = self.select_all(**query_params)
         parsed_data = [{'unique': {'name': unique.value, 'value': item[unique.value]},
-                        'data': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
+                        'fields': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
         new_data = []
         for item in parsed_data:
             unique_value = item['unique']['value']
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
                 new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
-                                       connection=connection_object.connection, plug=plug) for column in item['data']]
+                                       connection=connection_object.connection, plug=plug) for column in item['fields']]
                 new_data.append(new_item)
+        obj_last_source_record = None
+        result_list = []
         if new_data:
+            data.reverse()
+            parsed_data.reverse()
             new_data.reverse()
-            self._save_stored_data(new_data)
-            for item in parsed_data:
-                for column in item['data']:
+            for item in new_data:
+                obj_id = item[0].object_id
+                obj_raw = None
+                obj_data = None
+                for i in data:
+                    if obj_id in i.values():
+                        obj_raw = i
+                        break
+                data.remove(i)
+                for i in parsed_data:
+                    if obj_id == i['unique']['value']:
+                        obj_data = i
+                        break
+                parsed_data.remove(i)
+                is_stored, object_id = self._save_row(item)
+                if object_id != obj_id:
+                    print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id))
+                    # TODO: CHECK RAISE
+                result_list.append({'id': object_id, 'raw': obj_raw, 'is_stored': is_stored, 'data': obj_data})
+            for item in result_list:
+                for column in item['data']['fields']:
                     if column['name'] == order_by.value:
-                        return column['value']
+                        obj_last_source_record = column['value']
+                        break
+            return {'downloaded_data': result_list, 'last_source_record': obj_last_source_record}
         return False
 
-    def _save_stored_data(self, data):  # TODO: ASYNC METHOD
-        for item in data:
-            self._save_row(item)
-        return True
-
     def _save_row(self, item):  # TODO: ASYNC METHOD
-        extra = {'controller': 'postgresql', 'status': 's'}
         try:
             for stored_data in item:
                 stored_data.save()
-                self._log.info(
-                    'Item ID: {0}, Connection: {1}, Plug: {2} successfully stored.'.format(
-                        stored_data.object_id, stored_data.connection.id, stored_data.plug.id), extra=extra)
+            return True, stored_data.object_id
         except Exception as e:
-            extra['status'] = 'f'
-            self._log.info(
-                'Item ID: {0}, Field: {1}, Connection: {2}, Plug:{3} failed to save.'.format(
-                    stored_data.object_id, stored_data.name, stored_data.connection.id, stored_data.plug.id),
-                extra=extra)
-            raise ControllerError(code=4, controller=ConnectorEnum.PostgreSQL.name,
-                                  message='Error in save row. {}'.format(str(e)))
+            return False, item[0].object_id
 
     def _get_insert_statement(self, item):
         return """INSERT INTO {0}.{1} ({2}) VALUES ({3}) RETURNING id""".format(
             self._schema, self._table, ",".join(item.keys()),
             ",".join('\'{0}\''.format(i) for i in item.values()))
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[-1]]
-                except Exception as e:
-                    data_list = []
-        if self._plug is not None:
-            obj_list = []
-            extra = {'controller': 'postgresql'}
-            for item in data_list:
-                try:
-                    insert = self._get_insert_statement(item)
-                    self._cursor.execute(insert)
-                    extra['status'] = 's'
-                    fetch = self._cursor.fetchone()[0]
-                    # TODO : no se obtiene el fetch del cursor. REVISAR.
-                    self._log.info('Item: %s successfully sent.' % (fetch), extra=extra)
-                    obj_list.append(fetch)
-                except psycopg2.ProgrammingError:
-                    raise
-                    print("Problema en el insert del Item: {0}.".format(item))
-                    # TODO: MARCAR COMO ENVIADO Y NOTIFICAR AL USER
-                    obj_list.append(-1)
-                except Exception as e:
-                    print(e)
-                    extra['status'] = 'f'
-                    self._log.info('Item: %s failed to send.' % (item), extra=extra)
+    def send_stored_data(self, data_list):
+        obj_list = []
+        for item in data_list:
+            obj_result = {'data': dict(item)}
             try:
-                self._connection.commit()
-            except:
-                self._connection.rollback()
-            return obj_list
-        raise ControllerError("There's no plug")
+                insert = self._get_insert_statement(item)
+                self._cursor.execute(insert)
+                fetch = self._cursor.fetchone()[0]
+                obj_result['response'] = "Succesfully inserted item with id {0}.".format(fetch)
+                obj_result['sent'] = True
+                obj_result['identifier'] = fetch
+            except psycopg2.ProgrammingError:  # TODO REVISAR
+                obj_result['response'] = "Se envio el objeto pero no existe resultado.."
+                obj_result['sent'] = True
+                obj_result['identifier'] = "-1"
+            except Exception as e:
+                obj_result['response'] = "Failed to insert item."
+                obj_result['sent'] = False
+                obj_result['identifier'] = None
+            obj_list.append(obj_result)
+
+        try:
+            self._connection.commit()
+        except:
+            self._connection.rollback()
+            for obj in obj_list:
+                obj['sent'] = False
+                obj['identifier'] = None
+        return obj_list
 
     def get_mapping_fields(self, **kwargs):
         return [MapField(f, controller=ConnectorEnum.PostgreSQL) for f in self.describe_table()]

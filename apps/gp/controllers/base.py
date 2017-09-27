@@ -52,7 +52,7 @@ class BaseController(object):
 
     def download_source_data(self, **kwargs):
         """
-        El SEND_STORED_DATA DEBE RETORNAR UNA LISTA CON DICTs (uno por cada dato enviado) CON ESTE FORMATO:
+        El DOWNLOAD_TO_STORED_DATA DEBE RETORNAR UNA LISTA CON DICTs (uno por cada dato enviado) CON ESTE FORMATO:
         {'downloaded_data':[
             {"raw": "(%all_data_received_in_str_format)" # -> formato json,
              "data": {"unique": {"name": (%stored_data_unique_field_name), "value": (%stored_data_object_id),
