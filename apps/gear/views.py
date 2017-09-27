@@ -255,14 +255,10 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
     def get_available_source_fields(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
         if c == ConnectorEnum.GoogleContacts:
-            self.google_contacts_controller.create_connection(
-                plug.connection.related_connection, plug)
-            return ['%%{0}%%'.format(field) for field in
-                    self.google_contacts_controller.get_contact_fields()]
+            self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
+            return ['%%{0}%%'.format(field) for field in self.google_contacts_controller.get_contact_fields()]
         return ['%%{0}%%'.format(item['name']) for item in
-                StoredData.objects.filter(plug=plug,
-                                          connection=plug.connection).values(
-                    'name').distinct()]
+                StoredData.objects.filter(plug=plug, connection=plug.connection).values('name').distinct()]
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)

@@ -86,53 +86,19 @@ class IncomingWebhook(View):
             return response
 
     def post(self, request, *args, **kwargs):
-        response = HttpResponse(status=400)
         connector_name = self.kwargs['connector'].lower()
         connector = ConnectorEnum.get_connector(name=connector_name)
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class()
-        # SLACK
         try:
             body = json.loads(request.body.decode('utf-8'))
         except Exception as e:
             print(e)
             body = None
-        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey, ConnectorEnum.Gmail,
-                         ConnectorEnum.FacebookLeads, ConnectorEnum.MercadoLibre, ConnectorEnum.JIRA,
-                         ConnectorEnum.InfusionSoft, ConnectorEnum.Asana, ConnectorEnum.WunderList,
-                         ConnectorEnum.GoogleCalendar, ConnectorEnum.SurveyMonkey, ConnectorEnum.Shopify,
-                         ConnectorEnum.GitLab]:
-            response = controller.do_webhook_process(body=body, POST=request.POST, META=request.META,
-                                                     webhook_id=kwargs['webhook_id'])
+        response = controller.do_webhook_process(body=body, POST=request.POST, META=request.META,
+                                                 webhook_id=kwargs['webhook_id'])
+        return response
 
-            return response
-
-        elif connector == ConnectorEnum.ActiveCampaign:
-            response.status_code = 200
-            data = []
-            fields = dict(request.POST)
-            data.append(fields)
-            clean_data = {}
-            for i in data:
-                if type(i) == dict:
-                    for k, v in i.items():
-                        if type(v) == list:
-                            if len(v) < 2:
-                                clean_data[k] = v[0]
-            clean_data = [clean_data]
-            webhook_id = kwargs['webhook_id']
-            w = Webhook.objects.get(pk=webhook_id)
-            if w.plug.gear_source.first().is_active or not w.plug.is_tested:
-                if not w.plug.is_tested:
-                    w.plug.is_tested = True
-                controller_class = ConnectorEnum.get_controller(connector)
-                controller = controller_class(
-                    connection=w.plug.connection.related_connection, plug=w.plug)
-                ping = controller.test_connection()
-                if ping:
-                    controller.download_source_data(data=clean_data)
-                    w.plug.save()
-                response.status_code = 200
 
 class HelpView(LoginRequiredMixin, TemplateView):
     template_name = 'home/help.html'
