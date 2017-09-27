@@ -4,6 +4,11 @@ from apps.gp.controllers.utils import dynamic_import
 
 
 class ConnectorEnum(Enum):
+    """
+    FORMATO:
+    Name = ID (igual al de db), category, connection_type
+
+    """
     FacebookLeads = 1, 'lead', 'special'
     MySQL = 2, 'database', 'form'
     SugarCRM = 3, 'crm', 'form'
@@ -79,7 +84,7 @@ class ConnectorEnum(Enum):
                 if name.lower() == field.name.lower():
                     return field
 
-    def get_connector_list():
+    def get_connector_list(is_active=None, webhook=None):
         return [field for field in ConnectorEnum]
 
     def get_fields(connector):
@@ -91,12 +96,12 @@ class ConnectorEnum(Enum):
         return apps.get_model('gp', '%sConnection' % connector.name)
 
     def get_controller(connector):
-        return dynamic_import(connector.name,
-                              path="apps.gp.controllers.{0}".format(
-                                  connector.category), suffix='Controller')
+        return dynamic_import(connector.name, path="apps.gp.controllers.{0}".format(connector.category),
+                              suffix='Controller')
 
 
 class GoogleAPIEnum(Enum):
+    "NAME = ID?, SCOPE"
     GoogleSpreadSheets = 1, 'https://www.googleapis.com/auth/drive'
     GoogleForms = 2, 'https://www.googleapis.com/auth/drive'
     GoogleCalendar = 3, 'https://www.googleapis.com/auth/calendar'

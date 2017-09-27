@@ -134,6 +134,10 @@ class BaseController(object):
         raise ControllerError('Not implemented yet.')
 
     @property
+    def has_webhook(self):
+        return False
+
+    @property
     def connector(self):
         return self._connector
 
