@@ -950,20 +950,24 @@ class VtigerController(BaseController):
     _session_name = None
     _user_id = None
 
-    def __init__(self, *args, **kwargs):
-        super(VtigerController, self).__init__(*args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(VtigerController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(VtigerController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._user = self._connection_object.connection_user
-                    self._password = self._connection_object.connection_access_key
-                    self._url = self._connection_object.url
-                    self._token = self._connection_object.token
-                except Exception as e:
-                    print(e)
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(VtigerController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._user = self._connection_object.connection_user
+                self._password = self._connection_object.connection_access_key
+                self._url = self._connection_object.url
+                self._token = self._connection_object.token
+            except Exception as e:
+                print(e)
+        print('TOKEN', self._token)
+        print('PASSWORD', self._password)
+        print('USER', self._user)
+        print('URL', self._url)
+
         if self._url is not None and self._token is not None:
             if not self._token:
                 self._token = self.get_token(self._user, self._password)
@@ -971,11 +975,14 @@ class VtigerController(BaseController):
             if self._session_name is None:
                 self._token = self.get_token(self._user, self._password)
                 self._session_name, self._user_id = self.login()
+        else:
+            print('PROBLEM')
 
     def test_connection(self):
         return self._session_name is not None
 
     def get_token(self, user, passwd, url=None):
+
         if self._url is None and url is not None:
             self._url = url
         if self._url is not None:
@@ -987,7 +994,7 @@ class VtigerController(BaseController):
                     return r['result']['token']
                 return None
             except Exception as e:
-                print(e)
+                print('GET TOKEN EXCP', e)
                 return None
 
     def get_tokenized_access_key(self):
@@ -998,22 +1005,34 @@ class VtigerController(BaseController):
             return None
 
     def login(self):
+        tokenized_access_key = self.get_tokenized_access_key()
+        print('tokenized_access_key', tokenized_access_key)
+        values = {'accessKey': tokenized_access_key, 'operation': 'login',
+                  'username': self._user}
+        print('VALUES', values)
+        data = urllib.parse.urlencode(values).encode('utf-8')
+        print('DATA', data)
         try:
-            tokenized_access_key = self.get_tokenized_access_key()
-            values = {'accessKey': tokenized_access_key, 'operation': 'login',
-                      'username': self._user}
-            data = urllib.parse.urlencode(values).encode('utf-8')
             request = urllib.request.Request(self._url, data)
-            response = json.loads(
-                urllib.request.urlopen(request).read().decode('utf-8'))
-            if response['success'] is True:
-                session_name = response['result']['sessionName']
-                user_id = response['result']['userId']
-                return session_name, user_id
-            elif response['success'] is False:
-                return None, None
         except Exception as e:
-            raise
+            print('PROBLEMAS HACIENDO REQUEST', e)
+        try:
+            # response = json.loads(
+            #     urllib.request.urlopen(request).read().decode('utf-8'))
+            response = urllib.request.urlopen(request).read().decode('utf-8')
+            print('RESPONSE', response)
+            print('RESPONSE', response.body)
+
+        except Exception as e:
+            print('PROBLEMAS HACIENDO RESPONSE', e)
+        if response['success'] is True:
+            print('LOGIN EXITOSO')
+            session_name = response['result']['sessionName']
+            user_id = response['result']['userId']
+            return session_name, user_id
+        elif response['success'] is False:
+            print('LOGIN FRACASO')
+            return None, None
 
     def get_module(self, module_name):
         values = {'sessionName': self._session_name, 'operation': 'describe',
@@ -1143,6 +1162,7 @@ class VtigerController(BaseController):
             action_specification__name__iexact='module').value
         data = self.get_module_elements(limit=30,
                                         module=self.get_module_name(module_id))
+        print('DATA', data)
         new_data = []
         for field in data:
             q = StoredData.objects.filter(
