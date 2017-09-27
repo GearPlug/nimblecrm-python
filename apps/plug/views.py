@@ -60,16 +60,11 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         ping = controller.test_connection()
         if ping:
             if self.object.is_source:
-                if c in [ConnectorEnum.Bitbucket, ConnectorEnum.JIRA, ConnectorEnum.SurveyMonkey,
-                         ConnectorEnum.Instagram, ConnectorEnum.YouTube, ConnectorEnum.Shopify,
-                         ConnectorEnum.GoogleCalendar, ConnectorEnum.Asana, ConnectorEnum.Salesforce,
-                         ConnectorEnum.Mandrill, ConnectorEnum.FacebookLeads, ConnectorEnum.Gmail,
-                         ConnectorEnum.GitLab, ConnectorEnum.ActiveCampaign,ConnectorEnum.InfusionSoft,
-                         ConnectorEnum.TypeForm,]:
+                if controller.has_webhook:
                     controller.create_webhook()
                 else:
                     print("voy a descargar")
-                    last_source_record = controller.download_to_stored_data(self.object.connection.related_connection,
+                    last_source_record = controller.download_source_data(self.object.connection.related_connection,
                                                                         self.object, limit=1)
         self.request.session['source_connection_id'] = None
         self.request.session['target_connection_id'] = None

@@ -2,7 +2,8 @@ from apps.gp.controllers.base import BaseController, GoogleBaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification, \
-    Webhook, PlugActionSpecification
+    Webhook, PlugActionSpecification, Plug
+from django.db.models import Q
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 import httplib2
@@ -23,6 +24,7 @@ from collections import OrderedDict
 from evernote.edam.type.ttypes import NoteSortOrder
 from django.conf import settings
 import re
+from django.shortcuts import HttpResponse
 
 
 class GoogleSpreadSheetsController(GoogleBaseController):
@@ -68,6 +70,7 @@ class GoogleSpreadSheetsController(GoogleBaseController):
             files = None
         return files is not None
 
+
     def download_to_stored_data(self, connection_object, plug, *args,
                                 **kwargs):
         if plug is None:
@@ -81,14 +84,12 @@ class GoogleSpreadSheetsController(GoogleBaseController):
                 connection=connection_object.connection, plug=plug,
                 object_id=idx + 1)
             if not q.exists():
-                try:
-                    for idx2, cell in enumerate(item):
-                        new_data.append(StoredData(name=sheet_values[0][idx2], value=cell, object_id=idx + 1,
-                                                   connection=connection_object.connection, plug=plug))
-                except IndexError as e:
-                    raise ControllerError(code=0, controller=self.connector,
-                                          message='Los valores no corresponden con los campos existentes.'.format(
-                                              str(e)))
+                for idx2, cell in enumerate(item):
+                    new_data.append(
+                        StoredData(name=sheet_values[0][idx2], value=cell,
+                                   object_id=idx + 1,
+                                   connection=connection_object.connection,
+                                   plug=plug))
         if new_data:
             field_count = len(sheet_values)
             extra = {'controller': 'google_spreadsheets'}
@@ -177,7 +178,6 @@ class GoogleSpreadSheetsController(GoogleBaseController):
         res = sheets_service.spreadsheets().values().get(
             spreadsheetId=self._spreadsheet_id,
             range='{0}'.format(self._worksheet_name)).execute()
-        # TODO try para ver si llego la data. Sino levantar error de mala configuracion en la hoja de calculo
         values = res['values']
         if from_row is None and limit is None:
             return values
@@ -253,24 +253,30 @@ class GoogleCalendarController(GoogleBaseController):
             except Exception as e:
                 print("Error GoogleCalendar attributes {}".format(e))
         if credentials_json is not None:
-            self._credential = GoogleClient.OAuth2Credentials.from_json(
-                json.dumps(credentials_json))
+            try:
+                self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
+                http_auth = self._credential.authorize(httplib2.Http())
+                self._connection = discovery.build('calendar', 'v3', http=http_auth)
+            except Exception as e:
+                print("Error GoogleCalendar attributes {}".format(e))
 
     def test_connection(self):
         try:
             self._refresh_token()
             calendar_list = self._connection.calendarList().list().execute()
             calendars = calendar_list['items']
+            return calendars is not None
         except GoogleClient.HttpAccessTokenRefreshError:
             self._report_broken_token()
             calendars = None
         except Exception as e:
             print("Error Test connection GoogleCalendar")
             calendars = None
-        return calendars is not None
+        return calendars
 
     def download_to_stored_data(self, connection_object=None, plug=None,
                                 events=None, **kwargs):
+        print("download store data")
         if events is not None:
             _items = []
             for event in events:
@@ -449,6 +455,18 @@ class GoogleCalendarController(GoogleBaseController):
             raise ControllerError(
                 "That specification doesn't belong to an action in this connector.")
 
+    def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
+        webhook= Webhook.objects.get(pk=webhook_id)
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            if not webhook.plug.is_tested:
+                webhook.plug.is_tested = True
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+            if self.test_connection():
+                events = self.get_events()
+                self.download_source_data(events=events)
+                webhook.plug.save()
+        return HttpResponse(status=200)
+
 
 class EvernoteController(BaseController):
     _token = None
@@ -554,17 +572,18 @@ class EvernoteController(BaseController):
         note.content += '<en-note>' + c + '</en-note>'
         return noteStore.createNote(note)
 
-
 class WunderListController(BaseController):
     _token = None
     _api = wunderpy2.WunderApi()
     _client = None
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(WunderListController, self).create_connection(*args)
-            if self._connection_object is not None:
-                self._token = self._connection_object.token
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(WunderListController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(WunderListController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            self._token = self._connection_object.token
 
     def test_connection(self):
         self._client = self._api.get_client(
@@ -574,7 +593,6 @@ class WunderListController(BaseController):
             return self._token is not None
         except Exception as e:
             return self._token is None
-        return True
 
     def get_lists(self):
         response = self._client.authenticated_request(
@@ -629,9 +647,8 @@ class WunderListController(BaseController):
 
     def create_webhook(self):
         action = self._plug.action.name
-        if action == 'completed task':
-            list_id = self._plug.plug_action_specification.get(
-                action_specification__name='task list')
+        if action == 'completed task' or action == "new task":
+            list_id = self._plug.plug_action_specification.get(action_specification__name='list')
             webhook = Webhook.objects.create(
                 name='wunderlist', plug=self._plug, url='')
             url_base = settings.WEBHOOK_HOST
@@ -717,7 +734,7 @@ class WunderListController(BaseController):
                     task.save()
                     self._log.info(
                         'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            task.object_id, task.plug.id, task.connection.id),
+                        task.object_id, task.plug.id, task.connection.id),
                         extra=extra)
                 except Exception as e:
                     extra['status'] = 'f'
@@ -752,10 +769,28 @@ class WunderListController(BaseController):
                 if task.status_code in [200, 201]:
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (
-                        task.json()['data']['name']), extra=extra)
+                    task.json()['data']['name']), extra=extra)
                     obj_list.append(task)
                 else:
                     extra['status'] = 'f'
                     self._log.info('Item: failed to send.', extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
+
+    def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
+        webhook= Webhook.objects.get(pk=webhook_id)
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            if not webhook.plug.is_tested:
+                webhook.plug.is_tested = True
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+            action_name = webhook.plug.action.name
+            if self.test_connection():
+                if body['operation'] == 'create' and action_name == 'new task':
+                    self.download_source_data(task=body)
+                    webhook.plug.save()
+                elif body['operation'] == 'update' and action_name == 'completed task':
+                    if 'completed' in body['data'] and body['data']['completed'] == True:
+                        self.download_source_data(task=body)
+                        webhook.plug.save()
+        return HttpResponse(status=200)
+

@@ -105,8 +105,8 @@ class MysqlControllerTestCases(TestCase):
         cls.gear = Gear.objects.create(**gear)
         cls.gear_map = GearMap.objects.create(gear=cls.gear)
 
-        map_data_1 = {'target_name': 'old_id', 'source_value': '%%id%%', 'gear_map': cls.gear_map}
-        map_data_2 = {'target_name': 'name', 'source_value': '%%name%%', 'gear_map': cls.gear_map}
+        map_data_1 = {'target_name': 'nombre', 'source_value': '%%nombre%%', 'gear_map': cls.gear_map}
+        map_data_2 = {'target_name': 'apellido', 'source_value': '%%apellido%%', 'gear_map': cls.gear_map}
         GearMapData.objects.create(**map_data_1)
         GearMapData.objects.create(**map_data_2)
 
@@ -182,5 +182,5 @@ class MysqlControllerTestCases(TestCase):
         stored_data = StoredData.objects.filter(**query_params)
         target_fields = OrderedDict((data.target_name, data.source_value) for data in GearMapData.objects.filter(gear_map=self.gear_map))
         source_data = [{'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}} for item in stored_data.values_list('object_id').distinct()]
-        entries = self.target_controller.send_stored_data(source_data, target_fields, is_first=is_first)
+        entries = self.target_controller.send_target_data(source_data, target_fields, is_first=is_first)
         self.assertIsInstance(entries, list)

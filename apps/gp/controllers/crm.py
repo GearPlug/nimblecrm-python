@@ -1,9 +1,11 @@
+import re
 import json
 import os
 import string
 import base64
 import urllib.error
 import urllib.request
+from django.shortcuts import HttpResponse
 from hashlib import md5
 from urllib import parse
 from urllib.parse import urlparse
@@ -1254,6 +1256,16 @@ class ActiveCampaignController(BaseController):
         else:
             return False
 
+    def get_custom_fields(self):
+        params = [('api_action', "list_field_view"), ('api_key', self._key), ('api_output', 'json'), ('ids', 'all')]
+        url = "{0}/admin/api.php".format(self._host)
+        r = requests.get(url=url, params=params)
+        if r.status_code == 200:
+            result = r.json()
+            return {str(int(v['id']) - 1): {'name': v['perstag'], 'id': v['id'], 'label': v['title']} for (k, v) in
+                    result.items() if k not in ['result_code', 'result_output', 'result_message']}
+        return []
+
     def get_lists(self):
         params = [
             ('api_action', "list_list"),
@@ -1346,12 +1358,13 @@ class ActiveCampaignController(BaseController):
         ]
 
     def get_target_fields(self, **kwargs):
-        return [{'name': 'email', 'type': 'varchar', 'required': True},
-                {'name': 'first_name', 'type': 'varchar', 'required': False},
-                {'name': 'last_name', 'type': 'varchar', 'required': False},
-                {'name': 'phone', 'type': 'varchar', 'required': False},
-                {'name': 'orgname', 'type': 'varchar', 'required': False},
-                ]
+        return [
+            {'name': 'email', 'label': 'Email', 'type': 'varchar', 'required': True},
+            {'name': 'first_name', 'label': 'First Name', 'type': 'varchar', 'required': False},
+            {'name': 'last_name', 'label': 'Last Name', 'type': 'varchar', 'required': False},
+            {'name': 'phone', 'label': 'Phone', 'type': 'varchar', 'required': False},
+            {'name': 'orgname', 'label': 'Organization Name', 'type': 'varchar', 'required': False},
+        ]
 
     def create_user(self, data):
         params = [
@@ -1359,14 +1372,12 @@ class ActiveCampaignController(BaseController):
             ('api_key', self._key),
             ('api_output', 'json'),
         ]
-        data = data
         final_url = "{0}/admin/api.php".format(self._host)
         r = requests.post(url=final_url, data=data, params=params).json()
         return r
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
-
         if self._plug is not None:
             obj_list = []
             extra = {'controller': 'activecampaign'}
@@ -1388,22 +1399,17 @@ class ActiveCampaignController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def download_to_stored_data(self, connection_object=None, plug=None,
-                                data=None, **kwargs):
+    def download_to_stored_data(self, connection_object=None, plug=None, data=None, **kwargs):
         new_data = []
         if data is not None:
-            contact_id = data[0]['contact[id]']
+            contact_id = data['id']
             object_id = int(contact_id)
-            q = StoredData.objects.filter(object_id=object_id,
-                                          connection=connection_object.id,
-                                          plug=plug.id)
+            q = StoredData.objects.filter(object_id=object_id, connection=connection_object.id, plug=plug.id)
             if not q.exists():
-                for i in data:
-                    for k, v in i.items():
-                        new_data.append(StoredData(name=k, value=v or '',
-                                                   object_id=object_id,
-                                                   connection=connection_object.connection,
-                                                   plug=plug))
+                for k, v in data.items():
+                    new_data.append(
+                        StoredData(name=k, value=v or '', object_id=object_id, connection=connection_object.connection,
+                                   plug=plug))
             if new_data:
                 field_count = len(data)
                 extra = {'controller': 'activecampaign'}
@@ -1471,6 +1477,38 @@ class ActiveCampaignController(BaseController):
         final_url = "{0}/admin/api.php".format(self._host)
         r = requests.post(url=final_url, params=params)
         return r.json()
+
+    def do_webhook_process(self, body=None, POST=None, webhook_id=None, **kwargs):
+        if 'list' in POST and POST['list'] == '0':
+            # ActiveCampaign envia dos webhooks, el primero es cuando se crea el contacto, el segundo cuando el contacto
+            # creado es agregado a una lista. Cuando el contacto es agregado a una lista el webhook incluye los custom
+            # fields por eso descartamos los webhooks de contactos que no hayan sido agregados a una lista (list = 0).
+            return HttpResponse(status=200)
+
+        webhook = Webhook.objects.get(pk=webhook_id)
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+            expr = '\[(\w+)\](?:\[(\d+)\])?'
+            clean_data = {}
+            custom_fields = self.get_custom_fields()
+            for k, v in POST.items():
+                m = re.search(expr, k)
+                if m:
+                    n = m.group(2)
+                    if n is None:
+                        key = m.group(1)
+                    else:
+                        key = custom_fields[str(int(n) - 1)]['label']
+                else:
+                    key = None
+                if key is not None and key not in clean_data:
+                    clean_data[key] = v
+            if not webhook.plug.is_tested:
+                webhook.plug.is_tested = True
+            if self.test_connection():
+                self.download_source_data(data=clean_data)
+                webhook.plug.save()
+        return HttpResponse(status=200)
 
 
 class InfusionSoftController(BaseController):
