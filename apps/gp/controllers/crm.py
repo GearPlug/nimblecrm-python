@@ -945,9 +945,10 @@ class HubSpotController(BaseController):
 
 
 class VtigerController(BaseController):
-    _url = None
-    _token = None
+    _base_url = None
+    _access_key = None
     _session_name = None
+    _token = None
     _user_id = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
@@ -958,80 +959,68 @@ class VtigerController(BaseController):
         if self._connection_object is not None:
             try:
                 self._user = self._connection_object.connection_user
-                self._password = self._connection_object.connection_access_key
-                self._url = self._connection_object.url
-                self._token = self._connection_object.token
+                self._password = self._connection_object.connection_password
+                self._base_url = self._connection_object.url
+                self._access_key = self._connection_object.connection_access_key
             except Exception as e:
                 print(e)
-        print('TOKEN', self._token)
-        print('PASSWORD', self._password)
-        print('USER', self._user)
-        print('URL', self._url)
 
-        if self._url is not None and self._token is not None:
+        if self._base_url is not None and self._access_key is not None:
             if not self._token:
-                self._token = self.get_token(self._user, self._password)
+                self._token = self.get_token(self._user, self._base_url)
             self._session_name, self._user_id = self.login()
             if self._session_name is None:
-                self._token = self.get_token(self._user, self._password)
+                self._token = self.get_token(self._user, self._base_url)
                 self._session_name, self._user_id = self.login()
         else:
-            print('PROBLEM')
+            return None
 
+    # TEST CONNECTION NO FUNCIONANDO CORRECTAMENTE.
     def test_connection(self):
         return self._session_name is not None
 
-    def get_token(self, user, passwd, url=None):
+    def get_token(self, user, base_url):
 
-        if self._url is None and url is not None:
-            self._url = url
-        if self._url is not None:
+        endpoint_url = '/webservice.php?operation=getchallenge'
+        url = self._base_url + endpoint_url
+        if url is not None:
             try:
                 values = {'operation': 'getchallenge', 'username': user}
-                r = requests.get(self._url, params=values)
+                r = requests.get(url, params=values)
                 if r.status_code == 200:
                     r = r.json()
                     return r['result']['token']
                 return None
             except Exception as e:
-                print('GET TOKEN EXCP', e)
                 return None
 
     def get_tokenized_access_key(self):
         try:
             return md5(
-                str(self._token + self._password).encode('utf-8')).hexdigest()
+                str(self._token + self._access_key).encode('utf-8')).hexdigest()
         except Exception as es:
             return None
 
     def login(self):
+        endpoint_url = '/webservice.php'
+        url = self._base_url + endpoint_url
         tokenized_access_key = self.get_tokenized_access_key()
-        print('tokenized_access_key', tokenized_access_key)
         values = {'accessKey': tokenized_access_key, 'operation': 'login',
                   'username': self._user}
-        print('VALUES', values)
         data = urllib.parse.urlencode(values).encode('utf-8')
-        print('DATA', data)
         try:
-            request = urllib.request.Request(self._url, data)
+            request = urllib.request.Request(url, data)
         except Exception as e:
-            print('PROBLEMAS HACIENDO REQUEST', e)
-        try:
-            # response = json.loads(
-            #     urllib.request.urlopen(request).read().decode('utf-8'))
-            response = urllib.request.urlopen(request).read().decode('utf-8')
-            print('RESPONSE', response)
-            print('RESPONSE', response.body)
+            print(e)
 
-        except Exception as e:
-            print('PROBLEMAS HACIENDO RESPONSE', e)
+        response = urllib.request.urlopen(request).read().decode('utf-8')
+
         if response['success'] is True:
             print('LOGIN EXITOSO')
             session_name = response['result']['sessionName']
             user_id = response['result']['userId']
             return session_name, user_id
         elif response['success'] is False:
-            print('LOGIN FRACASO')
             return None, None
 
     def get_module(self, module_name):
