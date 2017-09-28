@@ -1212,7 +1212,6 @@ class VtigerController(BaseController):
             return False
 
     def send_stored_data(self, data_list):
-        print('SEND STORED DATA')
         obj_list = []
         module_id = self._plug.plug_action_specification.get(
             action_specification__name__iexact='module').value
