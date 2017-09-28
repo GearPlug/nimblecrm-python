@@ -1311,8 +1311,8 @@ class ActiveCampaignController(BaseController):
 
     def create_webhook(self):
         action = self._plug.action.name
-        if action == 'new contact' or 'subscribe':
-            if action == 'subscribe':
+        if action == 'new contact' or 'new subscriber':
+            if action == 'new subscriber':
                 selected_list = self._plug.plug_action_specification.get(
                 action_specification__name='list')
                 list_id = selected_list.value
@@ -1381,28 +1381,61 @@ class ActiveCampaignController(BaseController):
         r = requests.post(url=final_url, data=data, params=params).json()
         return r
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if self._plug is not None:
-            obj_list = []
-            extra = {'controller': 'activecampaign'}
-            for item in data_list:
-                try:
-                    response = self.create_user(item)
-                    self._log.info(
-                        'Item: %s successfully sent.' % (
-                            list(item.items())[0][1]),
-                        extra=extra)
-                    obj_list.append(response['subscriber_id'])
-                except Exception as e:
-                    print(e)
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item: %s failed to send.' % (
-                            list(item.items())[0][1]),
-                        extra=extra)
-            return obj_list
-        raise ControllerError("There's no plug")
+    def subscribe_contact(self, data):
+        list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
+        params = [
+            ('api_action', "contact_add"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+        ]
+        data['p[{0}]'.format(list_id)] = list_id
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, data=data, params=params).json()
+        return r
+
+    def unsubscribe_contact(self, data):
+        _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
+        params = [
+            ('api_action', "contact_delete_list"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('id', _list_id),
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, data=data, params=params).json()
+        return r
+
+    def send_stored_data(self, data_list):
+        extra = {'controller': 'activecampaign'}
+        action = self._plug.action.name
+        result_list = []
+        for item in data_list:
+            sent = False
+            identifier = ""
+            if action == 'create contact':
+                response = self.create_user(item)
+            elif action == 'subscribe a contact':
+                response = self.subscribe_contact(item)
+            elif action == 'unsubscribe a contact':
+                response = self.unsubscribe_contact(item)
+            print("response")
+            print(response)
+            if response['result_code'] == 1:
+                sent = True
+                identifier = response['subscriber_id']
+                self._log.info(
+                    'Item: %s successfully sent.' % (response['subscriber_id']),
+                    extra=extra)
+            else:
+                print(response['result_message'])
+                extra['status'] = 'f'
+                self._log.info(
+                    'Item: %s failed to send.' % (
+                        list(item.items())[0][1]),
+                    extra=extra)
+            result_list.append(
+                {'data': dict(item), 'response': response['result_message'], 'sent': sent, 'identifier': identifier})
+        return result_list
 
     def download_to_stored_data(self, connection_object=None, plug=None, last_source_record=None, data=None, **kwargs):
         new_data = []
