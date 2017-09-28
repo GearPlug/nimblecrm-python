@@ -104,11 +104,11 @@ class MySQLController(BaseController):
         if last_source_record is not None:
             query_params['gt'] = last_source_record
         data = self.select_all(**query_params)
-        parsed_data = [{'unique': {'name': unique.value, 'value': item[unique.value]},
+        parsed_data = [{'identifier': {'name': unique.value, 'value': item[unique.value]},
                         'fields': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
         new_data = []
         for item in parsed_data:
-            unique_value = item['unique']['value']
+            unique_value = item['identifier']['value']
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
                 new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
@@ -131,7 +131,7 @@ class MySQLController(BaseController):
                         break
                 data.remove(i)
                 for i in parsed_data:
-                    if obj_id == i['unique']['value']:
+                    if obj_id == i['identifier']['value']:
                         obj_data = i
                         break
                 parsed_data.remove(i)
@@ -139,7 +139,7 @@ class MySQLController(BaseController):
                 if object_id != obj_id:
                     print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id))
                     # TODO: CHECK RAISE
-                result_list.append({'id': object_id, 'raw': obj_raw, 'is_stored': is_stored, 'data': obj_data})
+                result_list.append({'identifier': object_id, 'raw': obj_raw, 'is_stored': is_stored, 'data': obj_data})
             for item in result_list:
                 for column in item['data']['fields']:
                     if column['name'] == order_by.value:
@@ -308,11 +308,11 @@ class PostgreSQLController(BaseController):
         if last_source_record is not None:
             query_params['gt'] = last_source_record
         data = self.select_all(**query_params)
-        parsed_data = [{'unique': {'name': unique.value, 'value': item[unique.value]},
+        parsed_data = [{'identifier': {'name': unique.value, 'value': item[unique.value]},
                         'fields': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
         new_data = []
         for item in parsed_data:
-            unique_value = item['unique']['value']
+            unique_value = item['identifier']['value']
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
                 new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
@@ -334,7 +334,7 @@ class PostgreSQLController(BaseController):
                         break
                 data.remove(i)
                 for i in parsed_data:
-                    if obj_id == i['unique']['value']:
+                    if obj_id == i['identifier']['value']:
                         obj_data = i
                         break
                 parsed_data.remove(i)
@@ -342,7 +342,7 @@ class PostgreSQLController(BaseController):
                 if object_id != obj_id:
                     print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id))
                     # TODO: CHECK RAISE
-                result_list.append({'id': object_id, 'raw': obj_raw, 'is_stored': is_stored, 'data': obj_data})
+                result_list.append({'identifier': object_id, 'raw': obj_raw, 'is_stored': is_stored, 'data': obj_data})
             for item in result_list:
                 for column in item['data']['fields']:
                     if column['name'] == order_by.value:
@@ -384,7 +384,6 @@ class PostgreSQLController(BaseController):
                 obj_result['sent'] = False
                 obj_result['identifier'] = None
             obj_list.append(obj_result)
-
         try:
             self._connection.commit()
         except:
