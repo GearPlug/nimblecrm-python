@@ -27,6 +27,7 @@ from django.conf import settings
 from django.http import HttpResponse
 import time
 
+
 import requests
 
 
@@ -1310,9 +1311,13 @@ class ActiveCampaignController(BaseController):
 
     def create_webhook(self):
         action = self._plug.action.name
-        if action == 'new contact':
-            selected_list = self._plug.plug_action_specification.get(
+        if action == 'new contact' or 'subscribe':
+            if action == 'subscribe':
+                selected_list = self._plug.plug_action_specification.get(
                 action_specification__name='list')
+                list_id = selected_list.value
+            elif action == 'new contact':
+                list_id = 0
             # Creacion de Webhook
             webhook = Webhook.objects.create(name='activecampaign', url='',
                                              plug=self._plug, expiration='')
@@ -1331,7 +1336,7 @@ class ActiveCampaignController(BaseController):
             post_array = {
                 "name": "GearPlug WebHook",
                 "url": url,
-                "lists": selected_list.value,
+                "lists": list_id,
                 "action": "subscribe",
                 "init": "admin"
             }
@@ -1399,7 +1404,7 @@ class ActiveCampaignController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def download_to_stored_data(self, connection_object=None, plug=None, data=None, **kwargs):
+    def download_to_stored_data(self, connection_object=None, plug=None, last_source_record=None, data=None, **kwargs):
         new_data = []
         if data is not None:
             contact_id = data['id']
@@ -1413,9 +1418,13 @@ class ActiveCampaignController(BaseController):
             if new_data:
                 field_count = len(data)
                 extra = {'controller': 'activecampaign'}
+                fields = []
+                is_stored = False
                 for i, item in enumerate(new_data):
                     try:
                         item.save()
+                        fields.append({"name": item.name, "valor": item.value})
+                        is_stored = True
                         if (i + 1) % field_count == 0:
                             extra['status'] = 's'
                             self._log.info(
@@ -1431,7 +1440,8 @@ class ActiveCampaignController(BaseController):
                             % (item.object_id, item.name, item.plug.id,
                                item.connection.id),
                             extra=extra)
-            return True
+                result_list=[{'raw':data,'data':{'unique_id':object_id,'fields':fields},'is_stored':is_stored}]
+            return {'downloaded_data' : result_list, 'last_source_record': object_id}
         return False
 
     def view_contact(self, id):
@@ -1479,13 +1489,13 @@ class ActiveCampaignController(BaseController):
         return r.json()
 
     def do_webhook_process(self, body=None, POST=None, webhook_id=None, **kwargs):
-        if 'list' in POST and POST['list'] == '0':
+        webhook = Webhook.objects.get(pk=webhook_id)
+        action_name = webhook.plug.action.name
+        if 'list' in POST and POST['list'] == '0' and action_name != 'new contact':
             # ActiveCampaign envia dos webhooks, el primero es cuando se crea el contacto, el segundo cuando el contacto
             # creado es agregado a una lista. Cuando el contacto es agregado a una lista el webhook incluye los custom
             # fields por eso descartamos los webhooks de contactos que no hayan sido agregados a una lista (list = 0).
             return HttpResponse(status=200)
-
-        webhook = Webhook.objects.get(pk=webhook_id)
         if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
             self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
             expr = '\[(\w+)\](?:\[(\d+)\])?'
@@ -1509,6 +1519,9 @@ class ActiveCampaignController(BaseController):
                 self.download_source_data(data=clean_data)
                 webhook.plug.save()
         return HttpResponse(status=200)
+
+    def has_webhook(self, id):
+        return True
 
 
 class InfusionSoftController(BaseController):
