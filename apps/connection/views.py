@@ -112,7 +112,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                 controller_class = ConnectorEnum.get_controller(connector)
                 controller = controller_class()
                 token = controller.get_token(form.cleaned_data['connection_user'],
-                                             form.cleaned_data['connection_access_key'], form.cleaned_data['url'])
+                                             form.cleaned_data['url'])
                 form.instance.token = token
             self.object = form.save()
             self.request.session['auto_select_connection_id'] = c.id
