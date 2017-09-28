@@ -682,7 +682,6 @@ class TypeFormController(BaseController):
             return None
 
     def create_webhook(self):
-        print('Create_webhhok')
         action = self._plug.action.name
         if action.lower() == 'new answer':
             # creación de webhook
@@ -697,7 +696,6 @@ class TypeFormController(BaseController):
         return False
 
     def do_webhook_process(self, body=None, GET=None, POST=None, META=None, webhook_id=None, **kwargs):
-        print('Do_webhook_process')
         webhook = Webhook.objects.get(pk=webhook_id)
         if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
             if not webhook.plug.is_tested:
@@ -710,8 +708,28 @@ class TypeFormController(BaseController):
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, answer=None, **kwargs):
         print('Download_to_stored_data')
-        form_id = self._plug.plug_action_specification.get(action_specification__name__iexact='form')
-        print(form_id)
+        form = self._plug.plug_action_specification.get(action_specification__name__iexact='form')
+        data_questions = self._client.get_form_questions(form.value)
+        data_answers = self._client.get_form_metadata(form.value)
+        # Object Raw
+        dict_data_questions = {}
+        list_data_answers = []
+        for question in data_questions:
+            dict_data_questions[question['id']] = question['question']
+        for answer in data_answers:
+            obj_raw = {}
+            obj_raw['completed'] = answer['completed']
+            obj_raw['token'] = answer['token']
+            if answer['answers']:
+                for k, v in answer['answers'].items():
+                    if k in dict_data_questions.keys():
+                        obj_raw[dict_data_questions[k]] = v
+            obj_raw.update(answer['metadata'])
+            list_data_answers.append(obj_raw)
+        # Data
+
+        # parsed_data = [{'unique': {'name': unique.value, 'value': item[unique.value]},
+        #                 'fields': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
         return False
 
     def get_action_specification_options(self, action_specification_id):
