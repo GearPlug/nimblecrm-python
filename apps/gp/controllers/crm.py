@@ -1,16 +1,7 @@
-import re
-import json
-import os
-import string
-import base64
-import urllib.error
-import urllib.request
-from django.shortcuts import HttpResponse
 from hashlib import md5
 from urllib import parse
 from urllib.parse import urlparse
 from dateutil.parser import parse
-from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from simple_salesforce import Salesforce
@@ -26,8 +17,15 @@ from apps.gp.enum import ConnectorEnum
 from django.conf import settings
 from django.http import HttpResponse
 import time
-
 import requests
+import re
+import json
+import os
+import string
+import base64
+import urllib.error
+import urllib.request
+from pprint import pprint
 
 
 class SugarCRMController(BaseController):
@@ -39,46 +37,39 @@ class SugarCRMController(BaseController):
     __url_end = 'service/v4_1/rest.php'
 
     def __init__(self, connection=None, plug=None, **kwargs):
-        super(SugarCRMController, self).__init__(connection=connection,
-                                                 plug=plug, **kwargs)
+        super(SugarCRMController, self).__init__(connection=connection, plug=plug, **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
-        super(SugarCRMController, self).create_connection(
-            connection=connection, plug=plug)
+        super(SugarCRMController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
                 self._user = self._connection_object.connection_user
                 self._password = self._connection_object.connection_password
-                if not self._connection_object.url.endswith(
-                        '/service/v4_1/rest.php'):
-                    self._url = self._connection_object.url + '/service/v4_1/rest.php'
-                else:
-                    self._url = self._connection_object.url
+                self._url = self._connection_object.url
+                if not self._url.endswith('/service/v4_1/rest.php'):
+                    if not self._connection_object.url.endswith('/'):
+                        self._url += '/'
+                self._url += 'service/v4_1/rest.php'
                 try:
                     self._module = self._plug.plug_action_specification.get(
                         action_specification__name__iexact='module').value
                 except AttributeError as e:
-                    print(
-                        "no module assigned. no plug specified \nMessage: {0}".format(
-                            str(e)))
+                    print("No module found. If this is a test_connection ignore the following message."
+                          " \nMessage: {0}".format(str(e)))
             except AttributeError as e:
-                raise ControllerError(code=1,
-                                      controller=ConnectorEnum.SugarCRM,
-                                      message='Error getting the SugarCRM attributes args. {}'.format(
-                                          str(e)))
+                raise ControllerError(code=1, controller=ConnectorEnum.SugarCRM,
+                                      message='Error getting the SugarCRM attributes args. {}'.format(str(e)))
         else:
             raise ControllerError('No connection.')
         if self._url is not None and self._user is not None and self._password is not None:
             try:
-
                 session = requests.Session()
-                self._client = SugarClient(self._url, self._user,
-                                           self._password, session=session)
+                self._client = SugarClient(self._url, self._user, self._password, session=session)
+            except requests.exceptions.MissingSchema:
+                raise
             except InvalidLogin as e:
-                raise ControllerError(code=2,
-                                      controller=ConnectorEnum.SugarCRM,
-                                      message='Invalid login. {}'.format(
-                                          str(e)))
+                raise ControllerError(code=2, controller=ConnectorEnum.SugarCRM,
+                                      message='Invalid login. {}'.format(str(e)))
 
     def test_connection(self):
         return self._client is not None and self._client.session_id is not None
@@ -87,8 +78,7 @@ class SugarCRMController(BaseController):
         try:
             return self._client.get_available_modules()
         except BaseError as e:
-            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM,
-                                  message='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
 
     def get_entry_list(self, module, **kwargs):
         try:
@@ -104,11 +94,9 @@ class SugarCRMController(BaseController):
         try:
             return self._client.get_module_fields(module, **kwargs)
         except WrongParameter as e:
-            raise ControllerError(code=4, controller=ConnectorEnum.SugarCRM,
-                                  message='Wrong Parameter. {}'.format(str(e)))
+            raise ControllerError(code=4, controller=ConnectorEnum.SugarCRM, message='Bad Parameter. {}'.format(str(e)))
         except BaseError as e:
-            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM,
-                                  message='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
 
     def set_entry(self, module, item):
         try:
@@ -117,53 +105,52 @@ class SugarCRMController(BaseController):
             raise ControllerError(code=4, controller=ConnectorEnum.SugarCRM,
                                   message='Wrong Parameter. {}'.format(str(e)))
         except BaseError as e:
-            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM,
-                                  message='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
 
-    def download_to_stored_data(self, connection_object, plug, limit=49,
-                                order_by="date_entered DESC", query='',
+    def download_to_stored_data(self, connection_object, plug, limit=49, order_by="date_entered DESC", query='',
                                 last_source_record=None, **kwargs):
         if last_source_record is not None:
             if query.isspace() or query == '':
-                query = "{0}.date_entered > '{1}'".format(self._module.lower(),
-                                                          last_source_record)
+                query = "{0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
             else:
-                query += " AND {0}.date_entered > '{1}'".format(
-                    self._module.lower(), last_source_record)
-        data = self.get_entry_list(self._module, max_results=limit,
-                                   order_by=order_by, query=query)
-        entries = data['entry_list']
+                query += " AND {0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
+        entries = self.get_entry_list(self._module, max_results=limit, order_by=order_by, query=query)['entry_list']
+        raw_data = []
         new_data = []
         for item in entries:
-            item['name_value_list'] = self.dictfy(item['name_value_list'])
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=item['id'])
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
             if not q.exists():
-                for k, v in item['name_value_list'].items():
-                    new_data.append(
-                        StoredData(name=k, value=v or '', object_id=item['id'],
-                                   connection=connection_object.connection,
-                                   plug=plug))
+                item_data = []
+                obj_raw = self.dictfy(item['name_value_list'])
+                for k, v in obj_raw.items():
+                    if isinstance(v, str) and v.isspace():
+                        obj_raw[k] = ''
+                raw_data.append(obj_raw)
+                for k, v in obj_raw.items():
+                    item_data.append(StoredData(name=k, value=v or '', object_id=item['id'],
+                                                connection=connection_object.connection, plug=plug))
+                new_data.append(item_data)
         if new_data:
-            field_count = len(entries[0]['name_value_list'])
-            extra = {'controller': 'sugarcrm'}
-            for i, item in enumerate(new_data):
-                try:
-                    item.save()
-                    if (i + 1) % field_count == 0:
-                        extra['status'] = 's'
-                        self._log.info(
-                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                                item.object_id, item.plug.id,
-                                item.connection.id), extra=extra)
-                except Exception as e:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                            item.object_id, item.name, item.plug.id,
-                            item.connection.id), extra=extra)
-            return entries[0]['name_value_list']['date_entered']
+            result_list = []
+            for item in new_data:
+                for stored_data in item:
+                    try:
+                        stored_data.save()
+                    except Exception as e:
+                        is_stored = False
+                        break
+                    is_stored = True
+                obj_raw = None
+                for obj in raw_data:
+                    if stored_data.object_id == obj['id']:
+                        obj_raw = obj
+                        break
+                raw_data.remove(obj_raw)
+                obj_data = {'identifier': {'name': 'id', 'value': stored_data.object_id},
+                            'fields': [{'name': key, 'value': value} for key, value in obj_raw.items()]}
+                result_list.append({'identifier': stored_data.object_id, 'is_stored': is_stored, 'raw': obj_raw,
+                                    'data': obj_data})
+            return {'downloaded_data': result_list, 'last_source_record': result_list[0]['raw']['date_entered']}
         return False
 
     def dictfy(self, _dict):

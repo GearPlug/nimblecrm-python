@@ -1,6 +1,5 @@
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from django.views.generic import CreateView, UpdateView, ListView, View, TemplateView, ListView, UpdateView
-from django.urls import reverse_lazy
+from django.http import HttpResponseRedirect
+from django.views.generic import CreateView, TemplateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from apps.gp.enum import ConnectorEnum
@@ -47,25 +46,23 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
                 g.target = self.object
             g.save()
         except Exception as e:
-            print("There's no gear in session.")
+            raise Exception("There's no gear in session.")
         exp = re.compile('(^specification-)(\d+)')
         specification_list = [{'name': m.group(0), 'id': m.group(2), 'value': self.request.POST.get(m.group(0), None)}
                               for s in self.request.POST.keys() for m in [exp.search(s)] if m]
         for s in specification_list:
             PlugActionSpecification.objects.create(plug=self.object, action_specification_id=s['id'], value=s['value'])
-        # Download data
         c = ConnectorEnum.get_connector(self.object.connection.connector.id)
         controller_class = ConnectorEnum.get_controller(c)
         controller = controller_class(connection=self.object.connection.related_connection, plug=self.object)
-        ping = controller.test_connection()
-        if ping:
+        if controller.test_connection():
             if self.object.is_source:
                 if controller.has_webhook:
                     controller.create_webhook()
                 else:
-                    print("voy a descargar")
                     last_source_record = controller.download_source_data(self.object.connection.related_connection,
-                                                                        self.object, limit=1)
+                                                                         self.object, limit=1)
+                    g.gear_map.last_source_order_by_field_value = last_source_record
         self.request.session['source_connection_id'] = None
         self.request.session['target_connection_id'] = None
         return HttpResponseRedirect(self.get_success_url())
@@ -187,11 +184,11 @@ class TestPlugView(TemplateView):
         controller_class = ConnectorEnum.get_controller(c)
         controller = controller_class(connection=p.connection.related_connection, plug=p)
         if p.plug_type == 'source':
-            ping = controller.test_connection()
-            if ping:
-                try:
-                    last_source_record = controller.download_to_stored_data(p.connection.related_connection, p, limit=1)
-                except Exception as e:
+            if controller.test_connection():
+                if not controller.has_webhook:
+                    last_source_record = controller.download_source_data(limit=1)
+                    p.gear_source.first().gear_map.last_source_order_by_field_value = last_source_record
+                else:
                     print("Test Failed. Probably the webhook hasn\'t received any data.")
         context = self.get_context_data()
         return super(TestPlugView, self).render_to_response(context)

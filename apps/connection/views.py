@@ -275,9 +275,8 @@ class TestConnectionView(LoginRequiredMixin, View):
                 controller = controller_class(connection=connection_object)
             else:
                 connection_model = ConnectorEnum.get_model(connector)
-                connection_params = {key: str(val)
-                                     for key, val in request.POST.items()}
-                del (connection_params['csrfmiddlewaretoken'])
+                connection_params = {key: str(val) for key, val in request.POST.items()}
+                del (connection_params['csrfmiddlewaretoken'])  # Eliminar csrf token de los parametros
                 connection_object = connection_model(**connection_params)
                 controller_class = ConnectorEnum.get_controller(connector)
                 controller = controller_class(connection=connection_object)
@@ -480,6 +479,7 @@ class MailchimpAuthView(View):
             raise
         return redirect(reverse('connection:create_token_authorized_connection'))
 
+
 class InfusionSoftAuthView(View):
     def get(self, request, *args, **kwargs):
         code = request.GET.get('code', '')
@@ -498,6 +498,7 @@ class InfusionSoftAuthView(View):
         self.request.session['connector_name'] = ConnectorEnum.InfusionSoft.name
         return redirect(
             reverse('connection:create_token_authorized_connection'))
+
 
 # NPI
 class AjaxMercadoLibrePostSiteView(View):
