@@ -111,7 +111,7 @@ class MySQLController(BaseController):
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
                 new_item = [StoredData(name=k, value=v or '', object_id=unique_value,
-                                       connection=connection_object.connection, plug=plug) for k, v in item.fields()]
+                                       connection=connection_object.connection, plug=plug) for k, v in item.items()]
                 new_data.append(new_item)
         # Nueva forma
         obj_last_source_record = None
@@ -121,7 +121,7 @@ class MySQLController(BaseController):
             data.reverse()
             for item in reversed(new_data):  # Este es el for anterior y si, la lista se invierte tambien.
                 obj_id = item[0].object_id
-                obj_raw = None
+                obj_raw = "RAW DATA NOT FOUND."
                 for i in data:  # Iter 'data' para buscar el 'dict' en 'data' del 'item' que iteramos en el for anterior
                     if i[unique.value] == obj_id:
                         obj_raw = i
