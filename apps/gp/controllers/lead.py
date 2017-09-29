@@ -698,8 +698,8 @@ class TypeFormController(BaseController):
     def do_webhook_process(self, body=None, GET=None, POST=None, META=None, webhook_id=None, **kwargs):
         webhook = Webhook.objects.get(pk=webhook_id)
         if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
-            if not webhook.plug.is_tested:
-                webhook.plug.is_tested = True
+            # if not webhook.plug.is_tested:
+            #     webhook.plug.is_tested = True
             self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
             if self.test_connection():
                 self.download_source_data(answer=body)
@@ -711,7 +711,7 @@ class TypeFormController(BaseController):
         form = self._plug.plug_action_specification.get(action_specification__name__iexact='form')
         data_questions = self._client.get_form_questions(form.value)
         data_answers = self._client.get_form_metadata(form.value)
-        # Object Raw
+        # Raw General
         dict_data_questions = {}
         list_data_answers = []
         for question in data_questions:
@@ -726,10 +726,25 @@ class TypeFormController(BaseController):
                         obj_raw[dict_data_questions[k]] = v
             obj_raw.update(answer['metadata'])
             list_data_answers.append(obj_raw)
+        # Raw + Identifier
+        parsed_data = [{'identifier': {'name': 'token', 'value': item['token']},
+                        'raw': {key: value for key, value in item.items()}} for item in list_data_answers]
         # Data
+        new_data = []
+        for item in list_data_answers:
+            unique_value = item['token']
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
+            if not q.exists():
+                new_item = [StoredData(name=key, value=value or '', object_id=unique_value,
+                                       connection=connection_object.connection, plug=plug) for key,
+                                                                                               value in item.items()]
+                new_data.append(new_item)
 
-        # parsed_data = [{'unique': {'name': unique.value, 'value': item[unique.value]},
-        #                 'fields': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
+        # Result list
+        if new_data:
+            for item in new_data:
+
+                pprint.pprint(item)
         return False
 
     def get_action_specification_options(self, action_specification_id):
