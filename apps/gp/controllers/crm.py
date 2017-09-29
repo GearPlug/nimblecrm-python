@@ -108,6 +108,18 @@ class SugarCRMController(BaseController):
 
     def download_to_stored_data(self, connection_object, plug, limit=49, order_by="date_entered DESC", query='',
                                 last_source_record=None, **kwargs):
+
+        """
+            NOTE: Se ordena por el campo: 'date_entered'.
+        :param connection_object:
+        :param plug:
+        :param limit:
+        :param order_by:
+        :param query:
+        :param last_source_record:
+        :param kwargs:
+        :return:
+        """
         if last_source_record is not None:
             if query.isspace() or query == '':
                 query = "{0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
@@ -124,10 +136,10 @@ class SugarCRMController(BaseController):
                 for k, v in obj_raw.items():
                     if isinstance(v, str) and v.isspace():
                         obj_raw[k] = ''
-                raw_data.append(obj_raw)
                 for k, v in obj_raw.items():
                     item_data.append(StoredData(name=k, value=v or '', object_id=item['id'],
                                                 connection=connection_object.connection, plug=plug))
+                raw_data.append(obj_raw)
                 new_data.append(item_data)
         if new_data:
             result_list = []
@@ -139,63 +151,47 @@ class SugarCRMController(BaseController):
                         is_stored = False
                         break
                     is_stored = True
-                obj_raw = None
+                obj_raw = "RAW DATA NOT FOUND."
                 for obj in raw_data:
                     if stored_data.object_id == obj['id']:
                         obj_raw = obj
                         break
                 raw_data.remove(obj_raw)
-                obj_data = {'identifier': {'name': 'id', 'value': stored_data.object_id},
-                            'fields': [{'name': key, 'value': value} for key, value in obj_raw.items()]}
-                result_list.append({'identifier': stored_data.object_id, 'is_stored': is_stored, 'raw': obj_raw,
-                                    'data': obj_data})
+                result_list.append({'identifier': {'name': 'id', 'value': stored_data.object_id},
+                                    'is_stored': is_stored, 'raw': obj_raw, })
             return {'downloaded_data': result_list, 'last_source_record': result_list[0]['raw']['date_entered']}
         return False
 
     def dictfy(self, _dict):
         return {k: v['value'] for k, v in _dict.items()}
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[0]]
-                except:
-                    data_list = []
-        if self._plug is not None:
-            obj_list = []
-            extra = {'controller': 'sugarcrm'}
-            for item in data_list:
-                try:
-                    res = self.set_entry(self._module, item)
-                    extra['status'] = 's'
-                    self._log.info('Item: %s successfully sent.' % (res['id']),
-                                   extra=extra)
-                    obj_list.append(res['id'])
-                except Exception as e:
-                    extra['status'] = 'f'
-                    self._log.info('Item: %s failed to send.' % (res['id']),
-                                   extra=extra)
-            return obj_list
-        raise ControllerError("There's no plug")
+    def send_stored_data(self, data_list, **kwargs):
+        obj_list = []
+        for item in data_list:
+            obj_result = {'data': dict(item)}
+            try:
+                res = self.set_entry(self._module, item)
+                obj_result['response'] = res
+                obj_result['sent'] = True
+                obj_result['identifier'] = res['id']
+            except Exception as e:
+                obj_result['response'] = res
+                obj_result['sent'] = False
+                obj_result['identifier'] = res['id']
+            obj_list.append(obj_result)
+        return obj_list
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_module_fields(self._module)
-        return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in
-                fields['module_fields'].values()]
+        return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields['module_fields'].values()]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(
-            pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'module':
-            return tuple(
-                {'id': m['module_key'], 'name': m['module_label']} for m in
-                self.get_available_modules()['modules'] if
-                m['module_key'] != 'Home')
+            return tuple({'id': m['module_key'], 'name': m['module_label']}
+                         for m in self.get_available_modules()['modules'] if m['module_key'] != 'Home')
         else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector.")
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class ZohoCRMController(BaseController):

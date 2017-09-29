@@ -104,14 +104,13 @@ class MySQLController(BaseController):
         if last_source_record is not None:
             query_params['gt'] = last_source_record
         data = self.select_all(**query_params)
-
         new_data = []
         for item in data:
             unique_value = item[unique.value]
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
                 new_item = [StoredData(name=k, value=v or '', object_id=unique_value,
-                                       connection=connection_object.connection, plug=plug) for k, v in item.fields()]
+                                       connection=connection_object.connection, plug=plug) for k, v in item.items()]
                 new_data.append(new_item)
         # Nueva forma
         obj_last_source_record = None
@@ -121,7 +120,7 @@ class MySQLController(BaseController):
             data.reverse()
             for item in reversed(new_data):  # Este es el for anterior y si, la lista se invierte tambien.
                 obj_id = item[0].object_id
-                obj_raw = None
+                obj_raw = "RAW DATA NOT FOUND."
                 for i in data:  # Iter 'data' para buscar el 'dict' en 'data' del 'item' que iteramos en el for anterior
                     if i[unique.value] == obj_id:
                         obj_raw = i
@@ -353,6 +352,7 @@ class PostgreSQLController(BaseController):
             return True, stored_data.object_id
         except Exception as e:
             return False, item[0].object_id
+
 
     def _get_insert_statement(self, item):
         return """INSERT INTO {0}.{1} ({2}) VALUES ({3}) RETURNING id""".format(

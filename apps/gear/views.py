@@ -209,7 +209,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
                         field.source_value = v
                         field.save(update_fields=['source_value'])
             except GearMapData.DoesNotExist:
-                if v != '' or not v.isspace():
+                if v is not None and (v != '' or not v.isspace()):
                     GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v)
             except Exception as e:
                 raise
