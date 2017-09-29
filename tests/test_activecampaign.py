@@ -235,3 +235,56 @@ class ActiveCampaignControllerTestCases(TestCase):
         self.assertEqual(contact['email'], os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL'))
         delete = self.controller_target.delete_contact(result[0])
         self.assertEqual(delete['result_code'], 1)
+
+    def test_get_custom_fields(self):
+        result = self.controller_source.get_custom_fields()
+        self.assertIsInstance(result, dict)
+
+    def test_subscribe_contact(self):
+        data = {'email':os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
+        result_subscribe = self.controller_target.subscribe_contact(data)
+        self.assertEqual(result_subscribe['result_code'], 1)
+        result_view = self.controller_target.contact_view(result_subscribe['subscriber_id'])
+        self.assertEqual(result_view['email'], os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL'))
+        self.assertEqual(result_view['listid'], os.environ.get('TEST_ACTIVECAMPAIGN_LIST'))
+        self.controller_target.delete_contact(result_subscribe['subscriber_id'])
+
+    def test_unsubscribe_contact(self):
+        data = {'email':os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
+        self.controller_target.create_contact(data)
+        self.controller_target.subscribe_contact(data)
+        _email={'email':os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
+        result_unsubscribe = self.controller_target.unsubscribe_contact(_email)
+        self.assertEqual(result_unsubscribe['result_code'], 1)
+        result_view = self.controller_target.contact_view(os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL'))
+        self.controller_target.delete_contact(result_view['id'])
+
+    def test_contact_view(self):
+        data = {'email': os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
+        result_create = self.controller_target.create_contact(data)
+        result_view = self.controller_target.contact_view(result_create['subscriber_id'])
+        self.assertEqual(result_view['email'], os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL'))
+        self.controller_target.delete_contact(result_create['subscriber_id'])
+
+    def test_delete_contact(self):
+        data = {'email': os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
+        result_create = self.controller_target.create_contact(data)
+        self.controller_target.delete_contact(result_create['subscriber_id'])
+        result_view = self.controller_target.contact_view(result_create['subscriber_id'])
+        self.assertTrue(result_view, 0)
+
+    def test_delete_webhook(self):
+        self.controller_source.create_webhook()
+        webhook = Webhook.objects.last()
+        self.controller_source.delete_webhooks(webhook.generated_id)
+        result_view = self.controller_source.list_webhooks(webhook.generated_id)
+        self.assertTrue(result_view, 0)
+
+    def test_list_webhooks(self):
+        self.controller_source.create_webhook()
+        webhook = Webhook.objects.last()
+        result_view = self.controller_source.list_webhooks(webhook.generated_id)
+        print(result_view)
+        # self.controller_source.delete_webhooks(webhook.generated_id)
+        # result_view = self.controller_source.list_webhooks(webhook.generated_id)
+        # self.assertTrue(result_view, 0)

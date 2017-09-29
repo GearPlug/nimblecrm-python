@@ -1354,7 +1354,7 @@ class ActiveCampaignController(BaseController):
             {'name': 'orgname', 'label': 'Organization Name', 'type': 'varchar', 'required': False},
         ]
 
-    def create_user(self, data):
+    def create_contact(self, data):
         params = [
             ('api_action', "contact_sync"),
             ('api_key', self._key),
@@ -1378,7 +1378,7 @@ class ActiveCampaignController(BaseController):
 
     def unsubscribe_contact(self, email):
         _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
-        data = self.contact_view(email['email'])
+        data = self.contact_view_email(email['email'])
         params = [
             ('api_action', "contact_edit"),
             ('api_key', self._key),
@@ -1391,7 +1391,7 @@ class ActiveCampaignController(BaseController):
         r['subscriber_id'] = data['id']
         return r
 
-    def contact_view(self, email):
+    def contact_view_email(self, email):
         params = [
             ('api_action', "contact_view_email"),
             ('api_key', self._key),
@@ -1410,7 +1410,7 @@ class ActiveCampaignController(BaseController):
             sent = False
             identifier = ""
             if action == 'create contact':
-                response = self.create_user(item)
+                response = self.create_contact(item)
             elif action == 'subscribe a contact':
                 response = self.subscribe_contact(item)
             elif action == 'unsubscribe a contact':
@@ -1469,7 +1469,7 @@ class ActiveCampaignController(BaseController):
             return {'downloaded_data' : result_list, 'last_source_record': object_id}
         return False
 
-    def view_contact(self, id):
+    def contact_view(self, id):
         params = [
             ('api_action', "contact_view"),
             ('api_key', self._key),
