@@ -186,7 +186,7 @@ class TestPlugView(TemplateView):
         if p.plug_type == 'source':
             if controller.test_connection():
                 if not controller.has_webhook:
-                    last_source_record = controller.download_source_data(p.connection.related_connection, p, limit=1)
+                    last_source_record = controller.download_source_data(limit=1)
                     p.gear_source.first().gear_map.last_source_order_by_field_value = last_source_record
                 else:
                     print("Test Failed. Probably the webhook hasn\'t received any data.")
