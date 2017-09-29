@@ -408,7 +408,6 @@ class VtigerConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_vtiger')
     name = models.CharField('name', max_length=200)
     connection_user = models.CharField('user', max_length=60)
-    connection_password = models.CharField('password', max_length=40)
     connection_access_key = models.CharField('access key', max_length=100, blank=True, null=True)
     url = models.URLField('url')
 
