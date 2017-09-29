@@ -613,20 +613,20 @@ class DownloadHistory(models.Model):
     plug_id = models.CharField('plug_id', max_length=25)
     connection = models.CharField(max_length=2000)
     date = models.DateTimeField(auto_now_add=True)
-    raw = models.CharField(max_length=2000)
-    saved_data = models.CharField(max_length=2000)
+    raw = models.CharField(max_length=25000)
+    identifier = models.CharField('identifier', max_length=500)
 
 
 class SendHistory(models.Model):
     connector = models.ForeignKey(Connector)
     gear_id = models.CharField('gear_id', max_length=25)
     plug_id = models.CharField('plug_id', max_length=25)
-    connection = models.CharField(max_length=2000)
+    connection = models.CharField(max_length=5000)
     date = models.DateTimeField(auto_now_add=True)
-    data = models.CharField(max_length=2000)
-    response = models.CharField(max_length=2000)
+    data = models.CharField(max_length=25000)
+    response = models.CharField(max_length=25000)
     sent = models.BooleanField('sent', default=False)
-    identifier = models.CharField('identifier', max_length=200)
+    identifier = models.CharField('identifier', max_length=500)
 
 
 admin.site.register(Connector)
