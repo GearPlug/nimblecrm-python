@@ -178,7 +178,7 @@ class MySQLController(BaseController):
             self._connection.rollback()
             for obj in obj_list:
                 obj['sent'] = False
-                obj['identifier'] = None
+                obj['identifier'] = '-1'
         return obj_list
 
     def get_target_fields(self, **kwargs):
@@ -354,7 +354,7 @@ class PostgreSQLController(BaseController):
                 obj_result['sent'] = True
                 obj_result['identifier'] = "-1"
             except Exception as e:
-                obj_result['response'] = "Failed to insert item."
+                obj_result['response'] = "Failed to insert item ."
                 obj_result['sent'] = False
                 obj_result['identifier'] = "-1"
             obj_list.append(obj_result)
@@ -364,7 +364,7 @@ class PostgreSQLController(BaseController):
             self._connection.rollback()
             for obj in obj_list:
                 obj['sent'] = False
-                obj['identifier'] = None
+                obj['identifier'] = '-1'
         return obj_list
 
     def get_mapping_fields(self, **kwargs):
