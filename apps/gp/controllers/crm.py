@@ -1288,50 +1288,52 @@ class ActiveCampaignController(BaseController):
             return False
 
     def create_webhook(self):
-        action = self._plug.action.name
-        if action == 'new contact' or 'new subscriber':
-            if action == 'new subscriber':
-                selected_list = self._plug.plug_action_specification.get(
-                action_specification__name='list')
-                list_id = selected_list.value
-            elif action == 'new contact':
-                list_id = 0
-            # Creacion de Webhook
-            webhook = Webhook.objects.create(name='activecampaign', url='',
-                                             plug=self._plug, expiration='')
+        action_name = self._plug.action.name
+        action = 'subscribe'
+        if action_name == 'new subscriber' or 'new unsubscriber':
+            selected_list = self._plug.plug_action_specification.get(
+            action_specification__name='list')
+            list_id = selected_list.value
+            if action_name == 'new unsubscriber':
+                action = 'unsubscribe'
+        elif action_name == 'new contact':
+            list_id = 0
+        # Creacion de Webhook
+        webhook = Webhook.objects.create(name='activecampaign', url='',
+                                         plug=self._plug, expiration='')
 
-            # Verificar ngrok para determinar url_base
-            url_base = settings.WEBHOOK_HOST
-            url_path = reverse('home:webhook',
-                               kwargs={'connector': 'activecampaign',
-                                       'webhook_id': webhook.id})
-            url = url_base + url_path
-            params = [
-                ('api_action', "webhook_add"),
-                ('api_key', self._key),
-                ('api_output', 'json'),
-            ]
-            post_array = {
-                "name": "GearPlug WebHook",
-                "url": url,
-                "lists": list_id,
-                "action": "subscribe",
-                "init": "admin"
-            }
-            final_url = "{0}/admin/api.php".format(self._host)
-            r = requests.post(url=final_url, data=post_array, params=params)
-            if r.status_code == 200 or r.status_code == 201:
+        # Verificar ngrok para determinar url_base
+        url_base = settings.WEBHOOK_HOST
+        url_path = reverse('home:webhook',
+                           kwargs={'connector': 'activecampaign',
+                                   'webhook_id': webhook.id})
+        url = url_base + url_path
+        params = [
+            ('api_action', "webhook_add"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+        ]
+        post_array = {
+            "name": "GearPlug WebHook",
+            "url": url,
+            "lists": list_id,
+            "action": action,
+            "init": "admin"
+        }
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, data=post_array, params=params)
+        if r.status_code == 200 or r.status_code == 201:
 
-                webhook.url = url_base + url_path
-                webhook.generated_id = r.json()['id']
-                webhook.is_active = True
-                webhook.save(
-                    update_fields=['url', 'generated_id', 'is_active'])
-            else:
-                webhook.is_deleted = True
-                webhook.save(update_fields=['is_deleted', ])
+            webhook.url = url_base + url_path
+            webhook.generated_id = r.json()['id']
+            webhook.is_active = True
+            webhook.save(
+                update_fields=['url', 'generated_id', 'is_active'])
             return True
-        return False
+        else:
+            webhook.is_deleted = True
+            webhook.save(update_fields=['is_deleted', ])
+            return False
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_target_fields()
@@ -1443,12 +1445,10 @@ class ActiveCampaignController(BaseController):
             if new_data:
                 field_count = len(data)
                 extra = {'controller': 'activecampaign'}
-                fields = []
                 is_stored = False
                 for i, item in enumerate(new_data):
                     try:
                         item.save()
-                        fields.append({"name": item.name, "valor": item.value})
                         is_stored = True
                         if (i + 1) % field_count == 0:
                             extra['status'] = 's'
@@ -1465,7 +1465,7 @@ class ActiveCampaignController(BaseController):
                             % (item.object_id, item.name, item.plug.id,
                                item.connection.id),
                             extra=extra)
-                result_list=[{'raw':data,'data':{'unique_id':object_id,'fields':fields},'is_stored':is_stored}]
+                result_list=[{'raw':data, 'is_stored':is_stored, 'identifier' :{'name':'id','valor':object_id}}]
             return {'downloaded_data' : result_list, 'last_source_record': object_id}
         return False
 
