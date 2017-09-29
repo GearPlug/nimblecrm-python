@@ -11,6 +11,7 @@ from apps.gp.map import MapField
 from apps.gp.controllers.utils import get_dict_with_source_data
 from magento import MagentoAPI
 import json
+from django.db.models import Q
 import ast
 from django.urls import reverse
 from mercadolibre.client import Client as MercadolibreClient
@@ -25,32 +26,31 @@ class MercadoLibreController(BaseController):
     _site = None
     _client = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(MercadoLibreController, self).__init__(connection=connection, plug=plug,
+                                                     **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(MercadoLibreController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token = self._connection_object.token
-                    self._site = self._connection_object.site
-                except AttributeError as e:
-                    raise ControllerError(code=1, controller=ConnectorEnum.MercadoLibre,
-                                          message='Failed to get the token. \n{}'.format(str(e)))
-            else:
-                raise ControllerError(code=7, controller=ConnectorEnum.MercadoLibre, message='No connection.')
-        try:
-            self._client = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
-                                              client_secret=settings.MERCADOLIBRE_CLIENT_SECRET,
-                                              site=self._site or 'MCO')
-        except Exception as e:
-            raise ControllerError(code=2, controller=ConnectorEnum.MercadoLibre,
-                                  message='Cannot instantiate the client. {}'.format(str(e)))
-        try:
-            self._client.set_token(ast.literal_eval(self._token))
-        except Exception as e:
-            pass
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(MercadoLibreController, self).create_connection(connection=connection,
+                                                              plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+                self._site = self._connection_object.site
+            except AttributeError as e:
+                raise ControllerError(code=1, controller=ConnectorEnum.MercadoLibre,
+                                      message='Failed to get the token. \n{}'.format(str(e)))
+            try:
+                self._client = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
+                                                  client_secret=settings.MERCADOLIBRE_CLIENT_SECRET,
+                                                  site=self._site or 'MCO')
+            except Exception as e:
+                raise ControllerError(code=2, controller=ConnectorEnum.MercadoLibre,
+                                      message='Cannot instantiate the client. {}'.format(str(e)))
+            try:
+                self._client.set_token(ast.literal_eval(self._token))
+            except Exception as e:
+                pass
 
     def test_connection(self):
         if self._client.access_token and not self._client.is_valid_token:
@@ -168,14 +168,12 @@ class MercadoLibreController(BaseController):
             raise ControllerError(code=3, controller=ConnectorEnum.MercadoLibre, message='Error. {}'.format(str(e)))
 
     def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
-        plugs = Plug.objects.filter(
-            action__action_type='source',
-            action__connector__name__iexact='mercadolibre',
-            action__name=body['topic'],
-            connection__connection_mercadolibre__user_id=body['user_id'])
-        for plug in plugs:
-            self._connection_object, self._plug = plug.connection.related_connection, plug
-            self.create_connection(self._connection_object, self._plug)
+        plugs_to_update = Plug.objects.filter(
+            Q(gear_source__is_active=True) | Q(is_tested=False),
+            connection__connection_mercadolibre__user_id=body['user_id'],
+            action__name=body['topic'])
+        for plug in plugs_to_update:
+            self.create_connection(connection=plug.connection.related_connection, plug=plug)
             if self.test_connection():
                 self.download_source_data(event=body)
         return HttpResponse(status=200)
@@ -211,61 +209,62 @@ class PayUController(BaseController):
 class ShopifyController(BaseController):
     _token = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(ShopifyController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(ShopifyController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token = self._connection_object.token
-                    self._shop_url = self._connection_object.shop_url
-                except Exception as e:
-                    print("Error getting the shopify token")
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(ShopifyController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+                self._shop_url = self._connection_object.shop_url
+            except Exception as e:
+                print("Error getting the shopify token")
 
     def test_connection(self):
         try:
             session = shopify.Session("https://" + self._shop_url, self._token)
+            shopify.ShopifyResource.activate_session(session)
             return self._token and self._shop_url is not None
-        except:
-            raise ControllerError("TODO")
+        except Exception as e:
+            print(e)
+            return self._token and self._shop_url is None
 
-    def download_to_stored_data(self, connection_object, plug, list=None):
+    def download_to_stored_data(self, connection_object, plug, data=None):
         if plug is None:
             plug = self._plug
+
         action = plug.action.name
         session = shopify.Session("https://" + self._shop_url, self._token)
         shopify.ShopifyResource.activate_session(session)
 
-        if list is None:
-            list = []
-            if action == 'new customer':
-                list2 = shopify.Customer.find()
-            elif action == 'new product':
-                list2 = shopify.Product.find()
-            elif action == 'new order':
-                list2 = shopify.Order.find()
-            for l in list2:
-                m = re.findall(r'\d+', str(l))
-                list.append(m[0])
+        # Codigo para traer todos los productos, ordenes, o clientes
+        # if list is None:
+        #     list = []
+        #     if action == 'new customer':
+        #         list2 = shopify.Customer.find()
+        #     elif action == 'new product':
+        #         list2 = shopify.Product.find()
+        #     elif action == 'new order':
+        #         list2 = shopify.Order.find()
+        #     for l in list2:
+        #         m = re.findall(r'\d+', str(l))
+        #        list.append(m[0])
 
         new_data = []
-        for item in list:
-            id_field = int(item)
-            print("item", item, type(item))
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id_field)
-            if not q.exists():
-                if action == 'new customer':
-                    details = shopify.Customer.find(id_field)
-                elif action == 'new product':
-                    details = shopify.Product.find(id_field)
-                elif action == 'new order':
-                    details = shopify.Order.find(id_field)
-                for value in details.attributes:
-                    information = details.attributes[value] or ''
-                    new_data.append(StoredData(name=value, value=information, object_id=id_field,
-                                               connection=connection_object.connection, plug=plug))
+        id_field = data["id"]
+        q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id_field)
+        if not q.exists():
+            if action == 'new customer':
+                details = shopify.Customer.find(id_field)
+            elif action == 'new product':
+                details = shopify.Product.find(id_field)
+            elif action == 'new order':
+                details = shopify.Order.find(id_field)
+            for value in details.attributes:
+                information = details.attributes[value] or ''
+                new_data.append(StoredData(name=value, value=information, object_id=id_field,
+                                           connection=connection_object.connection, plug=plug))
         if new_data:
             extra = {'controller': 'shopify'}
             for item in new_data:
@@ -282,9 +281,9 @@ class ShopifyController(BaseController):
     def create_webhook(self):
         action = self._plug.action.name
         webhook = Webhook.objects.create(name='shopify', plug=self._plug, url='')
-        url_path = reverse('home:webhook', kwargs={'connector': 'shopify', 'webhook_id': webhook.id})
+        redirect_uri = "{0}/webhook/shopify/{1}/".format(settings.CURRENT_HOST, webhook.id)
         session = shopify.Session("https://" + self._shop_url, self._token)
-        url_base = settings.WEBHOOK_HOST
+        shopify.ShopifyResource.activate_session(session)
         if action == 'new product':
             topic = 'products'
         elif action == 'new customer':
@@ -293,17 +292,15 @@ class ShopifyController(BaseController):
             topic = 'orders'
         new_webhook = shopify.Webhook()
         new_webhook.topic = topic + "/create"
-        new_webhook.address = url_base + url_path
+        new_webhook.address = redirect_uri
         new_webhook.format = "json"
         success = new_webhook.save()
-        shopify.ShopifyResource.activate_session(session)
         if success == True:
-            webhook.url = url_base + url_path
+            webhook.url = redirect_uri
             webhook.is_active = True
             id = re.findall(r'\d+', str(self.get_list_webhooks()[-1]))
             webhook.generated_id = id[0]
             webhook.save(update_fields=['url', 'generated_id', 'is_active'])
-            print("Se creo el webhook shopify")
             return True
         else:
             webhook.is_deleted = True
@@ -406,6 +403,17 @@ class ShopifyController(BaseController):
                     find = True
             if find is False: values[i['name']] = ""
         return values
+
+    def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
+        webhook= Webhook.objects.get(pk=webhook_id)
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            if not webhook.plug.is_tested:
+                webhook.plug.is_tested = True
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+            if self.test_connection():
+                self.download_source_data(data=body)
+                webhook.plug.save()
+        return HttpResponse(status=200)
 
 
 class MagentoController(BaseController):

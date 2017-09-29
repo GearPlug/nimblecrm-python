@@ -1,14 +1,9 @@
-import json
-import os
-import string
-import urllib.error
-import urllib.request
 from hashlib import md5
 from urllib import parse
 from urllib.parse import urlparse
 from dateutil.parser import parse
-from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 from simple_salesforce import Salesforce
 from simple_salesforce.login import SalesforceAuthenticationFailed
 from sugarcrm.client import Client as SugarClient
@@ -16,11 +11,21 @@ from sugarcrm.exception import BaseError, WrongParameter, InvalidLogin
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import ActionSpecification
-from apps.gp.models import StoredData, Webhook
+from apps.gp.models import ActionSpecification, Plug, PlugActionSpecification, StoredData, Webhook
 from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
+from django.conf import settings
+from django.http import HttpResponse
+import time
 import requests
+import re
+import json
+import os
+import string
+import base64
+import urllib.error
+import urllib.request
+from pprint import pprint
 
 
 class SugarCRMController(BaseController):
@@ -31,46 +36,40 @@ class SugarCRMController(BaseController):
     _module = None
     __url_end = 'service/v4_1/rest.php'
 
-    def __init__(self, *args, **kwargs):
-        super(SugarCRMController, self).__init__(*args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(SugarCRMController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(SugarCRMController, self).create_connection(*args)
-            if self._connection_object is not None:
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(SugarCRMController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._user = self._connection_object.connection_user
+                self._password = self._connection_object.connection_password
+                self._url = self._connection_object.url
+                if not self._url.endswith('/service/v4_1/rest.php'):
+                    if not self._connection_object.url.endswith('/'):
+                        self._url += '/'
+                self._url += 'service/v4_1/rest.php'
                 try:
-                    self._user = self._connection_object.connection_user
-                    self._password = self._connection_object.connection_password
-                    if not self._connection_object.url.endswith(
-                            '/service/v4_1/rest.php'):
-                        self._url = self._connection_object.url + '/service/v4_1/rest.php'
-                    else:
-                        self._url = self._connection_object.url
-                    try:
-                        self._module = self._plug.plug_action_specification.get(
-                            action_specification__name__iexact='module').value
-                    except AttributeError as e:
-                        print(
-                            "no module assigned. no plug specified \nMessage: {0}".format(
-                                str(e)))
+                    self._module = self._plug.plug_action_specification.get(
+                        action_specification__name__iexact='module').value
                 except AttributeError as e:
-                    raise ControllerError(code=1,
-                                          controller=ConnectorEnum.SugarCRM,
-                                          message='Error getting the SugarCRM attributes args. {}'.format(
-                                              str(e)))
-            else:
-                raise ControllerError('No connection.')
+                    print("No module found. If this is a test_connection ignore the following message."
+                          " \nMessage: {0}".format(str(e)))
+            except AttributeError as e:
+                raise ControllerError(code=1, controller=ConnectorEnum.SugarCRM,
+                                      message='Error getting the SugarCRM attributes args. {}'.format(str(e)))
+        else:
+            raise ControllerError('No connection.')
         if self._url is not None and self._user is not None and self._password is not None:
             try:
-
                 session = requests.Session()
-                self._client = SugarClient(self._url, self._user,
-                                           self._password, session=session)
+                self._client = SugarClient(self._url, self._user, self._password, session=session)
+            except requests.exceptions.MissingSchema:
+                raise
             except InvalidLogin as e:
-                raise ControllerError(code=2,
-                                      controller=ConnectorEnum.SugarCRM,
-                                      message='Invalid login. {}'.format(
-                                          str(e)))
+                raise ControllerError(code=2, controller=ConnectorEnum.SugarCRM,
+                                      message='Invalid login. {}'.format(str(e)))
 
     def test_connection(self):
         return self._client is not None and self._client.session_id is not None
@@ -79,8 +78,7 @@ class SugarCRMController(BaseController):
         try:
             return self._client.get_available_modules()
         except BaseError as e:
-            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM,
-                                  message='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
 
     def get_entry_list(self, module, **kwargs):
         try:
@@ -96,11 +94,9 @@ class SugarCRMController(BaseController):
         try:
             return self._client.get_module_fields(module, **kwargs)
         except WrongParameter as e:
-            raise ControllerError(code=4, controller=ConnectorEnum.SugarCRM,
-                                  message='Wrong Parameter. {}'.format(str(e)))
+            raise ControllerError(code=4, controller=ConnectorEnum.SugarCRM, message='Bad Parameter. {}'.format(str(e)))
         except BaseError as e:
-            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM,
-                                  message='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
 
     def set_entry(self, module, item):
         try:
@@ -109,99 +105,94 @@ class SugarCRMController(BaseController):
             raise ControllerError(code=4, controller=ConnectorEnum.SugarCRM,
                                   message='Wrong Parameter. {}'.format(str(e)))
         except BaseError as e:
-            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM,
-                                  message='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
 
-    def download_to_stored_data(self, connection_object, plug, limit=49,
-                                order_by="date_entered DESC", query='',
+    def download_to_stored_data(self, connection_object, plug, limit=49, order_by="date_entered DESC", query='',
                                 last_source_record=None, **kwargs):
+
+        """
+            NOTE: Se ordena por el campo: 'date_entered'.
+        :param connection_object:
+        :param plug:
+        :param limit:
+        :param order_by:
+        :param query:
+        :param last_source_record:
+        :param kwargs:
+        :return:
+        """
         if last_source_record is not None:
             if query.isspace() or query == '':
-                query = "{0}.date_entered > '{1}'".format(self._module.lower(),
-                                                          last_source_record)
+                query = "{0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
             else:
-                query += " AND {0}.date_entered > '{1}'".format(
-                    self._module.lower(), last_source_record)
-        data = self.get_entry_list(self._module, max_results=limit,
-                                   order_by=order_by, query=query)
-        entries = data['entry_list']
+                query += " AND {0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
+        entries = self.get_entry_list(self._module, max_results=limit, order_by=order_by, query=query)['entry_list']
+        raw_data = []
         new_data = []
         for item in entries:
-            item['name_value_list'] = self.dictfy(item['name_value_list'])
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=item['id'])
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
             if not q.exists():
-                for k, v in item['name_value_list'].items():
-                    new_data.append(
-                        StoredData(name=k, value=v, object_id=item['id'],
-                                   connection=connection_object.connection,
-                                   plug=plug))
+                item_data = []
+                obj_raw = self.dictfy(item['name_value_list'])
+                for k, v in obj_raw.items():
+                    if isinstance(v, str) and v.isspace():
+                        obj_raw[k] = ''
+                for k, v in obj_raw.items():
+                    item_data.append(StoredData(name=k, value=v or '', object_id=item['id'],
+                                                connection=connection_object.connection, plug=plug))
+                raw_data.append(obj_raw)
+                new_data.append(item_data)
         if new_data:
-            field_count = len(entries[0]['name_value_list'])
-            extra = {'controller': 'sugarcrm'}
-            for i, item in enumerate(new_data):
-                try:
-                    item.save()
-                    if (i + 1) % field_count == 0:
-                        extra['status'] = 's'
-                        self._log.info(
-                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                                item.object_id, item.plug.id,
-                                item.connection.id), extra=extra)
-                except Exception as e:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                            item.object_id, item.name, item.plug.id,
-                            item.connection.id), extra=extra)
-            return entries[0]['name_value_list']['date_entered']
+            result_list = []
+            for item in new_data:
+                for stored_data in item:
+                    try:
+                        stored_data.save()
+                    except Exception as e:
+                        is_stored = False
+                        break
+                    is_stored = True
+                obj_raw = "RAW DATA NOT FOUND."
+                for obj in raw_data:
+                    if stored_data.object_id == obj['id']:
+                        obj_raw = obj
+                        break
+                raw_data.remove(obj_raw)
+                result_list.append({'identifier': {'name': 'id', 'value': stored_data.object_id},
+                                    'is_stored': is_stored, 'raw': obj_raw, })
+            return {'downloaded_data': result_list, 'last_source_record': result_list[0]['raw']['date_entered']}
         return False
 
     def dictfy(self, _dict):
         return {k: v['value'] for k, v in _dict.items()}
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[0]]
-                except:
-                    data_list = []
-        if self._plug is not None:
-            obj_list = []
-            extra = {'controller': 'sugarcrm'}
-            for item in data_list:
-                try:
-                    res = self.set_entry(self._module, item)
-                    extra['status'] = 's'
-                    self._log.info('Item: %s successfully sent.' % (res['id']),
-                                   extra=extra)
-                    obj_list.append(id)
-                except Exception as e:
-                    extra['status'] = 'f'
-                    self._log.info('Item: %s failed to send.' % (res['id']),
-                                   extra=extra)
-            return obj_list
-        raise ControllerError("There's no plug")
+    def send_stored_data(self, data_list, **kwargs):
+        obj_list = []
+        for item in data_list:
+            obj_result = {'data': dict(item)}
+            try:
+                res = self.set_entry(self._module, item)
+                obj_result['response'] = res
+                obj_result['sent'] = True
+                obj_result['identifier'] = res['id']
+            except Exception as e:
+                obj_result['response'] = res
+                obj_result['sent'] = False
+                obj_result['identifier'] = res['id']
+            obj_list.append(obj_result)
+        return obj_list
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_module_fields(self._module)
-        return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in
-                fields['module_fields'].values()]
+        return [MapField(f, controller=ConnectorEnum.SugarCRM) for f in fields['module_fields'].values()]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(
-            pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'module':
-            return tuple(
-                {'id': m['module_key'], 'name': m['module_label']} for m in
-                self.get_available_modules()['modules'] if
-                m['module_key'] != 'Home')
+            return tuple({'id': m['module_key'], 'name': m['module_label']}
+                         for m in self.get_available_modules()['modules'] if m['module_key'] != 'Home')
         else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector.")
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class ZohoCRMController(BaseController):
@@ -1222,18 +1213,17 @@ class ActiveCampaignController(BaseController):
     _host = None
     _key = None
 
-    def __init__(self, *args, **kwargs):
-        super(ActiveCampaignController, self).__init__(*args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(ActiveCampaignController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(ActiveCampaignController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._host = self._connection_object.host
-                    self._key = self._connection_object.connection_access_key
-                except Exception as e:
-                    print(e)
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(ActiveCampaignController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._host = self._connection_object.host
+                self._key = self._connection_object.connection_access_key
+            except Exception as e:
+                print(e)
 
     def get_account_info(self):
         self.create_connection()
@@ -1248,6 +1238,16 @@ class ActiveCampaignController(BaseController):
             return True
         else:
             return False
+
+    def get_custom_fields(self):
+        params = [('api_action', "list_field_view"), ('api_key', self._key), ('api_output', 'json'), ('ids', 'all')]
+        url = "{0}/admin/api.php".format(self._host)
+        r = requests.get(url=url, params=params)
+        if r.status_code == 200:
+            result = r.json()
+            return {str(int(v['id']) - 1): {'name': v['perstag'], 'id': v['id'], 'label': v['title']} for (k, v) in
+                    result.items() if k not in ['result_code', 'result_output', 'result_message']}
+        return []
 
     def get_lists(self):
         params = [
@@ -1275,14 +1275,13 @@ class ActiveCampaignController(BaseController):
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
         try:
-            if action_specification.name.lower() == 'lists':
+            if action_specification.name.lower() == 'list':
                 for i in self.get_lists():
                     return tuple({'id': i['id'], 'name': i['name']} for i in
                                  self.get_lists())
             else:
-                raise ControllerError(
-                    "That specification doesn't belong to an action in this connector."
-                )
+                raise ControllerError("That specification doesn't belong "
+                                      "to an action in this connector.")
         except Exception as e:
             print(e)
 
@@ -1294,14 +1293,12 @@ class ActiveCampaignController(BaseController):
 
     def create_webhook(self):
         action = self._plug.action.name
-        if action == 'Detect contact creation':
+        if action == 'new contact':
             selected_list = self._plug.plug_action_specification.get(
-                action_specification__name='lists')
-
+                action_specification__name='list')
             # Creacion de Webhook
-            webhook = Webhook.objects.create(name='activecampaign',
-                                             plug=self._plug,
-                                             url='', expiration='')
+            webhook = Webhook.objects.create(name='activecampaign', url='',
+                                             plug=self._plug, expiration='')
 
             # Verificar ngrok para determinar url_base
             url_base = settings.WEBHOOK_HOST
@@ -1317,13 +1314,14 @@ class ActiveCampaignController(BaseController):
             post_array = {
                 "name": "GearPlug WebHook",
                 "url": url,
-                "lists": selected_list,
+                "lists": selected_list.value,
                 "action": "subscribe",
                 "init": "admin"
             }
             final_url = "{0}/admin/api.php".format(self._host)
             r = requests.post(url=final_url, data=post_array, params=params)
             if r.status_code == 200 or r.status_code == 201:
+
                 webhook.url = url_base + url_path
                 webhook.generated_id = r.json()['id']
                 webhook.is_active = True
@@ -1343,12 +1341,13 @@ class ActiveCampaignController(BaseController):
         ]
 
     def get_target_fields(self, **kwargs):
-        return [{'name': 'email', 'type': 'varchar', 'required': True},
-                {'name': 'first_name', 'type': 'varchar', 'required': False},
-                {'name': 'last_name', 'type': 'varchar', 'required': False},
-                {'name': 'phone', 'type': 'varchar', 'required': False},
-                {'name': 'orgname', 'type': 'varchar', 'required': False},
-                ]
+        return [
+            {'name': 'email', 'label': 'Email', 'type': 'varchar', 'required': True},
+            {'name': 'first_name', 'label': 'First Name', 'type': 'varchar', 'required': False},
+            {'name': 'last_name', 'label': 'Last Name', 'type': 'varchar', 'required': False},
+            {'name': 'phone', 'label': 'Phone', 'type': 'varchar', 'required': False},
+            {'name': 'orgname', 'label': 'Organization Name', 'type': 'varchar', 'required': False},
+        ]
 
     def create_user(self, data):
         params = [
@@ -1356,26 +1355,23 @@ class ActiveCampaignController(BaseController):
             ('api_key', self._key),
             ('api_output', 'json'),
         ]
-        data = data
         final_url = "{0}/admin/api.php".format(self._host)
         r = requests.post(url=final_url, data=data, params=params).json()
         return r
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
-
         if self._plug is not None:
             obj_list = []
             extra = {'controller': 'activecampaign'}
             for item in data_list:
-                print(item)
                 try:
                     response = self.create_user(item)
                     self._log.info(
                         'Item: %s successfully sent.' % (
                             list(item.items())[0][1]),
                         extra=extra)
-                    obj_list.append(id)
+                    obj_list.append(response['subscriber_id'])
                 except Exception as e:
                     print(e)
                     extra['status'] = 'f'
@@ -1386,22 +1382,17 @@ class ActiveCampaignController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-    def download_to_stored_data(self, connection_object=None, plug=None,
-                                data=None, **kwargs):
+    def download_to_stored_data(self, connection_object=None, plug=None, data=None, **kwargs):
         new_data = []
         if data is not None:
-            contact_id = data[0]['contact[id]']
+            contact_id = data['id']
             object_id = int(contact_id)
-            q = StoredData.objects.filter(object_id=object_id,
-                                          connection=connection_object.id,
-                                          plug=plug.id)
+            q = StoredData.objects.filter(object_id=object_id, connection=connection_object.id, plug=plug.id)
             if not q.exists():
-                for i in data:
-                    for k, v in i.items():
-                        new_data.append(StoredData(name=k, value=v or '',
-                                                   object_id=object_id,
-                                                   connection=connection_object.connection,
-                                                   plug=plug))
+                for k, v in data.items():
+                    new_data.append(
+                        StoredData(name=k, value=v or '', object_id=object_id, connection=connection_object.connection,
+                                   plug=plug))
             if new_data:
                 field_count = len(data)
                 extra = {'controller': 'activecampaign'}
@@ -1425,3 +1416,431 @@ class ActiveCampaignController(BaseController):
                             extra=extra)
             return True
         return False
+
+    def view_contact(self, id):
+        params = [
+            ('api_action', "contact_view"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('id', id),
+        ]
+        url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=url, params=params)
+        return r.json()
+
+    def delete_webhooks(self, id):
+        params = [
+            ('api_action', "webhook_delete"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('id', id),
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, params=params)
+        return r.json()
+
+    def delete_contact(self, id):
+        params = [
+            ('api_action', "contact_delete"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('id', id),
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, params=params)
+        return r.json()
+
+    def list_webhooks(self, id):
+        params = [
+            ('api_action', "webhook_view"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('id', id),
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, params=params)
+        return r.json()
+
+    def do_webhook_process(self, body=None, POST=None, webhook_id=None, **kwargs):
+        if 'list' in POST and POST['list'] == '0':
+            # ActiveCampaign envia dos webhooks, el primero es cuando se crea el contacto, el segundo cuando el contacto
+            # creado es agregado a una lista. Cuando el contacto es agregado a una lista el webhook incluye los custom
+            # fields por eso descartamos los webhooks de contactos que no hayan sido agregados a una lista (list = 0).
+            return HttpResponse(status=200)
+
+        webhook = Webhook.objects.get(pk=webhook_id)
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+            expr = '\[(\w+)\](?:\[(\d+)\])?'
+            clean_data = {}
+            custom_fields = self.get_custom_fields()
+            for k, v in POST.items():
+                m = re.search(expr, k)
+                if m:
+                    n = m.group(2)
+                    if n is None:
+                        key = m.group(1)
+                    else:
+                        key = custom_fields[str(int(n) - 1)]['label']
+                else:
+                    key = None
+                if key is not None and key not in clean_data:
+                    clean_data[key] = v
+            if not webhook.plug.is_tested:
+                webhook.plug.is_tested = True
+            if self.test_connection():
+                self.download_source_data(data=clean_data)
+                webhook.plug.save()
+        return HttpResponse(status=200)
+
+
+class InfusionSoftController(BaseController):
+    _token = None
+    _refresh_token = None
+    _token_expiration_time = None
+    _actual_time = time.time()
+
+    def __init__(self, *args, **kwargs):
+        super(InfusionSoftController, self).__init__(*args, **kwargs)
+
+    def create_connection(self, *args, **kwargs):
+        if args:
+            super(InfusionSoftController, self).create_connection(*args)
+            if self._connection_object is not None:
+                try:
+                    self._token = self._connection_object.token
+                    self._refresh_token = self._connection_object.refresh_token
+                    self._token_expiration_time = self._connection_object.token_expiration_time
+                except Exception as e:
+                    print(e)
+
+    def test_connection(self):
+        if self.is_token_expired():
+            self.refresh_token()
+        information = ''
+        return information is not None
+
+    def is_token_expired(self):
+        try:
+            return float(self._token_expiration_time) > self._actual_time
+        except Exception as e:
+            print(e)
+            return False
+
+    def refresh_token(self):
+        string_to_encode = (str(settings.INFUSIONSOFT_CLIENT_ID + ':' + settings.INFUSIONSOFT_CLIENT_SECRET)).encode(
+            'utf-8')
+        encoded = base64.b64encode(string_to_encode)
+        auth_string = 'basic' + str(encoded)
+        headers = {
+            "Accept": "application/json, */*",
+            "Authorization": "{0}".format(auth_string)
+        }
+        data = {
+            "grant_type": 'refresh_token',
+            "refresh_token": self._refresh_token,
+        }
+        try:
+            response = requests.post(
+                'https://api.infusionsoft.com/token',
+                headers=headers,
+                json=data
+            )
+
+            self._token = response.json()['access_token']
+            self._refresh_token = response.json()['refresh_token']
+            self._token_expiration_time = response.json()['expires_at']
+
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_contact(self, id):
+        if self.is_token_expired() == True:
+            self._refresh_token
+        headers = {
+            "Accept": "application/json, */*",
+            "Authorization": "Bearer {0}".format(self._token)
+        }
+        try:
+            response = requests.get('https://api.infusionsoft.com/crm/rest/v1/contacts/{0}'.format(str(id)),
+                                    headers=headers)
+            return response.json()
+        except Exception as e:
+            print(e)
+            return False
+
+    def create_update_contact(self, **kwargs):
+        if self.is_token_expired() == True:
+            self._refresh_token
+        headers = {
+            "Accept": "application/json, */*",
+            "Authorization": "Bearer {0}".format(self._token)
+        }
+        data = {"addresses": [
+            {
+                "field": "BILLING",
+                "line1": kwargs['addresses'],
+            }
+        ],
+            "email_addresses": [
+                {
+                    "email": kwargs['email_addresses'],
+                    "field": "EMAIL1"
+                }
+            ],
+            "phone_numbers": [
+                {
+                    "field": "PHONE1",
+                    "number": kwargs['phone_numbers'],
+                }
+            ],
+            "family_name": kwargs['family_name'],
+            "given_name": kwargs['given_name'],
+            "duplicate_option": "Email",
+        }
+        try:
+            response = requests.put(
+                "https://api.infusionsoft.com/crm/rest/v1/contacts",
+                headers=headers,
+                json=data
+            )
+            return response
+        except Exception as e:
+            print(e)
+            return False
+
+    def create_webhook(self):
+        if self.is_token_expired() == True:
+            self._refresh_token
+        action = self._plug.action.name
+        if action == 'Detect actions in Contacts':
+            option = self._plug.plug_action_specification.get(
+                action_specification__name='contact action')
+
+            # Creacion de Webhook
+            webhook = Webhook.objects.create(name='infusionsoft', plug=self._plug, url='', is_active=False, )
+
+            # Verificar ngrok para determinar url_base
+            url_base = settings.WEBHOOK_HOST
+            url_path = reverse('home:webhook', kwargs={'connector': 'infusionsoft', 'webhook_id': webhook.id})
+            hookUrl = url_base + url_path
+            headers = {
+                "Accept": "application/json, */*",
+                'Authorization': 'Bearer {}'.format(self._token)
+            }
+            data = {
+                "eventKey": str(option.value),
+                "hookUrl": str(hookUrl)
+            }
+            response = requests.post("https://api.infusionsoft.com/crm/rest/v1/hooks",
+                                     headers=headers, json=data)
+
+            try:
+                r = response.json()
+            except Exception as e:
+                r = {'status': 'Unverified'}
+                print(e)
+            if response.status_code in [201, 200] and r['status'].lower() == 'verified':
+                webhook.url = url_base + url_path
+                webhook.generated_id = response.json()['key']
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            else:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
+            return True
+
+        elif action == 'Detect actions in Opportunities':
+            option = self._plug.plug_action_specification.get(
+                action_specification__name='opportunity action')
+
+            # Creacion de Webhook
+            webhook = Webhook.objects.create(name='infusionsoft',
+                                             plug=self._plug, url='')
+
+            # Verificar ngrok para determinar url_base
+            url_base = settings.WEBHOOK_HOST
+            url_path = reverse('home:webhook',
+                               kwargs={'connector': 'infusionsoft',
+                                       'webhook_id': webhook.id})
+            hookUrl = url_base + url_path
+            headers = {
+                "Accept": "application/json, */*",
+                'Authorization': 'Bearer {}'.format(self._token)
+            }
+            data = {
+                "eventKey": str(option.value),
+                "hookUrl": str(hookUrl)
+            }
+            response = requests.post(
+                "https://api.infusionsoft.com/crm/rest/v1/hooks",
+                headers=headers, json=data)
+            try:
+                r = response.json()
+            except Exception as e:
+                r = {'status': 'Unverified'}
+                print(e)
+            if response.status_code in [201, 200] and r['status'].lower() == 'verified':
+                webhook.url = url_base + url_path
+                webhook.generated_id = response.json()['key']
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            else:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
+            return True
+
+        return False
+
+    def do_webhook_process(self, body=None, GET=None, POST=None, META=None, webhook_id=None, **kwargs):
+        response = HttpResponse(status=400)
+        if POST is not None:
+            if 'HTTP_X_HOOK_SECRET' in META:
+                response.status_code = 200
+                response['X-Hook-Secret'] = META['HTTP_X_HOOK_SECRET']
+                return response
+
+            if body['object_keys'][0]['id'] is not None:
+                object_id = body['object_keys'][0]['id']
+                event_key = body['event_key']
+                try:
+                    plug = Plug.objects.get(Q(gear_source__is_active=True) | Q(is_tested=False),
+                                            plug_type__iexact='source',
+                                            connection__connector__name__iexact='infusionsoft',
+                                            plug_action_specification__value__iexact=event_key,
+                                            webhook__id=webhook_id, )
+                except Exception as e:
+                    print(e)
+                    plug = None
+                if plug:
+                    self.create_connection(plug.connection.related_connection, plug)
+                    if self.test_connection():
+                        try:
+                            contact = self.get_contact(object_id)
+                        except Exception as e:
+                            print(e)
+                        self.download_source_data(contact=contact)
+        return response
+
+    def hooks_types(self):
+        if self.is_token_expired() == True:
+            self._refresh_token
+
+        headers = {
+            "Accept": "application/json, */*",
+            "Authorization": "Bearer {0}".format(self._token)
+        }
+        response = requests.get(
+            "https://api.infusionsoft.com/crm/rest/v1/hooks/event_keys",
+            headers=headers)
+        event_keys = response.json()
+        return event_keys
+
+    def get_action_specification_options(self, action_specification_id):
+        if self.is_token_expired() == True:
+            self._refresh_token
+        action_specification = ActionSpecification.objects.get(
+            pk=action_specification_id)
+        if action_specification.name.lower() == 'contact action':
+            options = []
+            opt = self.hooks_types()
+            for i in opt:
+                if 'contact' in i:
+                    options.append(i)
+            return tuple(
+                {'id': k, 'name': k.replace('.', ' ')} for k in options
+            )
+        elif action_specification.name.lower() == 'opportunity action':
+            options = []
+            opt = self.hooks_types()
+            for i in opt:
+                if 'opportunity' in i:
+                    options.append(i)
+            return tuple(
+                {'id': k, 'name': k.replace('.', ' ')} for k in options
+            )
+        else:
+            raise ControllerError(
+                "That specification doesn't belong to an action in this connector.")
+
+    def download_to_stored_data(self, connection_object=None, plug=None,
+                                contact=None, **kwargs):
+        if self.is_token_expired() == True:
+            self._refresh_token
+        if contact is not None:
+            contact_id = contact['id']
+            q = StoredData.objects.filter(
+                connection=connection_object.connection, plug=plug,
+                object_id=contact_id)
+            contact_data = []
+
+            flat_contacts = {}
+
+            for k, v in contact.items():
+                if type(v) == dict:
+                    for x, z in v.items():
+                        flat_contacts['{0}_{1}'.format(k, x)] = z
+                else:
+                    flat_contacts[k] = v
+
+            if not q.exists():
+                for k, v in flat_contacts.items():
+                    contact_data.append(
+                        StoredData(connection=connection_object.connection, plug=plug, object_id=contact_id, name=k,
+                                   value=v or ''))
+            extra = {}
+            for data in contact_data:
+                try:
+                    extra['status'] = 's'
+                    extra = {'controller': 'infusionSoft'}
+                    data.save()
+                    self._log.info(
+                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                            data.object_id, data.plug.id,
+                            data.connection.id),
+                        extra=extra)
+                except Exception as e:
+                    extra['status'] = 'f'
+                    self._log.info(
+                        'Item ID: %s, Connection: %s, Plug: %s failed.' % (
+                            data.object_id, data.plug.id,
+                            data.connection.id),
+                        extra=extra)
+            return True
+        return False
+
+    def get_target_fields(self, **kwargs):
+        return [{'name': 'given_name', 'type': 'text', 'required': False},
+                {'name': 'family_name', 'type': 'text', 'required': False},
+                {'name': 'middle_name', 'type': 'text', 'required': False},
+                {'name': 'id', 'type': 'text', 'required': False},
+                {'name': 'date_created', 'type': 'text', 'required': False},
+                {'name': 'phone_numbers', 'type': 'text', 'required': True},
+                {'name': 'addresses', 'type': 'text', 'required': False},
+                {'name': 'email_addresses', 'type': 'text', 'required': True},
+                {'name': 'company_company_name', 'type': 'text', 'required': False},
+                {'name': 'company_id', 'type': 'text', 'required': False}]
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.InfusionSoft) for f in fields]
+
+    def send_stored_data(self, source_data, target_fields, is_first=False):
+        data_list = get_dict_with_source_data(source_data, target_fields)
+        if self._plug is not None:
+            obj_list = []
+            extra = {'controller': 'InfusionSoft'}
+            for item in data_list:
+                task = self.create_update_contact(**item)
+                if task.status_code in [200, 201]:
+                    extra['status'] = 's'
+                    print(task.json())
+                    self._log.info('Item: %s successfully sent.' % (
+                        task.json()['given_name']), extra=extra)
+                    obj_list.append(task)
+                else:
+                    extra['status'] = 'f'
+                    self._log.info('Item: failed to send.', extra=extra)
+            return obj_list
+        raise ControllerError("There's no plug")

@@ -1,0 +1,22 @@
+{% extends 'connection/create.html' %}
+{% load static %}
+
+{% block body_base %}
+    <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
+          method="post" autocomplete="off">
+        <input type="text" name="shop-url">
+        <a id="shopify-link" href="javascript:auth('{{ authorization_url }}')">Shopify Auth</a>
+        {% csrf_token %}
+    </form>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        function auth(url) {
+            url = url.replace('xxxx', $('input[name=shop-url]').val());
+            this.location = url;
+        }
+    </script>
+{% endblock %}

@@ -4,8 +4,7 @@ from apps.gp.model_fields import JSONField
 from django.contrib.auth.models import User
 from apps.gp.enum import ConnectorEnum
 
-connections = ['connection_{0}'.format(connector.name.lower()) for connector in
-               ConnectorEnum.get_connector_list()]
+connections = ['connection_{0}'.format(connector.name.lower()) for connector in ConnectorEnum.get_connector_list()]
 
 
 class Category(models.Model):
@@ -18,8 +17,7 @@ class Connector(models.Model):
     css_class = models.CharField('css class', max_length=40, blank=True)
     is_source = models.BooleanField('is source', default=False)
     is_target = models.BooleanField('is target', default=False)
-    icon = models.ImageField('icon', upload_to='connector/icon', null=True,
-                             default=None)
+    icon = models.ImageField('icon', upload_to='connector/icon', null=True, default=None)
     category = models.ManyToManyField(Category, through='ConnectorCategory')
 
     class Meta:
@@ -58,8 +56,7 @@ class Action(models.Model):
 
 
 class ActionSpecification(models.Model):
-    action = models.ForeignKey(Action, on_delete=models.CASCADE,
-                               related_name='action_specification')
+    action = models.ForeignKey(Action, on_delete=models.CASCADE, related_name='action_specification')
     name = models.CharField('name', max_length=30)
 
     def __str__(self):
@@ -68,11 +65,11 @@ class ActionSpecification(models.Model):
 
 class Connection(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    connector = models.ForeignKey(Connector, default=2,
-                                  on_delete=models.CASCADE)
+    connector = models.ForeignKey(Connector, default=2, on_delete=models.CASCADE)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
     is_deleted = models.BooleanField('is deleted', default=False)
+    is_active = models.BooleanField('is active', default=True)
 
     @property
     def name(self):
@@ -115,7 +112,6 @@ class JiraConnection(models.Model):
 
 class FacebookLeadsConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_facebookleads')
-
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
 
@@ -132,7 +128,7 @@ class InstagramConnection(models.Model):
         return self.name
 
 
-class MySQLConnection(models.Model):  # TODO Encrypt TEST
+class MySQLConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mysql')
     name = models.CharField('name', max_length=200)
     host = models.CharField('host', max_length=200)
@@ -151,6 +147,7 @@ class PostgreSQLConnection(models.Model):
     name = models.CharField('name', max_length=200)
     host = models.CharField('host', max_length=200)
     database = models.CharField('database', max_length=200)
+    schema = models.CharField('schema', max_length=200)
     table = models.CharField('table', max_length=200)
     port = models.CharField('port', max_length=7)
     connection_user = models.CharField('user', max_length=60)
@@ -246,9 +243,8 @@ class TwitterConnection(models.Model):
     token = models.CharField('token', max_length=300)
     token_secret = models.CharField('token', max_length=300)
 
-
-def __str__(self):
-    return self.name
+    def __str__(self):
+        return self.name
 
 
 class GoogleSpreadSheetsConnection(models.Model):
@@ -409,8 +405,7 @@ class AsanaConnection(models.Model):
 
 
 class VtigerConnection(models.Model):
-    connection = models.OneToOneField(
-        Connection, on_delete=models.CASCADE, related_name='connection_vtiger')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_vtiger')
     name = models.CharField('name', max_length=200)
     connection_user = models.CharField('user', max_length=60)
     connection_access_key = models.CharField('password', max_length=40)
@@ -422,11 +417,15 @@ class VtigerConnection(models.Model):
 
 
 class MercadoLibreConnection(models.Model):
-    SITES = (('MLA', 'Argentina'), ('MLB', 'Brazil'), ('MCO', 'Colombia'), ('MCR', 'Costa Rica'), ('MEC', 'Ecuador'),
-             ('MLC', 'Chile'), ('MLM', 'Mexico'), ('MLU', 'Uruguay'), ('MLV', 'Venezuela'), ('MPA', 'Panama'),
-             ('MPE', 'Peru'), ('MPT', 'Portugal'), ('MRD', 'Republica Dominicana'))
+    SITES = (('MLA', 'Argentina'), ('MLB', 'Brazil'), ('MCO', 'Colombia'),
+             ('MCR', 'Costa Rica'), ('MEC', 'Ecuador'),
+             ('MLC', 'Chile'), ('MLM', 'Mexico'), ('MLU', 'Uruguay'),
+             ('MLV', 'Venezuela'), ('MPA', 'Panama'),
+             ('MPE', 'Peru'), ('MPT', 'Portugal'),
+             ('MRD', 'Republica Dominicana'))
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_mercadolibre')
     name = models.CharField('name', max_length=200)
+    user_id = models.CharField('user_id', max_length=200)
     token = models.CharField('token', max_length=300)
     site = models.CharField(max_length=3, choices=SITES)
 
@@ -454,14 +453,29 @@ class GitLabConnection(models.Model):
         return self.name
 
 
+class InfusionSoftConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_infusionsoft')
+    name = models.CharField('name', max_length=200)
+    token = models.CharField('token', max_length=300)
+    refresh_token = models.CharField('refresh token', max_length=300)
+    token_expiration_time = models.CharField('token expiration time', max_length=300)
+
+    def __str__(self):
+        return self.name
+
+
 class ActiveCampaignConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_activecampaign')
     name = models.CharField('name', max_length=200)
     host = models.CharField('host', max_length=200)
-    connection_access_key = models.CharField('password', max_length=100)
+    connection_access_key = models.CharField('access key', max_length=100)
 
     def __str__(self):
         return self.name
+
+
+class TypeForm():
+    pass
 
 
 class Plug(models.Model):
@@ -509,25 +523,6 @@ class StoredData(models.Model):
     def __str__(self):
         return '{0} {1}'.format(self.name, self.object_id)
 
-class HistoryCount(models.Model):
-    name_input = models.CharField('name_input', max_length=200)
-    datetime = models.DateTimeField(auto_now_add=True)
-    user_id = models.CharField('user_id', max_length=200)
-    user_name = models.CharField('user_name', max_length=200)
-    gear_id = models.CharField('gear_id', max_length=200)
-    plug_id_input = models.CharField('plug_id_input', max_length=200)
-    action_input = models.CharField('action_input', max_length=200)
-    specifications_input = models.CharField('specifications_input', max_length=1000)
-    data_input = models.CharField('data_input', max_length=2000)
-    object_id = models.CharField('object_id', max_length=200)
-    name_output = models.CharField('name_output', max_length=200)
-    plug_id_output = models.CharField('plug_id_output', max_length=200)
-    action_output = models.CharField('action_output', max_length=200)
-    specifications_output = models.CharField('specifications_output', max_length=1000)
-    data_output = models.CharField('data_output', max_length=2000)
-
-    def __str__(self):
-        return self.name_input
 
 class GearGroup(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -603,19 +598,30 @@ class ControllerLog(DBLogEntry):
     STATUS = (('f', 'Failed'), ('s', 'Successful'))
     module = models.CharField(max_length=30, blank=True, default='')
     process = models.CharField(max_length=20, blank=True, default='')
-    status = models.CharField(max_length=2, blank=False, choices=STATUS,
-                              default='f')
+    status = models.CharField(max_length=2, blank=False, choices=STATUS, default='f')
     controller = models.CharField(max_length=20, blank=True, default='')
 
 
-class ProcessedData():
-    gear = models.ForeignKey(Gear, related_name='processed_data')
-    plug = models.ForeignKey(Plug)
-    connection = models.ForeignKey(Connection)
+class DownloadHistory(models.Model):
     connector = models.ForeignKey(Connector)
-    process_type = models.CharField('process type', max_length=20, choices=(
-        ('source', 'Source'), ('target', 'target')))
-    created = models.DateTimeField('created', auto_now_add=True)
+    gear_id = models.CharField('gear_id', max_length=25)
+    plug_id = models.CharField('plug_id', max_length=25)
+    connection = models.CharField(max_length=2000)
+    date = models.DateTimeField(auto_now_add=True)
+    raw = models.CharField(max_length=25000)
+    identifier = models.CharField('identifier', max_length=500)
+
+
+class SendHistory(models.Model):
+    connector = models.ForeignKey(Connector)
+    gear_id = models.CharField('gear_id', max_length=25)
+    plug_id = models.CharField('plug_id', max_length=25)
+    connection = models.CharField(max_length=5000)
+    date = models.DateTimeField(auto_now_add=True)
+    data = models.CharField(max_length=25000)
+    response = models.CharField(max_length=25000)
+    sent = models.BooleanField('sent', default=False)
+    identifier = models.CharField('identifier', max_length=500)
 
 
 admin.site.register(Connector)

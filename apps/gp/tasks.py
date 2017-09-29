@@ -65,21 +65,22 @@ def update_plug(plug_id, gear_id, **query_params):
                     target_connector = ConnectorEnum.get_connector(gear.target.connection.connector_id)
                     update_plug.s(gear.target.id, gear_id).apply_async()  # SIN COLAS
                     # update_plug.s(gear.target.id, gear_id).apply_async(queue=target_connector.name.lower())  # CON COLAS
-                    print("Assigning plug {0} to queue: {1}.".format(gear.target.id, connector.name.lower()))
-
+                    print("Assigning plug {0} to queue: {1}.".format(gear.target.id,
+                                                                     gear.target.connection.connector.name.lower()))
             elif plug.plug_type.lower() == 'target':
                 stored_data = StoredData.objects.filter(**query_params)
                 if stored_data.count() > 0:
                     target_fields = OrderedDict((data.target_name, data.source_value) for data in
                                                 GearMapData.objects.filter(gear_map=gear.gear_map))
                     source_data = [
-                        {'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}}
-                        for item in stored_data.values_list('object_id').distinct()]
+                        {'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}} for
+                        item in stored_data.values_list('object_id').distinct()]
                     is_first = gear.gear_map.last_sent_stored_data_id is None
                     if is_first:
                         source_data = [source_data[0], ]
-                    entries = controller.send_stored_data(source_data, target_fields, is_first=is_first)
-                    last_sent_data = StoredData.objects.filter(object_id=source_data[-1]['id'], plug=gear.source, connection=gear.source.connection).order_by('id').last()
+                    entries = controller.send_target_data(source_data, target_fields, is_first=is_first)
+                    last_sent_data = StoredData.objects.filter(object_id=source_data[-1]['id'], plug=gear.source,
+                                                               connection=gear.source.connection).order_by('id').last()
                     if entries or connector == ConnectorEnum.MailChimp:
                         gear.gear_map.last_source_update = timezone.now()
                         gear.gear_map.last_sent_stored_data_id = last_sent_data.id

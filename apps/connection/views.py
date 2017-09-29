@@ -4,17 +4,20 @@ from instagram.client import InstagramAPI
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, ListView, View, TemplateView
+from django.views.generic import CreateView, ListView, View, TemplateView, \
+    UpdateView
 from django.core.urlresolvers import reverse
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from apps.gp.enum import ConnectorEnum, GoogleAPIEnum
-from apps.gp.models import Connection, Connector, MercadoLibreConnection
+from apps.gp.models import Gear, Plug, PlugActionSpecification, Connection, \
+    Connector, MercadoLibreConnection
 from oauth2client import client
 from requests_oauthlib import OAuth2Session
 from slacker import Slacker
 import json
 import urllib
+from urllib.parse import urlencode
 import requests
 from evernote.api.client import EvernoteClient
 from mercadolibre.client import Client as MercadolibreClient
@@ -38,7 +41,8 @@ class ListConnectorView(LoginRequiredMixin, ListView):
         elif self.kwargs['type'].lower() == 'target':
             kw = {'is_target': True}
         else:
-            raise (Exception("Not an available type. must be either Source or Target."))
+            raise (Exception(
+                "Not an available type. must be either Source or Target."))
         return self.model.objects.filter(**kw)
 
     def get_context_data(self, **kwargs):
@@ -101,16 +105,14 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                 controller = controller_class()
                 token = self.request.POST.get('token', '')
                 form.instance.token = controller.extend_token(token)
-            elif connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleContacts,
-                               ConnectorEnum.GoogleForms, ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube]:
+            elif connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleContacts, ConnectorEnum.YouTube,
+                               ConnectorEnum.GoogleForms, ConnectorEnum.GoogleCalendar]:
                 form.instance.credentials_json = self.request.session['google_credentials']
             elif connector == ConnectorEnum.Vtiger:
                 controller_class = ConnectorEnum.get_controller(connector)
                 controller = controller_class()
-                token = controller.get_token(
-                    form.cleaned_data['connection_user'],
-                    form.cleaned_data['connection_access_key'],
-                    form.cleaned_data['url'])
+                token = controller.get_token(form.cleaned_data['connection_user'],
+                                             form.cleaned_data['connection_access_key'], form.cleaned_data['url'])
                 form.instance.token = token
             self.object = form.save()
             self.request.session['auto_select_connection_id'] = c.id
@@ -126,6 +128,7 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                 self.template_name = 'connection/create/{0}.html'.format(connector.name.lower())
             elif connector.connection_type == 'authorization':
                 self.template_name = 'connection/create_with_auth.html'
+            self.request.session['connection_action'] = 'create'
         return super(CreateConnectionView, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
@@ -136,6 +139,10 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                 self.template_name = 'connection/create/{0}.html'.format(connector.name.lower())
             elif connector.connection_type == 'authorization':
                 self.template_name = 'connection/create_with_auth.html'
+            if 'connection_action' in self.request.session:
+                del self.request.session['connection_action']
+            if 'connection_id' in self.request.session:
+                del self.request.session['connection_id']
         return super(CreateConnectionView, self).post(*args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):
@@ -151,7 +158,8 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             context['authorization_url'] = flow.step1_get_authorize_url()
             self.request.session['google_connection_type'] = api.name.lower()
         elif connector == ConnectorEnum.Slack:
-            context['authorization_url'] = settings.SLACK_PERMISSIONS_URL
+            context['authorization_url'] = settings.SLACK_PERMISSIONS_URL + '&redirect_uri={0}{1}'.format(
+                settings.CURRENT_HOST, reverse('connection:slack_auth'))
         elif connector == ConnectorEnum.Twitter:
             flow = tweepy.OAuthHandler(settings.TWITTER_CLIENT_ID, settings.TWITTER_CLIENT_SECRET)
             context['authorization_url'] = flow.get_authorization_url()
@@ -172,20 +180,18 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         elif connector == ConnectorEnum.Evernote:
             client = EvernoteClient(consumer_key=settings.EVERNOTE_CONSUMER_KEY,
                                     consumer_secret=settings.EVERNOTE_CONSUMER_SECRET, sandbox=True)
-            request_token = client.get_request_token(
-                settings.EVERNOTE_REDIRECT_URL)
+            request_token = client.get_request_token(settings.EVERNOTE_REDIRECT_URL)
             self.request.session['oauth_secret_evernote'] = request_token['oauth_token_secret']
-            context['authorization_url'] = client.get_authorize_url(
-                request_token)
+            context['authorization_url'] = client.get_authorize_url(request_token)
         elif connector == ConnectorEnum.Asana:
-            oauth = OAuth2Session(client_id=settings.ASANA_CLIENT_ID,
-                                  redirect_uri=settings.ASANA_REDIRECT_URL)
+            oauth = OAuth2Session(client_id=settings.ASANA_CLIENT_ID, redirect_uri=settings.ASANA_REDIRECT_URL)
             authorization_url, state = oauth.authorization_url(
-                'https://app.asana.com/-/oauth_authorize?response_type=code&client_id={0}&redirect_uri={1}&state=1234'
-                    .format(settings.ASANA_CLIENT_ID, settings.ASANA_REDIRECT_URL))
+                'https://app.asana.com/-/oauth_authorize?response_type=code&client_id={0}&redirect_uri={1}&state=1234'.format(
+                    settings.ASANA_CLIENT_ID, settings.ASANA_REDIRECT_URL))
             context['authorization_url'] = authorization_url
         elif connector == ConnectorEnum.MercadoLibre:
-            m = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
+            m = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
+                                   client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
             context['authorization_url'] = m.authorization_url(redirect_uri=settings.MERCADOLIBRE_REDIRECT_URL)
             context['sites'] = MercadoLibreConnection.SITES
         elif connector == ConnectorEnum.WunderList:
@@ -202,6 +208,15 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             authorization_url, state = oauth.authorization_url(
                 'https://gitlab.com/oauth/authorize?response_type=code&client_id={0}&redirect_uri={1}&state=1234'.format(
                     settings.GITLAB_CLIENT_ID, settings.GITLAB_REDIRECT_URL))
+            context['authorization_url'] = authorization_url
+        elif connector == ConnectorEnum.InfusionSoft:
+            data = {
+                "client_id": settings.INFUSIONSOFT_CLIENT_ID,
+                "redirect_uri": settings.INFUSIONSOFT_REDIRECT_URL,
+                "response_type": "code",
+                "scope": "full|gn389.infusionsoft.com"
+            }
+            authorization_url = '%s%s' % (settings.INFUSIONSOFT_AUTHORIZATION_URL, urlencode(data))
             context['authorization_url'] = authorization_url
         return context
 
@@ -222,16 +237,22 @@ class CreateTokenAuthorizedConnectionView(TemplateView):
             data = self.request.session['connection_data']
             connector = ConnectorEnum.get_connector(name=self.request.session['connector_name'])
             connector_model = ConnectorEnum.get_model(connector)
-            c = Connection.objects.create(user=request.user, connector_id=connector.value)
-            n = int(connector_model.objects.filter(connection__user=request.user).count()) + 1
-            data['connection_id'] = c.id
-            data['name'] = "{0} Connection # {1}".format(connector.name, n)
-            try:
-                obj = connector_model.objects.create(**data)
-                return redirect(reverse('connection:create_success'))
-            except Exception:
-                # TODO: Connection Eror
-                return redirect(reverse('connection:create_success'))
+            if 'connection_action' in self.request.session and self.request.session['connection_action'] == 'update':
+                print("SII!")
+                print(self.request.session['connection_action'])
+                c = Connection.objects.get()
+
+            else:
+                c = Connection.objects.create(user=request.user, connector_id=connector.value)
+                n = int(connector_model.objects.filter(connection__user=request.user).count()) + 1
+                data['connection_id'] = c.id
+                data['name'] = "{0} Connection # {1}".format(connector.name, n)
+                try:
+                    obj = connector_model.objects.create(**data)
+                except Exception:
+                    # TODO: Connection Error
+                    pass
+            return redirect(reverse('connection:create_success'))
 
 
 class AuthSuccess(TemplateView):
@@ -254,15 +275,14 @@ class TestConnectionView(LoginRequiredMixin, View):
                 controller = controller_class(connection=connection_object)
             else:
                 connection_model = ConnectorEnum.get_model(connector)
-                connection_params = {key: str(val)
-                                     for key, val in request.POST.items()}
-                del (connection_params['csrfmiddlewaretoken'])
+                connection_params = {key: str(val) for key, val in request.POST.items()}
+                del (connection_params['csrfmiddlewaretoken'])  # Eliminar csrf token de los parametros
                 connection_object = connection_model(**connection_params)
                 controller_class = ConnectorEnum.get_controller(connector)
                 controller = controller_class(connection=connection_object)
             return JsonResponse({'test': controller.test_connection()})
         except Exception as e:
-            raise
+            # raise
             return JsonResponse({'test': False})
 
 
@@ -275,7 +295,8 @@ class FacebookAuthView(View):
 
 class MercadoLibreAuthView(View):
     def get(self, request, *args, **kwargs):
-        m = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID, client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
+        m = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
+                               client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
         token = m.exchange_code(code=request.GET.get('code'), redirect_uri=settings.MERCADOLIBRE_REDIRECT_URL)
         m.set_token(token)
         user_me = m.me()
@@ -324,8 +345,11 @@ class SlackAuthView(View):
         code = request.GET.get('code', None)
         if code:
             slack = Slacker("")
-            auth_client = slack.oauth.access(client_id=settings.SLACK_CLIENT_ID,
-                                             client_secret=settings.SLACK_CLIENT_SECRET, code=code)
+            auth_client = slack.oauth.access(
+                client_id=settings.SLACK_CLIENT_ID,
+                client_secret=settings.SLACK_CLIENT_SECRET, code=code,
+                redirect_uri=settings.CURRENT_HOST + reverse(
+                    'connection:slack_auth'))
             data = json.loads(auth_client.raw)
             token = data['access_token'] if 'access_token' in data else None
             request.session['connection_data'] = {'token': token, }
@@ -345,13 +369,15 @@ class EvernoteAuthView(View):
         auth_token = client.get_access_token(oauth_token, oauth_secret, val)
         self.request.session['connection_data'] = {'token': auth_token, }
         self.request.session['connector_name'] = ConnectorEnum.Evernote.name
-        return redirect(reverse('connection:create_token_authorized_connection'))
+        return redirect(
+            reverse('connection:create_token_authorized_connection'))
 
 
 class AsanaAuthView(View):
     def get(self, request, *args, **kwargs):
         code = request.GET.get('code', '')
-        oauth = OAuth2Session(client_id=settings.ASANA_CLIENT_ID, redirect_uri=settings.ASANA_REDIRECT_URL)
+        oauth = OAuth2Session(client_id=settings.ASANA_CLIENT_ID,
+                              redirect_uri=settings.ASANA_REDIRECT_URL)
         token = oauth.fetch_token('https://app.asana.com/-/oauth_token', code=code,
                                   authorization_response=settings.ASANA_REDIRECT_URL,
                                   client_id=settings.ASANA_CLIENT_ID, client_secret=settings.ASANA_CLIENT_SECRET, )
@@ -428,30 +454,50 @@ class ShopifyAuthView(View):
 class GitLabAuthView(View):
     def get(self, request, *args, **kwargs):
         code = request.GET.get('code', '')
-        oauth = OAuth2Session(client_id=settings.GITLAB_CLIENT_ID,
-                              redirect_uri=settings.GITLAB_REDIRECT_URL)
+        oauth = OAuth2Session(client_id=settings.GITLAB_CLIENT_ID, redirect_uri=settings.GITLAB_REDIRECT_URL)
         token = oauth.fetch_token('https://gitlab.com/oauth/token', code=code,
                                   authorization_response=settings.GITLAB_REDIRECT_URL,
                                   client_id=settings.GITLAB_CLIENT_ID, client_secret=settings.GITLAB_CLIENT_SECRET, )
         self.request.session['connection_data'] = {'token': token['access_token'],
-                                                   'refresh_token': token['refresh_token'], }
+                                                   'refresh_token': token['refresh_token']}
         self.request.session['connector_name'] = ConnectorEnum.GitLab.name
         return redirect(reverse('connection:create_token_authorized_connection'))
 
 
 class MailchimpAuthView(View):
     def get(self, request, *args, **kwargs):
-        print("get")
         auth_code = request.GET.get('code', None)
-        print("code", auth_code)
-        data = {"grant_type": "authorization_code", "client_id": settings.MAILCHIMP_CLIENT_ID,
-                "client_secret": settings.MAILCHIMP_CLIENT_SECRET,
-                "redirect_uri": settings.MAILCHIMP_REDIRECT_URL, "code": auth_code}
+        data = {"grant_type": "authorization_code", "client_id": settings.MAILCHIMP_CLIENT_ID, "code": auth_code,
+                "client_secret": settings.MAILCHIMP_CLIENT_SECRET, "redirect_uri": settings.MAILCHIMP_REDIRECT_URL}
         url = settings.MAILCHIMP_ACCESS_TOKEN_URI
         response = requests.post(url, data=data).json()
-        self.request.session['connection_data'] = {'token': response["access_token"]}
-        self.request.session['connector_name'] = ConnectorEnum.MailChimp.name
+        print(response.text)
+        try:
+            self.request.session['connection_data'] = {'token': response["access_token"]}
+            self.request.session['connector_name'] = ConnectorEnum.MailChimp.name
+        except:
+            raise
         return redirect(reverse('connection:create_token_authorized_connection'))
+
+
+class InfusionSoftAuthView(View):
+    def get(self, request, *args, **kwargs):
+        code = request.GET.get('code', '')
+        oauth = OAuth2Session(client_id=settings.INFUSIONSOFT_CLIENT_ID,
+                              redirect_uri=settings.INFUSIONSOFT_REDIRECT_URL)
+        token = oauth.fetch_token('https://api.infusionsoft.com/token',
+                                  code=code,
+                                  authorization_response=settings.INFUSIONSOFT_REDIRECT_URL,
+                                  client_id=settings.INFUSIONSOFT_CLIENT_ID,
+                                  client_secret=settings.INFUSIONSOFT_CLIENT_SECRET, )
+        self.request.session['connection_data'] = {
+            'token': token['access_token'],
+            'refresh_token': token['refresh_token'],
+            'token_expiration_time': token['expires_at']}
+        print('data de conexion', self.request.session['connection_data'])
+        self.request.session['connector_name'] = ConnectorEnum.InfusionSoft.name
+        return redirect(
+            reverse('connection:create_token_authorized_connection'))
 
 
 # NPI
@@ -467,9 +513,13 @@ def get_salesforce_auth():
 
 
 def get_survey_monkey_url():
-    url_params = urllib.parse.urlencode({"redirect_uri": settings.SURVEYMONKEY_REDIRECT_URI,
-                                         "client_id": settings.SURVEYMONKEY_CLIENT_ID, "response_type": "code"})
-    return '{0}{1}?{2}'.format(settings.SURVEYMONKEY_API_BASE, settings.SURVEYMONKEY_AUTH_CODE_ENDPOINT, url_params)
+    url_params = urllib.parse.urlencode(
+        {"redirect_uri": settings.SURVEYMONKEY_REDIRECT_URI,
+         "client_id": settings.SURVEYMONKEY_CLIENT_ID,
+         "response_type": "code"})
+    return '{0}{1}?{2}'.format(settings.SURVEYMONKEY_API_BASE,
+                               settings.SURVEYMONKEY_AUTH_CODE_ENDPOINT,
+                               url_params)
 
 
 def get_mailchimp_url():
@@ -480,7 +530,8 @@ def get_mailchimp_url():
 
 def get_shopify_url():
     return "https://{0}.myshopify.com/admin/oauth/authorize?client_id={1}&scope={2}&redirect_uri={3}".format(
-        'xxxx', settings.SHOPIFY_API_KEY, settings.SHOPIFY_SCOPE, settings.SHOPIFY_REDIRECT_URI)
+        'xxxx', settings.SHOPIFY_API_KEY, settings.SHOPIFY_SCOPE,
+        settings.SHOPIFY_REDIRECT_URI)
 
 
 def get_hubspot_url():
@@ -518,9 +569,131 @@ class ManageConnectionView(LoginRequiredMixin, ListView):
                 connectors.append(connection.connector.name.lower())
         result = []
         for connector in connectors:
-            result.append(all_connections.filter(connector__name__iexact=connector))
+            result.append(
+                all_connections.filter(connector__name__iexact=connector))
         return result
 
-    # def get_context_data(self, **kwargs):
-    #     context = super(ManageConnectionView, self).get_context_data(**kwargs)
-    #     return context
+
+def connection_toggle(request):
+    try:
+        gear_id = request.session['gear_id']
+    except Exception as e:
+        print(e)
+    try:
+        c = Connection.objects.get(pk=gear_id)
+        if c.is_active == True:
+            c.is_active = False
+            c.save()
+            return JsonResponse({'Connection State': 'NOT Active'})
+        else:
+            c.is_active = True
+            c.save()
+            return JsonResponse({'Connection State': 'ACTIVE'})
+    except Exception as e:
+        return JsonResponse(e)
+
+
+class UpdateConnectionView(UpdateView):
+    model = Connection
+    template_name = 'connection/update.html'
+    fields = ['name', 'gear_group']
+    login_url = '/accounts/login/'
+    success_url = reverse_lazy('connection:create_success')
+
+    def get(self, request, *args, **kwargs):
+        if self.kwargs['pk'] is not None:
+            connection = self.model.objects.get(pk=self.kwargs['pk'])
+            connector = ConnectorEnum.get_connector(connection.connector.id)
+            self.model, self.fields = ConnectorEnum.get_connector_data(
+                connector)
+            if connector.connection_type == 'special':
+                self.template_name = 'connection/create/{0}.html'.format(
+                    connector.name.lower())
+            elif connector.connection_type == 'authorization':
+                self.template_name = 'connection/create_with_auth.html'
+            self.request.session['connection_action'] = 'update'
+            self.request.session['connection_id'] = connection.id
+        return super(UpdateConnectionView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        if self.kwargs['pk'] is not None:
+            connection = self.model.objects.get(pk=self.kwargs['pk'])
+            connector = ConnectorEnum.get_connector(connection.connector.id)
+            self.model, self.fields = ConnectorEnum.get_connector_data(
+                connector)
+            if 'connection_action' in self.request.session:
+                del self.request.session['connection_action']
+            if 'connection_id' in self.request.session:
+                del self.request.session['connection_id']
+        return super(UpdateConnectionView, self).post(request, *args, **kwargs)
+
+    def get_object(self, queryset=None):
+        return self.model.objects.get(connection__id=self.kwargs['pk'])
+
+    def get_context_data(self, *args, **kwargs):
+        connection = self.model.objects.get(connection__id=self.kwargs['pk'])
+        connector = ConnectorEnum.get_connector(
+            connection.connection.connector.id)
+        context = super(UpdateConnectionView, self).get_context_data(**kwargs)
+        context['connection'] = connection.connection.id
+        context['connector_name'] = connector.name
+        context['connector_id'] = connector.value
+        if connector in [ConnectorEnum.GoogleSpreadSheets, ConnectorEnum.GoogleForms, ConnectorEnum.GoogleContacts,
+                         ConnectorEnum.GoogleCalendar, ConnectorEnum.YouTube, ConnectorEnum.Gmail]:
+            api = GoogleAPIEnum.get_api(connector.name)
+            flow = get_flow(settings.GOOGLE_AUTH_CALLBACK_URL, scope=api.scope)
+            context['authorization_url'] = flow.step1_get_authorize_url()
+            self.request.session['google_connection_type'] = api.name.lower()
+        elif connector == ConnectorEnum.Slack:
+            context['authorization_url'] = settings.SLACK_PERMISSIONS_URL + '&redirect_uri={0}{1}'.format(
+                settings.CURRENT_HOST, reverse('connection:slack_auth'))
+        elif connector == ConnectorEnum.Twitter:
+            flow = tweepy.OAuthHandler(settings.TWITTER_CLIENT_ID, settings.TWITTER_CLIENT_SECRET)
+            context['authorization_url'] = flow.get_authorization_url()
+            self.request.session['twitter_request_token'] = flow.request_token
+        elif connector == ConnectorEnum.SurveyMonkey:
+            context['authorization_url'] = get_survey_monkey_url()
+        elif connector == ConnectorEnum.Shopify:
+            context['authorization_url'] = get_shopify_url()
+        elif connector == ConnectorEnum.Instagram:
+            flow = InstagramAPI(client_id=settings.INSTAGRAM_CLIENT_ID, client_secret=settings.INSTAGRAM_CLIENT_SECRET,
+                                redirect_uri=settings.INSTAGRAM_AUTH_URL)
+            context['authorizaton_url'] = flow.get_authorize_login_url(scope=settings.INSTAGRAM_SCOPE)
+        elif connector == ConnectorEnum.Salesforce:
+            flow = get_salesforce_auth()
+            context['authorization_url'] = flow
+        elif connector == ConnectorEnum.HubSpot:
+            context['authorizaton_url'] = get_hubspot_url()
+        elif connector == ConnectorEnum.Evernote:
+            client = EvernoteClient(consumer_key=settings.EVERNOTE_CONSUMER_KEY,
+                                    consumer_secret=settings.EVERNOTE_CONSUMER_SECRET, sandbox=True)
+            request_token = client.get_request_token(settings.EVERNOTE_REDIRECT_URL)
+            self.request.session['oauth_secret_evernote'] = request_token['oauth_token_secret']
+            context['authorization_url'] = client.get_authorize_url(request_token)
+        elif connector == ConnectorEnum.Asana:
+            oauth = OAuth2Session(client_id=settings.ASANA_CLIENT_ID, redirect_uri=settings.ASANA_REDIRECT_URL)
+            authorization_url, state = oauth.authorization_url(
+                'https://app.asana.com/-/oauth_authorize?response_type=code&client_id={0}&redirect_uri={1}&state=1234'.format(
+                    settings.ASANA_CLIENT_ID, settings.ASANA_REDIRECT_URL))
+            context['authorization_url'] = authorization_url
+        elif connector == ConnectorEnum.MercadoLibre:
+            m = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
+                                   client_secret=settings.MERCADOLIBRE_CLIENT_SECRET)
+            context['authorization_url'] = m.authorization_url(redirect_uri=settings.MERCADOLIBRE_REDIRECT_URL)
+            context['sites'] = MercadoLibreConnection.SITES
+        elif connector == ConnectorEnum.WunderList:
+            oauth = OAuth2Session(client_id=settings.WUNDERLIST_CLIENT_ID,
+                                  redirect_uri=settings.WUNDERLIST_REDIRECT_URL)
+            url, state = oauth.authorization_url('https://www.wunderlist.com/oauth/authorize?state=RANDOM')
+            context['authorization_url'] = url
+        elif connector == ConnectorEnum.MailChimp:
+            context['authorization_url'] = get_mailchimp_url()
+        elif connector == ConnectorEnum.FacebookLeads:
+            context['app_id'] = settings.FACEBOOK_APP_ID
+        elif connector == ConnectorEnum.GitLab:
+            oauth = OAuth2Session(client_id=settings.GITLAB_CLIENT_ID, redirect_uri=settings.GITLAB_REDIRECT_URL)
+            authorization_url, state = oauth.authorization_url(
+                'https://gitlab.com/oauth/authorize?response_type=code&client_id={0}&redirect_uri={1}&state=1234'.format(
+                    settings.GITLAB_CLIENT_ID, settings.GITLAB_REDIRECT_URL))
+            context['authorization_url'] = authorization_url
+        return context

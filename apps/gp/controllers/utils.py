@@ -3,8 +3,9 @@ import re
 import xml.etree.ElementTree as ET
 from importlib import import_module
 
+
 def get_dict_with_source_data(source_data, target_fields, include_id=False):
-    pattern = re.compile("^(\%\%\S+\%\%)$")
+    pattern = re.compile("^(\%\%[\S+ ]+\%\%)$")
     valid_map = OrderedDict()
     result = []
     for field in target_fields:
@@ -16,8 +17,9 @@ def get_dict_with_source_data(source_data, target_fields, include_id=False):
             kw = valid_map[field].split(' ')
             values = []
             for i, w in enumerate(kw):
-                if w in ['%%%%%s%%%%' % k for k in obj['data'].keys()]:
-                    values.append(obj['data'][w.replace('%', '')])
+                w = html_decode(w)
+                if w in ['%%{0}%%'.format(k) for k in obj['data'].keys()]:
+                    values.append(obj['data'][w.replace('%%', '')])
                 elif pattern.match(w):
                     values.append('')
                 else:
@@ -45,7 +47,8 @@ def _recursive_xml_to_dict(lista):
     for e in lista:
         result = regex.match(e.tag)
         if result is not None:  # and result.group(5) != 'link':
-            dict_e = {'tag': result.group(2), 'attrib': e.attrib, 'text': e.text, 'content': _recursive_xml_to_dict(e)}
+            dict_e = {'tag': result.group(2), 'attrib': e.attrib,
+                      'text': e.text, 'content': _recursive_xml_to_dict(e)}
             lista_dict.append(dict_e)
     return lista_dict
 
@@ -53,3 +56,20 @@ def _recursive_xml_to_dict(lista):
 def dynamic_import(name, path='', prefix='', suffix=""):
     mod = import_module(path)
     return getattr(mod, prefix + name + suffix)
+
+
+def html_decode(s):
+    """
+    Returns the ASCII decoded version of the given HTML string. This does
+    NOT remove normal HTML tags like <p>.
+    """
+    htmlCodes = (
+        ("'", '&#39;'),
+        ('"', '&quot;'),
+        ('>', '&gt;'),
+        ('<', '&lt;'),
+        ('&', '&amp;')
+    )
+    for code in htmlCodes:
+        s = s.replace(code[1], code[0])
+    return s

@@ -9,6 +9,7 @@ from apps.gp.models import GearGroup, Gear, PlugActionSpecification, Plug, \
     Webhook, Connector
 from apps.gp.enum import ConnectorEnum
 import json
+import pprint
 
 
 class DashBoardView(LoginRequiredMixin, TemplateView):
@@ -85,219 +86,17 @@ class IncomingWebhook(View):
             return response
 
     def post(self, request, *args, **kwargs):
-        response = HttpResponse(status=400)
         connector_name = self.kwargs['connector'].lower()
         connector = ConnectorEnum.get_connector(name=connector_name)
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class()
-        # SLACK
         try:
             body = json.loads(request.body.decode('utf-8'))
         except Exception as e:
             print(e)
             body = None
-        if connector in [ConnectorEnum.Slack, ConnectorEnum.SurveyMonkey,
-                         ConnectorEnum.Gmail,
-                         ConnectorEnum.FacebookLeads,
-                         ConnectorEnum.MercadoLibre]:
-            response = controller.do_webhook_process(body=body,
-                                                     POST=request.POST)
-            return response
-        # ASANA
-        elif connector == ConnectorEnum.Asana:
-            if 'HTTP_X_HOOK_SECRET' in request.META:
-                response['X-Hook-Secret'] = request.META[
-                    'HTTP_X_HOOK_SECRET']
-                return response
-            decoded_events = json.loads(request.body.decode("utf-8"))
-            events = decoded_events['events']
-            controller_class = ConnectorEnum.get_controller(connector)
-            for event in events:
-                if event['type'] == 'task' and event['action'] == 'added':
-                    project_list = PlugActionSpecification.objects.filter(
-                        action_specification__action__action_type='source',
-                        action_specification__action__connector__name__iexact='asana',
-                        action_specification__name__iexact='project',
-                        value=event['parent'])
-                    for project in project_list:
-                        controller = controller_class(
-                            project.plug.connection.related_connection,
-                            project.plug)
-                        ping = controller.test_connection()
-                        if ping:
-                            controller.download_source_data(event=event)
-            response.status_code = 200
-        elif connector == ConnectorEnum.JIRA:
-            data = json.loads(request.body.decode('utf-8'))
-            issue = data['issue']
-            project_list = PlugActionSpecification.objects.filter(
-                action_specification__action__action_type='source',
-                action_specification__action__connector__name__iexact="jira",
-                action_specification__name__iexact='project_id',
-                value=issue['fields']['project']['id'], )
-            controller_class = ConnectorEnum.get_controller(connector)
-            for project in project_list:
-                controller = controller_class(
-                    connection=project.plug.connection.related_connection,
-                    plug=project.plug)
-                ping = controller.test_connection()
-                if ping:
-                    controller.download_source_data(issue=issue)
-        elif connector == ConnectorEnum.WunderList:
-            response = HttpResponse(status=200)
-            controller_class = ConnectorEnum.get_controller(connector)
-            task = json.loads(request.body.decode("utf-8"))
-            if 'operation' in task:
-                kwargs = {
-                    'action_specification__action__action_type': 'source',
-                    'action_specification__action__connector__name__iexact': 'wunderlist',
-                    'action_specification__name__iexact': 'list',
-                    'value': task['subject']['parents'][0]['id']}
-                if task['operation'] == 'create':
-                    kwargs[
-                        'action_specification__action__name__iexact'] = 'new task'
-                    print('se creo una tarea')
-                elif task['operation'] == 'update':
-                    if 'completed' in task['data'] and task['data'][
-                        'completed'] == True:
-                        print('se completo una tarea')
-                        kwargs[
-                            'action_specification__action__name__iexact'] = 'completed task'
-                try:
-                    specification_list = PlugActionSpecification.objects.filter(
-                        **kwargs)
-                except Exception as e:
-                    specification_list = []
-                for s in specification_list:
-                    controller = controller_class(
-                        connection=s.plug.connection.related_connection,
-                        plug=s.plug)
-                    ping = controller.test_connection()
-                    if ping:
-                        controller.download_source_data(task=task)
-        elif connector == ConnectorEnum.GoogleCalendar:
-            webhook_id = kwargs.pop('webhook_id', None)
-            w = Webhook.objects.get(pk=webhook_id)
-            controller_class = ConnectorEnum.get_controller(connector)
-            controller = controller_class(
-                connection=w.plug.connection.related_connection,
-                plug=w.plug)
-            ping = controller.test_connection()
-            if ping:
-                events = controller.get_events()
-                controller.download_source_data(events=events)
-                response.status_code = 200
-        elif connector == ConnectorEnum.SurveyMonkey:
-            responses = []
-            data = request.body.decode('utf-8')
-            data = json.loads(data)
-            survey = {'id': data['object_id']}
-            responses.append(survey)
-            qs = PlugActionSpecification.objects.filter(
-                action_specification__action__action_type='source',
-                action_specification__action__connector__name__iexact="SurveyMonkey",
-                value=data['resources']['survey_id']
-            )
-            for plug_action_specification in qs:
-                controller_class = ConnectorEnum.get_controller(connector)
-                controller = controller_class(
-                    connection=plug_action_specification.plug.connection.related_connection,
-                    plug=plug_action_specification.plug)
-                ping = controller.test_connection
-                if ping:
-                    controller.download_source_data(responses=responses)
-            response.status_code = 200
-        elif connector == ConnectorEnum.Shopify:
-            data = []
-            fields = request.body.decode('utf-8')
-            fields = json.loads(fields)
-            id = fields["id"]
-            data.append(id)
-            webhook_id = kwargs.pop('webhook_id', None)
-            w = Webhook.objects.get(pk=webhook_id)
-            if w.plug.gear_source.first().is_active or not w.plug.is_tested:
-                if not w.plug.is_tested:
-                    w.plug.is_tested = True
-                controller_class = ConnectorEnum.get_controller(connector)
-                controller = controller_class(
-                    connection=w.plug.connection.related_connection,
-                    plug=w.plug)
-                ping = controller.test_connection()
-                if ping:
-                    controller.download_source_data(list=data)
-                    w.plug.save()
-            response.status_code = 200
-        elif connector == ConnectorEnum.ActiveCampaign:
-            response.status_code = 200
-            data = []
-            fields = dict(request.POST)
-            data.append(fields)
-            clean_data = {}
-            for i in data:
-                if type(i) == dict:
-                    for k, v in i.items():
-                        if type(v) == list:
-                            if len(v) < 2:
-                                clean_data[k] = v[0]
-            clean_data = [clean_data]
-            webhook_id = kwargs['webhook_id']
-            w = Webhook.objects.get(pk=webhook_id)
-            if w.plug.gear_source.first().is_active or not w.plug.is_tested:
-                if not w.plug.is_tested:
-                    w.plug.is_tested = True
-                controller_class = ConnectorEnum.get_controller(connector)
-                controller = controller_class(
-                    connection=w.plug.connection.related_connection, plug=w.plug)
-                ping = controller.test_connection()
-                if ping:
-                    controller.download_source_data(data=clean_data)
-                    w.plug.save()
-                response.status_code = 200
-        elif connector == ConnectorEnum.GitLab:
-            # ??????????????????????
-            response = HttpResponse(status=200)
-            issues = request.body.decode("utf-8")
-            issues = json.loads(issues)
-            data = []
-            issue_id = issues['object_attributes']["id"]
-            issue_title = issues['object_attributes']["title"]
-            issue_creation_date = issues['object_attributes']["created_at"]
-            issue_author_id = issues['object_attributes']["author_id"]
-            issue_description = issues['object_attributes']["description"]
-            issue_project_id = issues['object_attributes']["project_id"]
-            issue_state = issues['object_attributes']["state"]
-            issue_url = issues['object_attributes']["url"]
-            data.append({'name': issue_title,
-                         'id': issue_id,
-                         'created_at': issue_creation_date,
-                         'author': issue_author_id,
-                         'description': issue_description,
-                         'project': issue_project_id,
-                         'state': issue_state,
-                         'url': issue_url
-                         })
-
-            webhook_id = kwargs.pop('webhook_id', None)
-            webhook_id = int(webhook_id)
-            try:
-                w = Webhook.objects.get(pk=webhook_id)
-            except Exception as e:
-                print(e)
-                return response
-            gear = w.plug.gear_source.first()
-            if (gear is not None and gear.is_active) or not w.plug.is_tested:
-                if not w.plug.is_tested:
-                    w.plug.is_tested = True
-                controller_class = ConnectorEnum.get_controller(connector)
-                controller = controller_class(
-                    connection=w.plug.connection.related_connection, plug=w.plug)
-                ping = controller.test_connection()
-                if ping:
-                    controller.download_source_data(issue=data)
-                    try:
-                        w.plug.save()
-                    except Exception as e:
-                        print(e)
+        response = controller.do_webhook_process(body=body, POST=request.POST, META=request.META,
+                                                 webhook_id=kwargs['webhook_id'])
         return response
 
 

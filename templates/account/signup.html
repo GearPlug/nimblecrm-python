@@ -1,0 +1,25 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block body_base %}
+    <div class="col-md-12">
+        <div class="col-md-4"> &nbsp;</div>
+        <div class="col-md-4 card card-container">
+            <img id="profile-img" class="profile-img-card" src={% static 'img/gp_logo.png' %}/>
+            <p id="profile-name" class="profile-name-card"></p>
+            <form class="form-register" method="post" action="">
+                {% csrf_token %}
+                <span id="reauth-email" class="reauth-email"></span>
+                <p>Enter your e-mail acount and your password to sign up</p>
+                {{ form }}
+                {% if form.error %}
+                    <div class="error">{{ form.error }}</div>
+                {% endif %}
+                <button class="btn btn-lg btn-primary btn-block btn-signin" type="submit">Sign up</button>
+            </form><!-- /form -->
+            <br /><br />
+            <p class="message">Already registered? <a href="{% url 'account_login' %}" class="login-account">Log in</a>
+        </div>
+        <div class="col-md-4"> &nbsp;</div>
+    </div>
+{% endblock %}

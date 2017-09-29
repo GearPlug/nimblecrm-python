@@ -3,10 +3,10 @@ from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification
+from apps.gp.models import StoredData, ActionSpecification, Webhook, Plug
 from apps.gp.map import MapField
 from django.urls import reverse
-
+from django.db.models import Q
 from django.conf import settings
 import requests
 from base64 import b64encode
@@ -14,26 +14,31 @@ from jira import JIRA
 import time
 import datetime
 import json
+import pprint
 
 
 class JIRAController(BaseController):
     _connection = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None):
+        BaseController.__init__(self, connection=connection, plug=plug)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(JIRAController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    host = self._connection_object.host
-                    user = self._connection_object.connection_user
-                    password = self._connection_object.connection_password
-                    if host and user and password:
-                        self._connection = JIRA(host, basic_auth=(user, password))
-                except Exception as e:
-                    self._connection = None
+    def create_connection(self, connection=None, plug=None):
+        super(JIRAController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                host = self._connection_object.host
+                user = self._connection_object.connection_user
+                password = self._connection_object.connection_password
+            except AttributeError as e:
+                raise ControllerError(code=1, controller=ConnectorEnum.JIRA.name,
+                                      message='Error getting the JIRA attributes args. {}'.format(str(e)))
+            try:
+                if host and user and password:
+                    self._connection = JIRA(host, basic_auth=(user, password))
+            except Exception as e:
+                raise ControllerError(code=2, controller=ConnectorEnum.JIRA.name,
+                                      message='Error instantiating the JIRA client. {}'.format(str(e)))
 
     def test_connection(self):
         return self._connection is not None
@@ -49,36 +54,29 @@ class JIRAController(BaseController):
                     data_list = []
         if self._plug is not None:
             for obj in data_list:
-                res = self.create_issue(
-                    self._plug.plug_action_specification.all()[0].value, obj)
+                res = self.create_issue(self._plug.plug_action_specification.all()[0].value, obj)
+                obj_list.append(res.id)
             extra = {'controller': 'jira'}
-            return
+            return obj_list
         raise ControllerError("Incomplete.")
 
-    def download_to_stored_data(self, connection_object=None, plug=None,
-                                issue=None, **kwargs):
-        print("DOWNLOAD JIRA")
+    def download_to_stored_data(self, connection_object=None, plug=None, issue=None, **kwargs):
         if issue is not None:
-            print("DOWNLOAD JIRA EN IF")
             issue_key = issue['key']
             _items = []
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=issue_key)
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=issue_key)
             if not q.exists():
                 for k, v in issue['fields'].items():
-                    obj = StoredData(connection=connection_object.connection,
-                                     plug=plug,
-                                     object_id=issue_key, name=k, value=v or '')
+                    obj = StoredData(
+                        connection=connection_object.connection, plug=plug, object_id=issue_key, name=k, value=v or ''
+                    )
                     _items.append(obj)
             extra = {}
             for item in _items:
                 extra['status'] = 's'
                 extra = {'controller': 'jira'}
-                self._log.info(
-                    'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                        item.object_id, item.plug.id, item.connection.id),
-                    extra=extra)
+                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                    item.object_id, item.plug.id, item.connection.id), extra=extra)
                 item.save()
         return False
 
@@ -102,13 +100,11 @@ class JIRAController(BaseController):
         return self._connection.create_issue(fields=fields)
 
     def create_webhook(self):
-        print("creando hook!")
-        url = '{}/rest/webhooks/1.0/webhook'.format(
-            self._connection_object.host)
+        url = '{}/rest/webhooks/1.0/webhook'.format(self._connection_object.host)
         key = self.get_key(self._plug.plug_action_specification.all()[0].value)
         body = {
             "name": "Gearplug Webhook",
-            "url": "%s/webhook/jira/0/" %settings.WEBHOOK_HOST,
+            "url": "%s/webhook/jira/0/" % settings.WEBHOOK_HOST,
             "events": [
                 "jira:issue_created",
             ],
@@ -116,8 +112,6 @@ class JIRAController(BaseController):
             "excludeIssueDetails": False
         }
         r = requests.post(url, headers=self._get_header(), json=body)
-        print(r.status_code)
-        print(r.json())
         if r.status_code == 201:
             return True
         return False
@@ -132,25 +126,21 @@ class JIRAController(BaseController):
         authorization = '{}:{}'.format(self._connection_object.connection_user,
                                        self._connection_object.connection_password)
         return {'Accept': 'application/json',
-                'Authorization': 'Basic {0}'.format(
-                    b64encode(authorization.encode('UTF-8')).decode('UTF-8'))}
+                'Authorization': 'Basic {0}'.format(b64encode(authorization.encode('UTF-8')).decode('UTF-8'))}
 
     def get_users(self):
         payload = {
-            'project': self.get_key(
-                self._plug.plug_action_specification.all()[0].value)
+            'project': self.get_key(self._plug.plug_action_specification.all()[0].value)
         }
-        url = 'http://jira.grplug.com:8080/rest/api/2/user/assignable/search'
+        url = '{}/rest/api/2/user/assignable/search'.format(self._connection_object.host)
         r = requests.get(url, headers=self._get_header(), params=payload)
         if r.status_code == requests.codes.ok:
-            return [{'id': u['name'], 'name': u['displayName']} for u in
-                    r.json()]
+            return [{'id': u['name'], 'name': u['displayName']} for u in r.json()]
         return []
 
     def get_meta(self):
-        meta = self._connection.createmeta(
-            projectIds=self._plug.plug_action_specification.all()[0].value,
-            issuetypeNames='Task', expand='projects.issuetypes.fields')
+        meta = self._connection.createmeta(projectIds=self._plug.plug_action_specification.all()[0].value,
+                                           issuetypeNames='Task', expand='projects.issuetypes.fields')
         exclude = ['attachment', 'project']
         users = self.get_users()
 
@@ -158,40 +148,35 @@ class JIRAController(BaseController):
             d.update({'id': v})
             return d
 
-        _dict = [f(v, k) for k, v in
-                 meta['projects'][0]['issuetypes'][0]['fields'].items() if
-                 k not in exclude]
+        _dict = [f(v, k) for k, v in meta['projects'][0]['issuetypes'][0]['fields'].items() if k not in exclude]
         for d in _dict:
             if d['id'] == 'reporter' or d['id'] == 'assignee':
                 d['allowedValues'] = users
         return sorted(_dict, key=lambda i: i['name'])
 
     def get_target_fields(self, **kwargs):
-        return self.get_meta(**kwargs)
+        return self.get_meta()
 
     def get_mapping_fields(self, **kwargs):
-        fields = self.jirac.get_meta()
+        fields = self.get_meta()
         return [MapField(f, controller=ConnectorEnum.JIRA) for f in fields]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(
-            pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'project_id':
-            return tuple(
-                {'id': p.id, 'name': p.name} for p in self.get_projects())
+            return tuple({'id': p.id, 'name': p.name} for p in self.get_projects())
         else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector.")
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
     def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
         issue = body['issue']
-        project_list = PlugActionSpecification.objects.filter(
-            action_specification__action__action_type='source',
-            action_specification__action__connector__name__iexact="jira",
-            action_specification__name__iexact='project_id',
-            value=issue['fields']['project']['id'], )
-        for project in project_list:
-            self._connection_object, self._plug = project.plug.connection.related_connection, project.plug
+        plugs_to_update = Plug.objects.filter(
+            Q(gear_source__is_active=True) | Q(is_tested=False),
+            plug_action_specification__value__iexact=issue['fields']['project']['id'],
+            plug_action_specification__action_specification__name__iexact='project_id',
+            action__name='new issue', )
+        for plug in plugs_to_update:
+            self.create_connection(connection=plug.connection.related_connection, plug=plug)
             if self.test_connection():
                 self.download_source_data(issue=issue)
         return HttpResponse(status=200)
@@ -227,13 +212,15 @@ class AsanaController(BaseController):
     #             print('NO PROJECT IN WORKSPACE ', ws['id'])
     #     print(proj_list)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(AsanaController, self).create_connection(*args)
-            if self._connection_object is not None:
-                self._token = self._connection_object.token
-                self._refresh_token = self._connection_object.refresh_token
-                self._token_expiration_timestamp = self._connection_object.token_expiration_timestamp
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(AsanaController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(AsanaController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            self._token = self._connection_object.token
+            self._refresh_token = self._connection_object.refresh_token
+            self._token_expiration_timestamp = self._connection_object.token_expiration_timestamp
 
     def test_connection(self):
         if self.is_token_expired():
@@ -245,7 +232,6 @@ class AsanaController(BaseController):
         return float(self._token_expiration_timestamp) < time.time()
 
     def refresh_token(self):
-        print('REFRESH')
         try:
             # Data para la peticion de nuevo token
             data_refresh_token = [
@@ -257,7 +243,8 @@ class AsanaController(BaseController):
             ]
             new_token = requests.post(self.__refresh_url,
                                       data=data_refresh_token).json()
-            print('3600 //',datetime.timedelta(seconds=float(new_token['expires_in'])).seconds, type(datetime.timedelta(seconds=float(new_token['expires_in'])).seconds))
+            print('3600 //', datetime.timedelta(seconds=float(new_token['expires_in'])).seconds,
+                  type(datetime.timedelta(seconds=float(new_token['expires_in'])).seconds))
             self._connection_object.token = new_token['access_token']
             print('old_stamp',
                   self._connection_object.token_expiration_timestamp)
@@ -268,7 +255,6 @@ class AsanaController(BaseController):
                   self._connection_object.token_expiration_timestamp)
             # print('time', time.time(), type(time.time()))
             self._connection_object.save()
-            print('save??')
             self._token = self._connection_object.token
             return self._token
         except Exception as e:
@@ -277,7 +263,13 @@ class AsanaController(BaseController):
 
     def get_user_information(self):
         # Headers para Request de usuario principal
-        headers_1 = {
+        headers_1 = {  # data = {'resource', project.value,
+            #             'target', url_base + url_path}
+            #
+            #     response = requests.post('https://app.asana.com/api/1.0/webhooks',
+            #                              headers=headers, data=data)
+            #     print("response", response.json())
+            #     print("code", response.status_code)
             'Authorization': 'Bearer {0}'.format(self._token),
         }
         # Request para obtener datos de usuario creador de la tarea
@@ -316,18 +308,10 @@ class AsanaController(BaseController):
             r_list_proj = requests.get(aa_url, headers=headers_list_proj,
                                        params=params_proj)
             temp_data_3 = r_list_proj.json()
-            # for i in temp_data_3['data']:
-            #     p_dict.append(i)
-            try:
-                # p_dict = {ws['id'] : r_list_proj.json()['data'][0]}
-                p_dict = {'id': r_list_proj.json()['data'][0]['id'],
-                                 'name': r_list_proj.json()['data'][0]['name']}
-            except Exception as e:
-                print('NO PROJECTS IN THIS WORKSPACE: ',ws['name'])
-            print(p_dict)
-        projects_list.append(p_dict)
-        print(projects_list)
-        return (projects_list)
+            if temp_data_3['data']:
+                return temp_data_3['data']
+            else:
+                raise ControllerError(code=1, message="No projects in this workspace")
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(
@@ -345,19 +329,19 @@ class AsanaController(BaseController):
 
     def create_webhook(self):
         action = self._plug.action.name
-        if action == 'read created task':
+        if action == 'new task created':
             project = self._plug.plug_action_specification.get(
                 action_specification__name='project')
             # Creacion de Webhook
-            webhook = Webhook.objects.create(name='asana', plug=self._plug,url='')
+            webhook = Webhook.objects.create(name='asana', plug=self._plug, url='')
             # Verificar ngrok para determinar url_base
             url_base = settings.WEBHOOK_HOST
-            url_path = reverse('home:webhook', kwargs={'connector': 'asana','webhook_id': webhook.id})
+            url_path = reverse('home:webhook', kwargs={'connector': 'asana', 'webhook_id': webhook.id})
             headers = {
-                'Authorization': 'Bearer {}'.format(self._token)
+                'Authorization': 'Bearer {}'.format(self._token),
             }
             data = [('resource', int(project.value)),
-                    ('target', url_base + url_path), ]
+                    ('target', url_base + url_path)]
             response = requests.post('https://app.asana.com/api/1.0/webhooks',
                                      headers=headers, data=data)
             if response.status_code == 201:
@@ -436,12 +420,13 @@ class AsanaController(BaseController):
                                        plug=plug, object_id=event_resource,
                                        name=k, value=v or ''))
                 for key, value in task_data['memberships'][0].items():
-                    for k, v in value.items():
-                        task_stored_data.append(
-                            StoredData(connection=connection_object.connection,
-                                       plug=plug, object_id=event_resource,
-                                       name='{0}_{1}'.format(key, k),
-                                       value=v or ''))
+                    if key == 'project':
+                        for k, v in value.items():
+                            task_stored_data.append(
+                                StoredData(connection=connection_object.connection,
+                                           plug=plug, object_id=event_resource,
+                                           name='{0}_{1}'.format(key, k),
+                                           value=v or ''))
             extra = {}
             for task in task_stored_data:
                 try:
@@ -495,3 +480,21 @@ class AsanaController(BaseController):
                     self._log.info('Item: failed to send.', extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
+
+    def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
+        if 'HTTP_X_HOOK_SECRET' in META:
+            response = HttpResponse()
+            response['X-Hook-Secret'] = META['HTTP_X_HOOK_SECRET']
+            response.status_code = 200
+            return response
+        events = body['events']
+        for event in events:
+            if event['type'] == 'task' and event['action'] == 'added':
+                webhook = Webhook.objects.get(pk=webhook_id)
+                if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+                    if not webhook.plug.is_tested:
+                        webhook.plug.is_tested = True
+                    self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+                    if self.test_connection():
+                        self.download_source_data(event=event)
+        return HttpResponse(status=200)
