@@ -308,14 +308,16 @@ class FacebookLeadsController(BaseController):
                 aditional_data['created_time'] = lead['created_time']
                 aditional_data['created_time_timestamp'] = parse(lead['created_time']).timestamp()
                 aditional_data['leadgen_id'] = lead['id']
-                obj_raw = {v['name']: v['values'][0] if isinstance(v['values'], list) else v['values']
-                           for k, v in lead['field_data']}
+                print(lead)
+                obj_raw = {d['name']: d['values'][0] if isinstance(d['values'], list) else d['values']
+                           for d in lead['field_data']}
                 obj_raw.update(aditional_data)
                 raw_data.append(obj_raw)
-                for k, v in raw_data.items():
-                    new_lead.append(StoredData(name=k, value=v or '', object_id=leadgen_id,
+                for d in raw_data:
+                    for k, v in d.items():
+                        new_lead.append(StoredData(name=k, value=v or '', object_id=leadgen_id,
                                                connection=connection_object.connection, plug=plug))
-                new_leads.append(new_lead)
+                    new_leads.append(new_lead)
         if new_leads:
             leads_result = []
             for new_lead in new_leads:
@@ -326,11 +328,11 @@ class FacebookLeadsController(BaseController):
                     except Exception as e:
                         is_stored = False
                 for lead in raw_data:
-                    if stored_data.object_id == lead['id']:
-                        leads_result.append({'identifier': {'name': 'leadgen_id', 'value': lead['id']},
-                                             'raw': lead, 'is_stored': is_stored})
+                    # TODO: Corregir
+                    if stored_data.object_id == lead['leadgen_id']:
+                        leads_result.append({'identifier': {'name': 'leadgen_id', 'value': lead['leadgen_id']}, 'raw': lead, 'is_stored': is_stored})
                         break
-                data.remove(lead)
+                # data.remove(lead)
             obj_last_source_record = leads_result[-1]['raw']['created_time_timestamp']
             return {'downloaded_data': leads_result, 'last_source_record': obj_last_source_record}
         return False
