@@ -25,8 +25,7 @@ import string
 import base64
 import urllib.error
 import urllib.request
-
-
+import pprint
 
 class SugarCRMController(BaseController):
     _user = None
@@ -1346,6 +1345,9 @@ class ActiveCampaignController(BaseController):
         ]
 
     def get_target_fields(self, **kwargs):
+        action = self._plug.action.name
+        if action == 'unsubscribe a contact':
+            return[ {'name': 'email', 'label': 'Email', 'type': 'varchar', 'required': True}]
         return [
             {'name': 'email', 'label': 'Email', 'type': 'varchar', 'required': True},
             {'name': 'first_name', 'label': 'First Name', 'type': 'varchar', 'required': False},
@@ -1365,27 +1367,41 @@ class ActiveCampaignController(BaseController):
         return r
 
     def subscribe_contact(self, data):
-        list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
+        _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
         params = [
             ('api_action', "contact_add"),
             ('api_key', self._key),
             ('api_output', 'json'),
         ]
-        data['p[{0}]'.format(list_id)] = list_id
+        data['p[{0}]'.format(_list_id)] = _list_id
         final_url = "{0}/admin/api.php".format(self._host)
         r = requests.post(url=final_url, data=data, params=params).json()
         return r
 
-    def unsubscribe_contact(self, data):
+    def unsubscribe_contact(self, email):
         _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
+        data = self.contact_view(email['email'])
         params = [
-            ('api_action', "contact_delete_list"),
+            ('api_action', "contact_edit"),
             ('api_key', self._key),
             ('api_output', 'json'),
-            ('id', _list_id),
         ]
+        data['p[{0}]'.format(_list_id)] = _list_id
+        data['status[{0}]'.format(_list_id)] = 2
         final_url = "{0}/admin/api.php".format(self._host)
         r = requests.post(url=final_url, data=data, params=params).json()
+        r['subscriber_id'] = data['id']
+        return r
+
+    def contact_view(self, email):
+        params = [
+            ('api_action', "contact_view_email"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('email', email),
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, params=params).json()
         return r
 
     def send_stored_data(self, data_list):
@@ -1401,8 +1417,6 @@ class ActiveCampaignController(BaseController):
                 response = self.subscribe_contact(item)
             elif action == 'unsubscribe a contact':
                 response = self.unsubscribe_contact(item)
-            print("response")
-            print(response)
             if response['result_code'] == 1:
                 sent = True
                 identifier = response['subscriber_id']
@@ -1416,8 +1430,7 @@ class ActiveCampaignController(BaseController):
                     'Item: %s failed to send.' % (
                         list(item.items())[0][1]),
                     extra=extra)
-            result_list.append(
-                {'data': dict(item), 'response': response['result_message'], 'sent': sent, 'identifier': identifier})
+            result_list.append({'data': dict(item), 'response': response['result_message'], 'sent': sent, 'identifier': identifier})
         return result_list
 
     def download_to_stored_data(self, connection_object=None, plug=None, last_source_record=None, data=None, **kwargs):
