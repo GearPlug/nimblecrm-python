@@ -1134,48 +1134,40 @@ class VtigerController(BaseController):
         module_id = self._plug.plug_action_specification.get(
             action_specification__name__iexact='module').value
         data = self.get_module_elements(limit=30, module=self.get_module_name(module_id), gt=last_source_record)
-
-        parsed_data = [{'unique': {'name': 'id', 'value': item['id']},
-                        'fields': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
-
         new_data = []
-        for item in parsed_data:
-            unique_value = item['unique']['value']
+        for product in data:
+            unique_value = product['id']
             q = StoredData.objects.filter(connection=connection_object.connection,plug=plug,object_id = unique_value)
             if not q.exists():
-                new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
-                                       connection=connection_object.connection, plug=plug) for column in item['fields']]
+                new_item = [StoredData(name= key, value= value or '', object_id=unique_value,
+                                       connection=connection_object.connection, plug=plug) for key, value in product.items()]
+
                 new_data.append(new_item)
 
         obj_last_source_record = None
         result_list = []
         if new_data:
             data.reverse()
-            parsed_data.reverse()
             new_data.reverse()
             for item in new_data:
                 obj_id = item[0].object_id
                 obj_raw = None
-                obj_data = None
                 for i in data:
                     if obj_id in i.values():
                         obj_raw = i
                         break
                 data.remove(i)
-                for i in parsed_data:
-                    if obj_id == i['unique']['value']:
-                        obj_data = i
-                        break
-                parsed_data.remove(i)
                 is_stored, object_id = self._save_row(item)
                 if object_id != obj_id:
                     print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id))
                     # TODO: CHECK RAISE
-                result_list.append({'id': object_id, 'raw': obj_raw, 'is_stored': is_stored, 'data': obj_data})
+                result_list.append({'identifier': object_id, 'raw': obj_raw, 'is_stored': is_stored})
+
             for item in result_list:
-                for column in item['data']['fields']:
-                    if column['name'] == module_id:
-                        obj_last_source_record = column['value']
+                for k, v in item['raw'].items():
+                    if k == 'createdtime':
+                        print('2', v)
+                        obj_last_source_record = v
                         break
             return {'downloaded_data': result_list, 'last_source_record': obj_last_source_record}
         return False
