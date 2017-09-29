@@ -609,7 +609,6 @@ class DownloadHistory(models.Model):
     connection = models.CharField(max_length=2000)
     date = models.DateTimeField(auto_now_add=True)
     raw = models.CharField(max_length=25000)
-    saved_data = models.CharField(max_length=25000)
     identifier = models.CharField('identifier', max_length=500)
 
 

@@ -54,12 +54,11 @@ class BaseController(object):
         """
         El DOWNLOAD_TO_STORED_DATA DEBE RETORNAR UNA LISTA CON DICTs (uno por cada dato enviado) CON ESTE FORMATO:
         {'downloaded_data':[
-            {"raw": "(%all_data_received_in_str_format)" # -> formato json,
-             "data": {"identifier": {"name": (%stored_data_unique_field_name), "value": (%stored_data_object_id),
-                     "fields": [{"name": (%stored_data_name), "value": (%stored_data_value), ]} # -> formato json,
+            {"raw": "(%all_data_received_in_str_format)" # -> formato json, {'name':'value'}
              "is_stored": True | False},
-             "identifier": (%item identifier. EJ: ID)}, {...}, {...}
-         "last_source_record":(%last_order_by_value)},
+             "identifier": {'name': '', 'value' :(%item identifier. EJ: ID) },
+            {...}, {...},
+         "last_source_record":(%last_order_by_value)},}
         :return: last_source_record
         """
         if connection_object is not None and plug is not None:
@@ -75,9 +74,8 @@ class BaseController(object):
                     for item in result['downloaded_data']:
                         DownloadHistory.objects.create(gear_id=str(self._plug.gear_source.first().id),
                                                        plug_id=str(self._plug.id), connection=serialized_connection,
-                                                       raw=json.dumps(item['raw']),
-                                                       saved_data=json.dumps(item['data']['fields']),
-                                                       connector=self.connector, identifier=item['identifier'])
+                                                       raw=json.dumps(item['raw']), connector=self.connector,
+                                                       identifier=item['identifier'], )
                     return result['last_source_record']
                 except:
                     # raise
