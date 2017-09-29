@@ -63,6 +63,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
                     last_source_record = controller.download_source_data(self.object.connection.related_connection,
                                                                          self.object, limit=1)
                     g.gear_map.last_source_order_by_field_value = last_source_record
+                    g.gear_map.save(update_fields=['last_source_order_by_field_value', ])
         self.request.session['source_connection_id'] = None
         self.request.session['target_connection_id'] = None
         return HttpResponseRedirect(self.get_success_url())
