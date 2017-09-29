@@ -299,6 +299,7 @@ class FacebookLeadsController(BaseController):
                 'form_id': self._form,
             }
         new_leads = []
+        raw_data = []
         for lead in data:
             leadgen_id = lead['id']
             new_lead = []
@@ -307,36 +308,30 @@ class FacebookLeadsController(BaseController):
                 aditional_data['created_time'] = lead['created_time']
                 aditional_data['created_time_timestamp'] = parse(lead['created_time']).timestamp()
                 aditional_data['leadgen_id'] = lead['id']
-                lead['field_data'].extend([{'name': k, 'values': v} for k, v in aditional_data.items()])
-                fields = [{'name': d['name'], 'value': d['values'][0] if isinstance(d['values'], list) else d['values']}
-                          for d in lead['field_data']]
-                parsed_data = {'identifier': {'name': 'id', 'value': leadgen_id}, 'fields': fields}
-                for column in parsed_data['fields']:
-                    new_lead.append(StoredData(name=column['name'], value=column['value'], object_id=leadgen_id,
+                obj_raw = {v['name']: v['values'][0] if isinstance(v['values'], list) else v['values']
+                           for k, v in lead['field_data']}
+                obj_raw.update(aditional_data)
+                raw_data.append(obj_raw)
+                for k, v in raw_data.items():
+                    new_lead.append(StoredData(name=k, value=v or '', object_id=leadgen_id,
                                                connection=connection_object.connection, plug=plug))
                 new_leads.append(new_lead)
         if new_leads:
             leads_result = []
             for new_lead in new_leads:
-                obj_raw = None
                 for stored_data in new_lead:
                     try:
                         stored_data.save()
                         is_stored = True
                     except Exception as e:
                         is_stored = False
-                for lead in data:
+                for lead in raw_data:
                     if stored_data.object_id == lead['id']:
-                        obj_raw = lead
-                        leads_result.append(
-                            {'identifier': {'name': 'id', 'value': lead['id']}, 'raw': obj_raw, 'is_stored': is_stored})
+                        leads_result.append({'identifier': {'name': 'leadgen_id', 'value': lead['id']},
+                                             'raw': lead, 'is_stored': is_stored})
                         break
-                data.remove(obj_raw)
-            obj_last_source_record = None
-            for field in leads_result[-1]['raw']['field_data']:
-                if 'created_time_timestamp' in field.values():
-                    obj_last_source_record = field['values']
-                    break
+                data.remove(lead)
+            obj_last_source_record = leads_result[-1]['raw']['created_time_timestamp']
             return {'downloaded_data': leads_result, 'last_source_record': obj_last_source_record}
         return False
 
