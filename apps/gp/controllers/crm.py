@@ -934,6 +934,7 @@ class VtigerController(BaseController):
     _token = None
     _user_id = None
 
+
     def __init__(self, connection=None, plug=None, **kwargs):
         super(VtigerController, self).__init__(connection=connection, plug=plug, **kwargs)
 
@@ -958,7 +959,6 @@ class VtigerController(BaseController):
         else:
             return None
 
-    # TEST CONNECTION NO FUNCIONANDO CORRECTAMENTE.
     def test_connection(self):
         return self._session_name is not None
 
@@ -1130,7 +1130,6 @@ class VtigerController(BaseController):
             print(e)
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, limit=50, **kwargs):
-
         module_id = self._plug.plug_action_specification.get(
             action_specification__name__iexact='module').value
         data = self.get_module_elements(limit=30, module=self.get_module_name(module_id), gt=last_source_record)
@@ -1141,9 +1140,7 @@ class VtigerController(BaseController):
             if not q.exists():
                 new_item = [StoredData(name= key, value= value or '', object_id=unique_value,
                                        connection=connection_object.connection, plug=plug) for key, value in product.items()]
-
-                new_data.append(new_item)
-
+            new_data.append(new_item)
         obj_last_source_record = None
         result_list = []
         if new_data:
@@ -1151,23 +1148,23 @@ class VtigerController(BaseController):
             new_data.reverse()
             for item in new_data:
                 obj_id = item[0].object_id
-                obj_raw = None
+                obj_raw = "RAW DATA NOT FOUND."
                 for i in data:
                     if obj_id in i.values():
                         obj_raw = i
                         break
                 data.remove(i)
+
                 is_stored, object_id = self._save_row(item)
                 if object_id != obj_id:
                     print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id))
                     # TODO: CHECK RAISE
-                result_list.append({'identifier': object_id, 'raw': obj_raw, 'is_stored': is_stored})
-
+                result_list.append({'identifier': {'name':'id', 'value':object_id}, 'raw': obj_raw, 'is_stored': is_stored})
             for item in result_list:
                 for k, v in item['raw'].items():
                     if k == 'createdtime':
-                        print('2', v)
                         obj_last_source_record = v
+                        (obj_last_source_record)
                         break
             return {'downloaded_data': result_list, 'last_source_record': obj_last_source_record}
         return False
@@ -1203,16 +1200,14 @@ class VtigerController(BaseController):
 
     def send_stored_data(self, data_list):
         obj_list = []
-        module_id = self._plug.plug_action_specification.get(
-            action_specification__name__iexact='module').value
+        module_id = self._plug.plug_action_specification.get(action_specification__name__iexact='module').value
         module_name = self.get_module_name(module_id)
         for item in data_list:
-            print('ITEM', item)
             obj_result = {'data': dict(item)}
             try:
                 task = self.create_register(module_name, **item)
             except Exception as e:
-                print(e)
+                raise
             try:
                 if task['success'] is True:
                     obj_result['response'] = "Succesfully created item with id {0}.".format(task['result']['id'])
