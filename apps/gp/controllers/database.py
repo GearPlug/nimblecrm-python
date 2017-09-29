@@ -104,47 +104,42 @@ class MySQLController(BaseController):
         if last_source_record is not None:
             query_params['gt'] = last_source_record
         data = self.select_all(**query_params)
-        parsed_data = [{'identifier': {'name': unique.value, 'value': item[unique.value]},
-                        'fields': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
+
         new_data = []
-        for item in parsed_data:
-            unique_value = item['identifier']['value']
+        for item in data:
+            unique_value = item[unique.value]
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
-                new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
-                                       connection=connection_object.connection, plug=plug) for column in item['fields']]
+                new_item = [StoredData(name=k, value=v or '', object_id=unique_value,
+                                       connection=connection_object.connection, plug=plug) for k, v in item.fields()]
                 new_data.append(new_item)
-        # TODO: NEW WAY
+        # Nueva forma
         obj_last_source_record = None
         result_list = []
         if new_data:
+            # Revertir para enviar en el orden correcto.
             data.reverse()
-            parsed_data.reverse()
-            new_data.reverse()
-            for item in new_data:
+            for item in reversed(new_data):  # Este es el for anterior y si, la lista se invierte tambien.
                 obj_id = item[0].object_id
                 obj_raw = None
-                obj_data = None
-                for i in data:
-                    if obj_id in i.values():
+                for i in data:  # Iter 'data' para buscar el 'dict' en 'data' del 'item' que iteramos en el for anterior
+                    if i[unique.value] == obj_id:
                         obj_raw = i
-                        break
-                data.remove(i)
-                for i in parsed_data:
-                    if obj_id == i['identifier']['value']:
-                        obj_data = i
-                        break
-                parsed_data.remove(i)
+                        break  # Paramos el for para que deje de iterar
+                data.remove(i)  # Removemos 'i' de la lista 'data'
                 is_stored, object_id = self._save_row(item)
-                if object_id != obj_id:
+                if object_id != obj_id:  # Validar que el 'obj_id' del stored data que se guardo es igual al id del item
                     print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id))
                     # TODO: CHECK RAISE
-                result_list.append({'identifier': object_id, 'raw': obj_raw, 'is_stored': is_stored, 'data': obj_data})
+                result_list.append({'identifier': {'name': unique.value, 'value': object_id},
+                                    'raw': obj_raw, 'is_stored': is_stored, })
             for item in result_list:
-                for column in item['data']['fields']:
-                    if column['name'] == order_by.value:
-                        obj_last_source_record = column['value']
-                        break
+                for k, v in item['raw'].items():  # Iter todos los campos que entraron
+                    if k == order_by.value:
+                        obj_last_source_record = v  # Sacamos el valor 'v' del key 'k' si k es el 'campo order_by'
+                        break  # Paramos el for porque ya conseguimos lo que queriamos
+                        # Se hace break proque el primer valor conseguido es que deberia ser utilizado
+                        # porque la lista esta invertida
             return {'downloaded_data': result_list, 'last_source_record': obj_last_source_record}
         return False
 
