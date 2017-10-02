@@ -128,8 +128,7 @@ class MySQLController(BaseController):
                 data.remove(i)  # Removemos 'i' de la lista 'data'
                 is_stored, object_id = self._save_row(item)
                 if object_id != obj_id:  # Validar que el 'obj_id' del stored data que se guardo es igual al id del item
-                    print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id))
-                    # TODO: CHECK RAISE
+                    print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id)) # TODO: CHECK RAISE
                 result_list.append({'identifier': {'name': unique.value, 'value': object_id},
                                     'raw': obj_raw, 'is_stored': is_stored, })
             for item in result_list:
@@ -167,11 +166,11 @@ class MySQLController(BaseController):
             except MySQLdb.OperationalError as e:
                 obj_result['response'] = "Failed to insert item."
                 obj_result['sent'] = False
-                obj_result['identifier'] = None
+                obj_result['identifier'] = '-1'
             except MySQLdb.ProgrammingError as e:
                 obj_result['response'] = "Failed to insert item."
                 obj_result['sent'] = False
-                obj_result['identifier'] = None
+                obj_result['identifier'] = '-1'
             obj_list.append(obj_result)
         try:
             self._connection.commit()
@@ -179,7 +178,7 @@ class MySQLController(BaseController):
             self._connection.rollback()
             for obj in obj_list:
                 obj['sent'] = False
-                obj['identifier'] = None
+                obj['identifier'] = '-1'
         return obj_list
 
     def get_target_fields(self, **kwargs):
@@ -286,61 +285,42 @@ class PostgreSQLController(BaseController):
                                   message='Error describing table. {}'.format(str(e)))
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, limit=50, **kwargs):
-        """
-            El DOWNLOAD_TO_STORED_DATA DEBE RETORNAR UNA LISTA CON DICTs (uno por cada dato enviado) CON ESTE FORMATO:
-            {'downloaded_data':[
-                {"raw": "(%all_data_received_in_str_format)" # -> formato json,
-                 "data": {"unique": {"name": (%stored_data_unique_field_name), "value": (%stored_data_object_id),
-                         "fields": [{"name": (%stored_data_name), "value": (%stored_data_value), ]} # -> formato json,
-                 "is_stored": True | False}]
-             "last_source_record":(%last_order_by_value)},:
-            :return: last_source_record
-            """
         order_by = self._plug.plug_action_specification.get(action_specification__name__iexact='order by')
         unique = self._plug.plug_action_specification.get(action_specification__name__iexact='unique')
         query_params = {'unique': unique, 'order_by': order_by, 'limit': limit}
         if last_source_record is not None:
             query_params['gt'] = last_source_record
         data = self.select_all(**query_params)
-        parsed_data = [{'identifier': {'name': unique.value, 'value': item[unique.value]},
-                        'fields': [{'name': key, 'value': value} for key, value in item.items()]} for item in data]
+
         new_data = []
-        for item in parsed_data:
-            unique_value = item['identifier']['value']
+        for item in data:
+            unique_value = item[unique.value]
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
-                new_item = [StoredData(name=column['name'], value=column['value'] or '', object_id=unique_value,
-                                       connection=connection_object.connection, plug=plug) for column in item['fields']]
+                new_item = [StoredData(name=k, value=v or '', object_id=unique_value, plug=plug,
+                                       connection=connection_object.connection) for k, v in item.items()]
                 new_data.append(new_item)
         obj_last_source_record = None
         result_list = []
         if new_data:
             data.reverse()
-            parsed_data.reverse()
-            new_data.reverse()
-            for item in new_data:
+            for item in reversed(new_data):
                 obj_id = item[0].object_id
-                obj_raw = None
-                obj_data = None
+                obj_raw = "RAW DATA NOT FOUND."
                 for i in data:
-                    if obj_id in i.values():
+                    if i[unique.value] == obj_id:
                         obj_raw = i
                         break
                 data.remove(i)
-                for i in parsed_data:
-                    if obj_id == i['identifier']['value']:
-                        obj_data = i
-                        break
-                parsed_data.remove(i)
                 is_stored, object_id = self._save_row(item)
                 if object_id != obj_id:
-                    print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id))
-                    # TODO: CHECK RAISE
-                result_list.append({'identifier': object_id, 'raw': obj_raw, 'is_stored': is_stored, 'data': obj_data})
+                    print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id))  # TODO: CHECK RAISE
+                result_list.append({'identifier': {'name': unique.value, 'value': object_id},
+                                    'raw': obj_raw, 'is_stored': is_stored, })
             for item in result_list:
-                for column in item['data']['fields']:
-                    if column['name'] == order_by.value:
-                        obj_last_source_record = column['value']
+                for k, v in item['raw'].items():
+                    if k == order_by.value:
+                        obj_last_source_record = v
                         break
             return {'downloaded_data': result_list, 'last_source_record': obj_last_source_record}
         return False
@@ -352,7 +332,6 @@ class PostgreSQLController(BaseController):
             return True, stored_data.object_id
         except Exception as e:
             return False, item[0].object_id
-
 
     def _get_insert_statement(self, item):
         return """INSERT INTO {0}.{1} ({2}) VALUES ({3}) RETURNING id""".format(
@@ -375,9 +354,9 @@ class PostgreSQLController(BaseController):
                 obj_result['sent'] = True
                 obj_result['identifier'] = "-1"
             except Exception as e:
-                obj_result['response'] = "Failed to insert item."
+                obj_result['response'] = "Failed to insert item ."
                 obj_result['sent'] = False
-                obj_result['identifier'] = None
+                obj_result['identifier'] = "-1"
             obj_list.append(obj_result)
         try:
             self._connection.commit()
@@ -385,7 +364,7 @@ class PostgreSQLController(BaseController):
             self._connection.rollback()
             for obj in obj_list:
                 obj['sent'] = False
-                obj['identifier'] = None
+                obj['identifier'] = '-1'
         return obj_list
 
     def get_mapping_fields(self, **kwargs):
