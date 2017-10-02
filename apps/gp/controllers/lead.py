@@ -677,9 +677,9 @@ class TypeFormController(BaseController):
             self._client = TypeformClient(self._connection_object.api_key)
             return self._client is not None
         except Exception as e:
-            print("error typeform test connection")
+            print("error Typeform test connection")
             print(e)
-            return None
+            return False
 
     def create_webhook(self):
         action = self._plug.action.name
@@ -689,7 +689,7 @@ class TypeFormController(BaseController):
             url_base = settings.WEBHOOK_HOST
             url_path = reverse('home:webhook', kwargs={'connector': 'typeform', 'webhook_id': webhook.id})
             webhook.url = url_base + url_path
-            webhook.generated_id = webhook.id #este no es el id event
+            webhook.generated_id = webhook.id
             webhook.is_active = True # Cambiar a False
             webhook.save(update_fields=['url', 'generated_id', 'is_active'])
             return True
@@ -697,9 +697,10 @@ class TypeFormController(BaseController):
 
     def do_webhook_process(self, body=None, GET=None, POST=None, META=None, webhook_id=None, **kwargs):
         webhook = Webhook.objects.get(pk=webhook_id)
+        pprint.pprint(body)
         if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
-            # if not webhook.plug.is_tested:
-            #     webhook.plug.is_tested = True
+            if not webhook.plug.is_tested:
+                webhook.plug.is_tested = True
             self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
             if self.test_connection():
                 self.download_source_data(answer=body)
@@ -707,7 +708,6 @@ class TypeFormController(BaseController):
         return HttpResponse(status=200)
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, answer=None, **kwargs):
-        print('Download_to_stored_data')
         form = self._plug.plug_action_specification.get(action_specification__name__iexact='form')
         data_questions = self._client.get_form_questions(form.value)
         data_answers = self._client.get_form_metadata(form.value)
@@ -724,11 +724,12 @@ class TypeFormController(BaseController):
                 for k, v in answer['answers'].items():
                     if k in dict_data_questions.keys():
                         obj_raw[dict_data_questions[k]] = v
+            else:
+                for k in dict_data_questions.keys():
+                    obj_raw[dict_data_questions[k]] = ''
             obj_raw.update(answer['metadata'])
             list_data_answers.append(obj_raw)
-        # Raw + Identifier
-        parsed_data = [{'identifier': {'name': 'token', 'value': item['token']},
-                        'raw': {key: value for key, value in item.items()}} for item in list_data_answers]
+        pprint.pprint(list_data_answers)
         # Data
         new_data = []
         for item in list_data_answers:
@@ -739,13 +740,20 @@ class TypeFormController(BaseController):
                                        connection=connection_object.connection, plug=plug) for key,
                                                                                                value in item.items()]
                 new_data.append(new_item)
-
         # Result list
-        if new_data:
-            for item in new_data:
-
-                pprint.pprint(item)
-        return False
+        result_list = []
+        for item in new_data:
+            for stored_data in item:
+                try:
+                    stored_data.save()
+                except Exception as e:
+                    is_stored = False
+                    break
+                is_stored = True
+            obj_raw = None
+            result_list.append({'identifier': stored_data.object_id, 'is_stored': is_stored, 'raw': list_data_answers})
+        obj_last_source_record = False
+        return {'downloaded_data': result_list, 'last_source_record': obj_last_source_record}
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
