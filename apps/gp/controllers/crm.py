@@ -924,92 +924,105 @@ class HubSpotController(BaseController):
 
 
 class VtigerController(BaseController):
-    _url = None
-    _token = None
+    _base_url = None
+    _access_key = None
     _session_name = None
+    _token = None
     _user_id = None
 
-    def __init__(self, *args, **kwargs):
-        super(VtigerController, self).__init__(*args, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(VtigerController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._user = self._connection_object.connection_user
-                    self._password = self._connection_object.connection_access_key
-                    self._url = self._connection_object.url
-                    self._token = self._connection_object.token
-                except Exception as e:
-                    print(e)
-        if self._url is not None and self._token is not None:
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(VtigerController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(VtigerController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._user = self._connection_object.connection_user
+                self._password = self._connection_object.connection_password
+                self._base_url = self._connection_object.url
+                self._access_key = self._connection_object.connection_access_key
+            except Exception as e:
+                print(e)
+
+        if self._base_url is not None and self._access_key is not None:
             if not self._token:
-                self._token = self.get_token(self._user, self._password)
+                self._token = self.get_token(self._user, self._base_url)
             self._session_name, self._user_id = self.login()
             if self._session_name is None:
-                self._token = self.get_token(self._user, self._password)
+                self._token = self.get_token(self._user, self._base_url)
                 self._session_name, self._user_id = self.login()
+        else:
+            return None
 
     def test_connection(self):
         return self._session_name is not None
 
-    def get_token(self, user, passwd, url=None):
-        if self._url is None and url is not None:
-            self._url = url
-        if self._url is not None:
+    def get_token(self, user, base_url):
+        endpoint_url = '/webservice.php?operation=getchallenge'
+        url = base_url + endpoint_url
+        if url is not None:
             try:
                 values = {'operation': 'getchallenge', 'username': user}
-                r = requests.get(self._url, params=values)
+                r = requests.get(url, params=values)
                 if r.status_code == 200:
                     r = r.json()
                     return r['result']['token']
                 return None
             except Exception as e:
-                print(e)
                 return None
 
     def get_tokenized_access_key(self):
         try:
             return md5(
-                str(self._token + self._password).encode('utf-8')).hexdigest()
+                str(self._token + self._access_key).encode('utf-8')).hexdigest()
         except Exception as es:
             return None
 
     def login(self):
+        endpoint_url = '/webservice.php'
+        url = self._base_url + endpoint_url
+        tokenized_access_key = self.get_tokenized_access_key()
+        values = {'accessKey': tokenized_access_key, 'operation': 'login',
+                  'username': self._user}
+        data = urllib.parse.urlencode(values).encode('utf-8')
         try:
-            tokenized_access_key = self.get_tokenized_access_key()
-            values = {'accessKey': tokenized_access_key, 'operation': 'login',
-                      'username': self._user}
-            data = urllib.parse.urlencode(values).encode('utf-8')
-            request = urllib.request.Request(self._url, data)
-            response = json.loads(
-                urllib.request.urlopen(request).read().decode('utf-8'))
-            if response['success'] is True:
-                session_name = response['result']['sessionName']
-                user_id = response['result']['userId']
-                return session_name, user_id
-            elif response['success'] is False:
-                return None, None
+            request = urllib.request.Request(url, data)
+            response = urllib.request.urlopen(request).read().decode('utf-8')
         except Exception as e:
-            raise
+            print(e)
+        try:
+            response = json.loads(response)
+        except Exception as e:
+            print(e)
+
+        if response['success'] is True:
+            self._session_name = response['result']['sessionName']
+            self._user_id = response['result']['userId']
+            return self._session_name, self._user_id
+        elif response['success'] is not True:
+            return None, None
 
     def get_module(self, module_name):
+        endpoint_url = '/webservice.php'
+        url = self._base_url + endpoint_url
         values = {'sessionName': self._session_name, 'operation': 'describe',
                   'elementType': module_name}
-        r = requests.get(self._url, params=values)
+        r = requests.get(url, params=values)
         if r.status_code == 200:
             r = r.json()
             return {'name': module_name, 'id': r['result']['idPrefix']}
         raise Exception("Error retrieving module data.")
 
     def get_modules(self):
+        endpoint_url = '/webservice.php'
+        url = self._base_url + endpoint_url
         try:
             values = {
                 'sessionName': self._session_name,
                 'operation': 'listtypes'
             }
-            r = requests.get(self._url, params=values)
+            r = requests.get(url, params=values)
             if r.status_code == 200:
                 r = r.json()
                 modules = []
@@ -1022,11 +1035,16 @@ class VtigerController(BaseController):
             raise
             return (e)
 
-    def get_module_elements(self, module=None, limit=30):
-        query = "select * from {0} order by createdtime desc;".format(module)
+    def get_module_elements(self, module=None, gt=None, limit=30):
+        endpoint_url = '/webservice.php'
+        url = self._base_url + endpoint_url
+        query = "SELECT * FROM {0} ".format(module)
+        if gt is not None:
+            query+="createdtime > {}".format(gt)
+        query += " ORDER BY createdtime desc;"
         values = {'sessionName': self._session_name, 'operation': 'query',
                   'query': query}
-        r = requests.get(self._url, params=values).json()
+        r = requests.get(url, params=values).json()
         try:
             data = r['result']
             return data
@@ -1036,11 +1054,15 @@ class VtigerController(BaseController):
 
     def create_register(self, module, **kwargs):
 
+        endpoint_url = '/webservice.php'
+        url = self._base_url + endpoint_url
+
         kwargs['assigned_user_id'] = self._user_id
         for k, v in kwargs.items():
             try:
                 kwargs[k] = (self.get_module(v)["id"])
             except Exception as e:
+                print(e)
                 continue
 
         kwargs['elementType'] = module
@@ -1050,36 +1072,19 @@ class VtigerController(BaseController):
             'elementType': kwargs['elementType'],
             'element': json.dumps(kwargs)
         }
+        try:
+            parameters = urllib.parse.urlencode(parameters)
+            connection = urllib.request.urlopen(url,
+                                                parameters.encode('utf-8'))
+            response = connection.read().decode('utf-8')
+            response = json.loads(response)
+        except Exception as e:
+            print(e)
 
-        parameters = urllib.parse.urlencode(parameters)
-        connection = urllib.request.urlopen(self._url,
-                                            parameters.encode('utf-8'))
-        response = connection.read().decode('utf-8')
-        response = json.loads(response)
         if response['success'] is True:
             return response
         else:
             return False
-
-    def delete_register(self):
-        """
-        Not implemented Yet.
-        :return:
-        """
-        session_name, user_id = self.login()
-        parameters = {
-            'operation': 'delete',
-            'sessionName': session_name,
-            'id': id
-        }
-        session_name = parameters['sessionName']
-
-        parameters = urllib.parse.urlencode(parameters)
-        connection = urllib.request.urlopen(self._url,
-                                            parameters.encode('utf-8'))
-        response = connection.read().decode('utf-8')
-        response = json.loads(response)
-        return response
 
     def get_module_name(self, module_id):
         try:
@@ -1090,13 +1095,16 @@ class VtigerController(BaseController):
             print(e)
 
     def get_module_fields(self, module_name):
+        endpoint_url = '/webservice.php'
+        url = self._base_url + endpoint_url
+
         try:
             details = {
                 'operation': 'describe',
                 'sessionName': self._session_name,
                 'elementType': str(module_name)
             }
-            response = requests.get(self._url, params=details).json()
+            response = requests.get(url, params=details).json()
             module_fields = []
             for i in response['result']['fields']:
                 module_fields.append(i)
@@ -1117,49 +1125,53 @@ class VtigerController(BaseController):
         except Exception as e:
             print(e)
 
-    def download_to_stored_data(self, connection_object, plug=None):
+    def download_to_stored_data(self, connection_object, plug, last_source_record=None, limit=50, **kwargs):
         module_id = self._plug.plug_action_specification.get(
             action_specification__name__iexact='module').value
-        data = self.get_module_elements(limit=30,
-                                        module=self.get_module_name(module_id))
+        data = self.get_module_elements(limit=30, module=self.get_module_name(module_id), gt=last_source_record)
         new_data = []
-        for field in data:
-            q = StoredData.objects.filter(
-                object_id=field['id'],
-                connection=connection_object.connection,
-                plug=plug)
-
+        for product in data:
+            unique_value = product['id']
+            q = StoredData.objects.filter(connection=connection_object.connection,plug=plug,object_id = unique_value)
             if not q.exists():
-                for k, v in field.items():
-                    new_data.append(
-                        StoredData(
-                            name=k,
-                            value=v or '',
-                            object_id=field['id'],
-                            connection=connection_object.connection,
-                            plug=plug))
+                new_item = [StoredData(name= key, value= value or '', object_id=unique_value,
+                                       connection=connection_object.connection, plug=plug) for key, value in product.items()]
+            new_data.append(new_item)
+        obj_last_source_record = None
+        result_list = []
         if new_data:
-            field_count = len(data)
-            extra = {'controller': 'vtiger'}
-            for i, item in enumerate(new_data):
-                try:
-                    item.save()
-                    if (i + 1) % field_count == 0:
-                        extra['status'] = 's'
-                        self._log.info(
-                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.'
-                            % (item.object_id, item.plug.id,
-                               item.connection.id),
-                            extra=extra)
-                except:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.'
-                        % (item.object_id, item.name, item.plug.id,
-                           item.connection.id),
-                        extra=extra)
-            return True
+            data.reverse()
+            new_data.reverse()
+            for item in new_data:
+                obj_id = item[0].object_id
+                obj_raw = "RAW DATA NOT FOUND."
+                for i in data:
+                    if obj_id in i.values():
+                        obj_raw = i
+                        break
+                data.remove(i)
+
+                is_stored, object_id = self._save_row(item)
+                if object_id != obj_id:
+                    print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id))
+                    # TODO: CHECK RAISE
+                result_list.append({'identifier': {'name':'id', 'value':object_id}, 'raw': obj_raw, 'is_stored': is_stored})
+            for item in result_list:
+                for k, v in item['raw'].items():
+                    if k == 'createdtime':
+                        obj_last_source_record = v
+                        (obj_last_source_record)
+                        break
+            return {'downloaded_data': result_list, 'last_source_record': obj_last_source_record}
         return False
+
+    def _save_row(self, item):
+        try:
+            for stored_data in item:
+                stored_data.save()
+            return True, stored_data.object_id
+        except Exception as e:
+            return False, item[0].object_id
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_target_fields()
@@ -1168,8 +1180,11 @@ class VtigerController(BaseController):
     def get_target_fields(self, **kwargs):
         module_id = self._plug.plug_action_specification.get(
             action_specification__name__iexact='module').value
-        module_fields = (
-            self.get_module_fields(self.get_module_name(module_id)))
+        try:
+            module_fields = (
+                self.get_module_fields(self.get_module_name(module_id)))
+        except Exception as e:
+            print(e)
         fields_list = []
         for i in module_fields:
             if i['editable'] is True:
@@ -1179,30 +1194,29 @@ class VtigerController(BaseController):
         else:
             return False
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if self._plug is not None:
-            obj_list = []
-            extra = {'controller': 'Vtiger'}
-            module_id = self._plug.plug_action_specification.get(
-                action_specification__name__iexact='module').value
-            module_name = self.get_module_name(module_id)
-            for item in data_list:
+    def send_stored_data(self, data_list):
+        obj_list = []
+        module_id = self._plug.plug_action_specification.get(action_specification__name__iexact='module').value
+        module_name = self.get_module_name(module_id)
+        for item in data_list:
+            obj_result = {'data': dict(item)}
+            try:
                 task = self.create_register(module_name, **item)
-                try:
-                    if task['success'] is True:
-                        extra['status'] = 's'
-                        self._log.info(
-                            'Item: %s successfully sent.' % (task),
-                            extra=extra)
-                        obj_list.append(task)
-                    else:
-                        extra['status'] = 'f'
-                        self._log.info('Item: failed to send.', extra=extra)
-                except Exception as e:
-                    print(e)
-            return obj_list
-        raise ControllerError("There's no plug")
+            except Exception as e:
+                raise
+            try:
+                if task['success'] is True:
+                    obj_result['response'] = "Succesfully created item with id {0}.".format(task['result']['id'])
+                    obj_result['sent'] = True
+                    obj_result['identifier'] = task['result']['id']
+                else:
+                    obj_result['response'] = "Failed to created item."
+                    obj_result['sent'] = False
+                    obj_result['identifier'] = "Failed to created item."
+                obj_list.append(obj_result)
+            except Exception as e:
+                print(e)
+        return obj_list
 
 
 class ActiveCampaignController(BaseController):
