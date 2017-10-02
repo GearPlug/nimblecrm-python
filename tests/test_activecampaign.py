@@ -213,32 +213,47 @@ class ActiveCampaignControllerTestCases(TestCase):
         self.assertEqual(count_end, count_start + count_data)
         data2= str(data)
         self.assertEqual(history.raw, data2.replace("'", '"'))
-        self.assertEqual(history.identifier, str({'name': 'id', 'valor' : int(data["id"])}))
+        self.assertEqual(history.identifier, str({'name': 'id', 'value' : int(data["id"])}))
         self.assertTrue(result)
 
     def test_download_to_store_data(self):
-        self.assertEqual(1,1)
+        data = self._clean_data(self.hook)
+        result = self.controller_source.download_to_stored_data(self.plug_source.connection.related_connection, self.plug_source,
+                                                         data=data)
+        self.assertIn('downloaded_data', result)
+        self.assertIsInstance(result['downloaded_data'], list)
+        self.assertIsInstance(result['downloaded_data'][-1], dict)
+        self.assertIn('identifier', result['downloaded_data'][-1])
+        self.assertIsInstance(result['downloaded_data'][-1]['identifier'], dict)
+        self.assertIn('name', result['downloaded_data'][-1]['identifier'])
+        self.assertIn('value', result['downloaded_data'][-1]['identifier'])
+        self.assertIsInstance(result['downloaded_data'][-1], dict)
+        self.assertIn('raw', result['downloaded_data'][-1])
+        self.assertIsInstance(result['downloaded_data'][-1]['raw'], dict)
+        self.assertIn('is_stored', result['downloaded_data'][-1])
+        self.assertIsInstance(result['downloaded_data'][-1]['is_stored'], bool)
+        self.assertIn('last_source_record', result)
+        self.assertIsNotNone(result['last_source_record'])
 
     def test_send_stored_data(self):
-        self.controller_source.create_webhook()
-        webhook = Webhook.objects.last()
-        result1 = self.controller_source.do_webhook_process(POST=self.hook, webhook_id=webhook.id)
-        self.assertIsNotNone(result1)
-        query_params = {"connection": self.gear.source.connection, "plug": self.gear.source}
-        is_first = self.gear_map.last_sent_stored_data_id is None
-        if not is_first:
-            query_params["id__gt"] = self.gear.gear_map.last_sent_stored_data_id
-        stored_data = StoredData.objects.filter(**query_params)
-        target_fields = OrderedDict(
-            (data.target_name, data.source_value) for data in GearMapData.objects.filter(gear_map=self.gear_map))
-        source_data = [{"id": item[0], "data": {i.name: i.value for i in stored_data.filter(object_id=item[0])}} for
-                       item in stored_data.values_list("object_id").distinct()]
-        result = self.controller_target.send_stored_data(source_data, target_fields, is_first=is_first)
-        self.assertNotEqual(result, [])
-        contact = self.controller_target.view_contact(result[0])
-        self.assertEqual(contact["email"], os.environ.get("TEST_ACTIVECAMPAIGN_EMAIL"))
-        delete = self.controller_target.delete_contact(result[0])
-        self.assertEqual(delete["result_code"], 1)
+        data = {'email': os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
+        data_list = [OrderedDict(data)]
+        result = self.controller_target.send_stored_data(data_list)
+        self.assertIsInstance(result, list)
+        self.assertIsInstance(result[-1], dict)
+        self.assertIn('data', result[-1])
+        self.assertIn('response', result[-1])
+        self.assertIn('sent', result[-1])
+        self.assertIn('identifier', result[-1])
+        self.assertIsInstance(result[-1]['data'], dict)
+        self.assertIsInstance(result[-1]['response'], str)
+        self.assertIsInstance(result[-1]['sent'], bool)
+        self.assertEqual(result[-1]['data'], dict(data_list[0]))
+        result_view = self.controller_target.contact_view(result[-1]['identifier'])
+        self.assertEqual(result_view['result_code'],1)
+        self.assertEqual(result_view['email'], os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL'))
+        self.controller_target.delete_contact(result[-1]['identifier'])
+
 
     def test_get_custom_fields(self):
         result = self.controller_source.get_custom_fields()

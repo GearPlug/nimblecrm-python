@@ -1479,7 +1479,7 @@ class ActiveCampaignController(BaseController):
                             % (item.object_id, item.name, item.plug.id,
                                item.connection.id),
                             extra=extra)
-                result_list=[{'raw':data, 'is_stored':is_stored, 'identifier' :{'name':'id','valor':object_id}}]
+                result_list=[{'raw':data, 'is_stored':is_stored, 'identifier' :{'name':'id','value':object_id}}]
             return {'downloaded_data' : result_list, 'last_source_record': object_id}
         return False
 
