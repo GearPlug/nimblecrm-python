@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from apps.gp.models import Connection, FacebookLeadsConnection, Plug, Action, ActionSpecification, \
-    PlugActionSpecification, Gear, StoredData, GearMap
+    PlugActionSpecification, Gear, StoredData, GearMap, DownloadHistory
 from apps.gp.controllers.lead import FacebookLeadsController
 from facebookmarketing.client import Client as FacebookClient
 from apps.gp.enum import ConnectorEnum
@@ -79,7 +79,15 @@ class FacebookControllerTestCases(TestCase):
         # self.client = Client()
         self.controller = FacebookLeadsController(self.plug.connection.related_connection, self.plug)
 
-        self.hook = {'entry': [{'id': '299300463551366', 'changes': [{'value': {'form_id': '270207053469727', 'page_id': '299300463551366', 'created_time': 1505494516, 'leadgen_id': '270800420077057'}, 'field': 'leadgen'}], 'time': 1505494516}], 'object': 'page'}
+        self.hook = {'entry': [{'id': '299300463551366', 'changes': [{'value': {'form_id': '270207053469727',
+                                                                                'page_id': '299300463551366',
+                                                                                'created_time': 1505494516,
+                                                                                'leadgen_id': '270800420077057'},
+                                                                      'field': 'leadgen'}], 'time': 1505494516}],
+                     'object': 'page'}
+        self.lead = {
+            'value': {'page_id': '299300463551366', 'leadgen_id': '270800420077057', 'created_time': 1505494516,
+                      'form_id': '270207053469727'}, 'field': 'leadgen'}
 
     def test_controller(self):
         self.assertIsInstance(self.controller._connection_object, FacebookLeadsConnection)
@@ -102,3 +110,31 @@ class FacebookControllerTestCases(TestCase):
 
         count = StoredData.objects.count()
         self.assertNotEqual(count, 0)
+
+    def test_download_to_stored_data(self):
+        result = self.controller.download_to_stored_data(self.plug.connection.related_connection, self.plug,
+                                                         lead=self.lead)
+        self.assertIn('downloaded_data', result)
+        self.assertIsInstance(result['downloaded_data'], list)
+        self.assertIsInstance(result['downloaded_data'][-1], dict)
+        self.assertIn('identifier', result['downloaded_data'][-1])
+        self.assertIsInstance(result['downloaded_data'][-1]['identifier'], dict)
+        self.assertIn('name', result['downloaded_data'][-1]['identifier'])
+        self.assertIn('value', result['downloaded_data'][-1]['identifier'])
+        self.assertIsInstance(result['downloaded_data'][-1], dict)
+        self.assertIn('raw', result['downloaded_data'][-1])
+        self.assertIsInstance(result['downloaded_data'][-1]['raw'], dict)
+        self.assertIn('is_stored', result['downloaded_data'][-1])
+        self.assertIsInstance(result['downloaded_data'][-1]['is_stored'], bool)
+        self.assertIn('last_source_record', result)
+        self.assertIsNotNone(result['last_source_record'])
+
+    def test_download_source_data(self):
+        result = self.controller.download_source_data(self.plug.connection.related_connection, self.plug,
+                                                      lead=self.lead)
+
+        qs = StoredData.objects.order_by('object_id').values_list('object_id', flat=True).distinct()
+        for lead in qs:
+            count = DownloadHistory.objects.filter(identifier={'name': 'id', 'value': lead}).count()
+            self.assertGreater(count, 0)
+
