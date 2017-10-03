@@ -6,9 +6,10 @@ from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
+from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, DownloadHistory
 from oauth2client import client
 import httplib2
+import json
 
 
 class ListGearView(LoginRequiredMixin, ListView):
@@ -257,6 +258,36 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         return []
 
 
+class DownloadHistoryView(LoginRequiredMixin, ListView):
+    model = DownloadHistory
+    template_name = 'gear/download_history.html'
+    login_url = '/accounts/login/'
+
+    def get_context_data(self, **kwargs):
+        #context = super(DownloadHistoryView, self).get_context_data(**kwargs)
+        context = {'Connections':self.get_connections_name()}
+        return context
+
+    def get_connections_name(self):
+        connection_list = []
+        query = self.model.objects.all()
+        for q in query:
+            print(q)
+            conn = json.loads(q.connection)
+            # print(conn)
+            for c in conn:
+                connection_list.append(c['fields']['name'])
+        return connection_list
+
+    def get_queryset(self):
+        return self.get_connections_name()
+
+class DownloadHistoryDetailsView(LoginRequiredMixin, ListView):
+    model = DownloadHistory
+    template_name = 'gear/download_history_details.html'
+    login_url = '/accounts/login/'
+
+
 def gear_toggle(request, gear_id):
     if request.is_ajax() is True and request.method == 'POST':
         try:
@@ -283,3 +314,6 @@ def get_authorization(request):
     credentials = client.OAuth2Credentials.from_json(
         request.session['google_credentials'])
     return credentials.authorize(httplib2.Http())
+
+
+
