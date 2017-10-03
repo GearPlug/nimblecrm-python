@@ -2,7 +2,7 @@ import os
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from apps.gp.models import Connection, SugarCRMConnection, Plug, Action, ActionSpecification, PlugActionSpecification, \
-    Gear, GearMap, StoredData, GearMapData, DownloadHistory
+    Gear, GearMap, StoredData, GearMapData, DownloadHistory, SendHistory
 from apps.gp.controllers.crm import SugarCRMController
 from sugarcrm.client import Client as SugarCRMClient
 from apps.gp.enum import ConnectorEnum
@@ -210,7 +210,7 @@ class SugarCRMControllerTestCases(TestCase):
 
     def test_send_stored_data(self):
         """Guarda datos en StoredData y luego los envía la data mapeada al servidor CRM, luego comprueba de que
-        el valor devuelto sea una lista.
+        el valor devuelto sea una lista además de comprobar que esté guardando registros en SendHistory.
 
         """
         result1 = self.source_controller.download_source_data()
@@ -226,3 +226,7 @@ class SugarCRMControllerTestCases(TestCase):
                        item in stored_data.values_list('object_id').distinct()]
         entries = self.target_controller.send_target_data(source_data, target_fields, is_first=is_first)
         self.assertIsInstance(entries, list)
+
+        for object_id in entries:
+            count = SendHistory.objects.filter(identifier=object_id).count()
+            self.assertGreater(count, 0)
