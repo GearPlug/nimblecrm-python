@@ -16,5 +16,9 @@
                 <i class="fa fa-play" aria-hidden="true"></i>
             {% endif %}
         </a>
+
+        <a href="{% url 'gear:send_history' pk=gear.id %}"><i class="fa fa-arrow-circle-up" aria-hidden="true"></i></a>
+        <a href="{% url 'gear:download_history' pk=gear.id %}"><i class="fa fa-arrow-circle-down" aria-hidden="true"></i></a>
+
     </div>
 </div>

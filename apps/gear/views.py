@@ -6,9 +6,10 @@ from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
+from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, DownloadHistory, SendHistory
 from oauth2client import client
 import httplib2
+import json
 
 
 class ListGearView(LoginRequiredMixin, ListView):
@@ -255,6 +256,53 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         if controller.test_connection():
             return controller.get_mapping_fields()
         return []
+
+
+class ActivityView(LoginRequiredMixin, ListView):
+    model = SendHistory
+    template_name = 'gear/activity.html'
+    login_url = '/accounts/login/'
+
+    def get_queryset(self):
+        gear_list = Gear.objects.filter(user=self.request.user)
+        recent_activity = self.model.objects.filter(gear_id__in=gear_list).order_by('-id')[:10]
+        obj_list = []
+        for item in recent_activity:
+            gear = gear_list.get(pk=item.gear_id)
+            obj_list.append({'gear_id': item.gear_id, 'source_connector': gear.source.connection.connector.name,
+                             'target_connector': gear.target.connection.connector.name,
+                             'action_source': gear.source.action.name,
+                             'action_target': gear.target.action.name})
+        return obj_list
+
+
+class GearDownloadHistoryView(LoginRequiredMixin, ListView):
+    model = DownloadHistory
+    template_name = 'gear/download_history.html'
+    login_url = '/accounts/login/'
+
+    def get_queryset(self):
+        return [{'connection': json.loads(item.connection)[0]['fields']['name'],
+                 'raw': [{'name': k, 'value': v} for k, v in json.loads(item.raw).items()],
+                 'date': item.date,
+                 'connector_id': item.connector_id
+                 } for item in self.model.objects.filter(gear_id=self.kwargs['pk'])]
+
+
+class GearSendHistoryView(LoginRequiredMixin, ListView):
+    model = SendHistory
+    template_name = 'gear/send_history.html'
+    login_url = '/accounts/login/'
+
+    def get_queryset(self):
+        return [{'connection': json.loads(item.connection)[0]['fields']['name'],
+                 'data': [{'name': k, 'value': v} for k, v in json.loads(item.data).items()],
+                 'date': item.date,
+                 'connector_id': item.connector_id,
+                 'sent': item.sent,
+                 'response': item.response,
+                 'identifier': item.identifier,
+                 } for item in self.model.objects.filter(gear_id=self.kwargs['pk'])]
 
 
 def gear_toggle(request, gear_id):

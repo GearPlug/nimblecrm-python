@@ -1,0 +1,16 @@
+{% extends 'layouts/site_base.html' %}
+{% load static %}
+{% block content %}
+    <h2>Recent Activity</h2>
+    <div class="col-md-12">
+        Events:
+    </div>
+
+
+
+    <ul>
+        {% for obj in object_list %}
+            {% include 'home/snippets/activity_extend.html' with gear_id=obj.gear_id iconosource='<i class="fa fa-facebook-square" aria-hidden="true"></i>' mensajesource=obj.action_source iconotarget='<i class="fa fa-envelope-o" aria-hidden="true"></i>' mensajetarget=obj.action_target %}
+        {% endfor %}
+    </ul>
+{% endblock %}

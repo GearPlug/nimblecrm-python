@@ -1,0 +1,17 @@
+{% extends 'layouts/site_base.html' %}
+{% load static %}
+{% block content %}
+    <h2>Download History</h2>
+    <ul>
+        {% for obj in object_list %}
+            <li>{{ obj.connector_id }} {{ obj.connection }} {{ obj.date }}
+
+                <ul>
+                    {% for item in obj.raw %}
+                        <li>{{ item.name }} : {{ item.value }}</li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
