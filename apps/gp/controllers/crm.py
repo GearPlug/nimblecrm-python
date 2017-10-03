@@ -25,8 +25,7 @@ import string
 import base64
 import urllib.error
 import urllib.request
-from pprint import pprint
-
+import pprint
 
 class SugarCRMController(BaseController):
     _user = None
@@ -774,10 +773,7 @@ class HubSpotController(BaseController):
                 "That specification doesn't belong to an action in this connector."
             )
 
-    def download_to_stored_data(
-            self,
-            connection_object,
-            plug, ):
+    def download_to_stored_data(self,connection_object,plug, ):
         module_id = self._plug.plug_action_specification.all()[0].value
         new_data = []
         data = self.get_data(module_id)
@@ -1306,46 +1302,52 @@ class ActiveCampaignController(BaseController):
             return False
 
     def create_webhook(self):
-        action = self._plug.action.name
-        if action == 'new contact':
+        action_name = self._plug.action.name
+        action = 'subscribe'
+        if action_name == 'new subscriber' or 'new unsubscriber':
             selected_list = self._plug.plug_action_specification.get(
-                action_specification__name='list')
-            # Creacion de Webhook
-            webhook = Webhook.objects.create(name='activecampaign', url='',
-                                             plug=self._plug, expiration='')
+            action_specification__name='list')
+            list_id = selected_list.value
+            if action_name == 'new unsubscriber':
+                action = 'unsubscribe'
+        elif action_name == 'new contact':
+            list_id = 0
+        # Creacion de Webhook
+        webhook = Webhook.objects.create(name='activecampaign', url='',
+                                         plug=self._plug, expiration='')
 
-            # Verificar ngrok para determinar url_base
-            url_base = settings.WEBHOOK_HOST
-            url_path = reverse('home:webhook',
-                               kwargs={'connector': 'activecampaign',
-                                       'webhook_id': webhook.id})
-            url = url_base + url_path
-            params = [
-                ('api_action', "webhook_add"),
-                ('api_key', self._key),
-                ('api_output', 'json'),
-            ]
-            post_array = {
-                "name": "GearPlug WebHook",
-                "url": url,
-                "lists": selected_list.value,
-                "action": "subscribe",
-                "init": "admin"
-            }
-            final_url = "{0}/admin/api.php".format(self._host)
-            r = requests.post(url=final_url, data=post_array, params=params)
-            if r.status_code == 200 or r.status_code == 201:
+        # Verificar ngrok para determinar url_base
+        url_base = settings.WEBHOOK_HOST
+        url_path = reverse('home:webhook',
+                           kwargs={'connector': 'activecampaign',
+                                   'webhook_id': webhook.id})
+        url = url_base + url_path
+        params = [
+            ('api_action', "webhook_add"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+        ]
+        post_array = {
+            "name": "GearPlug WebHook",
+            "url": url,
+            "lists": list_id,
+            "action": action,
+            "init": "admin"
+        }
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, data=post_array, params=params)
+        if r.status_code == 200 or r.status_code == 201:
 
-                webhook.url = url_base + url_path
-                webhook.generated_id = r.json()['id']
-                webhook.is_active = True
-                webhook.save(
-                    update_fields=['url', 'generated_id', 'is_active'])
-            else:
-                webhook.is_deleted = True
-                webhook.save(update_fields=['is_deleted', ])
+            webhook.url = url_base + url_path
+            webhook.generated_id = r.json()['id']
+            webhook.is_active = True
+            webhook.save(
+                update_fields=['url', 'generated_id', 'is_active'])
             return True
-        return False
+        else:
+            webhook.is_deleted = True
+            webhook.save(update_fields=['is_deleted', ])
+            return False
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_target_fields()
@@ -1355,6 +1357,9 @@ class ActiveCampaignController(BaseController):
         ]
 
     def get_target_fields(self, **kwargs):
+        action = self._plug.action.name
+        if action == 'unsubscribe a contact':
+            return[ {'name': 'email', 'label': 'Email', 'type': 'varchar', 'required': True}]
         return [
             {'name': 'email', 'label': 'Email', 'type': 'varchar', 'required': True},
             {'name': 'first_name', 'label': 'First Name', 'type': 'varchar', 'required': False},
@@ -1363,7 +1368,7 @@ class ActiveCampaignController(BaseController):
             {'name': 'orgname', 'label': 'Organization Name', 'type': 'varchar', 'required': False},
         ]
 
-    def create_user(self, data):
+    def create_contact(self, data):
         params = [
             ('api_action', "contact_sync"),
             ('api_key', self._key),
@@ -1373,30 +1378,74 @@ class ActiveCampaignController(BaseController):
         r = requests.post(url=final_url, data=data, params=params).json()
         return r
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if self._plug is not None:
-            obj_list = []
-            extra = {'controller': 'activecampaign'}
-            for item in data_list:
-                try:
-                    response = self.create_user(item)
-                    self._log.info(
-                        'Item: %s successfully sent.' % (
-                            list(item.items())[0][1]),
-                        extra=extra)
-                    obj_list.append(response['subscriber_id'])
-                except Exception as e:
-                    print(e)
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item: %s failed to send.' % (
-                            list(item.items())[0][1]),
-                        extra=extra)
-            return obj_list
-        raise ControllerError("There's no plug")
+    def subscribe_contact(self, data):
+        _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
+        params = [
+            ('api_action', "contact_add"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+        ]
+        data['p[{0}]'.format(_list_id)] = _list_id
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, data=data, params=params).json()
+        return r
 
-    def download_to_stored_data(self, connection_object=None, plug=None, data=None, **kwargs):
+    def unsubscribe_contact(self, email):
+        _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
+        data = self.contact_view_email(email['email'])
+        params = [
+            ('api_action', "contact_edit"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+        ]
+        data['p[{0}]'.format(_list_id)] = _list_id
+        data['status[{0}]'.format(_list_id)] = 2
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, data=data, params=params).json()
+        r['subscriber_id'] = data['id']
+        return r
+
+    def contact_view_email(self, email):
+        params = [
+            ('api_action', "contact_view_email"),
+            ('api_key', self._key),
+            ('api_output', 'json'),
+            ('email', email),
+        ]
+        final_url = "{0}/admin/api.php".format(self._host)
+        r = requests.post(url=final_url, params=params).json()
+        return r
+
+    def send_stored_data(self, data_list):
+        extra = {'controller': 'activecampaign'}
+        action = self._plug.action.name
+        result_list = []
+        for item in data_list:
+            sent = False
+            identifier = ""
+            if action == 'create contact':
+                response = self.create_contact(item)
+            elif action == 'subscribe a contact':
+                response = self.subscribe_contact(item)
+            elif action == 'unsubscribe a contact':
+                response = self.unsubscribe_contact(item)
+            if response['result_code'] == 1:
+                sent = True
+                identifier = response['subscriber_id']
+                self._log.info(
+                    'Item: %s successfully sent.' % (response['subscriber_id']),
+                    extra=extra)
+            else:
+                print(response['result_message'])
+                extra['status'] = 'f'
+                self._log.info(
+                    'Item: %s failed to send.' % (
+                        list(item.items())[0][1]),
+                    extra=extra)
+            result_list.append({'data': dict(item), 'response': response['result_message'], 'sent': sent, 'identifier': identifier})
+        return result_list
+
+    def download_to_stored_data(self, connection_object=None, plug=None, last_source_record=None, data=None, **kwargs):
         new_data = []
         if data is not None:
             contact_id = data['id']
@@ -1410,9 +1459,11 @@ class ActiveCampaignController(BaseController):
             if new_data:
                 field_count = len(data)
                 extra = {'controller': 'activecampaign'}
+                is_stored = False
                 for i, item in enumerate(new_data):
                     try:
                         item.save()
+                        is_stored = True
                         if (i + 1) % field_count == 0:
                             extra['status'] = 's'
                             self._log.info(
@@ -1428,10 +1479,11 @@ class ActiveCampaignController(BaseController):
                             % (item.object_id, item.name, item.plug.id,
                                item.connection.id),
                             extra=extra)
-            return True
+                result_list=[{'raw':data, 'is_stored':is_stored, 'identifier' :{'name':'id','value':object_id}}]
+            return {'downloaded_data' : result_list, 'last_source_record': object_id}
         return False
 
-    def view_contact(self, id):
+    def contact_view(self, id):
         params = [
             ('api_action', "contact_view"),
             ('api_key', self._key),
@@ -1476,13 +1528,13 @@ class ActiveCampaignController(BaseController):
         return r.json()
 
     def do_webhook_process(self, body=None, POST=None, webhook_id=None, **kwargs):
-        if 'list' in POST and POST['list'] == '0':
+        webhook = Webhook.objects.get(pk=webhook_id)
+        action_name = webhook.plug.action.name
+        if 'list' in POST and POST['list'] == '0' and action_name != 'new contact':
             # ActiveCampaign envia dos webhooks, el primero es cuando se crea el contacto, el segundo cuando el contacto
             # creado es agregado a una lista. Cuando el contacto es agregado a una lista el webhook incluye los custom
             # fields por eso descartamos los webhooks de contactos que no hayan sido agregados a una lista (list = 0).
             return HttpResponse(status=200)
-
-        webhook = Webhook.objects.get(pk=webhook_id)
         if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
             self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
             expr = '\[(\w+)\](?:\[(\d+)\])?'
@@ -1506,6 +1558,9 @@ class ActiveCampaignController(BaseController):
                 self.download_source_data(data=clean_data)
                 webhook.plug.save()
         return HttpResponse(status=200)
+
+    def has_webhook(self):
+        return True
 
 
 class InfusionSoftController(BaseController):
