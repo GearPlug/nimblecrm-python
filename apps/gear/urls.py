@@ -1,6 +1,6 @@
 from django.conf.urls import url
 from apps.gear.views import CreateGearView, CreateGearGroupView, UpdateGearView, UpdateGearGroupView, DeleteGearView,\
-    ListGearView, CreateGearMapView, gear_toggle, DownloadHistoryView
+    ListGearView, CreateGearMapView, gear_toggle, DownloadHistoryView, DownloadHistoryDetailsView
 
 urlpatterns = [
     url(r'^create/$', CreateGearView.as_view(), name='create'),
@@ -15,5 +15,5 @@ urlpatterns = [
     url(r'^toggle/(?P<gear_id>\d+)/$', gear_toggle, name='toggle'),
 
     url(r'^download-history/', DownloadHistoryView.as_view(), name='download_history'),
-    url(r'^download-history/(?P<gear_id>\d+)/$')
+    url(r'^download-history/(?P<identifier>\d+)/$', DownloadHistoryDetailsView.as_view(), name='download_history_details')
 ]
