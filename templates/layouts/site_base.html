@@ -37,15 +37,13 @@
                         </div>
                         <div class="col-md-12 border_base">
                             {% block left_menu_1 %}
-                                <i class="fa fa-cogs" aria-hidden="true"></i>&nbsp;<a href="{% url 'home:activity' %}">Actividad</a>
+                                <i class="fa fa-cogs" aria-hidden="true"></i>&nbsp;<a href="{% url 'gear:activity' %}">Actividad</a>
                                 <br>
                                 <i class="fa fa-hand-paper-o" aria-hidden="true"></i>&nbsp;<a href="{% url 'home:help' %}">Ayuda</a>
                                 <br>
                                 <i class="fa fa-users" aria-hidden="true"></i>&nbsp;
                                 <a href="{% url 'connection:manage' %}">Administrar conexiones</a>
                                 <br>
-                                <i class="fa fa-arrow-down" aria-hidden="true"></i>&nbsp;
-                                <a href="{% url 'gear:download_history' %}">Download History</a>
                             {% endblock %}
                         </div>
                         <div class="col-md-12 border_base">
