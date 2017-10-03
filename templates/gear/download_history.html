@@ -1,20 +1,10 @@
 {% extends 'layouts/site_base.html' %}
 {% load static %}
 {% block content %}
-    {% for connections in object_list %}
-        <div class="col-md-12" data-connector-id="{{ connections.0.connector.id }}">
-            <div class="col-md-12">
-                <hr>
-            </div>
-            <div class="col-md-12">
-                <img src="{{ connections.0.connector.icon.url }}" height="40"
-                     width="40"> &nbsp;
-                {{ connections.0.connector.name }}
-            </div>
-            {% for connection in connections %}
-                {% include 'connection/snippets/connector_state.html' with c=connection %}
+    <h2>Download History</h2>
+        <ul>
+            {% for connection in Connections %}
+                <li>Connection: <a href="#">{{ connection }}</a></li>
             {% endfor %}
-        </div>
-        <br>
-    {% endfor %}
+        </ul>
 {% endblock %}
