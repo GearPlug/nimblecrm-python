@@ -27,7 +27,7 @@ class GoogleFormsController(GoogleBaseController):
 
     def __init__(self, connection=None, plug=None, **kwargs):
         GoogleBaseController.__init__(self, connection=connection, plug=plug,
-                                **kwargs)
+                                      **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
         super(GoogleFormsController, self).create_connection(
@@ -519,7 +519,7 @@ class SurveyMonkeyController(BaseController):
 
     def download_to_stored_data(self, connection_object, plug, client=None,
                                 response=None):
-         # Codigo para traer historial de respuestas
+        # Codigo para traer historial de respuestas
         # if responses == None:
         #     responses = self.get_responses().__dict__["_content"].decode()
         #     responses = json.loads(responses)["data"]
@@ -690,55 +690,71 @@ class TypeFormController(BaseController):
             url_path = reverse('home:webhook', kwargs={'connector': 'typeform', 'webhook_id': webhook.id})
             webhook.url = url_base + url_path
             webhook.generated_id = webhook.id
-            webhook.is_active = True # Cambiar a False
+            webhook.is_active = True  # Cambiar a False
             webhook.save(update_fields=['url', 'generated_id', 'is_active'])
             return True
         return False
 
     def do_webhook_process(self, body=None, GET=None, POST=None, META=None, webhook_id=None, **kwargs):
-        webhook = Webhook.objects.get(pk=webhook_id)
-        pprint.pprint(body)
-        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+        webhook = Webhook.objects.filter(pk=webhook_id).prefetch_related('plug').first()
+        if not webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
             if not webhook.plug.is_tested:
                 webhook.plug.is_tested = True
-            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
-            if self.test_connection():
-                self.download_source_data(answer=body)
                 webhook.plug.save()
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+            try:
+                PlugActionSpecification.objects.get(action_specification__name__iexact='form', plug=webhook.plug,
+                                                    value=body['form_response']['form_id'])
+                if self.test_connection():
+                    self.download_source_data()
+            except PlugActionSpecification.DoesNotExist:
+                print("The webhook {0} is not listening to the form {1}.".format(webhook_id,
+                                                                                 body['form_response']['form_id']))
+                return HttpResponse(status=403)
         return HttpResponse(status=200)
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, answer=None, **kwargs):
         form = self._plug.plug_action_specification.get(action_specification__name__iexact='form')
-        data_questions = self._client.get_form_questions(form.value)
-        data_answers = self._client.get_form_metadata(form.value)
-        # Raw General
-        dict_data_questions = {}
         list_data_answers = []
-        for question in data_questions:
-            dict_data_questions[question['id']] = question['question']
-        for answer in data_answers:
-            obj_raw = {}
-            obj_raw['completed'] = answer['completed']
-            obj_raw['token'] = answer['token']
-            if answer['answers']:
-                for k, v in answer['answers'].items():
-                    if k in dict_data_questions.keys():
-                        obj_raw[dict_data_questions[k]] = v
-            else:
-                for k in dict_data_questions.keys():
-                    obj_raw[dict_data_questions[k]] = ''
-            obj_raw.update(answer['metadata'])
-            list_data_answers.append(obj_raw)
-        pprint.pprint(list_data_answers)
-        # Data
+        if answer is not None:
+            if 'event_type' in answer and answer['event_type'] == 'form_response':
+                data_questions = {question['id']: question['title'] for question in
+                                  answer['form_response']['definition']['fields']}
+                obj_raw = {'completed': '1', 'token': answer['form_response']['token'],
+                           'submitted_at': answer['form_response']['submitted_at'], }
+                for raw_answer in answer['form_response']['answers']:
+                    type = raw_answer['type']
+                    if type == 'choice':
+                        value = raw_answer[type]['label']
+                    elif type == 'boolean':
+                        value = '1' if type == True else '0'
+                    else:
+                        value = str(raw_answer[type])
+                    obj_raw[data_questions[raw_answer['field']['id']]] = value
+                list_data_answers.append(obj_raw)
+        else:
+            form_data = self._client.get_form_information(form.value)
+            data_questions = self._client.get_form_questions(form=form_data)
+            data_answers = self._client.get_form_metadata(form=form_data)
+            dict_data_questions = {question['id']: question['question'] for question in data_questions}
+            for answer in data_answers:
+                obj_raw = {'completed': answer['completed'], 'token': answer['token']}
+                if answer['answers']:
+                    for k, v in answer['answers'].items():
+                        if k in dict_data_questions.keys():
+                            obj_raw[dict_data_questions[k]] = v
+                else:
+                    for k in dict_data_questions.keys():
+                        obj_raw[dict_data_questions[k]] = ''
+                obj_raw['submitted_at'] = answer['metadata']['date_submit']
+                list_data_answers.append(obj_raw)
         new_data = []
         for item in list_data_answers:
             unique_value = item['token']
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
-                new_item = [StoredData(name=key, value=value or '', object_id=unique_value,
-                                       connection=connection_object.connection, plug=plug) for key,
-                                                                                               value in item.items()]
+                new_item = [StoredData(name=key, value=value or '', object_id=unique_value, plug=plug,
+                                       connection=connection_object.connection) for key, value in item.items()]
                 new_data.append(new_item)
         # Result list
         result_list = []
