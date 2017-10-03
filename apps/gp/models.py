@@ -473,8 +473,13 @@ class ActiveCampaignConnection(models.Model):
         return self.name
 
 
-class TypeForm():
-    pass
+class TypeFormConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_typeform')
+    name = models.CharField('name', max_length=200)
+    api_key = models.CharField('api key', max_length=400)
+
+    def __str__(self):
+        return self.name
 
 
 class Plug(models.Model):

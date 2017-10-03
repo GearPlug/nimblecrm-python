@@ -83,3 +83,4 @@ git+git://github.com/GearPlug/facebookmarketing-python.git
 git+git://github.com/GearPlug/sugarcrm-python.git
 git+git://github.com/GearPlug/mailchimp-python.git
 git+git://github.com/GearPlug/mercadolibre-python.git
+git+git://github.com/GearPlug/typeform-python.git
