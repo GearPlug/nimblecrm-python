@@ -4,7 +4,7 @@
     <h2>Download History</h2>
         <ul>
             {% for connection in Connections %}
-                <li>Connection: <a href="#">{{ connection }}</a></li>
+                <li>Connection: <a href={% url gear:download_history_details %}>{{ connection }}</a></li>
             {% endfor %}
         </ul>
 {% endblock %}
