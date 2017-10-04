@@ -707,7 +707,7 @@ class TypeFormController(BaseController):
                     break
                 is_stored = True
             obj_raw = None
-            result_list.append({'identifier': stored_data.object_id, 'is_stored': is_stored, 'raw': list_data_answers})
+            result_list.append({'identifier': {'name': 'token', 'value': stored_data.object_id}, 'is_stored': is_stored, 'raw': list_data_answers[0]})
         obj_last_source_record = False
         return {'downloaded_data': result_list, 'last_source_record': obj_last_source_record}
 
