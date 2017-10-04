@@ -70,77 +70,70 @@ class GoogleSpreadSheetsController(GoogleBaseController):
             files = None
         return files is not None
 
-
-    def download_to_stored_data(self, connection_object, plug, *args,
-                                **kwargs):
-        if plug is None:
-            plug = self._plug
+    def download_to_stored_data(self, connection_object, plug, last_source_record=None, **kwargs):
         if not self._spreadsheet_id or not self._worksheet_name:
             return False
-        sheet_values = self.get_worksheet_values()
+        data = self.get_worksheet_values()
+        raw_data = []
         new_data = []
-        for idx, item in enumerate(sheet_values[1:]):
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=idx + 1)
+        for idx, item in enumerate(data[1:], 1):
+            unique_value = idx
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
+                item_data = []
+                item_raw = {}
                 for idx2, cell in enumerate(item):
-                    new_data.append(
-                        StoredData(name=sheet_values[0][idx2], value=cell,
-                                   object_id=idx + 1,
-                                   connection=connection_object.connection,
-                                   plug=plug))
+                    item_data.append(StoredData(name=data[0][idx2], value=cell, object_id=unique_value,
+                                                connection=connection_object.connection, plug=plug))
+                    _dict = {data[0][idx2]: cell}
+                    item_raw.update(_dict)
+
+                new_data.append(item_data)
+                item_raw['id'] = idx
+                raw_data.append(item_raw)
+        # Nueva forma
         if new_data:
-            field_count = len(sheet_values)
-            extra = {'controller': 'google_spreadsheets'}
-            for i, item in enumerate(new_data):
-                try:
-                    item.save()
-                    if (i + 1) % field_count == 0:
-                        extra['status'] = 's'
-                        self._log.info(
-                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                                item.object_id, item.plug.id,
-                                item.connection.id), extra=extra)
-                except:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                            item.object_id, item.name, item.plug.id,
-                            item.connection.id), extra=extra)
-            # raise IndexError("hola")
-            return True
+            result_list = []
+            for item in new_data:
+                for stored_data in item:
+                    try:
+                        stored_data.save()
+                    except Exception as e:
+                        is_stored = False
+                        break
+                    is_stored = True
+                obj_raw = "ROW DATA NOT FOUND."
+                for obj in raw_data:
+                    if stored_data.object_id == obj['id']:
+                        obj_raw = obj
+                        break
+                raw_data.remove(obj_raw)
+                result_list.append({'identifier': {'name': 'id', 'value': stored_data.object_id},
+                                    'is_stored': is_stored, 'raw': obj_raw, })
+            return {'downloaded_data': result_list, 'last_source_record': result_list[-1]['identifier']['value']}
         return False
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
+    def send_stored_data(self, data_list, **kwargs):
         obj_list = []
-        first_row = self.get_worksheet_first_row()
-        ordered_target_fields = OrderedDict()
-        for field in first_row:
-            for k in target_fields.keys():
-                if k == field:
-                    if target_fields[k] == '':
-                        target_fields[k] = ' '
-                    ordered_target_fields[k] = target_fields[k]
-                    break
-        data_list = get_dict_with_source_data(source_data,
-                                              ordered_target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[0]]
-                except:
-                    data_list = []
+        _list = []
         if self._plug is not None:
             for obj in data_list:
                 l = [val for val in obj.values()]
-                obj_list.append(l)
-            extra = {'controller': 'google_spreadsheets'}
+                _list.append({'obj': obj, 'list': l})
             sheet_values = self.get_worksheet_values()
-            for idx, item in enumerate(obj_list, len(sheet_values) + 1):
-                res = self.create_row(item, idx)
-            return True
-        raise ControllerError("Incomplete.")
+            for idx, item in enumerate(_list, len(sheet_values) + 1):
+                obj_result = {'data': dict(item['obj'])}
+                try:
+                    res = self.create_row(item['list'], idx)
+                    obj_result['response'] = res
+                    obj_result['sent'] = True
+                    obj_result['identifier'] = res['updatedRange'].split('!')[-1]
+                except Exception as e:
+                    obj_result['response'] = 'Error writing row'
+                    obj_result['sent'] = False
+                    obj_result['identifier'] = None
+                obj_list.append(obj_result)
+            return obj_list
 
     def colnum_string(self, n):
         div = n
@@ -456,7 +449,7 @@ class GoogleCalendarController(GoogleBaseController):
                 "That specification doesn't belong to an action in this connector.")
 
     def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
-        webhook= Webhook.objects.get(pk=webhook_id)
+        webhook = Webhook.objects.get(pk=webhook_id)
         if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
             if not webhook.plug.is_tested:
                 webhook.plug.is_tested = True
@@ -571,6 +564,7 @@ class EvernoteController(BaseController):
         note.content = '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'
         note.content += '<en-note>' + c + '</en-note>'
         return noteStore.createNote(note)
+
 
 class WunderListController(BaseController):
     _token = None
@@ -734,7 +728,7 @@ class WunderListController(BaseController):
                     task.save()
                     self._log.info(
                         'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                        task.object_id, task.plug.id, task.connection.id),
+                            task.object_id, task.plug.id, task.connection.id),
                         extra=extra)
                 except Exception as e:
                     extra['status'] = 'f'
@@ -769,7 +763,7 @@ class WunderListController(BaseController):
                 if task.status_code in [200, 201]:
                     extra['status'] = 's'
                     self._log.info('Item: %s successfully sent.' % (
-                    task.json()['data']['name']), extra=extra)
+                        task.json()['data']['name']), extra=extra)
                     obj_list.append(task)
                 else:
                     extra['status'] = 'f'
@@ -778,7 +772,7 @@ class WunderListController(BaseController):
         raise ControllerError("There's no plug")
 
     def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
-        webhook= Webhook.objects.get(pk=webhook_id)
+        webhook = Webhook.objects.get(pk=webhook_id)
         if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
             if not webhook.plug.is_tested:
                 webhook.plug.is_tested = True
@@ -793,4 +787,3 @@ class WunderListController(BaseController):
                         self.download_source_data(task=body)
                         webhook.plug.save()
         return HttpResponse(status=200)
-
