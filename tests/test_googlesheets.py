@@ -10,10 +10,22 @@ import os
 
 
 class GoogleSpreadSheetsControllerTestCases(TestCase):
+    """Casos de prueba del controlador Google Spreadsheets.
+
+        Variables de entorno:
+            TEST_GOOGLESHEETS_CREDENTIALS: String: Token generado a partir de oAuth.
+            TEST_GOOGLESHEETS_SHEET: String: Nombre del spreadsheet.
+            TEST_GOOGLESHEETS_WORKSHEET: String: Nombre de la hoja.
+            TEST_GOOGLESHEETS_FIRST_FIELD: String: Primer field.
+
+    """
     fixtures = ['gp_base.json']
 
     @classmethod
     def setUpTestData(cls):
+        """Crea la base de datos y genera datos falsos en las tablas respectivas.
+
+        """
         cls.user = User.objects.create(username='test', email='lyrubiano5@gmail.com', password='Prueba#2017')
         connection = {
             'user': cls.user,
@@ -122,6 +134,9 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
         GearMapData.objects.create(**map_data_4)
 
     def setUp(self):
+        """Instancia el controlador e inicializa variables de webhooks en caso de usarlos.
+
+        """
         self.controller_source = GoogleSpreadSheetsController(self.plug_source.connection.related_connection,
                                                               self.plug_source)
         self.controller_target = GoogleSpreadSheetsController(self.plug_target.connection.related_connection,
@@ -137,6 +152,9 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
         return id
 
     def test_controller(self):
+        """Comprueba los atributos del controlador estén instanciados.
+
+        """
         self.assertIsInstance(self.controller_source._connection_object, GoogleSpreadSheetsConnection)
         self.assertIsInstance(self.controller_source._plug, Plug)
         self.assertIsInstance(self.controller_target._plug, Plug)
@@ -148,14 +166,23 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
         self.assertEqual(self.controller_target._worksheet_name, os.environ.get('TEST_GOOGLESHEETS_WORKSHEET'))
 
     def test_test_connection(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         result_source = self.controller_source.test_connection()
         self.assertTrue(result_source)
 
     def test_column_string(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         result = self.controller_source.colnum_string(10)
         self.assertEqual(result, 'J')
 
     def test_get_sheet_list(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         result = self.controller_source.get_sheet_list()
         sheet = ''
         for i in result:
@@ -164,6 +191,9 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
         self.assertEqual(sheet, os.environ.get('TEST_GOOGLESHEETS_SHEET'))
 
     def test_get_worksheet_list(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         result = self.controller_source.get_sheet_list()
         for i in result:
             if i['name'] == os.environ.get('TEST_GOOGLESHEETS_SHEET'):
@@ -176,16 +206,25 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
         self.assertEqual(worksheet, os.environ.get('TEST_GOOGLESHEETS_WORKSHEET'))
 
     def test_get_worksheet_values(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         self.controller_source._spreadsheet_id = self._get_sheet_id()
         result = self.controller_source.get_worksheet_values()
         self.assertEqual(result[0][0], os.environ.get('TEST_GOOGLESHEETS_FIRST_FIELD'))
 
     def test_get_worksheet_first_row(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         self.controller_source._spreadsheet_id = self._get_sheet_id()
         result = self.controller_source.get_worksheet_first_row()
         self.assertEqual(result[0], os.environ.get('TEST_GOOGLESHEETS_FIRST_FIELD'))
 
     def test_create_row(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         self.controller_target._spreadsheet_id = self._get_sheet_id()
         self.controller_source._spreadsheet_id = self._get_sheet_id()
         self.controller_target.create_row(['test', 'test'], 2)
@@ -193,17 +232,26 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
         self.assertEqual(result[1][0], 'test')
 
     def test_get_target_fields(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         self.controller_target._spreadsheet_id = self._get_sheet_id()
         result = self.controller_target.get_target_fields()
         self.assertEqual(result[0], os.environ.get('TEST_GOOGLESHEETS_FIRST_FIELD'))
 
     def test_get_mapping_fields(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         self.controller_target._spreadsheet_id = self._get_sheet_id()
         result = self.controller_target.get_mapping_fields()
         self.assertIsInstance(result, list)
         self.assertIsInstance(result[0], MapField)
 
     def test_get_action_specification_options(self, **kwargs):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         action_specification_id = self.specification3.id
         self.controller_target._spreadsheet_id = self._get_sheet_id()
         result_1 = self.controller_target.get_action_specification_options(action_specification_id)
@@ -224,6 +272,10 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
         self.assertEqual(worksheet, os.environ.get('TEST_GOOGLESHEETS_WORKSHEET'))
 
     def test_download_to_stored_data(self):
+        """Comprueba que la llamada al metodo devuelva un diccionario y la existencia de los atributos necesarios y
+        su respectivo tipo de dato almacenado como valor.
+
+        """
         self.controller_target._spreadsheet_id = self._get_sheet_id()
         self.controller_source._spreadsheet_id = self._get_sheet_id()
 
@@ -245,6 +297,10 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
         self.assertIsNotNone(result['last_source_record'])
 
     def test_download_source_data(self):
+        """Comprueba que la llamada al metodo haya guardado data en StoredData y que se hayan creado registros de
+        historial.
+
+        """
         self.controller_target._spreadsheet_id = self._get_sheet_id()
         self.controller_source._spreadsheet_id = self._get_sheet_id()
 
@@ -257,8 +313,8 @@ class GoogleSpreadSheetsControllerTestCases(TestCase):
             self.assertGreater(count, 0)
 
     def test_send_stored_data(self):
-        """Guarda datos en StoredData y luego los envía la data mapeada al servidor CRM, luego comprueba de que
-                el valor devuelto sea una lista además de comprobar que esté guardando registros en SendHistory.
+        """Guarda datos en StoredData y luego los envía la data mapeada al servidor Google, luego comprueba de que
+        el valor devuelto sea una lista además de comprobar que esté guardando registros en SendHistory.
 
         """
         self.controller_target._spreadsheet_id = self._get_sheet_id()
