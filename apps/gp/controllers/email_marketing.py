@@ -181,36 +181,29 @@ class MailChimpController(BaseController):
             print(e)
             return False
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
+    def send_stored_data(self, data_list, **kwargs):
         obj_list = []
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        action = Action.objects.get(
-            plug__plug_action_specification=self._plug.plug_action_specification.first())
+        action = Action.objects.get(plug__plug_action_specification=self._plug.plug_action_specification.first())
+        list_id = self._plug.plug_action_specification.filter(action_specification__action=action).first().value
         try:
             status = action.name + "d"
         except:
             status = None
-        list_id = self._plug.plug_action_specification.filter(
-            action_specification__action=action).first().value
+        list_id = self._plug.plug_action_specification.filter(action_specification__action=action).first().value
         _list = [{'email_address': obj.pop('email_address'), 'status': status,
-                  'merge_fields': {key: obj[key] for key in obj.keys()}} for
-                 obj in data_list]
-        extra = {'controller': 'mailchimp'}
+                  'merge_fields': {key: obj[key] for key in obj.keys()}} for obj in data_list]
         for item in _list:
+            obj_result = {'data': dict(item)}
             try:
                 res = self._client.add_new_list_member(list_id, item)
-                extra['status'] = "s"
-                self._log.info(
-                    'Email: %s  successfully sent. Result: %s.' % (
-                        item['email_address'], res['id']),
-                    extra=extra)
-                obj_list.append(res['id'])
+                obj_result['response'] = res
+                obj_result['sent'] = True
+                obj_result['identifier'] = res['id']
             except Exception as e:
-                print(e)
-                res = "User already exists"
-                extra['status'] = 'f'
-                self._log.error('Email: %s  failed. Result: %s.' % (
-                    item['email_address'], res), extra=extra)
+                obj_result['response'] = res
+                obj_result['sent'] = False
+                obj_result['identifier'] = res['id']
+            obj_list.append(obj_result)
         return obj_list
 
     def get_target_fields(self, **kwargs):

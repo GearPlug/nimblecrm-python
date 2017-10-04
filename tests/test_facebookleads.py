@@ -1,5 +1,8 @@
+import json
+import os
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
+from django.shortcuts import HttpResponse
 from apps.gp.models import Connection, FacebookLeadsConnection, Plug, Action, ActionSpecification, \
     PlugActionSpecification, Gear, StoredData, GearMap, DownloadHistory
 from apps.gp.controllers.lead import FacebookLeadsController
@@ -9,10 +12,21 @@ from apps.gp.map import MapField
 
 
 class FacebookControllerTestCases(TestCase):
+    """Casos de prueba del controlador Facebook Leads.
+
+    Variables de entorno:
+        TEST_FACEBOOK_TOKEN: String: Token generado a partir de oAuth.
+        TEST_FACEBOOK_PAGE: Int: Página la cual tiene los formularios.
+        TEST_FACEBOOK_FORM: Int: Formulario el cual tiene los leads.
+
+    """
     fixtures = ['gp_base.json']
 
     @classmethod
     def setUpTestData(cls):
+        """Crea la base de datos y genera datos falsos en las tablas respectivas.
+
+        """
         cls.user = User.objects.create(username='ingmferrer', email='ingferrermiguel@gmail.com',
                                        password='nopass100realnofake')
         _dict = {
@@ -21,7 +35,7 @@ class FacebookControllerTestCases(TestCase):
         }
         cls.connection = Connection.objects.create(**_dict)
 
-        token = 'EAABpnLldYUMBAIaiqMvWD0YZAIs4w97ktgHx73tQ4M8a3cygeGWCA5MCcFq51yVPL81uEt5rS7ZAZACBnh7C0sKMj5Vr2bWlwU0ZByEUeJ2jxAAAglksJ5fuKugZBDecsDztWh9GPM13VTGtxPGA6qB2Uj3bY9QV4ZATyZCMHKQdQZDZD'
+        token = os.environ.get('TEST_FACEBOOK_TOKEN')
 
         _dict2 = {
             'connection': cls.connection,
@@ -50,14 +64,14 @@ class FacebookControllerTestCases(TestCase):
         _dict4 = {
             'plug': cls.plug,
             'action_specification': specification1,
-            'value': '299300463551366'
+            'value': os.environ.get('TEST_FACEBOOK_PAGE')
         }
         PlugActionSpecification.objects.create(**_dict4)
 
         _dict5 = {
             'plug': cls.plug,
             'action_specification': specification2,
-            'value': '270207053469727'
+            'value': os.environ.get('TEST_FACEBOOK_FORM')
         }
         PlugActionSpecification.objects.create(**_dict5)
 
@@ -76,20 +90,30 @@ class FacebookControllerTestCases(TestCase):
         cls.gear_map = GearMap.objects.create(**_dict7)
 
     def setUp(self):
+        """Instancia el controlador e inicializa variables de webhooks en caso de usarlos.
+
+        """
         # self.client = Client()
         self.controller = FacebookLeadsController(self.plug.connection.related_connection, self.plug)
 
-        self.hook = {'entry': [{'id': '299300463551366', 'changes': [{'value': {'form_id': '270207053469727',
-                                                                                'page_id': '299300463551366',
-                                                                                'created_time': 1505494516,
-                                                                                'leadgen_id': '270800420077057'},
-                                                                      'field': 'leadgen'}], 'time': 1505494516}],
+        self.hook = {'entry':
+                         [{'id': '299300463551366', 'changes':
+                             [{'value': {'form_id': '270207053469727',
+                                         'page_id': '299300463551366',
+                                         'created_time': 1505494516,
+                                         'leadgen_id': '270800420077057'},
+                               'field': 'leadgen'
+                               }], 'time': 1505494516
+                           }],
                      'object': 'page'}
         self.lead = {
             'value': {'page_id': '299300463551366', 'leadgen_id': '270800420077057', 'created_time': 1505494516,
                       'form_id': '270207053469727'}, 'field': 'leadgen'}
 
     def test_controller(self):
+        """Comprueba los atributos del controlador estén instanciados.
+
+        """
         self.assertIsInstance(self.controller._connection_object, FacebookLeadsConnection)
         self.assertIsInstance(self.controller._plug, Plug)
         # Error 1
@@ -97,23 +121,39 @@ class FacebookControllerTestCases(TestCase):
         self.assertIsInstance(self.controller._client, FacebookClient)
 
     def test_get_account(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         result = self.controller.get_account()
         self.assertIsInstance(result, dict)
 
     def test_get_pages(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         result = self.controller.get_pages()
         self.assertIsInstance(result, dict)
 
     def test_do_webhook_process(self):
+        """Comprueba que la llamada al metodo devuelva un HTTP Response con un Status Code específico y que
+        como resultado del proceso haya data guardada en StoredData.
+
+        """
         result = self.controller.do_webhook_process(self.hook, POST=True)
+        self.assertIsInstance(result, HttpResponse)
         self.assertEqual(result.status_code, 200)
 
         count = StoredData.objects.count()
         self.assertNotEqual(count, 0)
 
     def test_download_to_stored_data(self):
+        """Comprueba que la llamada al metodo devuelva un diccionario y la existencia de los atributos necesarios y
+        su respectivo tipo de dato almacenado como valor.
+
+        """
         result = self.controller.download_to_stored_data(self.plug.connection.related_connection, self.plug,
                                                          lead=self.lead)
+        self.assertIsInstance(result, dict)
         self.assertIn('downloaded_data', result)
         self.assertIsInstance(result['downloaded_data'], list)
         self.assertIsInstance(result['downloaded_data'][-1], dict)
@@ -130,11 +170,15 @@ class FacebookControllerTestCases(TestCase):
         self.assertIsNotNone(result['last_source_record'])
 
     def test_download_source_data(self):
+        """Comprueba que la llamada al metodo haya guardado data en StoredData y que se hayan creado registros de
+        historial.
+
+        """
         result = self.controller.download_source_data(self.plug.connection.related_connection, self.plug,
                                                       lead=self.lead)
 
         qs = StoredData.objects.order_by('object_id').values_list('object_id', flat=True).distinct()
         for lead in qs:
-            count = DownloadHistory.objects.filter(identifier={'name': 'id', 'value': lead}).count()
+            l = DownloadHistory.objects.first()
+            count = DownloadHistory.objects.filter(identifier={'name': 'leadgen_id', 'value': lead}).count()
             self.assertGreater(count, 0)
-

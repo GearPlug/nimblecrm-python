@@ -1,21 +1,37 @@
 import os
 from collections import OrderedDict
 from apps.gp.models import Connection, MailChimpConnection, Plug, Action, PlugActionSpecification, ActionSpecification, \
-    Gear, GearMap, GearMapData, StoredData, MySQLConnection
+    Gear, GearMap, GearMapData, StoredData, MySQLConnection, SendHistory
 from apps.gp.controllers.database import MySQLController
 from apps.gp.controllers.email_marketing import MailChimpController
 from django.contrib.auth.models import User
 from django.test import TestCase
 from apps.gp.enum import ConnectorEnum
-from mailchimp.client import Client
+from mailchimp.client import Client as MailchimpClient
 from apps.gp.map import MapField
 
 
 class MailchimpControllerTestCases(TestCase):
+    """Casos de prueba del controlador SugarCRM.
+
+            Variables de entorno:
+                TEST_MAILCHIMP_TOKEN: String: Token de acceso.
+                TEST_MAILCHIMP_LIST: String: Lista de contactos.
+                TEST_MYSQL_SOURCE_HOST: String: Host del servidor..
+                TEST_MYSQL_SOURCE_DATABASE String: Nombre de la base de datos.
+                TEST_MYSQL_SOURCE_TABLE: String: Nombre de la tabla.
+                TEST_MYSQL_SOURCE_PORT: String: Nùmero de puerto.
+                TEST_MYSQL_SOURCE_CONNECTION_USER: String: Usuario.
+                TEST_MYSQL_SOURCE_CONNECTION_PASSWORD: String: Contraseña.
+
+        """
     fixtures = ['gp_base.json']
 
     @classmethod
     def setUpTestData(cls):
+        """Crea la base de datos y genera datos falsos en las tablas respectivas.
+
+        """
         cls.user = User.objects.create(username='lyrubiano', email='lyrubiano5@gmail.com',
                                        password='Prueba#2017')
         connection = {
@@ -115,10 +131,23 @@ class MailchimpControllerTestCases(TestCase):
         GearMapData.objects.create(**map_data_2)
 
     def setUp(self):
+        """Instancia el controlador e inicializa variables de webhooks en caso de usarlos.
+
+        """
         self.controller_source = MySQLController(self.plug_source.connection.related_connection, self.plug_source)
         self.controller_target = MailChimpController(self.plug_target.connection.related_connection, self.plug_target)
 
-        self._client = Client(access_token=self._token)
+        self._client = MailchimpClient(access_token=self._token)
+
+    def test_controller(self):
+        """Comprueba los atributos del controlador estén instanciados.
+
+        """
+        self.assertIsInstance(self.controller_target._connection_object, MailChimpConnection)
+        self.assertIsInstance(self.controller_target._plug, Plug)
+        # Error 1
+        # self.assertIsInstance(self.controller._connector, ConnectorEnum.SugarCRM)
+        self.assertIsInstance(self.controller_target._client, MailchimpClient)
 
     def _get_fields(self):
         return [
@@ -128,19 +157,31 @@ class MailchimpControllerTestCases(TestCase):
         ]
 
     def test_test_connection(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+                """
         result = self.controller_target.test_connection()
         self.assertTrue(result)
 
     def test_get_target_fields(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         result = self.controller_target.get_target_fields()
         self.assertEqual(result, self._get_fields())
 
     def test_get_mapping_fields(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         result = self.controller_target.get_mapping_fields()
         self.assertIsInstance(result, list)
         self.assertIsInstance(result[0], MapField)
 
     def test_get_action_specification_options(self):
+        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
+
+        """
         action_specification_id = self.specification3.id
         result = self.controller_target.get_action_specification_options(action_specification_id)
         _list = tuple({'id': c['id'], 'name': c['name']} for c in self._client.get_lists()['lists'])
@@ -148,6 +189,10 @@ class MailchimpControllerTestCases(TestCase):
         self.assertEqual(result, _list)
 
     def test_send_stored_data(self):
+        """Guarda datos en StoredData y luego los envía la data mapeada al servidor CRM, luego comprueba de que
+                el valor devuelto sea una lista además de comprobar que esté guardando registros en SendHistory.
+
+        """
         result1 = self.controller_source.download_source_data()
         self.assertIsNotNone(result1)
         query_params = {'connection': self.gear.source.connection, 'plug': self.gear.source}
@@ -159,5 +204,9 @@ class MailchimpControllerTestCases(TestCase):
             (data.target_name, data.source_value) for data in GearMapData.objects.filter(gear_map=self.gear_map))
         source_data = [{'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}} for
                        item in stored_data.values_list('object_id').distinct()]
-        entries = self.controller_target.send_stored_data(source_data, target_fields, is_first=is_first)
+        entries = self.controller_target.send_target_data(source_data, target_fields, is_first=is_first)
         self.assertIsInstance(entries, list)
+
+        for object_id in entries:
+            count = SendHistory.objects.filter(identifier=object_id).count()
+            self.assertGreater(count, 0)
