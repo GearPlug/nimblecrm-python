@@ -164,11 +164,11 @@ class MySQLController(BaseController):
                 obj_result['sent'] = True
                 obj_result['identifier'] = self._cursor.lastrowid
             except MySQLdb.OperationalError as e:
-                obj_result['response'] = "Failed to insert item."
+                obj_result['response'] = "Failed to insert item. {}".format(e)
                 obj_result['sent'] = False
                 obj_result['identifier'] = '-1'
             except MySQLdb.ProgrammingError as e:
-                obj_result['response'] = "Failed to insert item."
+                obj_result['response'] = "Failed to insert item. {}".format(e)
                 obj_result['sent'] = False
                 obj_result['identifier'] = '-1'
             obj_list.append(obj_result)
