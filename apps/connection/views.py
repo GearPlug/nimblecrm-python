@@ -240,8 +240,13 @@ class CreateTokenAuthorizedConnectionView(TemplateView):
             if 'connection_action' in self.request.session and self.request.session['connection_action'] == 'update':
                 print("SII!")
                 print(self.request.session['connection_action'])
-                c = Connection.objects.get()
-
+                c = Connection.objects.get(pk=self.request.session['connection_id'])
+                saved_keys = []
+                for k, v in data.items():
+                    if hasattr(c.related_connection, k):
+                        saved_keys.append(k)
+                        setattr(c.related_connection, k, v)
+                c.related_connection.save()
             else:
                 c = Connection.objects.create(user=request.user, connector_id=connector.value)
                 n = int(connector_model.objects.filter(connection__user=request.user).count()) + 1
