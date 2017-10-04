@@ -238,8 +238,6 @@ class CreateTokenAuthorizedConnectionView(TemplateView):
             connector = ConnectorEnum.get_connector(name=self.request.session['connector_name'])
             connector_model = ConnectorEnum.get_model(connector)
             if 'connection_action' in self.request.session and self.request.session['connection_action'] == 'update':
-                print("SII!")
-                print(self.request.session['connection_action'])
                 c = Connection.objects.get(pk=self.request.session['connection_id'])
                 saved_keys = []
                 for k, v in data.items():
