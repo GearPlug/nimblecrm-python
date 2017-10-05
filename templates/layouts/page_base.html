@@ -1,0 +1,42 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+
+{% block scripts %}
+    {{ block.super }}
+{% endblock %}
+{% block styles %}
+    <link href="{% static 'css/style_page.css' %}" rel="stylesheet">
+{% endblock %}
+{% block body_class %}ayuda-gp-index{% endblock %}
+{% block body_base %}
+    <div class="content">
+        <header>
+            <nav>
+                <div class="row">
+                    <div class="col-md-7">
+                        <a href="#">
+                            <img src="{% static 'img/landing/logo_header.png' %}" class="img-responsive logo_header">
+                        </a>
+                    </div>
+                    <div class="col-md-5">
+                        
+                    </div>
+                </div>
+            </nav>
+        </header>
+        <div class="row">
+            <div class="col-md-12">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+    <div class="page-footer">
+        {% block footer_base %}
+            {% block footer_content %}
+            {% endblock %}
+        {% endblock %}
+    </div>
+    {% block scripts_gear %}{% endblock %}
+{% endblock %}
+

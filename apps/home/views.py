@@ -47,7 +47,8 @@ class HomeView(LoginView):
 
     def get(self, *args, **kwargs):
         if self.request.user.is_authenticated():
-            return redirect(self.get_success_url())
+            # return redirect(self.get_success_url())
+            return True
         return super(HomeView, self).get(*args, **kwargs)
 
 
