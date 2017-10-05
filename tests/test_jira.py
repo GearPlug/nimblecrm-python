@@ -13,10 +13,10 @@ from collections import OrderedDict
 class JiraControllerTestCases(TestCase):
     """
        Variables de entorno:
-           TEST_FACEBOOK_PROJECT: String: ID de un proyecto de la aplicación.
-           TEST_FACEBOOK_HOST: String: Host de la aplicación.
-           TEST_FACEBOOK_CONNECTION_USER: String: Usuario .
-           TEST_FACEBOOK_CONNECTION_PASSWORD: String: Contraseña .
+           TEST_JIRA_PROJECT: String: ID de un proyecto de la aplicación.
+           TEST_JIRA_HOST: String: Host de la aplicación.
+           TEST_JIRA_CONNECTION_USER: String: Usuario .
+           TEST_JIRA_CONNECTION_PASSWORD: String: Contraseña .
     """
 
     fixtures = ['gp_base.json']
