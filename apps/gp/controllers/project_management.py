@@ -14,7 +14,6 @@ from jira import JIRA
 import time
 import datetime
 import json
-import pprint
 
 
 class JIRAController(BaseController):
@@ -43,22 +42,24 @@ class JIRAController(BaseController):
     def test_connection(self):
         return self._connection is not None
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        obj_list = []
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[-1]]
-                except:
-                    data_list = []
-        if self._plug is not None:
-            for obj in data_list:
-                res = self.create_issue(self._plug.plug_action_specification.all()[0].value, obj)
-                obj_list.append(res.id)
+    def send_stored_data(self, data_list, **kwargs):
+        result_list = []
+        for obj in data_list:
             extra = {'controller': 'jira'}
-            return obj_list
-        raise ControllerError("Incomplete.")
+            try:
+                result = self.create_issue(self._plug.plug_action_specification.all()[0].value, obj)
+                identifier = result
+                sent = True
+                extra['status'] = 's'
+                self._log.info('Item: %s successfully sent.' % result,
+                               extra=extra)
+            except:
+                identifier = ""
+                sent = False
+                extra['status'] = 'f'
+                self._log.info('Item: failed to send.', extra=extra)
+            result_list.append({'data':dict(obj), 'response' : '', 'sent': sent, 'identifier':identifier})
+        return result_list
 
     def download_to_stored_data(self, connection_object=None, plug=None, issue=None, **kwargs):
         if issue is not None:
@@ -72,13 +73,18 @@ class JIRAController(BaseController):
                     )
                     _items.append(obj)
             extra = {}
+            is_stored = False
+            raw = {}
             for item in _items:
+                raw[item.name] = item.value
                 extra['status'] = 's'
                 extra = {'controller': 'jira'}
                 self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
                     item.object_id, item.plug.id, item.connection.id), extra=extra)
                 item.save()
-        return False
+                is_stored = True
+            result=[{'raw' : raw, 'is_stored': is_stored, 'identifier':{'name':'key', 'value': issue_key}}]
+            return {'downloaded_data': result, 'last_source_record' : issue_key}
 
     def get_projects(self):
         return self._connection.projects()
@@ -100,11 +106,14 @@ class JIRAController(BaseController):
         return self._connection.create_issue(fields=fields)
 
     def create_webhook(self):
+        webhook = Webhook.objects.create(name='jira', url='',
+                                         plug=self._plug, expiration='')
+
         url = '{}/rest/webhooks/1.0/webhook'.format(self._connection_object.host)
         key = self.get_key(self._plug.plug_action_specification.all()[0].value)
         body = {
             "name": "Gearplug Webhook",
-            "url": "%s/webhook/jira/0/" % settings.WEBHOOK_HOST,
+            "url": '{0}/webhook/jira/{1}'.format(settings.CURRENT_HOST, webhook.id),
             "events": [
                 "jira:issue_created",
             ],
@@ -113,8 +122,17 @@ class JIRAController(BaseController):
         }
         r = requests.post(url, headers=self._get_header(), json=body)
         if r.status_code == 201:
+            _id = r.json()['self'].split('/')[-1]
+            webhook.url = url
+            webhook.generated_id = r.json()['self'].split('/')[-1]
+            webhook.is_active = True
+            webhook.save(
+                update_fields=['url', 'generated_id', 'is_active'])
             return True
-        return False
+        else:
+            webhook.is_deleted = True
+            webhook.save(update_fields=['is_deleted', ])
+            return False
 
     def get_key(self, project_id):
         for project in self.get_projects():
@@ -181,6 +199,25 @@ class JIRAController(BaseController):
                 self.download_source_data(issue=issue)
         return HttpResponse(status=200)
 
+
+    def view_issue(self, issue_id):
+        return self._connection.issue(issue_id)
+
+    def delete_issue(self, issue_id):
+        _issue = self._connection.issue(issue_id)
+        return _issue.delete()
+
+    def delete_webhook(self, webhook_id):
+        url = '{0}/rest/webhooks/1.0/webhook/{1}'.format(self._connection_object.host, webhook_id)
+        response = requests.delete(url, headers=self._get_header())
+        if response.status_code == 204:
+            return None
+        return response.json()
+
+    def view_webhook(self, webhook_id):
+        url = '{0}/rest/webhooks/1.0/webhook/{1}'.format(self._connection_object.host, webhook_id)
+        response = requests.get(url, headers=self._get_header())
+        return response.json()
 
 class AsanaController(BaseController):
     _token = None
