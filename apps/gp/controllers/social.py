@@ -24,23 +24,18 @@ class TwitterController(BaseController):
     _token = None
     _token_secret = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        BaseController.__init__(self, connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(TwitterController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token = self._connection_object.token
-                    self._token_secret = self._connection_object.token_secret
-                except Exception as e:
-                    print("Error getting the Twitter Token")
-                    print(e)
-        elif kwargs:
-            if 'token' in kwargs and 'token_secret' in kwargs:
-                self._token = kwargs['token']
-                self._token_secret = kwargs['token_secret']
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(TwitterController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+                self._token_secret = self._connection_object.token_secret
+            except Exception as e:
+                print("Error getting the Twitter Token")
+                print(e)
         me = None
         if self._token and self._token_secret:
             api = tweepy.API(self.get_twitter_auth())
@@ -50,19 +45,22 @@ class TwitterController(BaseController):
     def test_connection(self):
         return self._token is not None
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[-1]]
-                except:
-                    data_list = []
-        if self._plug is not None:
-            for obj in data_list:
-                self.post_tweet(obj)
-            extra = {'controller': 'twitter'}
-        raise ControllerError("Incomplete.")
+    def send_stored_data(self, data_list, **kwargs):
+        obj_list = []
+        for item in data_list:
+            obj_result = {'data': dict(item)}
+            try:
+                res = self.post_tweet(item)
+                obj_result['response'] = res
+                obj_result['sent'] = True
+                obj_result['identifier'] = res.id
+            except Exception as e:
+                obj_result['response'] = str(e)
+                obj_result['sent'] = False
+                obj_result['identifier'] = '-1'
+
+            obj_list.append(obj_result)
+        return obj_list
 
     def get_twitter_auth(self):
         consumer_key = settings.TWITTER_CLIENT_ID
@@ -73,7 +71,7 @@ class TwitterController(BaseController):
 
     def post_tweet(self, item):
         api = tweepy.API(self.get_twitter_auth())
-        api.update_status(**item)
+        return api.update_status(**item)
 
     def get_target_fields(self, **kwargs):
         return [{
