@@ -19,15 +19,14 @@ class BitbucketController(BaseController):
     _connection = None
     API_BASE_URL = 'https://api.bitbucket.org'
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None):
+        BaseController.__init__(self, connection=connection, plug=plug)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(BitbucketController, self).create_connection(*args)
-            if self._connection_object is not None:
-                user = self._connection_object.connection_user
-                password = self._connection_object.connection_password
+    def create_connection(self, connection=None, plug=None):
+        super(BitbucketController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            user = self._connection_object.connection_user
+            password = self._connection_object.connection_password
         try:
             self._connection = Bitbucket(user, password)
         except Exception as e:
@@ -36,13 +35,10 @@ class BitbucketController(BaseController):
 
     def test_connection(self):
         try:
-            print("con ", self._connection)
-            print("con obj ", self._connection_object)
-            print("user ", self._connection_object.connection_user)
             privileges = self._connection.get_privileges()[0]
         except Exception as e:
             privileges = None
-        return privileges is not None
+        return privileges
 
     def download_to_stored_data(self, connection_object=None, plug=None, issue=None, **kwargs):
         if issue is not None:
@@ -56,13 +52,19 @@ class BitbucketController(BaseController):
                                      object_id=issue_id, name=k, value=v or '')
                     _items.append(obj)
             extra = {}
+            raw = {}
+            result_data = []
+            is_stored = False
             for item in _items:
+                raw[item.name] = raw[item.value]
                 extra['status'] = 's'
                 extra = {'controller': 'bitbucket'}
                 self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
                     item.object_id, item.plug.id, item.connection.id), extra=extra)
                 item.save()
-        return False
+                is_stored = True
+            result_data.append({'raw':raw, 'is_stored' : is_stored, 'identifier':{'name':'id', 'value':issue_id}})
+            return {'downloaded_data':result_data, 'last_source_record':issue_id}
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
@@ -88,9 +90,10 @@ class BitbucketController(BaseController):
                   'Authorization': 'Basic {0}'.format(b64encode(authorization.encode('UTF-8')).decode('UTF-8'))}
         return header
 
-    def create_webhook(self, url=settings.WEBHOOK_HOST + reverse('home:webhook',
-                                                                 kwargs={'connector': 'asana', 'webhook_id': 0})):
-        bitbucket_url = 'https://api.bitbucket.org/2.0/repositories/{}/{}/hooks'.format(
+    def create_webhook(self):
+        webhook = Webhook.objects.create(name='bitbucket', url='',plug=self._plug, expiration='')
+        url = settings.WEBHOOK_HOST + reverse('home:webhook',kwargs={'connector': 'bitbucket', 'webhook_id': 0})
+        bitbucket_url = 'https://api.bitbucket.org/2.0/repositories/{0}/{1}/hooks'.format(
             self._connection_object.connection_user,
             self.get_repository_name())
         body = {
@@ -102,12 +105,20 @@ class BitbucketController(BaseController):
             ]
         }
         r = requests.post(bitbucket_url, headers=self._get_header(), json=body)
+        print("response", r.json())
         if r.status_code == 201:
+            webhook.url = url
+            webhook.generated_id = ""
+            webhook.is_active = True
+            webhook.save(update_fields=['url', 'generated_id', 'is_active'])
             return True
-        return False
+        else:
+            webhook.is_deleted = True
+            webhook.save(update_fields=['is_deleted', ])
+            return False
 
     def get_repositories(self):
-        url = '/2.0/repositories/{}'.format(self._connection_object.connection_user)
+        url = '/2.0/repositories/{}'.format(self._connection_object.connection_user.split('@')[0])
         r = self._request(url)
         return sorted(r['values'], key=lambda i: i['name']) if r else []
 
@@ -226,13 +237,13 @@ class BitbucketController(BaseController):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         print(action_specification.name.lower())
         if action_specification.name.lower() in ['repository_id', 'repository_name']:
-            print("ifff")
             tup = tuple({'id': p['uuid'], 'name': p['name']} for p in self.get_repositories())
-            print(tup)
             return tup
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
+    def has_webhook(self):
+        return True
 
 class GitLabController(BaseController):
     _token = None
