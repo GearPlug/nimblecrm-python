@@ -50,15 +50,10 @@ class JIRAController(BaseController):
                 result = self.create_issue(self._plug.plug_action_specification.all()[0].value, obj)
                 identifier = result
                 sent = True
-                extra['status'] = 's'
-                self._log.info('Item: %s successfully sent.' % result,
-                               extra=extra)
             except:
                 identifier = ""
                 sent = False
-                extra['status'] = 'f'
-                self._log.info('Item: failed to send.', extra=extra)
-            result_list.append({'data':dict(obj), 'response' : '', 'sent': sent, 'identifier':identifier})
+            result_list.append({'data': dict(obj), 'response': '', 'sent': sent, 'identifier': identifier})
         return result_list
 
     def download_to_stored_data(self, connection_object=None, plug=None, issue=None, **kwargs):
@@ -77,14 +72,10 @@ class JIRAController(BaseController):
             raw = {}
             for item in _items:
                 raw[item.name] = item.value
-                extra['status'] = 's'
-                extra = {'controller': 'jira'}
-                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                    item.object_id, item.plug.id, item.connection.id), extra=extra)
                 item.save()
                 is_stored = True
-            result=[{'raw' : raw, 'is_stored': is_stored, 'identifier':{'name':'key', 'value': issue_key}}]
-            return {'downloaded_data': result, 'last_source_record' : issue_key}
+            result = [{'raw': raw, 'is_stored': is_stored, 'identifier': {'name': 'key', 'value': issue_key}}]
+            return {'downloaded_data': result, 'last_source_record': issue_key}
 
     def get_projects(self):
         return self._connection.projects()
@@ -197,8 +188,10 @@ class JIRAController(BaseController):
             self.create_connection(connection=plug.connection.related_connection, plug=plug)
             if self.test_connection():
                 self.download_source_data(issue=issue)
+            if not self._plug.is_tested:
+                self._plug.is_tested = True
+                self._plug.save(update_fields=['is_tested', ])
         return HttpResponse(status=200)
-
 
     def view_issue(self, issue_id):
         return self._connection.issue(issue_id)
@@ -218,6 +211,7 @@ class JIRAController(BaseController):
         url = '{0}/rest/webhooks/1.0/webhook/{1}'.format(self._connection_object.host, webhook_id)
         response = requests.get(url, headers=self._get_header())
         return response.json()
+
 
 class AsanaController(BaseController):
     _token = None

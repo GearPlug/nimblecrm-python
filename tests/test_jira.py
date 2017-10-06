@@ -20,6 +20,7 @@ class JiraControllerTestCases(TestCase):
     """
 
     fixtures = ['gp_base.json']
+
     @classmethod
     def setUpTestData(cls):
         cls.user = User.objects.create(username='ingmferrer', email='ingferrermiguel@gmail.com',
@@ -123,11 +124,92 @@ class JiraControllerTestCases(TestCase):
         self.source_controller = JIRAController(self.plug_source.connection.related_connection, self.plug_source)
         self.target_controller = JIRAController(self.plug_target.connection.related_connection, self.plug_target)
 
-        self.hook = {'issue': {'id': '12507', 'self': 'http://192.168.10.101/rest/api/2/issue/12507', 'key': 'PU-3', 'fields': {'aggregatetimeestimate': None, 'summary': 'JIRA Unittest', 'environment': None, 'fixVersions': [], 'description': 'se cayó todo..', 'customfield_10201': None, 'created': '2017-09-20T14:51:58.598+0000', 'versions': [], 'timetracking': {}, 'watches': {'self': 'http://192.168.10.101/rest/api/2/issue/PU-3/watchers', 'watchCount': 0, 'isWatching': False}, 'progress': {'total': 0, 'progress': 0}, 'creator': {'self': 'http://192.168.10.101/rest/api/2/user?username=damanrique', 'key': 'damanrique', 'timeZone': 'America/Lima', 'avatarUrls': {'48x48': 'http://192.168.10.101/secure/useravatar?ownerId=damanrique&avatarId=10503', '32x32': 'http://192.168.10.101/secure/useravatar?size=medium&ownerId=damanrique&avatarId=10503', '16x16': 'http://192.168.10.101/secure/useravatar?size=xsmall&ownerId=damanrique&avatarId=10503', '24x24': 'http://192.168.10.101/secure/useravatar?size=small&ownerId=damanrique&avatarId=10503'}, 'active': True, 'name': 'damanrique', 'emailAddress': 'damanrique@grplug.com', 'displayName': 'Diego Manrique'}, 'resolutiondate': None, 'issuelinks': [], 'customfield_10200': None, 'aggregateprogress': {'total': 0, 'progress': 0}, 'priority': {'id': '3', 'self': 'http://192.168.10.101/rest/api/2/priority/3', 'name': 'Medium', 'iconUrl': 'http://192.168.10.101/images/icons/priorities/medium.svg'}, 'updated': '2017-09-20T14:51:58.598+0000', 'status': {'id': '10003', 'self': 'http://192.168.10.101/rest/api/2/status/10003', 'iconUrl': 'http://192.168.10.101/', 'description': '', 'statusCategory': {'id': 2, 'self': 'http://192.168.10.101/rest/api/2/statuscategory/2', 'colorName': 'blue-gray', 'key': 'new', 'name': 'Por hacer'}, 'name': 'Por hacer'}, 'assignee': {'self': 'http://192.168.10.101/rest/api/2/user?username=damanrique', 'key': 'damanrique', 'timeZone': 'America/Lima', 'avatarUrls': {'48x48': 'http://192.168.10.101/secure/useravatar?ownerId=damanrique&avatarId=10503', '32x32': 'http://192.168.10.101/secure/useravatar?size=medium&ownerId=damanrique&avatarId=10503', '16x16': 'http://192.168.10.101/secure/useravatar?size=xsmall&ownerId=damanrique&avatarId=10503', '24x24': 'http://192.168.10.101/secure/useravatar?size=small&ownerId=damanrique&avatarId=10503'}, 'active': True, 'name': 'damanrique', 'emailAddress': 'damanrique@grplug.com', 'displayName': 'Diego Manrique'}, 'customfield_10006': None, 'resolution': None, 'customfield_10202': None, 'comment': {'total': 0, 'maxResults': 0, 'startAt': 0, 'comments': []}, 'components': [], 'issuetype': {'id': '10002', 'self': 'http://192.168.10.101/rest/api/2/issuetype/10002', 'subtask': False, 'iconUrl': 'http://192.168.10.101/secure/viewavatar?size=xsmall&avatarId=10318&avatarType=issuetype', 'description': 'Una tarea que necesita ser realizada.', 'name': 'Tarea', 'avatarId': 10318}, 'timeoriginalestimate': None, 'workratio': -1, 'subtasks': [], 'customfield_10005': '0|i0045z:', 'labels': [], 'duedate': None, 'timespent': None, 'reporter': {'self': 'http://192.168.10.101/rest/api/2/user?username=damanrique', 'key': 'damanrique', 'timeZone': 'America/Lima', 'avatarUrls': {'48x48': 'http://192.168.10.101/secure/useravatar?ownerId=damanrique&avatarId=10503', '32x32': 'http://192.168.10.101/secure/useravatar?size=medium&ownerId=damanrique&avatarId=10503', '16x16': 'http://192.168.10.101/secure/useravatar?size=xsmall&ownerId=damanrique&avatarId=10503', '24x24': 'http://192.168.10.101/secure/useravatar?size=small&ownerId=damanrique&avatarId=10503'}, 'active': True, 'name': 'damanrique', 'emailAddress': 'damanrique@grplug.com', 'displayName': 'Diego Manrique'}, 'aggregatetimespent': None, 'customfield_10000': None, 'worklog': {'total': 0, 'maxResults': 20, 'startAt': 0, 'worklogs': []}, 'attachment': [], 'project': {'id': '10400', 'self': 'http://192.168.10.101/rest/api/2/project/10400', 'avatarUrls': {'48x48': 'http://192.168.10.101/secure/projectavatar?avatarId=10324', '32x32': 'http://192.168.10.101/secure/projectavatar?size=medium&avatarId=10324', '16x16': 'http://192.168.10.101/secure/projectavatar?size=xsmall&avatarId=10324', '24x24': 'http://192.168.10.101/secure/projectavatar?size=small&avatarId=10324'}, 'key': 'PU', 'name': 'Project Unicorn'}, 'timeestimate': None, 'aggregatetimeoriginalestimate': None, 'customfield_10001': None, 'customfield_10100': None, 'lastViewed': None, 'votes': {'self': 'http://192.168.10.101/rest/api/2/issue/PU-3/votes', 'votes': 0, 'hasVoted': False}}}, 'timestamp': 1505919118656, 'webhookEvent': 'jira:issue_created', 'issue_event_type_name': 'issue_created', 'user': {'self': 'http://192.168.10.101/rest/api/2/user?username=damanrique', 'key': 'damanrique', 'timeZone': 'America/Lima', 'avatarUrls': {'48x48': 'http://192.168.10.101/secure/useravatar?ownerId=damanrique&avatarId=10503', '32x32': 'http://192.168.10.101/secure/useravatar?size=medium&ownerId=damanrique&avatarId=10503', '16x16': 'http://192.168.10.101/secure/useravatar?size=xsmall&ownerId=damanrique&avatarId=10503', '24x24': 'http://192.168.10.101/secure/useravatar?size=small&ownerId=damanrique&avatarId=10503'}, 'active': True, 'name': 'damanrique', 'emailAddress': 'damanrique@grplug.com', 'displayName': 'Diego Manrique'}}
+        self.hook = {'issue': {'id': '12507', 'self': 'http://192.168.10.101/rest/api/2/issue/12507', 'key': 'PU-3',
+                               'fields': {'aggregatetimeestimate': None, 'summary': 'JIRA Unittest',
+                                          'environment': None, 'fixVersions': [], 'description': 'se cayó todo..',
+                                          'customfield_10201': None, 'created': '2017-09-20T14:51:58.598+0000',
+                                          'versions': [], 'timetracking': {},
+                                          'watches': {'self': 'http://192.168.10.101/rest/api/2/issue/PU-3/watchers',
+                                                      'watchCount': 0, 'isWatching': False},
+                                          'progress': {'total': 0, 'progress': 0}, 'creator': {
+                                       'self': 'http://192.168.10.101/rest/api/2/user?username=damanrique',
+                                       'key': 'damanrique', 'timeZone': 'America/Lima', 'avatarUrls': {
+                                           '48x48': 'http://192.168.10.101/secure/useravatar?ownerId=damanrique&avatarId=10503',
+                                           '32x32': 'http://192.168.10.101/secure/useravatar?size=medium&ownerId=damanrique&avatarId=10503',
+                                           '16x16': 'http://192.168.10.101/secure/useravatar?size=xsmall&ownerId=damanrique&avatarId=10503',
+                                           '24x24': 'http://192.168.10.101/secure/useravatar?size=small&ownerId=damanrique&avatarId=10503'},
+                                       'active': True, 'name': 'damanrique', 'emailAddress': 'damanrique@grplug.com',
+                                       'displayName': 'Diego Manrique'}, 'resolutiondate': None, 'issuelinks': [],
+                                          'customfield_10200': None, 'aggregateprogress': {'total': 0, 'progress': 0},
+                                          'priority': {'id': '3', 'self': 'http://192.168.10.101/rest/api/2/priority/3',
+                                                       'name': 'Medium',
+                                                       'iconUrl': 'http://192.168.10.101/images/icons/priorities/medium.svg'},
+                                          'updated': '2017-09-20T14:51:58.598+0000', 'status': {'id': '10003',
+                                                                                                'self': 'http://192.168.10.101/rest/api/2/status/10003',
+                                                                                                'iconUrl': 'http://192.168.10.101/',
+                                                                                                'description': '',
+                                                                                                'statusCategory': {
+                                                                                                    'id': 2,
+                                                                                                    'self': 'http://192.168.10.101/rest/api/2/statuscategory/2',
+                                                                                                    'colorName': 'blue-gray',
+                                                                                                    'key': 'new',
+                                                                                                    'name': 'Por hacer'},
+                                                                                                'name': 'Por hacer'},
+                                          'assignee': {
+                                              'self': 'http://192.168.10.101/rest/api/2/user?username=damanrique',
+                                              'key': 'damanrique', 'timeZone': 'America/Lima', 'avatarUrls': {
+                                                  '48x48': 'http://192.168.10.101/secure/useravatar?ownerId=damanrique&avatarId=10503',
+                                                  '32x32': 'http://192.168.10.101/secure/useravatar?size=medium&ownerId=damanrique&avatarId=10503',
+                                                  '16x16': 'http://192.168.10.101/secure/useravatar?size=xsmall&ownerId=damanrique&avatarId=10503',
+                                                  '24x24': 'http://192.168.10.101/secure/useravatar?size=small&ownerId=damanrique&avatarId=10503'},
+                                              'active': True, 'name': 'damanrique',
+                                              'emailAddress': 'damanrique@grplug.com', 'displayName': 'Diego Manrique'},
+                                          'customfield_10006': None, 'resolution': None, 'customfield_10202': None,
+                                          'comment': {'total': 0, 'maxResults': 0, 'startAt': 0, 'comments': []},
+                                          'components': [], 'issuetype': {'id': '10002',
+                                                                          'self': 'http://192.168.10.101/rest/api/2/issuetype/10002',
+                                                                          'subtask': False,
+                                                                          'iconUrl': 'http://192.168.10.101/secure/viewavatar?size=xsmall&avatarId=10318&avatarType=issuetype',
+                                                                          'description': 'Una tarea que necesita ser realizada.',
+                                                                          'name': 'Tarea', 'avatarId': 10318},
+                                          'timeoriginalestimate': None, 'workratio': -1, 'subtasks': [],
+                                          'customfield_10005': '0|i0045z:', 'labels': [], 'duedate': None,
+                                          'timespent': None, 'reporter': {
+                                       'self': 'http://192.168.10.101/rest/api/2/user?username=damanrique',
+                                       'key': 'damanrique', 'timeZone': 'America/Lima', 'avatarUrls': {
+                                           '48x48': 'http://192.168.10.101/secure/useravatar?ownerId=damanrique&avatarId=10503',
+                                           '32x32': 'http://192.168.10.101/secure/useravatar?size=medium&ownerId=damanrique&avatarId=10503',
+                                           '16x16': 'http://192.168.10.101/secure/useravatar?size=xsmall&ownerId=damanrique&avatarId=10503',
+                                           '24x24': 'http://192.168.10.101/secure/useravatar?size=small&ownerId=damanrique&avatarId=10503'},
+                                       'active': True, 'name': 'damanrique', 'emailAddress': 'damanrique@grplug.com',
+                                       'displayName': 'Diego Manrique'}, 'aggregatetimespent': None,
+                                          'customfield_10000': None,
+                                          'worklog': {'total': 0, 'maxResults': 20, 'startAt': 0, 'worklogs': []},
+                                          'attachment': [], 'project': {'id': '10400',
+                                                                        'self': 'http://192.168.10.101/rest/api/2/project/10400',
+                                                                        'avatarUrls': {
+                                                                            '48x48': 'http://192.168.10.101/secure/projectavatar?avatarId=10324',
+                                                                            '32x32': 'http://192.168.10.101/secure/projectavatar?size=medium&avatarId=10324',
+                                                                            '16x16': 'http://192.168.10.101/secure/projectavatar?size=xsmall&avatarId=10324',
+                                                                            '24x24': 'http://192.168.10.101/secure/projectavatar?size=small&avatarId=10324'},
+                                                                        'key': 'PU', 'name': 'Project Unicorn'},
+                                          'timeestimate': None, 'aggregatetimeoriginalestimate': None,
+                                          'customfield_10001': None, 'customfield_10100': None, 'lastViewed': None,
+                                          'votes': {'self': 'http://192.168.10.101/rest/api/2/issue/PU-3/votes',
+                                                    'votes': 0, 'hasVoted': False}}}, 'timestamp': 1505919118656,
+                     'webhookEvent': 'jira:issue_created', 'issue_event_type_name': 'issue_created',
+                     'user': {'self': 'http://192.168.10.101/rest/api/2/user?username=damanrique', 'key': 'damanrique',
+                              'timeZone': 'America/Lima', 'avatarUrls': {
+                             '48x48': 'http://192.168.10.101/secure/useravatar?ownerId=damanrique&avatarId=10503',
+                             '32x32': 'http://192.168.10.101/secure/useravatar?size=medium&ownerId=damanrique&avatarId=10503',
+                             '16x16': 'http://192.168.10.101/secure/useravatar?size=xsmall&ownerId=damanrique&avatarId=10503',
+                             '24x24': 'http://192.168.10.101/secure/useravatar?size=small&ownerId=damanrique&avatarId=10503'},
+                              'active': True, 'name': 'damanrique', 'emailAddress': 'damanrique@grplug.com',
+                              'displayName': 'Diego Manrique'}}
 
     def _data(self):
-        return {'description' : 'mm', 'reporter' : 'lrubiano', 'assignee' : 'lrubiano', 'issuetype' : '10002',
-                'summary' : 'mm'}
+        return {'description': 'mm', 'reporter': 'lrubiano', 'assignee': 'lrubiano', 'issuetype': '10002',
+                'summary': 'mm'}
 
     def test_controller(self):
         """
@@ -171,8 +253,8 @@ class JiraControllerTestCases(TestCase):
         try:
             result_view = self.target_controller.view_issue(result_create)
         except:
-            result_view =''
-        self.assertEqual(result_create,result_view)
+            result_view = ''
+        self.assertEqual(result_create, result_view)
         self.target_controller.delete_issue(result_create)
 
     def test_create_webhook(self):
@@ -241,7 +323,7 @@ class JiraControllerTestCases(TestCase):
         """
         result_create = self.target_controller.create_issue(os.environ.get('TEST_JIRA_PROJECT'), self._data())
         result_view = self.target_controller.view_issue(result_create)
-        self.assertEqual(result_create,result_view)
+        self.assertEqual(result_create, result_view)
         self.target_controller.delete_issue(result_create)
 
     def test_delete_issue(self):
