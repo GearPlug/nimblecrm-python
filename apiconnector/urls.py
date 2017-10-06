@@ -11,7 +11,8 @@ urlpatterns = [
                   url(r'^plug/', include('apps.plug.urls', namespace='plug')),
                   url(r'^connection/', include('apps.connection.urls', namespace='connection')),
                   url(r'^accounts/', include('allauth.urls')),
-                  url(r'^', include('apps.home.urls', namespace='home')),
+                  url(r'^home/', include('apps.home.urls', namespace='home')),
+                  url(r'^', include('apps.landing.urls', namespace='landing')),
               ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
               + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

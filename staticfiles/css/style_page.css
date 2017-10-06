@@ -7,4 +7,30 @@
 .row{ margin: 0}
 
 /* Header */
-.logo_header{ margin: 20px 0 0 242px; }
+.nav_spaces{ margin: 20px 0 34px 0; }
+.logo_header{
+    display: inherit;
+    margin-left: 84px;
+}
+.text_menu{ padding-top: 23px; }
+.text_menu a{
+    color: #9D9BA1;
+    font-family: 'Sansation';
+    font-size: 1.75em;
+    letter-spacing: 0.3px;
+    text-decoration: none;
+}
+.padding_nav_nosotros{ padding-left: 39px; }
+.padding_nav_apps{ padding-left: 26px; }
+.padding_nav_ingresar, .padding_nav_contacto{ padding-left: 32px; }
+
+/* Footer */
+.bg_footer{
+    background-color: black;
+    color: #00E08F;
+    font-family: 'Sansation';
+    font-size: 1.55em;
+    letter-spacing: -0.62px;
+    padding: 25px 0 30px 0;
+}
+footer{ background: transparent; }
