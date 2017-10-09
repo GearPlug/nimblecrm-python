@@ -80,10 +80,10 @@ class BitbucketControllerTestCases(TestCase):
         cls.plug_target = Plug.objects.create(**_dict_target_action)
 
         cls.source_specification = ActionSpecification.objects.get(action=source_action,
-                                                         name='repository_id')
+                                                         name='repository')
 
         cls.target_specification = ActionSpecification.objects.get(action=target_action,
-                                                               name='repository_id')
+                                                               name='repository')
 
         _dict_source_specification = {
             'plug': cls.plug_source,
