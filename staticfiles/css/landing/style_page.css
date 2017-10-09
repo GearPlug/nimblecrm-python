@@ -4,13 +4,12 @@
 }
 
 .bg_page{ background-color: white; }
-.row{ margin: 0}
 
 /* Header */
 .nav_spaces{ margin: 20px 0 34px 0; }
 .logo_header{
     display: inherit;
-    margin-left: 84px;
+    margin-left: 96px;
 }
 .text_menu{ padding-top: 23px; }
 .text_menu a{
@@ -20,7 +19,7 @@
     letter-spacing: 0.3px;
     text-decoration: none;
 }
-.padding_nav_nosotros{ padding-left: 39px; }
+.padding_nav_nosotros{ padding-left: 37px; }
 .padding_nav_apps{ padding-left: 26px; }
 .padding_nav_ingresar, .padding_nav_contacto{ padding-left: 32px; }
 

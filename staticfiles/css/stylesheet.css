@@ -4,7 +4,27 @@
     src: url('fonts/Sansation_Regular.eot?#iefix') format('embedded-opentype'),
          url('fonts/Sansation_Regular.woff') format('woff'),
          url('fonts/Sansation_Regular.ttf') format('truetype'),
-         url('fonts/Sansation_Regular.svg#TrajanPro') format('svg');
+         url('fonts/Sansation_Regular.svg#Sansation') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'Sansation Bold';
+    src: url('fonts/Sansation_Bold.eot');
+    src: url('fonts/Sansation_Bold.eot?#iefix') format('embedded-opentype'),
+         url('fonts/Sansation_Bold.woff') format('woff'),
+         url('fonts/Sansation_Bold.ttf') format('truetype'),
+         url('fonts/Sansation_Bold.svg#Sansation') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'Sansation Light';
+    src: url('fonts/Sansation_Light.eot');
+    src: url('fonts/Sansation_Light.eot?#iefix') format('embedded-opentype'),
+         url('fonts/Sansation_Light.woff') format('woff'),
+         url('fonts/Sansation_Light.ttf') format('truetype'),
+         url('fonts/Sansation_Light.svg#Sansation') format('svg');
     font-weight: normal;
     font-style: normal;
 }

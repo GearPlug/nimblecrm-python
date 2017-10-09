@@ -2,5 +2,17 @@
 {% load static %}
 
 {% block content %}
-    lulu
+    <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
+        <ol class="carousel-indicators">
+            <li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
+        </ol>
+        <div class="carousel-inner">
+            <div class="item active container-fluid slide-item">
+                <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
+                <div class="carousel-caption">
+                    &nbsp;
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
