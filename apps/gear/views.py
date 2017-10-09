@@ -4,7 +4,7 @@ from django.views.generic import CreateView, UpdateView, DeleteView, ListView, F
 from django.views.generic.edit import FormMixin
 from django.http.response import JsonResponse, HttpResponseForbidden
 from apps.gear.apps import APP_NAME as app_name
-from apps.gear.forms import MapForm, SendHistoryForm
+from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, DownloadHistory, SendHistory
@@ -277,19 +277,6 @@ class ActivityView(LoginRequiredMixin, ListView):
         return obj_list
 
 
-class GearDownloadHistoryView(LoginRequiredMixin, ListView):
-    model = DownloadHistory
-    template_name = 'gear/download_history.html'
-    login_url = '/accounts/login/'
-
-    def get_queryset(self):
-        return [{'connection': json.loads(item.connection)[0]['fields']['name'],
-                 'raw': [{'name': k, 'value': v} for k, v in json.loads(item.raw).items()],
-                 'date': item.date,
-                 'connector_id': item.connector_id
-                 } for item in self.model.objects.filter(gear_id=self.kwargs['pk'])]
-
-
 class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
     model = SendHistory
     form_class = SendHistoryForm
@@ -337,7 +324,7 @@ class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
         context['form'] = self.get_form()
         return context
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, **kwargs):
         if not request.user.is_authenticated and Gear.objects.get(self.kwargs['pk']).user != self.request.user:
             return HttpResponseForbidden()
         form = self.get_form()
@@ -351,6 +338,36 @@ class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
         context = self.get_context_data()
         return self.render_to_response(context)
         # return super(GearSendHistoryView, self).form_valid(form)
+
+
+class GearDownloadHistoryView(GearSendHistoryView):
+    model = DownloadHistory
+    form_class = DownloadHistoryForm
+    template_name = 'gear/download_history.html'
+    login_url = '/accounts/login/'
+
+    def get_queryset(self, **kwargs):
+        order = 'date'
+        if self.request.method == "POST":
+            if 'date_from' in self.request.POST and self.request.POST['date_from']:
+                if 'date_to' in self.request.POST and self.request.POST['date_to']:
+                    kwargs['date__range'] = (self.request.POST['date_from'], self.request.POST['date_to'])
+                else:
+                    kwargs['date__gte'] = self.request.POST['date_from']
+            elif 'date_to' in self.request.POST and self.request.POST['date_to']:
+                kwargs['date__lte'] = self.request.POST['date_to']
+            if 'order' in self.request.POST and self.request.POST['order'] == 'desc':
+                order = '-date'
+            del kwargs['date_from']
+            del kwargs['date_to']
+            del kwargs['order']
+        return [{'connection': json.loads(item.connection)[0]['fields']['name'],
+                 'raw': [{'name': k, 'value': v} for k, v in json.loads(item.raw).items()],
+                 'date': item.date,
+                 'connector_id': item.connector_id,
+                 'connector_name': ConnectorEnum.get_connector(item.connector_id).name,
+                 'id': item.id,
+                 } for item in self.model.objects.filter(gear_id=self.kwargs['pk'], **kwargs).order_by(order)]
 
 
 def gear_toggle(request, gear_id):
