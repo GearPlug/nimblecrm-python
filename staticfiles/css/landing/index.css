@@ -1,10 +1,43 @@
-.slide-item {
+.slide-item{
     height: 710px;
     padding: 0;
 }
-.slide {
+.slide{
     opacity: 0.4;
     width: 100%;
+}
+.slide-caption{
+    color: white;
+    font-family: 'Sansation';
+    font-size: 4.6em;
+    height: 30%;
+    left: 12%;
+    letter-spacing: -0.005px;
+    line-height: 57px;
+    text-align: justify;
+    text-shadow: inherit;
+    top: 5.9%;
+}
+.slide-text-light{ font-family: 'Sansation Light'; }
+.slide-color-aqua{ color: #00E08F; }
+.slide-control{ background-image: none !important; }
+.slide-arrow {
+    position: absolute;
+    top: 44%;
+}
+.bg-form{
+    background-color: #F1F2F4;
+    border-radius: 43px 43px 51px 51px;
+    -moz-border-radius: 43px 43px 51px 51px;
+    -webkit-border-radius: 43px 43px 51px 51px;
+    height: 520px; /* Quitar */
+    margin: 56px 0 0 35px; /* Cambiar a margin top */
+    opacity: 0.4; /* Quitar */
+    padding: 48px 0 0 0; /* Modificar */
+    width: 61%;
+}
+.input-form{
+    background-color: white;
 }
 .main-text {
     position: absolute;
