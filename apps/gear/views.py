@@ -324,13 +324,21 @@ class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
                  'id': item.id,
                  } for item in self.model.objects.filter(gear_id=self.kwargs['pk'], **kwargs).order_by(order)]
 
+    def get(self, request, *args, **kwargs):
+        try:
+            if not request.user.is_authenticated or Gear.objects.get(pk=self.kwargs['pk']).user != self.request.user:
+                return HttpResponseForbidden()
+        except:
+            return HttpResponseForbidden()
+        return super(GearSendHistoryView, self).get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super(GearSendHistoryView, self).get_context_data(**kwargs)
         context['form'] = self.get_form()
         return context
 
     def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
+        if not request.user.is_authenticated and Gear.objects.get(self.kwargs['pk']).user != self.request.user:
             return HttpResponseForbidden()
         form = self.get_form()
         if form.is_valid():
