@@ -1,0 +1,64 @@
+.aboutus-banner {
+    background: url("../../img/landing/icons.png") no-repeat left bottom;
+}
+
+.aboutus-text {
+    width: 70%;
+    margin: 15% 0 0 38%;
+    line-height: 5em;
+}
+
+.aboutus-text .text1 {
+    font-family: 'Sansation';
+    font-weight: 700;
+    font-size: 4.80em;
+    color: #005ca7;
+}
+
+.aboutus-text .text2 {
+    font-family: 'Sansation Light';
+    /*font-weight: 300;*/
+    font-size: 4.80em;
+    color: #9d9ba1;
+}
+
+.aboutus-description {
+    background-color: #f7f8f8;
+
+}
+
+.aboutus-description .text3 {
+    padding: 5% 16% 5% 16%;
+    font-family: 'Sansation Light';
+    font-size: 2.00em;
+    color: #727277;
+    text-align: justify;
+}
+
+.aboutus-description .text3 p {
+    margin: 0 0 45px 0;
+}
+
+.aboutus-services .title {
+    padding-top: 2%;
+    font-family: 'Sansation';
+    font-size: 5.33em;
+    color: #9e9ba2;
+    text-align: center;
+}
+
+.aboutus-services .boxes {
+    margin: 5% 10% 5% 10%;
+}
+
+.aboutus-services .boxes .box {
+    text-align: center;
+}
+
+.aboutus-services .boxes .box .title2 {
+    padding-top: 5px;
+    font-family: 'Sansation Light';
+    font-size: 3.00em;
+    color: #9d9ba1;
+
+}
