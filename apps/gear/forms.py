@@ -67,3 +67,18 @@ class MapForm(forms.Form):
         except Exception as e:
             raise
             super(MapForm, self).__init__(*args, **kwargs)
+
+
+class SendHistoryForm(forms.Form):
+    date_from = forms.DateTimeField(required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    date_to = forms.DateTimeField(required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    order = forms.ChoiceField(required=True, choices=(('asc', 'Ascending'), ('desc', 'Descending')),
+                              widget=forms.Select(attrs={'class': 'form-control'}))
+    sent = forms.ChoiceField(required=True, choices=((0, 'All'), (True, 'Successful'), (False, 'Failed')),
+                               widget=forms.Select(attrs={'class': 'form-control'}))
+
+class DownloadHistoryForm(forms.Form):
+    date_from = forms.DateTimeField(required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    date_to = forms.DateTimeField(required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    order = forms.ChoiceField(required=True, choices=(('asc', 'Ascending'), ('desc', 'Descending')),
+                              widget=forms.Select(attrs={'class': 'form-control'}))
