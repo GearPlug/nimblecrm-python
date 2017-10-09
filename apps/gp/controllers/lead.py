@@ -25,29 +25,24 @@ class GoogleFormsController(GoogleBaseController):
     _spreadsheet_id = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
-        GoogleBaseController.__init__(self, connection=connection, plug=plug,
-                                      **kwargs)
+        GoogleBaseController.__init__(self, connection=connection, plug=plug, **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
-        super(GoogleFormsController, self).create_connection(
-            connection=connection, plug=plug)
+        super(GoogleFormsController, self).create_connection(connection=connection, plug=plug)
         credentials_json = None
         if self._connection_object is not None:
             try:
                 credentials_json = self._connection_object.credentials_json
                 if self._plug is not None:
                     try:
-                        self._spreadsheet_id = self._plug.plug_action_specification.get(
-                            action_specification__name__iexact='form').value
+                        self._spreadsheet_id = self._plug.plug_action_specification.get(action_specification__name__iexact='form').value
                     except Exception as e:
-                        print(
-                            "Error asignando los specifications GoogleForms 2")
+                        print("Error asignando los specifications GoogleForms 2")
             except Exception as e:
                 print("Error getting the GoogleForms attributes 1")
                 print(e)
         if credentials_json is not None:
-            self._credential = GoogleClient.OAuth2Credentials.from_json(
-                json.dumps(credentials_json))
+            self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
 
     def test_connection(self):
         try:
@@ -63,45 +58,47 @@ class GoogleFormsController(GoogleBaseController):
             files = None
         return files is not None
 
-    def download_to_stored_data(self, connection_object, plug, *args,
-                                **kwargs):
-        if plug is None:
-            plug = self._plug
+    def download_to_stored_data(self, connection_object, plug, last_source_record=None, **kwargs):
         if not self._spreadsheet_id:
             return False
-        sheet_values = self.get_worksheet_values()
+        data = self.get_worksheet_values()
+        raw_data = []
         new_data = []
-        for idx, item in enumerate(sheet_values[1:]):
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=idx + 1)
+        for idx, item in enumerate(data[1:], 1):
+            unique_value = idx
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
+                item_data = []
+                item_raw = {}
                 for idx2, cell in enumerate(item):
-                    new_data.append(
-                        StoredData(name=sheet_values[0][idx2], value=cell,
-                                   object_id=idx + 1,
-                                   connection=connection_object.connection,
-                                   plug=plug))
+                    item_data.append(StoredData(name=data[0][idx2], value=cell, object_id=unique_value,
+                                                connection=connection_object.connection, plug=plug))
+                    _dict = {data[0][idx2]: cell}
+                    item_raw.update(_dict)
+
+                new_data.append(item_data)
+                item_raw['id'] = idx
+                raw_data.append(item_raw)
+        # Nueva forma
         if new_data:
-            field_count = len(sheet_values)
-            extra = {'controller': 'google_forms'}
-            for i, item in enumerate(new_data):
-                try:
-                    item.save()
-                    if (i + 1) % field_count == 0:
-                        extra['status'] = 's'
-                        self._log.info(
-                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                                item.object_id, item.plug.id,
-                                item.connection.id), extra=extra)
-                except:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                            item.object_id, item.name, item.plug.id,
-                            item.connection.id), extra=extra)
-            # raise IndexError("hola")
-            return True
+            result_list = []
+            for item in new_data:
+                for stored_data in item:
+                    try:
+                        stored_data.save()
+                    except Exception as e:
+                        is_stored = False
+                        break
+                    is_stored = True
+                obj_raw = "ROW DATA NOT FOUND."
+                for obj in raw_data:
+                    if stored_data.object_id == obj['id']:
+                        obj_raw = obj
+                        break
+                raw_data.remove(obj_raw)
+                result_list.append({'identifier': {'name': 'id', 'value': stored_data.object_id},
+                                    'is_stored': is_stored, 'raw': obj_raw, })
+            return {'downloaded_data': result_list, 'last_source_record': result_list[-1]['identifier']['value']}
         return False
 
     def get_sheet_list(self):
@@ -109,17 +106,14 @@ class GoogleFormsController(GoogleBaseController):
         http_auth = credential.authorize(httplib2.Http())
         drive_service = discovery.build('drive', 'v3', http=http_auth)
         files = drive_service.files().list().execute()
-        sheet_list = tuple(
-            f for f in files['files'] if 'mimeType' in f and f[
-                'mimeType'] == 'application/vnd.google-apps.spreadsheet')
+        sheet_list = tuple(f for f in files['files'] if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet')
         return sheet_list
 
     def get_worksheet_list(self, sheet_id):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
-        result = sheets_service.spreadsheets().get(
-            spreadsheetId=sheet_id).execute()
+        result = sheets_service.spreadsheets().get(spreadsheetId=sheet_id).execute()
         worksheet_list = tuple(i['properties'] for i in result['sheets'])
         return worksheet_list
 
@@ -128,9 +122,7 @@ class GoogleFormsController(GoogleBaseController):
         http_auth = credential.authorize(httplib2.Http())
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
         range = self.get_worksheet_list(self._spreadsheet_id)
-        res = sheets_service.spreadsheets().values().get(
-            spreadsheetId=self._spreadsheet_id,
-            range=range[0]['title']).execute()
+        res = sheets_service.spreadsheets().values().get(spreadsheetId=self._spreadsheet_id, range=range[0]['title']).execute()
         values = res['values']
         if from_row is None and limit is None:
             return values
@@ -149,16 +141,12 @@ class GoogleFormsController(GoogleBaseController):
     def get_target_fields(self, **kwargs):
         return self.get_worksheet_first_row(**kwargs)
 
-    def get_action_specification_options(self, action_specification_id,
-                                         **kwargs):
-        action_specification = ActionSpecification.objects.get(
-            pk=action_specification_id)
+    def get_action_specification_options(self, action_specification_id, **kwargs):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'form':
-            return tuple({'id': p['id'], 'name': p['name']} for p in
-                         self.get_sheet_list())  # TODO SOLO CARGAR FORMS
+            return tuple({'id': p['id'], 'name': p['name']} for p in self.get_sheet_list())  # TODO SOLO CARGAR FORMS
         else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector.")
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class FacebookLeadsController(BaseController):

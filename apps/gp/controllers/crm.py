@@ -175,9 +175,9 @@ class SugarCRMController(BaseController):
                 obj_result['sent'] = True
                 obj_result['identifier'] = res['id']
             except Exception as e:
-                obj_result['response'] = res
+                obj_result['response'] = str(e)
                 obj_result['sent'] = False
-                obj_result['identifier'] = res['id']
+                obj_result['identifier'] = '-1'
             obj_list.append(obj_result)
         return obj_list
 
