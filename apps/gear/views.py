@@ -1,9 +1,10 @@
 from apps.gp.models import GearGroup
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
-from django.http.response import JsonResponse
+from django.views.generic.edit import FormMixin
+from django.http.response import JsonResponse, HttpResponseForbidden
 from apps.gear.apps import APP_NAME as app_name
-from apps.gear.forms import MapForm
+from apps.gear.forms import MapForm, SendHistoryForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.gp.enum import ConnectorEnum
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, DownloadHistory, SendHistory
@@ -289,20 +290,59 @@ class GearDownloadHistoryView(LoginRequiredMixin, ListView):
                  } for item in self.model.objects.filter(gear_id=self.kwargs['pk'])]
 
 
-class GearSendHistoryView(LoginRequiredMixin, ListView):
+class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
     model = SendHistory
+    form_class = SendHistoryForm
     template_name = 'gear/send_history.html'
     login_url = '/accounts/login/'
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
+        order = 'date'
+        if self.request.method == "POST":
+            if 'date_from' in self.request.POST and self.request.POST['date_from']:
+                if 'date_to' in self.request.POST and self.request.POST['date_to']:
+                    kwargs['date__range'] = (self.request.POST['date_from'], self.request.POST['date_to'])
+                else:
+                    kwargs['date__gte'] = self.request.POST['date_from']
+            elif 'date_to' in self.request.POST and self.request.POST['date_to']:
+                kwargs['date__lte'] = self.request.POST['date_to']
+            if 'order' in self.request.POST and self.request.POST['order'] == 'desc':
+                order = '-date'
+            if 'sent' in kwargs and kwargs['sent'] == '0':
+                del kwargs['sent']
+            del kwargs['date_from']
+            del kwargs['date_to']
+            del kwargs['order']
         return [{'connection': json.loads(item.connection)[0]['fields']['name'],
                  'data': [{'name': k, 'value': v} for k, v in json.loads(item.data).items()],
                  'date': item.date,
                  'connector_id': item.connector_id,
+                 'connector_name': ConnectorEnum.get_connector(item.connector_id).name,
                  'sent': item.sent,
                  'response': item.response,
                  'identifier': item.identifier,
-                 } for item in self.model.objects.filter(gear_id=self.kwargs['pk'])]
+                 'id': item.id,
+                 } for item in self.model.objects.filter(gear_id=self.kwargs['pk'], **kwargs).order_by(order)]
+
+    def get_context_data(self, **kwargs):
+        context = super(GearSendHistoryView, self).get_context_data(**kwargs)
+        context['form'] = self.get_form()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden()
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def form_valid(self, form):
+        self.object_list = self.get_queryset(**form.cleaned_data)
+        context = self.get_context_data()
+        return self.render_to_response(context)
+        # return super(GearSendHistoryView, self).form_valid(form)
 
 
 def gear_toggle(request, gear_id):
