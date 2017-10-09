@@ -1,5 +1,5 @@
 .ayuda-gp-index{
-    background: url("../img/landing/plantilla.png") no-repeat scroll 50% 20px;
+    background: url("../../img/landing/plantilla.png") no-repeat scroll 50% 20px;
     height: 3880px;
 }
 
@@ -32,5 +32,9 @@
     font-size: 1.55em;
     letter-spacing: -0.62px;
     padding: 25px 0 30px 0;
+}
+.bg_footer a{
+    color: #00E08F;
+    text-decoration: none;
 }
 footer{ background: transparent; }
