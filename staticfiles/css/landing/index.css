@@ -2,10 +2,7 @@
     height: 710px;
     padding: 0;
 }
-.slide{
-    opacity: 0.4;
-    width: 100%;
-}
+.slide{ width: 100%; }
 .slide-caption{
     color: white;
     font-family: 'Sansation';
@@ -30,10 +27,9 @@
     border-radius: 43px 43px 51px 51px;
     -moz-border-radius: 43px 43px 51px 51px;
     -webkit-border-radius: 43px 43px 51px 51px;
-    height: 520px; /* Quitar */
-    margin: 56px 0 0 33px; /* Cambiar a margin top */
-    opacity: 0.4; /* Quitar */
-    padding: 48px 0 0 0; /* Modificar */
+    height: 520px;
+    margin: 56px 0 0 33px;
+    padding: 48px 0 0 0;
     width: 60.5%;
 }
 .input-form{
@@ -91,6 +87,8 @@
 .index-space4{ height: 34px; }
 .index-space5{ height: 84px; }
 .index-space6{ height: 72px; }
+.index-space7{ height: 120px; }
+.index-space8{ height: 61px; }
 .text-what{
     color: #9E9BA2;
     font-family: 'Sansation';
@@ -122,4 +120,65 @@
     color: #727277;
     line-height: 28px;
     padding: 1.4% 0 0 4%;
+}
+.banner{
+    position: relative;
+    width: 100%;
+    z-index: 1;
+}
+.text-connect{
+    background: url("../../img/landing/bg_banner1.png") no-repeat scroll 0 0;
+    background-size: cover;
+    color: #4A474B;
+    font-family: 'Sansation';
+    font-size: 4.1em;
+    padding: 1.7% 0 2.3% 0;
+}
+.text-us{
+    color: #727277;
+    font-family: 'Sansation Light';
+    font-size: 2.8em;
+}
+.list-wrapper {
+    margin: 50px 0 99px 0;
+    width: 80%;
+}
+.list-wrapper .list-item {
+    text-align: center;
+    margin: 5% 0 10% 0;
+}
+.list-wrapper .list-item .divider {
+    width: 98px;
+    height: 1px;
+    display: inline-block;
+    background-color: #E5E6E9;
+    margin: 5% 0 1% 0;
+
+}
+.list-wrapper .list-item .name1 {
+    font-family: "Sansation Light";
+    font-size: 1.40em;
+    color: #727277;
+}
+.bg_comments{ background: url("../../img/landing/icons3.png") no-repeat scroll top right #005ca7; }
+.title-comments{
+    color: white;
+    font-family: "Sansation Bold";
+    font-size: 4.1em;
+    margin-top: 91px;
+}
+.hr-comments{
+    border-bottom: #00E08F solid 4px;
+    margin: -0.6% 0 0 39.1%;
+    width: 16.8%;
+}
+.list-wrapper1 {
+    margin-bottom: 4.5%;
+    margin-top: 4.5%;
+}
+.name11 {
+    font-family: "Sansation";
+    font-size: 1.1em;
+    color: white;
+    margin-top: 2%;
 }

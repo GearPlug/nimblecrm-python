@@ -83,8 +83,7 @@
         <img src="{% static 'img/landing/process.png' %}">
     </div>
     <div class="col-md-12 index-space6"> &nbsp; </div>
-    <div class="col-md-1"> &nbsp; </div>
-    <div class="col-md-10">
+    <div class="col-md-10 col-md-offset-1">
         <div class="col-md-4">
             <div class="col-md-2">
                 <img src="{% static 'img/landing/bullet1.png' %}">
@@ -104,9 +103,52 @@
             <div class="col-md-10 text-bullet">Selecciona el destino</div>
         </div>
     </div>
+    <div class="col-md-12 index-space7"> &nbsp; </div>
+    <div class="col-md-12 text-center text-connect">
+        Conéctalo con tus <span style="font-family: 'Sansation Bold">Aplicaciones Favoritas</span>
+    </div>
+    <div class="col-md-12 index-space8"> &nbsp; </div>
+    <div class="col-md-12 text-center text-us">
+        Nuestras aplicaciones más usadas
+    </div>
     <div class="col-md-1"> &nbsp; </div>
-    <div class="col-md-12 index-space6"> &nbsp; </div>
-    <div class="col-md-12 text-center">
-
+    <div class="col-md-10  list-wrapper">
+        {% for i in 'xxxxxx' %}
+        <div class="col-md-2">
+            <div class="list-item">
+                <div class="image1">
+                    <img src="{% static 'img/landing/logo_mysql.png' %}">
+                </div>
+                <div class="divider"></div>
+                <div class="name1">
+                    MySQL
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="col-md-1"> &nbsp; </div>
+    <div class="col-md-12 bg_comments">
+        <div class="col-md-12 text-center title-comments">
+            La Experiencia Habla
+            <hr class="hr-comments">
+        </div>
+        <div class="col-md-1"> &nbsp; </div>
+        <div class="col-md-10 list-wrapper1">
+            {% for i in 'xxxxxx' %}
+            <div class="col-md-4">
+                <div class="list-item1">
+                    <div class="col-md-4 image11">
+                        <img src="{% static 'img/landing/guy3.png' %}" style="margin-bottom: 40px;">
+                    </div>
+                    <div class="col-md-8 name11">
+                        Daniel Ricco<br />
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="col-md-1"> &nbsp; </div>
     </div>
 {% endblock %}
