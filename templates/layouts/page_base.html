@@ -25,11 +25,19 @@
                             </a>
                         </div>
                         <div class="col-md-3"> &nbsp; </div>
-                        <div class="col-md-4 text_menu">
-                            <a href="#" class="padding_nav_nosotros">Nosotros</a>
-                            <a href="#" class="padding_nav_apps">Apps</a>
-                            <a href="#" class="padding_nav_ingresar">Ingresar</a>
-                            <a href="#" class="padding_nav_contacto">Contacto</a>
+                        <div class="col-md-4 text_menu text-center">
+                            <div class="col-md-3">
+                                <a href="{% url 'landing:aboutus' %}">Nosotros</a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="#">Apps</a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="#">Ingresar</a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="#">Contacto</a>
+                            </div>
                         </div>
                         <div class="col-md-1"> &nbsp; </div>
                     </div>
@@ -37,12 +45,12 @@
             </header>
         {% endblock %}
         <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-12 sp">
                 {% block content %}{% endblock %}
             </div>
         </div>
     </div>
-    <!-- <footer>
+    <footer>
         {% block footer_base %}
             {% block footer_content %}
                 <div class="row">
@@ -52,7 +60,7 @@
                 </div>
             {% endblock %}
         {% endblock %}
-    </footer> -->
+    </footer>
     {% block scripts_gear %}{% endblock %}
 {% endblock %}
 

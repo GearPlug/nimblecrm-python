@@ -3,16 +3,49 @@
 
 {% block content %}
     <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
-        <ol class="carousel-indicators">
-            <li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
-        </ol>
         <div class="carousel-inner">
             <div class="item active container-fluid slide-item">
                 <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
-                <div class="carousel-caption">
-                    &nbsp;
+                <div class="carousel-caption slide-caption slide-text">
+                    Conectándote <br />
+                    <span class="slide-text-light"> en todos </span> <br />
+                    <span class="slide-color-aqua"> lados </span>
                 </div>
             </div>
+        </div>
+         <a class="left carousel-control slide-control" href="#carousel-example-generic" data-slide="prev">
+             <span class="slide-arrow">
+                 <img src="{% static 'img/landing/arrow_left.png' %}">
+             </span>
+         </a>
+        <a class="right carousel-control slide-control" href="#carousel-example-generic" data-slide="next">
+            <span class="slide-arrow">
+                <img src="{% static 'img/landing/arrow_right.png' %}">
+            </span>
+
+        </a>
+    </div>
+    <div class="main-text hidden-xs">
+        <div class="col-md-7"> &nbsp; </div>
+        <div class="col-md-5">
+            <div class="col-md-1"> &nbsp; </div>
+            <div class="col-md-9 bg-form">
+                <form method="post" action="">
+                    <div class="col-md-12">
+                        <input type="text" name="name" placeholder="Nombre" class="input-form">
+                    </div>
+                    <div class="col-md-12">
+                        <input type="text" name="lastname" placeholder="Apellido" class="input-form">
+                    </div>
+                    <div class="col-md-12">
+                        <input type="email" name="email" placeholder="Email" class="input-form">
+                    </div>
+                    <div class="col-md-12">
+                        <input type="password" name="password" placeholder="Password" class="input-form">
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-2"> &nbsp; </div>
         </div>
     </div>
 {% endblock %}

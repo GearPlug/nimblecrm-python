@@ -2,15 +2,16 @@
     /*background: url("../../img/landing/plantilla.png") no-repeat scroll 50% 20px;*/
     /*height: 3880px;*/
 }
-
 .bg_page{ background-color: white; }
+.row{
+    margin: 0;
+    padding: 0;
+}
+.sp{ padding: 0; }
 
 /* Header */
 .nav_spaces{ margin: 20px 0 34px 0; }
-.logo_header{
-    display: inherit;
-    margin-left: 96px;
-}
+.logo_header{ display: inherit; }
 .text_menu{ padding-top: 23px; }
 .text_menu a{
     color: #9D9BA1;
@@ -19,9 +20,6 @@
     letter-spacing: 0.3px;
     text-decoration: none;
 }
-.padding_nav_nosotros{ padding-left: 37px; }
-.padding_nav_apps{ padding-left: 26px; }
-.padding_nav_ingresar, .padding_nav_contacto{ padding-left: 32px; }
 
 /* Footer */
 .bg_footer{
