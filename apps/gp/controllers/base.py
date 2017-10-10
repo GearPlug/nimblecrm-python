@@ -77,10 +77,13 @@ class BaseController(object):
                                                        raw=json.dumps(item['raw']), connector=self.connector,
                                                        identifier=item['identifier'], )
                     return result['last_source_record']
-                except:
-                    # raise
-                    print("NO REGISTRO DATA")
+                except KeyError:
+                    print("no hay last source?? -> \t{0}".format(result))
                     return result
+                except:
+                    raise
+                    print("NO REGISTRO DATA")
+                    return False
             except TypeError:
                 return self.download_to_stored_data(self._connection_object, self._plug)
         raise ControllerError(code=0, controller=self.connector.name,
