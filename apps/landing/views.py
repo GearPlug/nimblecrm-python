@@ -8,3 +8,7 @@ class IndexView(TemplateView):
 
 class AboutUsView(TemplateView):
     template_name = 'landing/aboutus.html'
+
+
+class ContactUsView(TemplateView):
+    template_name = 'landing/contactus.html'

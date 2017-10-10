@@ -1,0 +1,66 @@
+{% extends 'layouts/page_base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="row contactus-banner">
+        <div class="col-md-3">
+            <img src="{% static 'img/landing/guy1.png' %}">
+        </div>
+        <div class="col-md-6">
+            <div class="contactus-text">
+                <div class="text1">
+                    Ponte en Contacto
+                </div>
+                <div class="text2">
+                    con uno de nuestros
+                </div>
+                <div class="text2">
+                    asesores
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row contactus-footer">
+        <div class="col-md-5">
+            <div class="logo1">
+                <img src="{% static 'img/landing/logo.png' %}">
+            </div>
+            <div class="address1">
+                <span>GearPlug SAS Colombia</span>
+                <span>Cra 49B #93-68</span>
+                <span>Telf: 5639596</span>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="divider"></div>
+            <div class="form-wrapper">
+                <div class="text3">
+                    ¿Tienes Preguntas?
+                </div>
+                <form>
+                    <div class="form-group">
+                        <label for="name">Nombre:</label>
+                        <input type="text" id="name" name="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Correo:</label>
+                        <input type="email" id="email" name="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="question">Pregunta:</label>
+                        <textarea id="question" name="question"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="attachment">Adjuntar Archivo:</label>
+                        <div class="inline">
+                            <input type="text" id="attachment" name="attachment">
+                            <button type="submit">Enviar</button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+{% endblock %}

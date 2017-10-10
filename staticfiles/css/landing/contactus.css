@@ -1,0 +1,134 @@
+.contactus-banner {
+    background: url("../../img/landing/icons.png") no-repeat right bottom;
+}
+
+.contactus-banner img {
+    margin-left: 30%;
+}
+
+.contactus-text {
+    margin: 12% 0 0 0;
+    line-height: 5em;
+    text-align: center;
+}
+
+.contactus-text .text1 {
+    font-family: 'Sansation';
+    font-weight: 700;
+    font-size: 4.80em;
+    color: #005ca7;
+}
+
+.contactus-text .text2 {
+    font-family: 'Sansation Light';
+    /*font-weight: 300;*/
+    font-size: 4.80em;
+    color: #9d9ba1;
+}
+
+.contactus-footer {
+    background-color: #005ca7;
+    box-sizing: border-box;
+    padding: 5% 0 5% 0;
+}
+
+.contactus-footer .logo1 {
+    padding-top: 15%;
+    text-align: center;
+}
+
+.contactus-footer .address1 {
+    font-family: 'Sansation';
+    font-size: 1.40em;
+    color: #FFFFFF;
+
+    width: 50%;
+    margin: 0 auto;
+    padding-top: 10%;
+}
+
+.contactus-footer .address1 span {
+    display: block;
+}
+
+.contactus-footer .divider {
+    background-color: #008fc6;
+    width: 1px;
+    height: 560px;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.contactus-footer .form-wrapper {
+    display: inline-block;
+    vertical-align: top;
+
+    margin-left: 5%;
+}
+
+.contactus-footer .form-wrapper form {
+    margin: 2% 0 0 2%;
+}
+
+.contactus-footer .form-wrapper .text3 {
+    font-family: 'Sansation Light';
+    font-size: 4.25em;
+    color: #47e093;
+}
+
+.contactus-footer .form-wrapper .form-group {
+    margin-bottom: 10px;
+}
+
+.contactus-footer .form-wrapper .form-group label, .contactus-footer .form-wrapper .form-group input {
+    display: block;
+}
+
+.contactus-footer .form-wrapper .form-group label {
+    font-family: 'Sansation';
+    font-size: 1.40em;
+    color: #FFFFFF;
+}
+
+.contactus-footer .form-wrapper .form-group input, textarea, button {
+    width: 410px;
+    height: 50px;
+    border: 0;
+
+    -webkit-border-radius: 15px;
+    -moz-border-radius: 15px;
+    border-radius: 15px;
+
+    font-family: 'Sansation';
+    font-size: 1.40em;
+    padding: 3%;
+
+    outline: none;
+}
+
+.contactus-footer .form-wrapper .form-group textarea {
+    width: 700px;
+    height: 120px;
+
+    resize: none;
+}
+
+.contactus-footer .form-wrapper .form-group .inline button {
+    width: 245px;
+    height: 50px;
+    border: 0;
+    background-color: #47e093;
+    color: #FFFFFF;
+    font-family: 'Sansation Bold';
+
+    font-size: 2.20em;
+    padding: 0;
+
+    float: right;
+}
+
+.contactus-footer .form-wrapper .form-group .inline input, button {
+    display: inline;
+    vertical-align: top;
+}
+
