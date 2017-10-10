@@ -723,6 +723,8 @@ class SalesforceController(BaseController):
             raise ControllerError(
                 "That specification doesn't belong to an action in this connector.")
 
+    def has_webhook(self):
+        return True
 
 class HubSpotController(BaseController):
     _token = None

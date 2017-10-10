@@ -505,3 +505,6 @@ class GitLabController(BaseController):
                 self.download_source_data(issue=body)
                 webhook.plug.save()
         return HttpResponse(status=200)
+
+    def has_webhook(self):
+        return True

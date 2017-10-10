@@ -415,6 +415,8 @@ class FacebookLeadsController(BaseController):
             response.status_code = 200
         return response
 
+    def has_webhook(self):
+        return True
 
 class SurveyMonkeyController(BaseController):
     _token = None
@@ -585,6 +587,8 @@ class SurveyMonkeyController(BaseController):
                 webhook.plug.save()
         return HttpResponse(status=200)
 
+    def has_webhook(self):
+        return True
 
 class TypeFormController(BaseController):
     _client = None
