@@ -12,3 +12,7 @@ class AboutUsView(TemplateView):
 
 class ContactUsView(TemplateView):
     template_name = 'landing/contactus.html'
+
+
+class AppsView(TemplateView):
+    template_name = 'landing/apps.html'
