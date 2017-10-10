@@ -460,6 +460,8 @@ class GoogleCalendarController(GoogleBaseController):
                 webhook.plug.save()
         return HttpResponse(status=200)
 
+    def has_webhook(self):
+        return True
 
 class EvernoteController(BaseController):
     _token = None
@@ -787,3 +789,6 @@ class WunderListController(BaseController):
                         self.download_source_data(task=body)
                         webhook.plug.save()
         return HttpResponse(status=200)
+
+    def has_webhook(self):
+        return True

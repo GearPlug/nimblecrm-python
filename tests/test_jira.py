@@ -393,3 +393,7 @@ class JiraControllerTestCases(TestCase):
         result_view = self.target_controller.view_issue(result[-1]['identifier'])
         self.assertEqual(result_view, result[-1]['identifier'])
         self.target_controller.delete_issue(result[-1]['identifier'])
+
+    def test_has_webhook(self):
+        result = self.source_controller.has_webhook()
+        self.assertTrue(result)

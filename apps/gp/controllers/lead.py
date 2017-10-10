@@ -181,6 +181,7 @@ class FacebookLeadsController(BaseController):
                 raise ControllerError(code=1, controller=ConnectorEnum.FacebookLeads,
                                       message='Failed to get the token. \n{}'.format(str(e)))
             try:
+
                 self._client = Client(settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET, 'v2.10')
                 self._client.set_access_token(self._token)
             except UnknownError as e:
@@ -591,6 +592,9 @@ class SurveyMonkeyController(BaseController):
                 self.download_source_data(response=body)
                 webhook.plug.save()
         return HttpResponse(status=200)
+
+    def has_webhook(self):
+        return True
 
 
 class TypeFormController(BaseController):
