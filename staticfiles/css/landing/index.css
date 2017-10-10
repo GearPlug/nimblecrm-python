@@ -31,13 +31,39 @@
     -moz-border-radius: 43px 43px 51px 51px;
     -webkit-border-radius: 43px 43px 51px 51px;
     height: 520px; /* Quitar */
-    margin: 56px 0 0 35px; /* Cambiar a margin top */
+    margin: 56px 0 0 33px; /* Cambiar a margin top */
     opacity: 0.4; /* Quitar */
     padding: 48px 0 0 0; /* Modificar */
-    width: 61%;
+    width: 60.5%;
 }
 .input-form{
     background-color: white;
+    border-radius: 15px;
+    -moz-border-radius: 15px;
+    -webkit-border-radius: 15px;
+    border-style: none;
+    color: #9E9BA2;
+    font-family: 'Sansation';
+    font-size: 1.6em;
+    height: 49px;
+    margin: 0 0 30px 23px;
+    padding-left: 22px;
+    width: 88%;
+}
+.checkbox-form{
+    color: black;
+    font-family: 'Sansation';
+    font-size: 1.42em;
+    padding-left: 13px;
+}
+.padding-checkbox{ padding-left: 41px; }
+.button_form{
+    background-color: #005CA7;
+    color: #00E08F;
+    font-size: 1.9em;
+    height: 12%;
+    margin: 26px 0 0 24px;
+    width: 88%;
 }
 .main-text {
     position: absolute;
@@ -58,4 +84,42 @@
 .btn-clear:hover {
     color: #000;
     background-color: #FFF;
+}
+.index-space1{ height: 87px; }
+.index-space2{ height: 30px; }
+.index-space3{ height: 60px; }
+.index-space4{ height: 34px; }
+.index-space5{ height: 84px; }
+.index-space6{ height: 72px; }
+.text-what{
+    color: #9E9BA2;
+    font-family: 'Sansation';
+    font-size: 4.6em;
+}
+.text-p{
+    color: #727277;
+    font-family: 'Sansation Light';
+    font-size: 1.9em;
+    line-height: 41px;
+    padding: 2.6% 20% 0;
+}
+.hr-separator{ color: #E9EAED; }
+.text-two{
+    color: #005CA7;
+    font-family: 'Sansation';
+    font-size: 2.3em;
+    margin-top: -0.8%;
+}
+.text-bullet{
+    font-family: 'Sansation Light';
+    font-size: 2em;
+    color: #727277;
+    padding: 2.5% 0 0 4%;
+}
+.text-bullet1{
+    font-family: 'Sansation Light';
+    font-size: 2em;
+    color: #727277;
+    line-height: 28px;
+    padding: 1.4% 0 0 4%;
 }
