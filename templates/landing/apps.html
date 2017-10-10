@@ -1,5 +1,5 @@
 {% extends 'layouts/page_base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
     <div class="row apps-banner">
@@ -7,12 +7,14 @@
             <img src="{% static 'img/landing/bg_banner.png' %}" width="100%">
         </div>
         <div class="text1">
-            Conéctalo con tus <span style="font-family: 'Sansation Bold'">Aplicaciones Favoritas</span>
+            {% blocktrans %}
+                Conéctalo con tus <span style="font-family: 'Sansation Bold'">Aplicaciones Favoritas</span>
+            {% endblocktrans %}
         </div>
     </div>
     <div class="row apps-list">
         <div class="text2">
-            Conécta cualquiera de estas Apps
+            {% trans 'Conécta cualquiera de estas Apps' %}
         </div>
         <div class="search1">
             <div class="box">
@@ -22,11 +24,11 @@
         </div>
         <div class="nav">
             <div class="item">
-                Más Usadas
+                {% trans 'Más Usadas' %}
             </div>
             <div class="divider"></div>
             <div class="item">
-                Las Mejores Combinaciones
+                {% trans 'Las Mejores Combinaciones' %}
             </div>
             <div class="divider"></div>
             <div class="item">
@@ -36,17 +38,17 @@
         <div class="list-wrapper">
             <div class="row">
                 {% for i in 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' %}
-                <div class="col-md-2">
-                    <div class="list-item">
-                        <div class="image1">
-                            <img src="{% static 'img/landing/logo_mysql.png' %}">
-                        </div>
-                        <div class="divider"></div>
-                        <div class="name1">
-                            MySQL
+                    <div class="col-md-2">
+                        <div class="list-item">
+                            <div class="image1">
+                                <img src="{% static 'img/landing/logo_mysql.png' %}">
+                            </div>
+                            <div class="divider"></div>
+                            <div class="name1">
+                                MySQL
+                            </div>
                         </div>
                     </div>
-                </div>
                 {% endfor %}
             </div>
         </div>
