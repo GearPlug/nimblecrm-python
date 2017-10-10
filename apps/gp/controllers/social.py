@@ -197,6 +197,8 @@ class InstagramController(BaseController):
                     self.download_source_data(media=media)
         return HttpResponse(status=200)
 
+    def has_webhook(self):
+        return True
 
 class YouTubeController(BaseController):
     _credential = None
@@ -452,3 +454,6 @@ class YouTubeController(BaseController):
     def get_mapping_fields(self, **kwargs):
         fields = self.get_target_fields()
         return [MapField(f, controller=ConnectorEnum.YouTube) for f in fields]
+
+    def has_webhook(self):
+        return True
