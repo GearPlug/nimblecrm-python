@@ -28,7 +28,10 @@ class BitbucketController(BaseController):
     def create_connection(self, connection=None, plug=None):
         super(BitbucketController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
-            self._user = self._connection_object.connection_user.split('@')[0]
+            if '@' in self._connection_object_user:
+                self._user = self._connection_object.connection_user.split('@')[0]
+            else:
+                self._user = self._connection_object.connection_user
             self._password = self._connection_object.connection_password
         try:
             self._connection = Bitbucket(self._user, self._password)
