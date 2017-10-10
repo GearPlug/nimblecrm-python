@@ -606,28 +606,6 @@ class ControllerLog(DBLogEntry):
     controller = models.CharField(max_length=20, blank=True, default='')
 
 
-class DownloadHistory(models.Model):
-    connector = models.ForeignKey(Connector)
-    gear_id = models.CharField('gear_id', max_length=25)
-    plug_id = models.CharField('plug_id', max_length=25)
-    connection = models.CharField(max_length=2000)
-    date = models.DateTimeField(auto_now_add=True)
-    raw = models.CharField(max_length=25000)
-    identifier = models.CharField('identifier', max_length=500)
-
-
-class SendHistory(models.Model):
-    connector = models.ForeignKey(Connector)
-    gear_id = models.CharField('gear_id', max_length=25)
-    plug_id = models.CharField('plug_id', max_length=25)
-    connection = models.CharField(max_length=5000)
-    date = models.DateTimeField(auto_now_add=True)
-    data = models.CharField(max_length=25000)
-    response = models.CharField(max_length=25000)
-    sent = models.BooleanField('sent', default=False)
-    identifier = models.CharField('identifier', max_length=500)
-
-
 admin.site.register(Connector)
 admin.site.register(Action)
 admin.site.register(ActionSpecification)

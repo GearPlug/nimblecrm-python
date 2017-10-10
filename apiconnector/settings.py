@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'apps.plug',
     'apps.connection',
     'apps.gp',
+    'apps.history',
 ]
 
 MIDDLEWARE = [
@@ -67,10 +68,24 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
-            'read_default_file': os.path.join(BASE_DIR, 'apiconnector/mysql.cnf', )
+            'read_default_file': os.path.join(BASE_DIR, 'apiconnector/gearplug.cnf', )
+        },
+    },
+    'history': {
+        'ENGINE': 'django.db.backends.mysql',
+        'OPTIONS': {
+            'read_default_file': os.path.join(BASE_DIR, 'apiconnector/history.cnf', )
+        },
+    },
+    'landing': {
+        'ENGINE': 'django.db.backends.mysql',
+        'OPTIONS': {
+            'read_default_file': os.path.join(BASE_DIR, 'apiconnector/landing.cnf', )
         },
     },
 }
+
+DATABASE_ROUTERS = ['apps.gp.routers.DefaultRouter', 'apps.gp.routers.HistoryRouter', 'apps.gp.routers.LandingRouter', ]
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
@@ -94,31 +109,31 @@ LOGGING = {
         }
     },
     'handlers': {
-            'controller.file': {
-                'level': 'INFO',
-                'class': 'logging.handlers.RotatingFileHandler',
-                'filename': os.path.join(BASE_DIR, 'log/controller/general.log'),
-                'maxBytes': 1024 * 1024 * 5,  # 5 MB
-                'backupCount': 50,
-                'formatter': 'verbose',
-            },
-            'request.file': {
-                'level': 'DEBUG',
-                'class': 'logging.handlers.RotatingFileHandler',
-                'filename': os.path.join(BASE_DIR, 'log/django/request.log'),
-                'maxBytes': 1024 * 1024 * 5,  # 5 MB
-                'backupCount': 2,
-                'formatter': 'server',
-
-            },
-            'controller': {
-                'level': 'INFO',
-                'class': 'apps.gp.handlers.DBHandler',
-                'model': 'apps.gp.models.ControllerLog',
-                'expiry': 86400,
-                'formatter': 'server',
-            }
+        'controller.file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'log/controller/general.log'),
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 50,
+            'formatter': 'verbose',
         },
+        'request.file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'log/django/request.log'),
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 2,
+            'formatter': 'server',
+
+        },
+        'controller': {
+            'level': 'INFO',
+            'class': 'apps.gp.handlers.DBHandler',
+            'model': 'apps.gp.models.ControllerLog',
+            'expiry': 86400,
+            'formatter': 'server',
+        }
+    },
 }
 CACHES = {
     'default': {

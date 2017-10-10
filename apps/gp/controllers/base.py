@@ -1,6 +1,7 @@
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import Connection, DownloadHistory, SendHistory
+from apps.gp.models import Connection
+from apps.history.models import DownloadHistory, SendHistory
 from django.core.serializers import serialize
 import logging
 import httplib2
@@ -74,7 +75,7 @@ class BaseController(object):
                     for item in result['downloaded_data']:
                         DownloadHistory.objects.create(gear_id=str(self._plug.gear_source.first().id),
                                                        plug_id=str(self._plug.id), connection=serialized_connection,
-                                                       raw=json.dumps(item['raw']), connector=self.connector,
+                                                       raw=json.dumps(item['raw']), connector_id=self.connector.id,
                                                        identifier=item['identifier'], )
                     return result['last_source_record']
                 except KeyError:
@@ -111,11 +112,11 @@ class BaseController(object):
                 result = self.send_stored_data(data_list, **kwargs)
                 serialized_connection = serialize('json', [self._connection_object, ])
                 for item in result:
-                    SendHistory.objects.create(connector=self.connector, gear_id=str(self._plug.gear_target.first().id),
-                                               plug_id=str(self._plug.id), connection=serialized_connection,
+                    SendHistory.objects.create(connector_id=self.connector.id, connection=serialized_connection,
+                                               gear_id=str(self._plug.gear_target.first().id),
+                                               plug_id=str(self._plug.id),
                                                data=json.dumps(item['data']), response=item['response'],
                                                sent=item['sent'], identifier=item['identifier'])
-
                 return [i['identifier'] for i in result]
             except KeyError:
                 return result
