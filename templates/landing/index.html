@@ -7,17 +7,17 @@
             <div class="item active container-fluid slide-item">
                 <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
                 <div class="carousel-caption slide-caption slide-text">
-                    Conectándote <br />
-                    <span class="slide-text-light"> en todos </span> <br />
+                    Conectándote <br/>
+                    <span class="slide-text-light"> en todos </span> <br/>
                     <span class="slide-color-aqua"> lados </span>
                 </div>
             </div>
         </div>
-         <a class="left carousel-control slide-control" href="#carousel-example-generic" data-slide="prev">
+        <a class="left carousel-control slide-control" href="#carousel-example-generic" data-slide="prev">
              <span class="slide-arrow">
                  <img src="{% static 'img/landing/arrow_left.png' %}">
              </span>
-         </a>
+        </a>
         <a class="right carousel-control slide-control" href="#carousel-example-generic" data-slide="next">
             <span class="slide-arrow">
                 <img src="{% static 'img/landing/arrow_right.png' %}">
@@ -26,22 +26,23 @@
         </a>
     </div>
     <div class="main-text hidden-xs">
-        <div class="col-md-7"> &nbsp; </div>
+        <div class="col-md-7"> &nbsp;</div>
         <div class="col-md-5">
-            <div class="col-md-1"> &nbsp; </div>
+            <div class="col-md-1"> &nbsp;</div>
             <div class="col-md-9 bg-form">
-                <form method="post" action="">
+                <form method="post" action="{% url 'allauth:account_signup' %}" autocomplete="off">
+                    {% csrf_token %}
                     <div class="col-md-12">
-                        <input type="text" name="name" placeholder="Nombre" class="input-form">
+                        {{ register_form.first_name }}
                     </div>
                     <div class="col-md-12">
-                        <input type="text" name="lastname" placeholder="Apellido" class="input-form">
+                        {{ register_form.last_name }}
                     </div>
                     <div class="col-md-12">
-                        <input type="email" name="email" placeholder="Email" class="input-form">
+                        {{ register_form.email }}
                     </div>
                     <div class="col-md-12">
-                        <input type="password" name="password" placeholder="Password" class="input-form">
+                        {{ register_form.password1 }}
                     </div>
                     <div class="col-md-12 padding-checkbox">
                         <input type="checkbox" name="notification" value="True" checked>
@@ -52,14 +53,14 @@
                     </div>
                 </form>
             </div>
-            <div class="col-md-2"> &nbsp; </div>
+            <div class="col-md-2"> &nbsp;</div>
         </div>
     </div>
-    <div class="col-md-12 index-space1"> &nbsp; </div>
+    <div class="col-md-12 index-space1"> &nbsp;</div>
     <div class="col-md-12 text-center">
         <img src="{% static 'img/landing/logo_what.png' %}">
     </div>
-    <div class="col-md-12 index-space2"> &nbsp; </div>
+    <div class="col-md-12 index-space2"> &nbsp;</div>
     <div class="col-md-12 text-center">
         <span class="text-what">¿Qué es GearPlug?</span>
         <br/>
@@ -69,21 +70,21 @@
             efectivos por medio de diferentes soluciones integrales de marketing digital que ofrece nuestro software.
         </p>
     </div>
-    <div class="col-md-12 index-space3"> &nbsp; </div>
+    <div class="col-md-12 index-space3"> &nbsp;</div>
     <div class="col-md-12">
         <hr class="hr-separator">
     </div>
-    <div class="col-md-12 index-space4"> &nbsp; </div>
+    <div class="col-md-12 index-space4"> &nbsp;</div>
     <div class="col-md-12 text-center">
         <span class="text-what">¡Crea los Gear que quieras!</span> <br/>
         <p class="text-two">(2 aplicaciones por gear)</p>
     </div>
-    <div class="col-md-12 index-space5"> &nbsp; </div>
+    <div class="col-md-12 index-space5"> &nbsp;</div>
     <div class="col-md-12 text-center">
         <img src="{% static 'img/landing/process.png' %}">
     </div>
-    <div class="col-md-12 index-space6"> &nbsp; </div>
-    <div class="col-md-1"> &nbsp; </div>
+    <div class="col-md-12 index-space6"> &nbsp;</div>
+    <div class="col-md-1"> &nbsp;</div>
     <div class="col-md-10">
         <div class="col-md-4">
             <div class="col-md-2">
@@ -92,10 +93,10 @@
             <div class="col-md-10 text-bullet">Selecciona el Origen</div>
         </div>
         <div class="col-md-4">
-            <div class="col-md-2" >
+            <div class="col-md-2">
                 <img src="{% static 'img/landing/bullet2.png' %}">
             </div>
-            <div class="col-md-10 text-bullet1"> Selecciona la acción que deseas que realice el Gear. </div>
+            <div class="col-md-10 text-bullet1"> Selecciona la acción que deseas que realice el Gear.</div>
         </div>
         <div class="col-md-4">
             <div class="col-md-2">
@@ -104,8 +105,8 @@
             <div class="col-md-10 text-bullet">Selecciona el destino</div>
         </div>
     </div>
-    <div class="col-md-1"> &nbsp; </div>
-    <div class="col-md-12 index-space6"> &nbsp; </div>
+    <div class="col-md-1"> &nbsp;</div>
+    <div class="col-md-12 index-space6"> &nbsp;</div>
     <div class="col-md-12 text-center">
 
     </div>

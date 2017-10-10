@@ -35,18 +35,18 @@
         </div>
         <div class="list-wrapper">
             <div class="row">
-                {% for i in 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' %}
-                <div class="col-md-2">
-                    <div class="list-item">
-                        <div class="image1">
-                            <img src="{% static 'img/landing/logo_mysql.png' %}">
-                        </div>
-                        <div class="divider"></div>
-                        <div class="name1">
-                            MySQL
+                {% for connector in object_list %}
+                    <div class="col-md-2">
+                        <div class="list-item">
+                            <div class="image1">
+                                <img src="{{ connector.icon.url }}" width="110" height="110">
+                            </div>
+                            <div class="divider"></div>
+                            <div class="name1">
+                                {{ connector.name }}
+                            </div>
                         </div>
                     </div>
-                </div>
                 {% endfor %}
             </div>
         </div>
