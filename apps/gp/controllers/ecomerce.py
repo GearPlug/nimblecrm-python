@@ -415,6 +415,8 @@ class ShopifyController(BaseController):
                 webhook.plug.save()
         return HttpResponse(status=200)
 
+    def has_webhook(self):
+        return True
 
 class MagentoController(BaseController):
     _connection = None

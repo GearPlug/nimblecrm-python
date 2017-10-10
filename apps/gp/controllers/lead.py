@@ -35,7 +35,8 @@ class GoogleFormsController(GoogleBaseController):
                 credentials_json = self._connection_object.credentials_json
                 if self._plug is not None:
                     try:
-                        self._spreadsheet_id = self._plug.plug_action_specification.get(action_specification__name__iexact='form').value
+                        self._spreadsheet_id = self._plug.plug_action_specification.get(
+                            action_specification__name__iexact='form').value
                     except Exception as e:
                         print("Error asignando los specifications GoogleForms 2")
             except Exception as e:
@@ -106,7 +107,8 @@ class GoogleFormsController(GoogleBaseController):
         http_auth = credential.authorize(httplib2.Http())
         drive_service = discovery.build('drive', 'v3', http=http_auth)
         files = drive_service.files().list().execute()
-        sheet_list = tuple(f for f in files['files'] if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet')
+        sheet_list = tuple(
+            f for f in files['files'] if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet')
         return sheet_list
 
     def get_worksheet_list(self, sheet_id):
@@ -122,7 +124,8 @@ class GoogleFormsController(GoogleBaseController):
         http_auth = credential.authorize(httplib2.Http())
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
         range = self.get_worksheet_list(self._spreadsheet_id)
-        res = sheets_service.spreadsheets().values().get(spreadsheetId=self._spreadsheet_id, range=range[0]['title']).execute()
+        res = sheets_service.spreadsheets().values().get(spreadsheetId=self._spreadsheet_id,
+                                                         range=range[0]['title']).execute()
         values = res['values']
         if from_row is None and limit is None:
             return values
@@ -178,6 +181,7 @@ class FacebookLeadsController(BaseController):
                 raise ControllerError(code=1, controller=ConnectorEnum.FacebookLeads,
                                       message='Failed to get the token. \n{}'.format(str(e)))
             try:
+
                 self._client = Client(settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET, 'v2.10')
                 self._client.set_access_token(self._token)
             except UnknownError as e:
@@ -305,7 +309,7 @@ class FacebookLeadsController(BaseController):
                 for d in raw_data:
                     for k, v in d.items():
                         new_lead.append(StoredData(name=k, value=v or '', object_id=leadgen_id,
-                                               connection=connection_object.connection, plug=plug))
+                                                   connection=connection_object.connection, plug=plug))
                     new_leads.append(new_lead)
         if new_leads:
             leads_result = []
@@ -319,9 +323,11 @@ class FacebookLeadsController(BaseController):
                 for lead in raw_data:
                     # TODO: Corregir
                     if stored_data.object_id == lead['leadgen_id']:
-                        leads_result.append({'identifier': {'name': 'leadgen_id', 'value': lead['leadgen_id']}, 'raw': lead, 'is_stored': is_stored})
+                        leads_result.append(
+                            {'identifier': {'name': 'leadgen_id', 'value': lead['leadgen_id']}, 'raw': lead,
+                             'is_stored': is_stored})
                         break
-                # data.remove(lead)
+                        # data.remove(lead)
             obj_last_source_record = leads_result[-1]['raw']['created_time_timestamp']
             return {'downloaded_data': leads_result, 'last_source_record': obj_last_source_record}
         return False
@@ -413,6 +419,9 @@ class FacebookLeadsController(BaseController):
                         plug.save(update_fields=['is_tested', ])
             response.status_code = 200
         return response
+
+    def has_webhook(self):
+        return True
 
 
 class SurveyMonkeyController(BaseController):
@@ -584,6 +593,9 @@ class SurveyMonkeyController(BaseController):
                 webhook.plug.save()
         return HttpResponse(status=200)
 
+    def has_webhook(self):
+        return True
+
 
 class TypeFormController(BaseController):
     _client = None
@@ -695,7 +707,8 @@ class TypeFormController(BaseController):
                     break
                 is_stored = True
             obj_raw = None
-            result_list.append({'identifier': {'name': 'token', 'value': stored_data.object_id}, 'is_stored': is_stored, 'raw': list_data_answers[0]})
+            result_list.append({'identifier': {'name': 'token', 'value': stored_data.object_id}, 'is_stored': is_stored,
+                                'raw': list_data_answers[0]})
         obj_last_source_record = False
         return {'downloaded_data': result_list, 'last_source_record': obj_last_source_record}
 

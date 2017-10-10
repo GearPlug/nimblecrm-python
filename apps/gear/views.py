@@ -7,7 +7,8 @@ from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, DownloadHistory, SendHistory
+from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
+from apps.history.models import DownloadHistory, SendHistory
 from oauth2client import client
 import httplib2
 import json
