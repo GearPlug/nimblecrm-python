@@ -37,7 +37,8 @@
     border-radius: 15px;
     -moz-border-radius: 15px;
     -webkit-border-radius: 15px;
-    border-style: none;
+    /*border-style: none;*/
+    border: 1px solid #F1F2F4;
     color: #9E9BA2;
     font-family: 'Sansation';
     font-size: 1.6em;
