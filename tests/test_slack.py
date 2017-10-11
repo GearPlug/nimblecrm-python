@@ -157,7 +157,7 @@ class SlackControllerTestCases(TestCase):
     def test_post_message_to_target(self):
         """Verifica que se escriba un mensaje en un canal"""
         result = self.controller_target.post_message_to_target('Hashtag #nerioOnIce', os.environ.get('TEST_SLACK_CHANNEL'))
-        self.assertIsInstance(result, Slacker)
+        self.assertEqual(result.__dict__['body']['channel'], os.environ.get('TEST_SLACK_CHANNEL'))
 
     def test_post_message_to_channel(self):
         """Verifica que se escriba un mensaje en un canal"""
