@@ -10,9 +10,9 @@ urlpatterns = [
                   url(r'^gear/', include(gear_urls, namespace='gear')),
                   url(r'^plug/', include('apps.plug.urls', namespace='plug')),
                   url(r'^connection/', include('apps.connection.urls', namespace='connection')),
-                  url(r'^accounts/', include('allauth.urls')),
-                  url(r'^home/', include('apps.home.urls', namespace='home')),
+                  url(r'^accounts/', include('allauth.urls', namespace='allauth')),
                   url(r'^', include('apps.landing.urls', namespace='landing')),
+                  url(r'^', include('apps.home.urls', namespace='home')),
               ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
               + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
