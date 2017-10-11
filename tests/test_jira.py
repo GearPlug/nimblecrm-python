@@ -2,8 +2,9 @@ import os
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from apps.gp.models import Connection, JiraConnection, Plug, Action, ActionSpecification, PlugActionSpecification, \
-    Gear, GearMap, StoredData, GearMapData, Webhook, DownloadHistory
+    Gear, GearMap, StoredData, GearMapData, Webhook
 from apps.gp.controllers.project_management import JIRAController
+from apps.history.models import DownloadHistory
 from jira import JIRA as JiraClient
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField

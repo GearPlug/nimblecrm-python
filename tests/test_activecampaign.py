@@ -7,8 +7,8 @@ from apps.gp.enum import ConnectorEnum
 from django.contrib.auth.models import User
 from apps.gp.controllers.crm import ActiveCampaignController
 from apps.gp.models import Connection, ActiveCampaignConnection, Action, Plug, ActionSpecification, \
-    PlugActionSpecification, Webhook, StoredData, Gear, GearMap, GearMapData, DownloadHistory
-
+    PlugActionSpecification, Webhook, StoredData, Gear, GearMap, GearMapData
+from apps.history.models import DownloadHistory
 
 class ActiveCampaignControllerTestCases(TestCase):
     """

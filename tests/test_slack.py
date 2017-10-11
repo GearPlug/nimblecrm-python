@@ -2,7 +2,8 @@ import os
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from apps.gp.models import Connection, SlackConnection, Plug, Action, \
-    ActionSpecification, PlugActionSpecification, Gear, StoredData, DownloadHistory
+    ActionSpecification, PlugActionSpecification, Gear, StoredData
+from apps.history.models import DownloadHistory
 from apps.gp.controllers.im import SlackController
 from slacker import Slacker
 from apps.gp.enum import ConnectorEnum
