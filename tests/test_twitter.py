@@ -2,7 +2,8 @@ import os
 from apps.gp.controllers.social import TwitterController
 from apps.gp.controllers.database import MySQLController
 from apps.gp.models import User, ConnectorEnum, Connection, Action, Plug, ActionSpecification, TwitterConnection, \
-    PlugActionSpecification, Gear, MySQLConnection, GearMap, GearMapData, StoredData, SendHistory
+    PlugActionSpecification, Gear, MySQLConnection, GearMap, GearMapData, StoredData
+from apps.history.models import SendHistory
 from django.test import TestCase
 from collections import OrderedDict
 

@@ -6,7 +6,8 @@ from collections import OrderedDict
 from apps.gp.enum import ConnectorEnum
 from django.contrib.auth.models import User
 from apps.gp.models import Connection, ActiveCampaignConnection, Action, Plug, ActionSpecification, \
-    PlugActionSpecification, Webhook, StoredData, Gear, GearMap, GearMapData, DownloadHistory, TypeFormConnection
+    PlugActionSpecification, Webhook, StoredData, Gear, GearMap, GearMapData, TypeFormConnection
+from apps.history.models import DownloadHistory
 from apps.gp.controllers.lead import TypeFormController
 
 class TypeFormControllerTestCases(TestCase):

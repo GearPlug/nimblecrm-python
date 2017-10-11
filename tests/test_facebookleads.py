@@ -4,7 +4,8 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.shortcuts import HttpResponse
 from apps.gp.models import Connection, FacebookLeadsConnection, Plug, Action, ActionSpecification, \
-    PlugActionSpecification, Gear, StoredData, GearMap, DownloadHistory
+    PlugActionSpecification, Gear, StoredData, GearMap
+from apps.history.models import DownloadHistory
 from apps.gp.controllers.lead import FacebookLeadsController
 from facebookmarketing.client import Client as FacebookClient
 from apps.gp.enum import ConnectorEnum

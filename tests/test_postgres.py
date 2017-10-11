@@ -2,7 +2,8 @@ import os
 from django.test import TestCase
 from django.contrib.auth.models import User
 from apps.gp.models import Connection, PostgreSQLConnection, Plug, Action, StoredData, PlugActionSpecification, \
-    ActionSpecification, Gear, GearMap, GearMapData, DownloadHistory, SendHistory
+    ActionSpecification, Gear, GearMap, GearMapData
+from apps.history.models import DownloadHistory, SendHistory
 from apps.gp.controllers.database import PostgreSQLController
 from apps.gp.enum import ConnectorEnum
 from collections import OrderedDict
