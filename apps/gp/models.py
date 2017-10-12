@@ -588,6 +588,17 @@ class Webhook(models.Model):
     def __str__(self):
         return '%s webhook of %s' % (self.name, self.plug)
 
+class ListSubscriptions(models.Model):
+    title = models.CharField('title', max_length=100)
+    list = models.ManyToManyField(User, through='Subscription')
+
+    def __str__(self):
+        return self.title
+
+class Subscription(models.Model):
+    list_subscription = models.ForeignKey(ListSubscriptions)
+    user = models.ForeignKey(User)
+
 
 class DBLogEntry(models.Model):
     time = models.DateTimeField(auto_now_add=True)
