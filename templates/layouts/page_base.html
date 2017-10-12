@@ -1,5 +1,5 @@
 {% extends 'layouts/base.html' %}
-{% load static %}
+{% load static i18n %}
 
 
 {% block scripts %}
@@ -12,36 +12,27 @@
     <link href="{% static 'css/landing/contactus.css' %}" rel="stylesheet">
     <link href="{% static 'css/landing/apps.css' %}" rel="stylesheet">
 {% endblock %}
-{% block body_class %}{% endblock %}
+{% block body_class %}ayuda{% endblock %}
 {% block body_base %}
     <div class="content">
         {% block header_content %}
             <header>
                 <nav class="nav_spaces">
                     <div class="row">
-                        <div class="col-md-1"> &nbsp; </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3 col-md-offset-1">
                             <a href="{% url 'landing:index' %}">
                                 <img src="{% static 'img/landing/logo_header.png' %}" class="img-responsive logo_header">
                             </a>
                         </div>
-                        <div class="col-md-3"> &nbsp; </div>
-                        <div class="col-md-4 text_menu text-center">
-                            <div class="col-md-3">
-                                <a {% if request.path == "/about/" %}class="selected_page"{% endif %}
-                                   href="{% url 'landing:about' %}">Nosotros</a>
-                            </div>
-                            <div class="col-md-3">
-                                <a {% if request.path == "/apps/directory/" %}class="selected_page"{% endif %}
-                                   href="{% url 'landing:apps_directory' %}">Apps</a>
-                            </div>
-                            <div class="col-md-3">
-                                <a href="#">Ingresar</a>
-                            </div>
-                            <div class="col-md-3">
-                                <a {% if request.path == "/contact/" %}class="selected_page"{% endif %}
-                                   href="{% url 'landing:contact' %}">Contacto</a>
-                            </div>
+                        <div class="col-md-6 col-md-offset-2 text_menu">
+                            <a {% if request.path == "/about/" %}class="selected_page"{% endif %}
+                               href="{% url 'landing:about' %}">{% trans 'Nosotros' %}</a>
+                            <a href="#">{% trans 'Como Funciona' %}</a>
+                            <a {% if request.path == "/apps/directory/" %}class="selected_page"{% endif %}
+                               href="{% url 'landing:apps_directory' %}">{% trans 'Apps' %}</a>
+                            <a href="#">{% trans 'Ingresar' %}</a>
+                            <a {% if request.path == "/contact/" %}class="selected_page"{% endif %}
+                               href="{% url 'landing:contact' %}">{% trans 'Contacto' %}</a>
                         </div>
                         <div class="col-md-1"> &nbsp; </div>
                     </div>

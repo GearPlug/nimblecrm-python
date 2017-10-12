@@ -1,0 +1,250 @@
+.content {
+    /*Mover*/
+    font-family: "Sansation", sans-serif;
+    /**/
+
+}
+
+.dashboard-header {
+    height: 108px;
+    padding: 1% 3%;
+    box-sizing: border-box;
+}
+
+.dashboard-header .left-side {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.dashboard-header .left-side .logo {
+    display: inline-block;
+}
+
+.dashboard-header .left-side .name {
+    font-size: 2.50em;
+    color: #9d9ba1;
+    display: inline-block;
+}
+
+.dashboard-header .right-side {
+    float: right;
+    font-size: 2.00em;
+    color: #9d9ba1;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.dashboard-header .right-side .user, .divider, .search {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.dashboard-header .right-side .user .name, .icon {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.dashboard-header .right-side .user .name {
+    padding-top: 15px;
+}
+
+.dashboard-header .right-side .user .icon {
+    padding-top: 5px;
+}
+
+.dashboard-header .right-side .divider {
+    width: 1px;
+    height: 60px;
+    background-color: #e4e4e8;
+    margin: 0 25px 0 18px;
+}
+
+.dashboard-header .right-side .search {
+    position: relative;
+    padding-top: 15px;
+}
+
+.dashboard-header .right-side .search img {
+    position: absolute;
+    top: 45%;
+    left: 5%;
+}
+
+.dashboard-header .right-side .search input {
+    width: 376px;
+    height: 40px;
+    border: solid 2px #dddde1;
+
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+    border-radius: 20px;
+
+    font-size: 0.80em;
+    padding-left: 15%;
+
+    outline: none;
+}
+
+.dashboard-panel {
+    width: 17%;
+    height: calc(100% - 108px);
+    display: inline-block;
+    background: url('../../img/console/g5842.png') bottom center/100% no-repeat, #005ea7;
+
+    vertical-align: top;
+
+    padding: 35px 0 0 0;
+    box-sizing: border-box;
+}
+
+.dashboard-panel .menu .item {
+    padding: 3% 15%;
+    margin: 3% 0;
+}
+
+.dashboard-panel .menu .item.logout {
+    background-color: #00e08f;
+}
+
+.dashboard-panel .menu .item .image {
+    width: 41px;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.dashboard-panel .menu .item .text {
+    width: calc(100% - 46px);
+    display: inline-block;
+    vertical-align: top;
+
+    font-size: 1.80em;
+    color: #FFFFFF;
+    padding: 0 0 0 5px;
+    line-height: 1em;
+}
+
+.dashboard-panel .menu .divider {
+    width: 80%;
+    height: 1px;
+    background-color: #0069c9;
+    margin: 8% auto;
+    display: block;
+}
+
+.dashboard-panel .menu .item.logout .text {
+    color: #0062a6;
+}
+
+.dashboard-content {
+    width: 83%;
+    height: calc(100% - 108px);
+    display: inline-block;
+    background-color: #f8f8f8;
+}
+
+.content-header {
+    padding-top: 75px;
+}
+
+.content-header .image, .info {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.content-header .info {
+    padding: 35px 0 0 15px;
+}
+
+.content-header .info .user {
+    font-size: 1.80em;
+    color: #9d9ba1;
+    line-height: 0.80em;
+}
+
+.content-header .info .description {
+    font-style: italic;
+    font-size: 1.80em;
+    color: #9d9ba1;
+}
+
+.content-header .info .plan {
+    font-family: 'Sansation Bold';
+    text-align: center;
+
+    margin: 6px 0 0 0;
+    padding-top: 2px;
+    width: 140px;
+    height: 26px;
+    background-color: #005ca7;
+    color: #00e08f;
+
+    border-radius: 10px 10px 10px 10px;
+    -moz-border-radius: 10px 10px 10px 10px;
+    -webkit-border-radius: 10px 10px 10px 10px;
+    border: 0px solid #000000;
+}
+
+.content-header .divider {
+    width: 1px;
+    height: 176px;
+    background-color: #c1c0c4;
+}
+
+.content-header .divider2 {
+    width: 83%;
+    height: 1px;
+    background-color: #c1c0c4;
+    margin: 22px auto 0 auto;
+}
+
+.content-header .gp-info, .gp-bar {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.content-header .gp-info {
+    padding: 35px 0 0 0;
+}
+
+.content-header .gp-bar {
+    margin-left: 60px;
+}
+
+.content-header .gp-info .connectors, .credits {
+    font-size: 1.30em;
+    color: #9d9ba1;
+}
+
+.content-header .gp-info .available {
+    font-family: 'Sansation Bold';
+    text-align: center;
+
+    margin: 45px 0 0 55px;
+    padding-top: 2px;
+    background-color: #00e08f;
+    color: #005ca7;
+    text-transform: uppercase;
+
+    width: 140px;
+    height: 26px;
+
+    border-radius: 10px 10px 10px 10px;
+    -moz-border-radius: 10px 10px 10px 10px;
+    -webkit-border-radius: 10px 10px 10px 10px;
+    border: 0px solid #000000;
+}
+
+.info-tool {
+    width: 93px;
+    height: 81px;
+    position: fixed;
+    top: 260px;
+    right: 0;
+
+    background: url("../../img/console/g6736.png") center/60% no-repeat, #00e08f;
+
+    border-radius: 30px 0px 0px 30px;
+    -moz-border-radius: 30px 0px 0px 30px;
+    -webkit-border-radius: 30px 0px 0px 30px;
+    border: 0px solid #000000;
+}

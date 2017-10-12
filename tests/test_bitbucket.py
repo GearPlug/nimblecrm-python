@@ -2,12 +2,12 @@ import os
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from apps.gp.models import Connection, BitbucketConnection, Plug, Action, \
-    ActionSpecification, PlugActionSpecification, Gear, StoredData, DownloadHistory, Webhook
+    ActionSpecification, PlugActionSpecification, Gear, StoredData, Webhook
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from collections import OrderedDict
-
+from apps.history.models import DownloadHistory
 
 class BitbucketControllerTestCases(TestCase):
     """

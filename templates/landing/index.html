@@ -1,5 +1,5 @@
 {% extends 'layouts/page_base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
     <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
@@ -7,9 +7,11 @@
             <div class="item active container-fluid slide-item">
                 <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
                 <div class="carousel-caption slide-caption slide-text">
-                    Conectándote <br/>
-                    <span class="slide-text-light"> en todos </span> <br/>
-                    <span class="slide-color-aqua"> lados </span>
+                    {% blocktrans %}
+                        Conectándote <br/>
+                        <span class="slide-text-light"> en todos </span> <br/>
+                        <span class="slide-color-aqua"> lados </span>
+                    {% endblocktrans %}
                 </div>
             </div>
         </div>
@@ -43,7 +45,7 @@
     </div>
     <div class="col-md-12 index-space2"> &nbsp;</div>
     <div class="col-md-12 text-center">
-        <span class="text-what">¿Qué es GearPlug?</span>
+        <span class="text-what">{% trans '¿Qué es GearPlug?' %}</span>
         <br/>
         <p class="text-p">
             GearPlug es un software de automatización y optimización de todas las herramientas digitales para que su
