@@ -169,3 +169,4 @@ ACCOUNT_EMAIL_REQUIRED = True
 LOGIN_REDIRECT_URL = '/dashboard/'
 
 ACCOUNT_SIGNUP_FORM_CLASS = 'apps.gp.forms.SignupForm'
+# ACCOUNT_SIGNUP_FORM_CLASS = 'apps.gp.forms.OptionsForm'
