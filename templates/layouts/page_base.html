@@ -25,11 +25,14 @@
                             </a>
                         </div>
                         <div class="col-md-6 col-md-offset-2 text_menu">
-                                <a href="{% url 'landing:about' %}">{% trans 'Nosotros' %}</a>
-                                <a href="#">{% trans 'Como Funciona' %}</a>
-                                <a href="{% url 'landing:apps_directory' %}">{% trans 'Apps' %}</a>
-                                <a href="#">{% trans 'Ingresar' %}</a>
-                                <a href="{% url 'landing:contact' %}">{% trans 'Contacto' %}</a>
+                            <a {% if request.path == "/about/" %}class="selected_page"{% endif %}
+                               href="{% url 'landing:about' %}">{% trans 'Nosotros' %}</a>
+                            <a href="#">{% trans 'Como Funciona' %}</a>
+                            <a {% if request.path == "/apps/directory/" %}class="selected_page"{% endif %}
+                               href="{% url 'landing:apps_directory' %}">{% trans 'Apps' %}</a>
+                            <a href="#">{% trans 'Ingresar' %}</a>
+                            <a {% if request.path == "/contact/" %}class="selected_page"{% endif %}
+                               href="{% url 'landing:contact' %}">{% trans 'Contacto' %}</a>
                         </div>
                         <div class="col-md-1"> &nbsp; </div>
                     </div>

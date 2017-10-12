@@ -1,4 +1,5 @@
 from django.views.generic import TemplateView, ListView
+from django.urls import reverse_lazy
 from django.db.models import Q
 from allauth.account.views import SignupView
 from apps.landing.forms import NameSignupForm
@@ -12,7 +13,7 @@ class IndexView(TemplateView):
         context = super(IndexView, self).get_context_data(**kwargs)
         context['signup_form'] = NameSignupForm()
         context['top_apps'] = Connector.objects.filter(Q(name__in=['slack', 'gmail', 'mysql', 'facebookleads',
-                                                                   'sugarcrm', 'mailchimp']))
+                                                                   'googlespreadsheet', 'mailchimp']))
         return context
 
 
@@ -32,12 +33,11 @@ class AppsView(ListView):
         return self.model.objects.filter(is_active=True)
 
 
-class CustomSignup(SignupView, IndexView):
+class CustomSignup(SignupView):
     form_class = NameSignupForm
-    template_name = 'landing/index.html'
+    template_name = 'landing/snippets/signup_form.html'
+    http_method_names = 'post'
+    success_url = reverse_lazy('home:dashboard')
 
-    def __init__(self, *args, **kwargs):
-        return super(SignupView, self).__init__(*args, **kwargs)
-
-    def form_invalid(self, form):
+    def form_invalid(self, form, **kwargs):
         return self.render_to_response(self.get_context_data(signup_form=form))
