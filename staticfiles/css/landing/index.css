@@ -1,9 +1,13 @@
-.slide-item{
+.slide-item {
     height: 710px;
     padding: 0;
 }
-.slide{ width: 100%; }
-.slide-caption{
+
+.slide {
+    width: 100%;
+}
+
+.slide-caption {
     color: white;
     font-family: 'Sansation';
     font-size: 4.6em;
@@ -15,14 +19,25 @@
     text-shadow: inherit;
     top: 5.9%;
 }
-.slide-text-light{ font-family: 'Sansation Light'; }
-.slide-color-aqua{ color: #00E08F; }
-.slide-control{ background-image: none !important; }
+
+.slide-text-light {
+    font-family: 'Sansation Light';
+}
+
+.slide-color-aqua {
+    color: #00E08F;
+}
+
+.slide-control {
+    background-image: none !important;
+}
+
 .slide-arrow {
     position: absolute;
     top: 44%;
 }
-.bg-form{
+
+.bg-form {
     background-color: #F1F2F4;
     border-radius: 43px 43px 51px 51px;
     -moz-border-radius: 43px 43px 51px 51px;
@@ -32,7 +47,8 @@
     padding: 48px 0 0 0;
     width: 60.5%;
 }
-.input-form{
+
+.input-form {
     background-color: white;
     border-radius: 15px;
     -moz-border-radius: 15px;
@@ -47,14 +63,19 @@
     padding-left: 22px;
     width: 88%;
 }
-.checkbox-form{
+
+.checkbox-form {
     color: black;
     font-family: 'Sansation';
     font-size: 1.42em;
     padding-left: 13px;
 }
-.padding-checkbox{ padding-left: 41px; }
-.button_form{
+
+.padding-checkbox {
+    padding-left: 41px;
+}
+
+.button_form {
     background-color: #005CA7;
     color: #00E08F;
     font-size: 1.9em;
@@ -62,72 +83,110 @@
     margin: 26px 0 0 24px;
     width: 88%;
 }
+
 .main-text {
     position: absolute;
     top: 50px;
     width: 96.66666666666666%;
     color: #FFF;
 }
+
 .btn-min-block {
     min-width: 170px;
     line-height: 26px;
 }
+
 .btn-clear {
     color: #FFF;
     background-color: transparent;
     border-color: #FFF;
     margin-right: 15px;
 }
+
 .btn-clear:hover {
     color: #000;
     background-color: #FFF;
 }
-.index-space1{ height: 87px; }
-.index-space2{ height: 30px; }
-.index-space3{ height: 60px; }
-.index-space4{ height: 34px; }
-.index-space5{ height: 84px; }
-.index-space6{ height: 72px; }
-.index-space7{ height: 120px; }
-.index-space8{ height: 61px; }
-.text-what{
+
+.index-space1 {
+    height: 87px;
+}
+
+.index-space2 {
+    height: 30px;
+}
+
+.index-space3 {
+    height: 60px;
+}
+
+.index-space4 {
+    height: 34px;
+}
+
+.index-space5 {
+    height: 84px;
+}
+
+.index-space6 {
+    height: 72px;
+}
+
+.index-space7 {
+    height: 120px;
+}
+
+.index-space8 {
+    height: 61px;
+}
+
+.text-what {
     color: #9E9BA2;
     font-family: 'Sansation';
     font-size: 4.6em;
 }
-.text-p{
+
+.text-p {
     color: #727277;
     font-family: 'Sansation Light';
     font-size: 1.9em;
     line-height: 41px;
     padding: 2.6% 20% 0;
 }
-.hr-separator{ color: #E9EAED; }
-.text-two{
+
+.hr-separator {
+    color: #E9EAED;
+}
+
+.text-two {
     color: #005CA7;
     font-family: 'Sansation';
     font-size: 2.3em;
     margin-top: -0.8%;
 }
-.text-bullet{
+
+.text-bullet {
     font-family: 'Sansation Light';
     font-size: 2em;
     color: #727277;
     padding: 2.5% 0 0 4%;
 }
-.text-bullet1{
+
+.text-bullet1 {
     font-family: 'Sansation Light';
     font-size: 2em;
     color: #727277;
     line-height: 28px;
     padding: 1.4% 0 0 4%;
 }
-.banner{
+
+.banner {
     position: relative;
     width: 100%;
     z-index: 1;
 }
-.text-connect{
+
+.text-connect {
     background: url("../../img/landing/bg_banner1.png") no-repeat scroll 0 0;
     background-size: cover;
     color: #4A474B;
@@ -135,19 +194,23 @@
     font-size: 4.1em;
     padding: 1.7% 0 2.3% 0;
 }
-.text-us{
+
+.text-us {
     color: #727277;
     font-family: 'Sansation Light';
     font-size: 2.8em;
 }
+
 .list-wrapper {
     margin: 50px 0 99px 0;
     width: 80%;
 }
+
 .list-wrapper .list-item {
     text-align: center;
     margin: 5% 0 10% 0;
 }
+
 .list-wrapper .list-item .divider {
     width: 98px;
     height: 1px;
@@ -156,30 +219,43 @@
     margin: 5% 0 1% 0;
 
 }
+
 .list-wrapper .list-item .name1 {
     font-family: "Sansation Light";
     font-size: 1.40em;
     color: #727277;
 }
-.bg_comments{ background: url("../../img/landing/icons3.png") no-repeat scroll top right #005ca7; }
-.title-comments{
+
+.bg_comments {
+    background: url("../../img/landing/icons3.png") no-repeat scroll top right #005ca7;
+}
+
+.title-comments {
     color: white;
     font-family: "Sansation Bold";
     font-size: 4.1em;
     margin-top: 91px;
 }
-.hr-comments{
+
+.hr-comments {
     border-bottom: #00E08F solid 4px;
     margin: -0.6% 0 0 39.1%;
     width: 16.8%;
 }
+
 .list-wrapper1 {
     margin-bottom: 4.5%;
     margin-top: 4.5%;
 }
+
 .name11 {
     font-family: "Sansation";
     font-size: 1.1em;
     color: white;
     margin-top: 2%;
+}
+
+.selected_page {
+    color: #005CA7 !important;
+    font-family: 'Sansation Bold' !important;;
 }

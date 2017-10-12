@@ -28,16 +28,19 @@
                         <div class="col-md-3"> &nbsp; </div>
                         <div class="col-md-4 text_menu text-center">
                             <div class="col-md-3">
-                                <a href="{% url 'landing:about' %}">Nosotros</a>
+                                <a {% if request.path == "/about/" %}class="selected_page"{% endif %}
+                                   href="{% url 'landing:about' %}">Nosotros</a>
                             </div>
                             <div class="col-md-3">
-                                <a href="{% url 'landing:apps_directory' %}">Apps</a>
+                                <a {% if request.path == "/apps/directory/" %}class="selected_page"{% endif %}
+                                   href="{% url 'landing:apps_directory' %}">Apps</a>
                             </div>
                             <div class="col-md-3">
                                 <a href="#">Ingresar</a>
                             </div>
                             <div class="col-md-3">
-                                <a href="{% url 'landing:contact' %}">Contacto</a>
+                                <a {% if request.path == "/contact/" %}class="selected_page"{% endif %}
+                                   href="{% url 'landing:contact' %}">Contacto</a>
                             </div>
                         </div>
                         <div class="col-md-1"> &nbsp; </div>
