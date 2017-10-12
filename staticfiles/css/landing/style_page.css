@@ -1,7 +1,4 @@
-.ayuda-gp-index{
-    /*background: url("../../img/landing/plantilla.png") no-repeat scroll 50% 20px;
-    height: 3880px;*/
-}
+.ayuda{ background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 21px; }
 .bg_page{ background-color: white; }
 .row{
     margin: 0;
@@ -10,7 +7,7 @@
 .sp{ padding: 0; }
 
 /* Header */
-.nav_spaces{ margin: 20px 0 34px 0; }
+.nav_spaces{ margin: 1.12% 0 1.4% 0; }
 .logo_header{ display: inherit; }
 .text_menu{ padding-top: 23px; }
 .text_menu a{
@@ -18,6 +15,7 @@
     font-family: 'Sansation';
     font-size: 1.75em;
     letter-spacing: 0.3px;
+    padding-left: 3.5%;
     text-decoration: none;
 }
 

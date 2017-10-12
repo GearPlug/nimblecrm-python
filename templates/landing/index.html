@@ -1,5 +1,5 @@
 {% extends 'layouts/page_base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
     <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
@@ -7,9 +7,11 @@
             <div class="item active container-fluid slide-item">
                 <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
                 <div class="carousel-caption slide-caption slide-text">
-                    Conectándote <br/>
-                    <span class="slide-text-light"> en todos </span> <br/>
-                    <span class="slide-color-aqua"> lados </span>
+                    {% blocktrans %}
+                        Conectándote <br/>
+                        <span class="slide-text-light"> en todos </span> <br/>
+                        <span class="slide-color-aqua"> lados </span>
+                    {% endblocktrans %}
                 </div>
             </div>
         </div>
@@ -25,44 +27,25 @@
 
         </a>
     </div>
-    <div class="main-text hidden-xs">
-        <div class="col-md-7"> &nbsp;</div>
-        <div class="col-md-5">
-            <div class="col-md-1"> &nbsp;</div>
-            <div class="col-md-9 bg-form">
-                <form method="post" action="{% url 'allauth:account_signup' %}" autocomplete="off">
-                    {% csrf_token %}
-                    <div class="col-md-12">
-                        {{ register_form.first_name }}
-                    </div>
-                    <div class="col-md-12">
-                        {{ register_form.last_name }}
-                    </div>
-                    <div class="col-md-12">
-                        {{ register_form.email }}
-                    </div>
-                    <div class="col-md-12">
-                        {{ register_form.password1 }}
-                    </div>
-                    <div class="col-md-12 padding-checkbox">
-                        <input type="checkbox" name="notification" value="True" checked>
-                        <span class="checkbox-form">Enviarme notificaciones a mi correo</span>
-                    </div>
-                    <div class="col-md-12">
-                        <button type="submit" class="button_form">Regístrate</button>
-                    </div>
-                </form>
+{#    {% if request.user.is_authenticated is False %}#}
+        <div class="main-text hidden-xs">
+            <div class="col-md-7"> &nbsp;</div>
+            <div class="col-md-5">
+                <div class="col-md-1"> &nbsp;</div>
+                <div class="col-md-9 bg-form">
+                    {% include 'landing/snippets/signup_form.html' %}
+                </div>
+                <div class="col-md-2"> &nbsp;</div>
             </div>
-            <div class="col-md-2"> &nbsp;</div>
         </div>
-    </div>
+{#    {% endif %}#}
     <div class="col-md-12 index-space1"> &nbsp;</div>
     <div class="col-md-12 text-center">
         <img src="{% static 'img/landing/logo_what.png' %}">
     </div>
     <div class="col-md-12 index-space2"> &nbsp;</div>
     <div class="col-md-12 text-center">
-        <span class="text-what">¿Qué es GearPlug?</span>
+        <span class="text-what">{% trans '¿Qué es GearPlug?' %}</span>
         <br/>
         <p class="text-p">
             GearPlug es un software de automatización y optimización de todas las herramientas digitales para que su
@@ -105,9 +88,76 @@
             <div class="col-md-10 text-bullet">Selecciona el destino</div>
         </div>
     </div>
-    <div class="col-md-1"> &nbsp;</div>
-    <div class="col-md-12 index-space6"> &nbsp;</div>
-    <div class="col-md-12 text-center">
-
+    <div class="col-md-12 index-space7"> &nbsp;</div>
+    <div class="col-md-12 text-center text-connect">
+        Conéctalo con tus <span style="font-family: 'Sansation Bold">Aplicaciones Favoritas</span>
     </div>
+    <div class="col-md-12 index-space8"> &nbsp;</div>
+    <div class="col-md-12 text-center text-us">
+        Nuestras aplicaciones más usadas
+    </div>
+    <div class="col-md-1"> &nbsp;</div>
+    <div class="col-md-10  list-wrapper">
+        {% for app in top_apps %}
+            <div class="col-md-2">
+                <div class="list-item">
+                    <div class="image1">
+                        <img src="{{ app.icon.url }}" width="110" height="110">
+                    </div>
+                    <div class="divider"></div>
+                    <div class="name1">
+                        {{ app.name }}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="col-md-1"> &nbsp;</div>
+    <div class="col-md-12 bg_comments">
+        <div class="col-md-12 text-center title-comments">
+            La Experiencia Habla
+            <hr class="hr-comments">
+        </div>
+        <div class="col-md-1"> &nbsp;</div>
+        <div class="col-md-10 list-wrapper1">
+            {% for i in 'xxxxxx' %}
+                <div class="col-md-4">
+                    <div class="list-item1">
+                        <div class="col-md-4 image11">
+                            <img src="{% static 'img/landing/guy3.png' %}" style="margin-bottom: 40px;">
+                        </div>
+                        <div class="col-md-8 name11">
+                            Daniel Ricco<br/>
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="col-md-1"> &nbsp;</div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super.block }}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            $('form#signup_form').on('submit', function () {
+                var form = $(this);
+                console.log(form.serialize())
+                $.ajax({
+                    method: "POST",
+                    url: $(form).attr('action'),
+                    data: $(form).serialize(),
+
+                }).done(function (response) {
+                    var url = 'http://{{ request.META.HTTP_HOST }}' + response.location;
+                    window.location.href = url;
+                }).fail(function (response) {
+                    $(form).parent().html(response.responseJSON.html);
+                });
+                return false;
+            })
+        })
+    </script>
 {% endblock %}
