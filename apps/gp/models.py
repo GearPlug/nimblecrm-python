@@ -588,18 +588,6 @@ class Webhook(models.Model):
     def __str__(self):
         return '%s webhook of %s' % (self.name, self.plug)
 
-class ListSubscriptions(models.Model):
-    title = models.CharField('title', max_length=100)
-    list = models.ManyToManyField(User, through='Subscription')
-
-    def __str__(self):
-        return self.title
-
-class Subscription(models.Model):
-    list_subscription = models.ForeignKey(ListSubscriptions)
-    user = models.ForeignKey(User)
-
-
 class DBLogEntry(models.Model):
     time = models.DateTimeField(auto_now_add=True)
     level = models.CharField(max_length=10)
@@ -615,6 +603,19 @@ class ControllerLog(DBLogEntry):
     process = models.CharField(max_length=20, blank=True, default='')
     status = models.CharField(max_length=2, blank=False, choices=STATUS, default='f')
     controller = models.CharField(max_length=20, blank=True, default='')
+
+class SubscriptionsList(models.Model):
+    title = models.CharField(max_length=500, default='subscription')
+    description = models.CharField(max_length=500, default='description of subscription')
+    user = models.ManyToManyField(User, through='Subscriptions')
+
+    def __str__(self):
+        return self.title
+
+class Subscriptions(models.Model):
+    user = models.ForeignKey(User, to_field='username')
+    list = models.ForeignKey(SubscriptionsList)
+
 
 
 admin.site.register(Connector)
