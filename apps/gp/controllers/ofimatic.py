@@ -580,10 +580,9 @@ class WunderListController(BaseController):
         super(WunderListController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             self._token = self._connection_object.token
+            self._client = self._api.get_client(self._token, settings.WUNDERLIST_CLIENT_ID)
 
     def test_connection(self):
-        self._client = self._api.get_client(
-            self._token, settings.WUNDERLIST_CLIENT_ID)
         try:
             a = self.get_lists()
             return self._token is not None
@@ -672,39 +671,32 @@ class WunderListController(BaseController):
                     update_fields=['url', 'generated_id', 'is_active'])
         return True
 
-    def list_webhooks(self):
-        action = self._plug.action.name
-        if action == 'completed task':
-            list_id = self._plug.plug_action_specification.get(
-                action_specification__name='task list')
-            headers = {
+    def view_webhooks(self, list_id):
+        headers = {
+            'X-Access-Token': self._token,
+            'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
+        }
+        body_data = {
+            'list_id': str(list_id),
+        }
+        response = requests.get(
+            'http://a.wunderlist.com/api/v1/webhooks', headers=headers,
+            data=body_data)
+        return response.json()
+
+    # Metodo de borrado de webhooks, utilizacion manual.
+    def delete_webhook(self, id_webhook):
+        headers = {
                 'X-Access-Token': self._token,
                 'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
             }
-            body_data = {
-                'list_id': int(list_id.value),
-            }
-            response = requests.get(
-                'http://a.wunderlist.com/api/v1/webhooks', headers=headers,
-                data=body_data)
-            return (response.json())
-
-    # Metodo de borrado de webhooks, utilizacion manual.
-    def delete_webhooks(self):
-        webhook_list = self.list_webhooks()
-        if len(webhook_list) > 0:
-            for wh in webhook_list:
-                headers = {
-                    'X-Access-Token': self._token,
-                    'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
-                }
-                body_data = {
-                    'revision': 0,
-                }
-                response = requests.delete(
-                    'http://a.wunderlist.com/api/v1/webhooks/{0}'.format(
-                        str(wh['id'])),
-                    headers=headers, data=body_data)
+        body_data = {
+            'revision': 0,
+        }
+        response = requests.delete(
+            'http://a.wunderlist.com/api/v1/webhooks/{0}'.format(str(id_webhook)),
+            headers=headers, data=body_data)
+        return response
 
     def download_to_stored_data(self, connection_object=None, plug=None,
                                 task=None, **kwargs):

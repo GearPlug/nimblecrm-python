@@ -71,17 +71,47 @@ DATABASES = {
             'read_default_file': os.path.join(BASE_DIR, 'apiconnector/gearplug.cnf', )
         },
     },
+    'replica': {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': 'localhost',
+        'USER': 'root',
+        'PASSWORD' : 'root',
+        'TEST': {
+            'MIRROR': 'default',
+            'DEPENDENCIES': []
+        }
+    },
     'history': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
             'read_default_file': os.path.join(BASE_DIR, 'apiconnector/history.cnf', )
         },
     },
+    'replica_history': {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': 'localhost',
+        'USER': 'root',
+        'PASSWORD' : 'root',
+        'TEST': {
+            'MIRROR': 'default',
+            'DEPENDENCIES': ['default']
+        }
+    },
     'landing': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
             'read_default_file': os.path.join(BASE_DIR, 'apiconnector/landing.cnf', )
         },
+    },
+    'replica_landing': {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': 'localhost',
+        'USER': 'root',
+        'PASSWORD' : 'root',
+        'TEST': {
+            'MIRROR': 'landing',
+            'DEPENDENCIES': ['default']
+        }
     },
 }
 
