@@ -1,9 +1,10 @@
-from django.views.generic import TemplateView, ListView
+from django.views.generic import TemplateView, ListView, CreateView
 from django.urls import reverse_lazy
 from django.db.models import Q
 from allauth.account.views import SignupView
 from apps.landing.forms import NameSignupForm
 from apps.gp.models import Connector
+from apps.landing.models import ContactModel, ExperienceModel
 
 
 class IndexView(TemplateView):
@@ -14,15 +15,19 @@ class IndexView(TemplateView):
         context['signup_form'] = NameSignupForm()
         context['top_apps'] = Connector.objects.filter(Q(name__in=['slack', 'gmail', 'mysql', 'facebookleads',
                                                                    'googlespreadsheet', 'mailchimp']))
+        context['experiece_talks'] = ExperienceModel.objects.all()[:6]
         return context
 
 
 class AboutUsView(TemplateView):
-    template_name = 'landing/aboutus.html'
+    template_name = 'landing/about.html'
 
 
-class ContactUsView(TemplateView):
-    template_name = 'landing/contactus.html'
+class ContactUsView(CreateView):
+    template_name = 'landing/contact.html'
+    model = ContactModel
+    fields = ['email', 'name', 'text']
+    success_url = reverse_lazy('landing:contact')
 
 
 class AppsView(ListView):

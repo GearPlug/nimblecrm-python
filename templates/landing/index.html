@@ -6,7 +6,7 @@
         <div class="carousel-inner">
             <div class="item active container-fluid slide-item">
                 <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
-                <div class="carousel-caption slide-caption slide-text">
+                <div class="carousel-caption slide-caption">
                     {% blocktrans %}
                         Conectándote <br/>
                         <span class="slide-text-light"> en todos </span> <br/>
@@ -14,31 +14,33 @@
                     {% endblocktrans %}
                 </div>
             </div>
+            <div class="item">
+                <img src="{% static 'img/landing/slide1.png' %}" alt="Second slide" class="slide">
+            </div>
         </div>
-        <a class="left carousel-control slide-control" href="#carousel-example-generic" data-slide="prev">
-             <span class="slide-arrow">
-                 <img src="{% static 'img/landing/arrow_left.png' %}">
-             </span>
+        <a class="left carousel-control" href="#carousel-example-generic" data-slide="prev">
+            <span class="slide-arrow">
+                <img src="{% static 'img/landing/arrow_left.png' %}">
+            </span>
         </a>
-        <a class="right carousel-control slide-control" href="#carousel-example-generic" data-slide="next">
+        <a class="right carousel-control" href="#carousel-example-generic" data-slide="next">
             <span class="slide-arrow">
                 <img src="{% static 'img/landing/arrow_right.png' %}">
             </span>
-
         </a>
     </div>
-{#    {% if request.user.is_authenticated is False %}#}
-        <div class="main-text hidden-xs">
-            <div class="col-md-7"> &nbsp;</div>
-            <div class="col-md-5">
-                <div class="col-md-1"> &nbsp;</div>
-                <div class="col-md-9 bg-form">
-                    {% include 'landing/snippets/signup_form.html' %}
-                </div>
-                <div class="col-md-2"> &nbsp;</div>
+    {#    {% if request.user.is_authenticated is False %}#}
+    <div class="main-text hidden-xs">
+        <div class="col-md-7"> &nbsp;</div>
+        <div class="col-md-5">
+            <div class="col-md-1"> &nbsp;</div>
+            <div class="col-md-9 bg-form">
+                {% include 'landing/snippets/signup_form.html' %}
             </div>
+            <div class="col-md-2"> &nbsp;</div>
         </div>
-{#    {% endif %}#}
+    </div>
+    {#    {% endif %}#}
     <div class="col-md-12 index-space1"> &nbsp;</div>
     <div class="col-md-12 text-center">
         <img src="{% static 'img/landing/logo_what.png' %}">
@@ -120,19 +122,22 @@
         </div>
         <div class="col-md-1"> &nbsp;</div>
         <div class="col-md-10 list-wrapper1">
-            {% for i in 'xxxxxx' %}
-                <div class="col-md-4">
-                    <div class="list-item1">
-                        <div class="col-md-4 image11">
-                            <img src="{% static 'img/landing/guy3.png' %}" style="margin-bottom: 40px;">
-                        </div>
-                        <div class="col-md-8 name11">
-                            Daniel Ricco<br/>
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            {% with name='Daniel Ricco' text='Lorem ipsum dolor sit amet, consectetur adipiscing elit.' image='img/landing/guy3.png' %}
+                {% for i in 'xxxxxx' %}
+                    <div class="col-md-4">
+                        <div class="list-item1">
+                            <div class="col-md-4 image11">
+                                <img src="{% static image %}" style="margin-bottom: 40px;">
+                            </div>
+                            <div class="col-md-8 name11">
+                                {{ name }}<br/>
+                                {{ text }}
+                            </div>
                         </div>
                     </div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            {% endwith %}
+
         </div>
         <div class="col-md-1"> &nbsp;</div>
     </div>
