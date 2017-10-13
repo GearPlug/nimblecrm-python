@@ -1,5 +1,6 @@
 from django.conf.urls import url
-from apps.home.views import HomeView, DashBoardView, IncomingWebhook, AppsView, HelpView, TermsView
+from apps.home.views import HomeView, DashBoardView, IncomingWebhook, AppsView, HelpView, TermsView, \
+    SubscriptionsManagerView
 
 urlpatterns = [
     url(r'^$', HomeView.as_view(), name='homepage'),
@@ -8,4 +9,5 @@ urlpatterns = [
     url(r'^apps/$', AppsView.as_view(), name='apps'),
     url(r'^help/$', HelpView.as_view(), name='help'),
     url(r'^terms/$', TermsView.as_view(), name='terms'),
+    url(r'^subscriptions/$', SubscriptionsManagerView.as_view(), name='subscriptions_manager'),
 ]
