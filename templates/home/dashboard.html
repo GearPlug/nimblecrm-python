@@ -2,10 +2,27 @@
 {% load static %}
 
 {% block content %}
-    <div class="info-tool"></div>
+    <div class="gp-modal">
+        <div class="close-button">
+            <img src="{% static 'img/console/g1688.png' %}" width="50">
+        </div>
+        <div class="modal-content2">
+            <div class="title">
+                Nombre del Grupo
+            </div>
+            <div class="form">
+                <div class="group">
+                    <input>
+                </div>
+            </div>
+            <div class="button">
+                Crear Grupo
+            </div>
+        </div>
+    </div>
     <div class="content-header">
         <div class="row">
-            <div class="col-md-6 col-md-offset-1">
+            <div class="col-md-7">
                 <div class="image">
                     <img src="{% static 'img/console/g6064.png' %}" width="148">
                 </div>
@@ -23,7 +40,6 @@
                 <div class="divider" style="float: right"></div>
             </div>
             <div class="col-md-5">
-
                 <div class="gp-info">
                     <div class="connectors">
                         Conectores: <span style="font-family: 'Sansation Bold'">1000</span>
@@ -41,5 +57,55 @@
             </div>
         </div>
         <div class="divider2"></div>
+    </div>
+    <div class="content-body">
+        <div class="projects">
+            <div class="title">
+                <span>Proyectos</span>
+            </div>
+            <div class="add-wrapper">
+                <div class="add">
+                    <div class="image">
+                        <img src="{% static 'img/console/path6684.png' %}" width="176">
+                    </div>
+                    <div class="text">
+                        Crear Grupo
+                    </div>
+                </div>
+                <div class="steps-tooltip">
+                    <div class="bar"></div>
+                    <div class="box">
+                        <div class="text">
+                            Crear un grupo donde dirigirás todos tus gears.
+                        </div>
+                    </div>
+                    <div class="image">
+                        <img src="{% static 'img/console/g6712.png' %}" width="45">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="gears">
+            <div class="title">
+                <span>Gears</span>
+            </div>
+            <div class="list">
+                <div class="item">
+                    <div class="image-wrapper">
+                        <div class="image">
+                            <div class="connector">
+                                <img src="{% static 'img/landing/logo_mysql.png' %}" width="55">
+                            </div>
+                            <div class="connector">
+                                <img src="{% static 'img/landing/logo_mysql.png' %}" width="55">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="name">
+                        CO_1
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}
