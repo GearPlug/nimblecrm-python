@@ -3,10 +3,14 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View, ListView
+from django.views.generic.edit import FormView
 from django.views.decorators.csrf import csrf_exempt
 from allauth.account.views import LoginView
 from apps.gp.models import GearGroup, Gear, PlugActionSpecification, Plug, \
     Webhook, Connector
+from .forms import SubscriptionsForm
+from apps.gp.models import Subscriptions
+from django.contrib.auth.models import User
 from apps.gp.enum import ConnectorEnum
 import json
 import pprint
@@ -106,3 +110,26 @@ class HelpView(LoginRequiredMixin, TemplateView):
 
 class TermsView(LoginRequiredMixin, TemplateView):
     template_name = 'home/terms.html'
+
+
+class SubscriptionsManagerView(LoginRequiredMixin, FormView):
+    template_name = 'account/subscriptionsmanager.html'
+    form_class = SubscriptionsForm
+    success_url = 'dashboard'
+
+    def get_form_kwargs(self, **kwargs):
+        kwargs = super(SubscriptionsManagerView, self).get_form_kwargs(**kwargs)
+        kwargs['initial']['owner'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        self.baja_list = form.cleaned_data['user_lists']
+
+        user_obj = User.objects.get(username__exact=self.request.user)
+        user_id = user_obj.id
+
+        for i in self.baja_list:
+            Subscriptions.objects.filter(user_id=user_id).get(list_id=i).delete()
+        return super(SubscriptionsManagerView, self).form_valid(form)
+
+
