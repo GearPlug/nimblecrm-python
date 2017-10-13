@@ -3,7 +3,8 @@ import sqlite3
 from django.test import TestCase
 from django.contrib.auth.models import User
 from apps.gp.models import Connection, MySQLConnection, Plug, Action, StoredData, PlugActionSpecification, \
-    ActionSpecification, Gear, GearMap, GearMapData, DownloadHistory, SendHistory
+    ActionSpecification, Gear, GearMap, GearMapData
+from apps.history.models import DownloadHistory, SendHistory
 from apps.gp.controllers.database import MySQLController
 from MySQLdb.connections import Connection as MyConnection
 from MySQLdb.cursors import Cursor as MyCursor
@@ -34,9 +35,6 @@ class MysqlControllerTestCases(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        """Crea la base de datos y genera datos falsos en las tablas respectivas.
-
-        """
         cls.user = User.objects.create(username='ingmferrer', email='ingferrermiguel@gmail.com',
                                        password='nopass100realnofake')
         connection = {
@@ -69,6 +67,7 @@ class MysqlControllerTestCases(TestCase):
             'connection_user': os.environ.get('TEST_MYSQL_TARGET_CONNECTION_USER'),
             'connection_password': os.environ.get('TEST_MYSQL_TARGET_CONNECTION_PASSWORD')
         }
+
         cls.mysql_connection2 = MySQLConnection.objects.create(**mysql_connection2)
 
         action_source = Action.objects.get(connector_id=ConnectorEnum.MySQL.value, action_type='source', name='get row',
@@ -163,7 +162,7 @@ class MysqlControllerTestCases(TestCase):
         """
         # Error 2
         result = self.source_controller.select_all()
-        self.assertTrue(result)
+        self.assertIsInstance(result, list)
 
     def test_download_to_stored_data(self):
         """Comprueba que la llamada al metodo devuelva un diccionario y la existencia de los atributos necesarios y

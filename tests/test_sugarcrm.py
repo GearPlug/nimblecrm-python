@@ -2,7 +2,8 @@ import os
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from apps.gp.models import Connection, SugarCRMConnection, Plug, Action, ActionSpecification, PlugActionSpecification, \
-    Gear, GearMap, StoredData, GearMapData, DownloadHistory, SendHistory
+    Gear, GearMap, StoredData, GearMapData
+from apps.history.models import DownloadHistory, SendHistory
 from apps.gp.controllers.crm import SugarCRMController
 from sugarcrm.client import Client as SugarCRMClient
 from apps.gp.enum import ConnectorEnum

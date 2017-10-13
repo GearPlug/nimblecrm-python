@@ -1,6 +1,7 @@
 from apps.gp.controllers.lead import GoogleFormsController
 from apps.gp.models import Connection, ConnectorEnum, Action, Plug, ActionSpecification, PlugActionSpecification, \
-    GoogleFormsConnection, StoredData, DownloadHistory, Gear
+    GoogleFormsConnection, StoredData, Gear
+from apps.history.models import DownloadHistory
 from django.contrib.auth.models import User
 from django.test import TestCase, Client
 import json

@@ -1,34 +1,45 @@
-{% extends 'layouts/site_base.html' %}
+{% extends 'layouts/console_base.html' %}
 {% load static %}
 
 {% block content %}
-    {# USER INFO #}
-    <div class="col-md-12 dashboard_border">
-        <div class="col-md-4">
-            User: {{ request.user }}
-        </div>
-        <div class="col-md-4">
-            Connectors and Credits Information
-        </div>
-        <div class="col-md-4">
-            Availability graph
-        </div>
-    </div>
+    <div class="info-tool"></div>
+    <div class="content-header">
+        <div class="row">
+            <div class="col-md-6 col-md-offset-1">
+                <div class="image">
+                    <img src="{% static 'img/console/g6064.png' %}" width="148">
+                </div>
+                <div class="info">
+                    <div class="user">
+                        Usuario
+                    </div>
+                    <div class="description">
+                        Descripción Trabajo
+                    </div>
+                    <div class="plan">
+                        Plan Premium
+                    </div>
+                </div>
+                <div class="divider" style="float: right"></div>
+            </div>
+            <div class="col-md-5">
 
-    {# GROUPS (CARPETAS) #}
-    <div class="col-md-12 dashboard_border">
-        Groups:
-        <br />
-        {% for group in gear_groups %}
-            {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=4%}
-        {% endfor %}
-    </div>
-    {# GEARS "MAS USADOS" #}
-    <div class="col-md-12 dashboard_border">
-        Gears:
-        <br />
-        {% for gear in used_gears %}
-            {% include 'gear/snippets/gear_small.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
-        {% endfor %}
+                <div class="gp-info">
+                    <div class="connectors">
+                        Conectores: <span style="font-family: 'Sansation Bold'">1000</span>
+                    </div>
+                    <div class="credits">
+                        Crédito: <span style="font-family: 'Sansation Bold'">$10 USD</span>
+                    </div>
+                    <div class="available">
+                        100 Disponibles
+                    </div>
+                </div>
+                <div class="gp-bar">
+                    <img src="{% static 'img/console/g6064.png' %}" width="160">
+                </div>
+            </div>
+        </div>
+        <div class="divider2"></div>
     </div>
 {% endblock %}

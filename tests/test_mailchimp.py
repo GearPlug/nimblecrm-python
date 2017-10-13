@@ -1,8 +1,9 @@
 import os
 from collections import OrderedDict
 from apps.gp.models import Connection, MailChimpConnection, Plug, Action, PlugActionSpecification, ActionSpecification, \
-    Gear, GearMap, GearMapData, StoredData, MySQLConnection, SendHistory
+    Gear, GearMap, GearMapData, StoredData, MySQLConnection
 from apps.gp.controllers.database import MySQLController
+from apps.history.models import DownloadHistory, SendHistory
 from apps.gp.controllers.email_marketing import MailChimpController
 from django.contrib.auth.models import User
 from django.test import TestCase
