@@ -1,4 +1,3 @@
-from django.contrib.auth import get_user_model
 from django import forms
 from apps.gp.models import Subscriptions, SubscriptionsList
 
@@ -16,8 +15,6 @@ class SignupForm(forms.ModelForm):
             profile = Subscriptions()
 
             profile.user = user
-            # for i in self.cleaned_data['list']:
-            #     selected_list.append(i)
             for i in selected_list:
                 list = SubscriptionsList.objects.filter(title__exact=i).values()
                 for y in list.iterator():
