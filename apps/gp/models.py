@@ -613,7 +613,7 @@ class SubscriptionsList(models.Model):
         return self.title
 
 class Subscriptions(models.Model):
-    user = models.ForeignKey(User, to_field='username')
+    user = models.ForeignKey(User)
     list = models.ForeignKey(SubscriptionsList)
 
 
