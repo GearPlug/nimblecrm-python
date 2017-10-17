@@ -30,7 +30,7 @@ class Connector(models.Model):
 
 
 class ConnectorCategory(models.Model):
-    Connector = models.ForeignKey(Connector)
+    connector = models.ForeignKey(Connector)
     category = models.ForeignKey(Category)
 
     class Meta:
