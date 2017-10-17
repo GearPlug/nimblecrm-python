@@ -606,29 +606,26 @@ class WunderListController(BaseController):
         return response.json()
 
     def create_task(self, **kwargs):
-        _list_id = int(kwargs['parents'])
-        _title = str(kwargs['title'])
-
-        data = {'list_id': _list_id, 'title': _title}
+        _id = kwargs['assignee_id']
+        json_acceptable_string = _id.replace("'", '"')
+        _id = int(json.loads(json_acceptable_string)['id'])
+        kwargs['assignee_id'] = _id
+        kwargs['list_id'] = int(self._plug.plug_action_specification.get(action_specification__name='list').value)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain',
                    'X-Access-Token': self._token,
                    'X-Client-ID': settings.WUNDERLIST_CLIENT_ID}
-
         response = requests.post('http://a.wunderlist.com/api/v1/tasks',
-                                 data=json.dumps(data), headers=headers)
+                                 data=json.dumps(kwargs), headers=headers)
         return response
 
-    def update_task(self):
-
-        data = {'list_id': self._list_id, 'title': self._title}
+    def delete_task(self, task_id):
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain',
                    'X-Access-Token': self._token,
                    'X-Client-ID': settings.WUNDERLIST_CLIENT_ID}
-
-        response = requests.post('http://a.wunderlist.com/api/v1/tasks',
-                                 data=json.dumps(data), headers=headers)
-        return response
-        pass
+        data = {'revision': 1}
+        response = requests.delete('http://a.wunderlist.com/api/v1/tasks/{0}'.format(task_id),
+                                   params=data, headers=headers)
+        return response.status_code
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(
@@ -714,32 +711,23 @@ class WunderListController(BaseController):
                             StoredData(connection=connection_object.connection,
                                        plug=plug, object_id=task_id,
                                        name=k, value=v or ''))
-            extra = {}
-            for task in task_stored_data:
+            result_list = []
+            for taskk in task_stored_data:
                 try:
-                    extra['status'] = 's'
-                    extra = {'controller': 'wunderlist'}
-                    task.save()
-                    self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            task.object_id, task.plug.id, task.connection.id),
-                        extra=extra)
+                    taskk.save()
+                    is_stored = True
+                    last_object_id = task_id
                 except Exception as e:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s failed.' % (
-                            task.object_id, task.plug.id, task.connection.id),
-                        extra=extra)
-            return True
-        return False
+                    is_stored = False
+                    last_object_id = ""
+                result_list = [{'raw': task, 'is_stored': is_stored, 'identifier': {'name': 'id', 'value': last_object_id}}]
+            return {'downloaded_data' : result_list, 'last_source_record': last_object_id}
 
     def get_target_fields(self, **kwargs):
-        return [{'name': 'title', 'type': 'text', 'required': True},
-                {'name': 'completed', 'type': 'text', 'required': True},
-                {'name': 'completed_by_id', 'type': 'int', 'required': False},
-                {'name': 'completed_at', 'type': 'text', 'required': False},
-                {'name': 'created_at', 'type': 'text', 'required': True},
-                {'name': 'parents', 'type': 'int', 'required': True}
+        users = self.get_users()
+        return [{'name': 'title', 'type': 'text', 'required': True, 'label': 'Title'},
+                {"name": "assignee_id", "required": False, "type": 'varchar',
+                 "choices": users, 'label':'Assignee'},
                 ]
 
     def get_mapping_fields(self, **kwargs):
@@ -747,23 +735,18 @@ class WunderListController(BaseController):
         return [MapField(f, controller=ConnectorEnum.WunderList) for f in
                 fields]
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if self._plug is not None:
-            obj_list = []
-            extra = {'controller': 'WunderList'}
-            for item in data_list:
-                task = self.create_task(**item)
-                if task.status_code in [200, 201]:
-                    extra['status'] = 's'
-                    self._log.info('Item: %s successfully sent.' % (
-                        task.json()['data']['name']), extra=extra)
-                    obj_list.append(task)
-                else:
-                    extra['status'] = 'f'
-                    self._log.info('Item: failed to send.', extra=extra)
-            return obj_list
-        raise ControllerError("There's no plug")
+    def send_stored_data(self, data_list):
+        result_list = []
+        for item in data_list:
+            task = self.create_task(**item)
+            if task.status_code in [200, 201]:
+                sent = True
+                identifier = task.json()['id']
+            else:
+                sent = False
+                identifier = ""
+            result_list.append({'data': dict(item), 'response': "", 'sent': sent, 'identifier':identifier})
+        return result_list
 
     def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
         webhook = Webhook.objects.get(pk=webhook_id)
@@ -784,3 +767,14 @@ class WunderListController(BaseController):
 
     def has_webhook(self):
         return True
+
+    def get_users(self):
+        headers = {
+            'Content-type': 'application/json', 'Accept': 'text/plain',
+            'X-Access-Token': self._token,
+            'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
+        }
+        response = requests.get(
+            'http://a.wunderlist.com/api/v1/users', headers=headers)
+        return [{'name': r['name'],'id': r['id']} for r in response.json()]
+
