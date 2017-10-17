@@ -6,12 +6,15 @@
 {% endblock %}
 
 {% block body_base %}
+    <div class="info-tool"></div>
     <div class="content">
         <div class="dashboard-header">
             <div class="left-side">
-                <div class="logo">
-                    <img src="{% static 'img/landing/logo_header.png' %}">
-                </div>
+                <a href="{% url 'home:dashboard' %}">
+                    <div class="logo">
+                        <img src="{% static 'img/landing/logo_header.png' %}" width="220">
+                    </div>
+                </a>
             </div>
             <div class="right-side">
                 <div class="user">
@@ -35,9 +38,11 @@
                     <div class="image">
                         <img src="{% static 'img/console/g6666.png' %}">
                     </div>
-                    <div class="text">
-                        Gears
-                    </div>
+                    <a href="{% url 'gear:list' %}">
+                        <div class="text">
+                            Gears
+                        </div>
+                    </a>
                 </div>
                 <div class="item">
                     <div class="image">

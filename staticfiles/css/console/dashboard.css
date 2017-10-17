@@ -50,6 +50,7 @@
 
 .dashboard-header .right-side .user .icon {
     padding-top: 5px;
+    cursor: pointer;
 }
 
 .dashboard-header .right-side .divider {
@@ -100,6 +101,7 @@
 .dashboard-panel .menu .item {
     padding: 3% 15%;
     margin: 3% 0;
+    cursor: pointer;
 }
 
 .dashboard-panel .menu .item.logout {
@@ -140,6 +142,7 @@
     height: calc(100% - 108px);
     display: inline-block;
     background-color: #f8f8f8;
+    padding: 0 8%;
 }
 
 .content-header {
@@ -191,7 +194,7 @@
 }
 
 .content-header .divider2 {
-    width: 83%;
+    width: 100%;
     height: 1px;
     background-color: #c1c0c4;
     margin: 22px auto 0 auto;
@@ -247,4 +250,275 @@
     -moz-border-radius: 30px 0px 0px 30px;
     -webkit-border-radius: 30px 0px 0px 30px;
     border: 0px solid #000000;
+    cursor: pointer;
+}
+
+.content-body {
+    padding-top: 75px;
+}
+
+.content-body .projects .title, .content-body .gears .title {
+    font-family: "Sansation Bold";
+    font-size: 2em;
+    color: #9d9ba1;
+    padding-bottom: 35px;
+}
+
+.content-body .projects .title span, .content-body .gears .title span {
+    border-bottom: 3px solid #00e08f;
+    display: inline-block;
+    line-height: 1em;
+}
+
+.content-body .projects .folders {
+
+}
+
+.content-body .projects .folders .item {
+    display: inline-block;
+    vertical-align: top;
+    padding: 0 32px;
+}
+
+.content-body .projects .folders .item .name {
+    font-size: 2.00em;
+    color: #9d9ba1;
+    padding-top: 20px;
+}
+
+.content-body .projects .add-wrapper .add, .steps-tooltip {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.content-body .projects .add-wrapper .add {
+    display: inline-block;
+    vertical-align: top;
+    cursor: pointer;
+}
+
+.content-body .projects .add-wrapper .add .text {
+    font-size: 2em;
+    color: #9d9ba1;
+    text-align: center;
+    padding-top: 15px;
+}
+
+.content-body .projects .add-wrapper .steps-tooltip {
+    position: relative;
+    margin: 35px 0 0 20px;
+}
+
+.content-body .projects .add-wrapper .steps-tooltip .bar, .box {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.content-body .projects .add-wrapper .steps-tooltip .bar {
+    width: 75px;
+    height: 2px;
+    background-color: #24e49e;
+
+}
+
+.content-body .projects .add-wrapper .steps-tooltip .box {
+    background-color: #24e49e;
+    width: 325px;
+    height: 84px;
+    padding-top: 7px;
+
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+}
+
+.content-body .projects .add-wrapper .steps-tooltip .box .text {
+    font-size: 1.70em;
+    color: #FFFFFF;
+    padding: 0 30px;
+}
+
+.content-body .projects .add-wrapper .steps-tooltip .image {
+    position: absolute;
+    top: 20px;
+    left: 55px;
+}
+
+.content-body .gears {
+    padding-top: 40px;
+}
+
+.content-body .gears .list .item {
+    display: inline-block;
+    vertical-align: top;
+    text-align: center;
+}
+
+.content-body .gears .list .item.extended {
+    display: block;
+    text-align: left;
+    padding-bottom: 35px;
+}
+
+.content-body .gears .list .item.extended .image-wrapper {
+    width: 60%;
+}
+
+.content-body .gears .list .item .image-wrapper {
+    background-color: #FFFFFF;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+}
+
+.content-body .gears .list .item .image-wrapper .image {
+    width: 180px;
+    height: 90px;
+    background: url('../../img/console/g7316.png') center/9% no-repeat;
+    text-align: center;
+}
+
+.content-body .gears .list .item.extended .image-wrapper .image, .name, .control {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.content-body .gears .list .item.extended .image-wrapper .name {
+    width: 30%;
+}
+
+.content-body .gears .list .item.extended .image-wrapper .name {
+    width: 40%;
+    font-size: 1.90em;
+    color: #9d9ba1;
+    text-align: center;
+    padding-top: 25px;
+}
+
+.content-body .gears .list .item.extended .image-wrapper .control {
+    float: right;
+    font-family: "Sansation Bold";
+    font-size: 1.70em;
+    color: #005ca7;
+    padding: 20px 25px 0 0;
+}
+
+.content-body .gears .list .item.extended .image-wrapper .control .edit, .button, .status {
+    display: inline-block;
+    vertical-align: middle;
+    padding: 0 4px;
+}
+
+.content-body .gears .list .item.extended .image-wrapper .control .status {
+    width: 46px;
+}
+
+.content-body .gears .list .item .image-wrapper .image .connector {
+    display: inline-block;
+    padding: 20px 15px 0 15px;
+
+}
+
+.content-body .gears .list .item .name {
+    font-size: 2em;
+    color: #9d9ba1;
+}
+
+.content-body .gears .add .button, .text {
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 2.00em;
+    color: #9d9ba1;
+}
+
+.content-body .gears .add .text {
+    padding-left: 15px;
+}
+
+.gp-modal, .gp-modal .modal-content2 {
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+}
+
+.gp-modal {
+    width: 400px;
+    background-color: #FFFFFF;
+    position: fixed;
+
+    top: 50%;
+    left: 50%;
+    margin-top: -121px; /* Negative half of height. */
+    margin-left: -200px; /* Negative half of width. */
+
+    z-index: 9998;
+
+    -webkit-box-shadow: 0px 0px 25px 0px rgba(0, 0, 0, 0.75);
+    -moz-box-shadow: 0px 0px 25px 0px rgba(0, 0, 0, 0.75);
+    box-shadow: 0px 0px 25px 0px rgba(0, 0, 0, 0.75);
+}
+
+.gp-modal .close-button {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    z-index: 9999;
+    cursor: pointer;
+}
+
+.gp-modal .modal-content2 {
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
+    background-color: #005ca7;
+    margin: 5px;
+
+    padding: 20px 36px;
+}
+
+.gp-modal .modal-content2 .title {
+    font-family: "Sansation Bold";
+    font-size: 1.80em;
+    color: #FFFFFF;
+    text-align: center;
+}
+
+.gp-modal .modal-content2 .form input, .gp-modal .modal-content2 .button {
+    width: 100%;
+    height: 56px;
+    margin: 12px 0;
+
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+
+    text-align: center;
+}
+
+.gp-modal .modal-content2 .form input {
+    font-size: 2.00em;
+    padding: 0;
+    border: none;
+    outline: none;
+    color: #9d9ba1;
+
+}
+
+.gp-modal .modal-content2 .form label {
+    font-size: 1.80em;
+    color: #FFFFFF;
+    font-weight: 400;
+    margin: 0;
+}
+
+.gp-modal .modal-content2 .button {
+    font-family: "Sansation Bold";
+    font-size: 1.70em;
+    color: #FFFFFF;
+    background-color: #00e08f;
+    padding-top: 10px;
+    cursor: pointer;
 }

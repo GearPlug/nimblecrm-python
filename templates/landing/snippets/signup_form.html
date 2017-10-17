@@ -25,8 +25,15 @@
         {% endfor %}
     </div>
     <div class="col-md-12 padding-checkbox">
-        <input type="checkbox" name="notification" value="True" checked>
+        <div class="btn-group" data-toggle="buttons">
+            <label class="btn btn-primary">
+                <input type="checkbox" autocomplete="off" name="notification">
+                <span class="glyphicon glyphicon-ok"></span>
+            </label>
+        </div>
         <span class="checkbox-form">Enviarme notificaciones a mi correo</span>
+{#        <input type="checkbox" name="notification" value="True" checked>#}
+{#        <span class="checkbox-form">Enviarme notificaciones a mi correo</span>#}
     </div>
     <div class="col-md-12">
         <button type="submit" class="button_form">Regístrate</button>

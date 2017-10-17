@@ -19,22 +19,26 @@
             <header>
                 <nav class="nav_spaces">
                     <div class="row">
-                        <div class="col-md-3 col-md-offset-1">
+                        <div class="col-md-2 col-md-offset-1">
                             <a href="{% url 'landing:index' %}">
                                 <img src="{% static 'img/landing/logo_header.png' %}" class="img-responsive logo_header">
                             </a>
                         </div>
-                        <div class="col-md-6 col-md-offset-2 text_menu">
+                        <div class="col-md-5 col-md-offset-2 text_menu">
                             <a {% if request.path == "/about/" %}class="selected_page"{% endif %}
                                href="{% url 'landing:about' %}">{% trans 'Nosotros' %}</a>
                             <a href="#">{% trans 'Como Funciona' %}</a>
                             <a {% if request.path == "/apps/directory/" %}class="selected_page"{% endif %}
                                href="{% url 'landing:apps_directory' %}">{% trans 'Apps' %}</a>
-                            <a href="#">{% trans 'Ingresar' %}</a>
                             <a {% if request.path == "/contact/" %}class="selected_page"{% endif %}
                                href="{% url 'landing:contact' %}">{% trans 'Contacto' %}</a>
                         </div>
-                        <div class="col-md-1"> &nbsp; </div>
+                        <div class="col-md-2">
+                            <div class="border_login">
+                                <a href="#">{% trans 'Ingresar' %}</a>
+                            </div>
+
+                        </div>
                     </div>
                 </nav>
             </header>
@@ -50,7 +54,8 @@
             {% block footer_content %}
                 <div class="row">
                     <div class="col-md-12 bg_footer text-center">
-                        <a href="#">www.gearplug.com</a> - All rights reserved &reg;
+                        <a href="#">www.gearplug.com</a> - All rights reserved &reg; - Términos y Condiciones - Políticas
+                        de Privacidad
                     </div>
                 </div>
             {% endblock %}
