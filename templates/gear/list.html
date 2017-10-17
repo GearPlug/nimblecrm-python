@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-    <div class="gp-modal">
+    <div class="gp-modal" style="display:none;">
         <div class="close-button">
             <img src="{% static 'img/console/g1688.png' %}" width="50">
         </div>
@@ -31,30 +31,9 @@
                 <span>Proyectos</span>
             </div>
             <div class="folders">
-                <div class="item">
-                    <div class="image">
-                        <img src="{% static 'img/console/g3205.png' %}" width="134">
-                    </div>
-                    <div class="name">
-                        Colapep
-                    </div>
-                </div>
-                <div class="item">
-                    <div class="image">
-                        <img src="{% static 'img/console/g3277.png' %}" width="134">
-                    </div>
-                    <div class="name">
-                        Capicell
-                    </div>
-                </div>
-                <div class="item">
-                    <div class="image">
-                        <img src="{% static 'img/console/g3277.png' %}" width="134">
-                    </div>
-                    <div class="name">
-                        Magikae
-                    </div>
-                </div>
+                {% for group in object_list %}
+                    {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=2 %}
+                {% endfor %}
             </div>
         </div>
         <div class="gears">
@@ -62,65 +41,21 @@
                 <span>Gears</span>
             </div>
             <div class="list">
-                <div class="item extended">
-                    <div class="image-wrapper">
-                        <div class="image">
-                            <div class="connector">
-                                <img src="{% static 'img/landing/logo_mysql.png' %}" width="55">
-                            </div>
-                            <div class="connector">
-                                <img src="{% static 'img/landing/logo_mysql.png' %}" width="55">
-                            </div>
-                        </div>
-                        <div class="name">
-                            Nombre
-                        </div>
-                        <div class="control">
-                            <div class="edit">
-                                <img src="{% static 'img/console/g3125.png' %}" width="34">
-                            </div>
-                            <div class="button">
-                                <img src="{% static 'img/console/g3317.png' %}" width="50">
-                            </div>
-                            <div class="status">
-                                ON
-                            </div>
-                        </div>
+                {% for group in object_list %}
+                    <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;"
+                         id="group_gear_{{ group.id }}" data-show="True">
+                        {% for gear in group.gear.all %}
+                            {% include 'gear/snippets/gear_extend.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
+                        {% endfor %}
                     </div>
-                </div>
-                <div class="item extended">
-                    <div class="image-wrapper">
-                        <div class="image">
-                            <div class="connector">
-                                <img src="{% static 'img/landing/logo_mysql.png' %}" width="55">
-                            </div>
-                            <div class="connector">
-                                <img src="{% static 'img/landing/logo_mysql.png' %}" width="55">
-                            </div>
-                        </div>
-                        <div class="name">
-                            Nombre
-                        </div>
-                        <div class="control">
-                            <div class="edit">
-                                <img src="{% static 'img/console/g3125.png' %}" width="34">
-                            </div>
-                            <div class="button">
-                                <img src="{% static 'img/console/g3333.png' %}" width="50">
-                            </div>
-                            <div class="status">
-                                OFF
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                {% endfor %}
             </div>
             <div class="add">
                 <div class="button">
                     <img src="{% static 'img/console/g3261.png' %}" width="65">
                 </div>
                 <div class="text">
-                    Nuevo Gear
+                    <a href="{% url 'gear:create' %}">Nuevo Gear</a>
                 </div>
             </div>
         </div>
