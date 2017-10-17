@@ -1,5 +1,6 @@
 from .app_settings import *
 import os
+import sys
 
 try:
     from .local_settings import *
@@ -64,56 +65,48 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'apiconnector.wsgi.application'
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
             'read_default_file': os.path.join(BASE_DIR, 'apiconnector/gearplug.cnf', )
         },
-    },
-    'replica': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': 'localhost',
-        'USER': 'root',
-        'PASSWORD' : 'root',
         'TEST': {
-            'MIRROR': 'default',
-            'DEPENDENCIES': []
-        }
+            'DEPENDENCIES': [],
+        },
     },
     'history': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
             'read_default_file': os.path.join(BASE_DIR, 'apiconnector/history.cnf', )
         },
-    },
-    'replica_history': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': 'localhost',
-        'USER': 'root',
-        'PASSWORD' : 'root',
         'TEST': {
-            'MIRROR': 'default',
-            'DEPENDENCIES': ['default']
-        }
+            'DEPENDENCIES': ['default'],
+        },
     },
     'landing': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
             'read_default_file': os.path.join(BASE_DIR, 'apiconnector/landing.cnf', )
         },
-    },
-    'replica_landing': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': 'localhost',
-        'USER': 'root',
-        'PASSWORD' : 'root',
         'TEST': {
-            'MIRROR': 'landing',
-            'DEPENDENCIES': ['default']
-        }
+            'DEPENDENCIES': ['history'],
+        },
     },
 }
+
+if 'test' in sys.argv:
+    DATABASES= {
+        'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'default.db',
+        },
+        'history': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'history.db',
+        },
+    }
 
 DATABASE_ROUTERS = ['apps.gp.routers.DefaultRouter', 'apps.gp.routers.HistoryRouter', 'apps.gp.routers.LandingRouter', ]
 
