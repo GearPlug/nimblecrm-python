@@ -9,6 +9,7 @@
     height: 108px;
     padding: 1% 3%;
     box-sizing: border-box;
+    background-color: #f8f8f8;
 }
 
 .dashboard-header .left-side {
@@ -28,7 +29,7 @@
 
 .dashboard-header .right-side {
     float: right;
-    font-size: 2.00em;
+    font-size: 1.60em;
     color: #9d9ba1;
     display: inline-block;
     vertical-align: top;
@@ -45,7 +46,7 @@
 }
 
 .dashboard-header .right-side .user .name {
-    padding-top: 15px;
+    padding-top: 18px;
 }
 
 .dashboard-header .right-side .user .icon {
@@ -87,13 +88,8 @@
 }
 
 .dashboard-panel {
-    width: 17%;
-    height: calc(100% - 108px);
-    display: inline-block;
+    height: 100%;
     background: url('../../img/console/g5842.png') bottom center/100% no-repeat, #005ea7;
-
-    vertical-align: top;
-
     padding: 35px 0 0 0;
     box-sizing: border-box;
 }
@@ -119,9 +115,9 @@
     display: inline-block;
     vertical-align: top;
 
-    font-size: 1.80em;
+    font-size: 1.60em;
     color: #FFFFFF;
-    padding: 0 0 0 5px;
+    padding: 5px 0 0 5px;
     line-height: 1em;
 }
 
@@ -138,11 +134,8 @@
 }
 
 .dashboard-content {
-    width: 83%;
-    height: calc(100% - 108px);
-    display: inline-block;
-    background-color: #f8f8f8;
-    padding: 0 8%;
+    height: 100%;
+    background-color: #ffffff;
 }
 
 .content-header {
@@ -159,14 +152,13 @@
 }
 
 .content-header .info .user {
-    font-size: 1.80em;
+    font-size: 1.90em;
     color: #9d9ba1;
     line-height: 0.80em;
 }
 
 .content-header .info .description {
-    font-style: italic;
-    font-size: 1.80em;
+    font-size: 1.60em;
     color: #9d9ba1;
 }
 
@@ -179,7 +171,7 @@
     width: 140px;
     height: 26px;
     background-color: #005ca7;
-    color: #00e08f;
+    color: #FFFFFF;
 
     border-radius: 10px 10px 10px 10px;
     -moz-border-radius: 10px 10px 10px 10px;
@@ -214,7 +206,7 @@
 }
 
 .content-header .gp-info .connectors, .content-header .gp-info .credits {
-    font-size: 1.30em;
+    font-size: 1.20em;
     color: #9d9ba1;
 }
 
@@ -259,7 +251,7 @@
 
 .content-body .projects .title, .content-body .gears .title {
     font-family: "Sansation Bold";
-    font-size: 2em;
+    font-size: 1.60em;
     color: #9d9ba1;
     padding-bottom: 35px;
 }
@@ -298,7 +290,7 @@
 }
 
 .content-body .projects .add-wrapper .add .text {
-    font-size: 2em;
+    font-size: 1.60em;
     color: #9d9ba1;
     text-align: center;
     padding-top: 15px;
@@ -323,8 +315,8 @@
 
 .content-body .projects .add-wrapper .steps-tooltip .box {
     background-color: #24e49e;
-    width: 325px;
-    height: 84px;
+    width: 280px;
+    height: 70px;
     padding-top: 7px;
 
     border-radius: 25px 25px 25px 25px;
@@ -334,7 +326,7 @@
 }
 
 .content-body .projects .add-wrapper .steps-tooltip .box .text {
-    font-size: 1.70em;
+    font-size: 1.40em;
     color: #FFFFFF;
     padding: 0 30px;
 }
@@ -422,7 +414,7 @@
 }
 
 .content-body .gears .list .item .name {
-    font-size: 2em;
+    font-size: 1.60em;
     color: #9d9ba1;
 }
 
