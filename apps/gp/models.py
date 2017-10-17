@@ -17,8 +17,10 @@ class Connector(models.Model):
     css_class = models.CharField('css class', max_length=40, blank=True)
     is_source = models.BooleanField('is source', default=False)
     is_target = models.BooleanField('is target', default=False)
-    icon = models.ImageField('icon', upload_to='connector/icon', null=True, default=None)
+    icon15 = models.ImageField('icon 15px', upload_to='connector/icon', null=True, default=None)
+    icon73 = models.ImageField('icon 73px', upload_to='connector/icon', null=True, default=None)
     category = models.ManyToManyField(Category, through='ConnectorCategory')
+    connection_help_text = models.CharField('connection help text', max_length=3000, default='')
 
     class Meta:
         verbose_name = 'connector'
@@ -28,7 +30,7 @@ class Connector(models.Model):
 
 
 class ConnectorCategory(models.Model):
-    Connector = models.ForeignKey(Connector)
+    connector = models.ForeignKey(Connector)
     category = models.ForeignKey(Category)
 
     class Meta:
