@@ -34,12 +34,12 @@
     vertical-align: top;
 }
 
-.dashboard-header .right-side .user, .divider, .search {
+.dashboard-header .right-side .user, .dashboard-header .right-side .divider, .dashboard-header .right-side .search {
     display: inline-block;
     vertical-align: top;
 }
 
-.dashboard-header .right-side .user .name, .icon {
+.dashboard-header .right-side .user .name, .dashboard-header .right-side .user .icon {
     display: inline-block;
     vertical-align: top;
 }
@@ -149,7 +149,7 @@
     padding-top: 75px;
 }
 
-.content-header .image, .info {
+.content-header .image, .content-header .info {
     display: inline-block;
     vertical-align: top;
 }
@@ -200,7 +200,7 @@
     margin: 22px auto 0 auto;
 }
 
-.content-header .gp-info, .gp-bar {
+.content-header .gp-info, .content-header .gp-bar {
     display: inline-block;
     vertical-align: top;
 }
@@ -213,7 +213,7 @@
     margin-left: 60px;
 }
 
-.content-header .gp-info .connectors, .credits {
+.content-header .gp-info .connectors, .content-header .gp-info .credits {
     font-size: 1.30em;
     color: #9d9ba1;
 }
@@ -286,7 +286,7 @@
     padding-top: 20px;
 }
 
-.content-body .projects .add-wrapper .add, .steps-tooltip {
+.content-body .projects .add-wrapper .add, .content-body .projects .add-wrapper .steps-tooltip {
     display: inline-block;
     vertical-align: top;
 }
@@ -309,7 +309,7 @@
     margin: 35px 0 0 20px;
 }
 
-.content-body .projects .add-wrapper .steps-tooltip .bar, .box {
+.content-body .projects .add-wrapper .steps-tooltip .bar, .content-body .projects .add-wrapper .steps-tooltip .box {
     display: inline-block;
     vertical-align: middle;
 }
@@ -380,7 +380,7 @@
     text-align: center;
 }
 
-.content-body .gears .list .item.extended .image-wrapper .image, .name, .control {
+.content-body .gears .list .item.extended .image-wrapper .image, .content-body .gears .list .item.extended .image-wrapper .name, .content-body .gears .list .item.extended .image-wrapper .control {
     display: inline-block;
     vertical-align: top;
 }
@@ -405,7 +405,7 @@
     padding: 20px 25px 0 0;
 }
 
-.content-body .gears .list .item.extended .image-wrapper .control .edit, .button, .status {
+.content-body .gears .list .item.extended .image-wrapper .control .edit, .content-body .gears .list .item.extended .image-wrapper .control .button, .content-body .gears .list .item.extended .image-wrapper .control .status {
     display: inline-block;
     vertical-align: middle;
     padding: 0 4px;
@@ -426,7 +426,7 @@
     color: #9d9ba1;
 }
 
-.content-body .gears .add .button, .text {
+.content-body .gears .add .button, .content-body .gears .add .text {
     display: inline-block;
     vertical-align: middle;
     font-size: 2.00em;
@@ -445,7 +445,6 @@
 }
 
 .gp-modal {
-    width: 400px;
     background-color: #FFFFFF;
     position: fixed;
 
@@ -456,9 +455,9 @@
 
     z-index: 9998;
 
-    -webkit-box-shadow: 0px 0px 25px 0px rgba(0, 0, 0, 0.75);
-    -moz-box-shadow: 0px 0px 25px 0px rgba(0, 0, 0, 0.75);
-    box-shadow: 0px 0px 25px 0px rgba(0, 0, 0, 0.75);
+    -webkit-box-shadow: 0px 0px 25px 0px rgba(0, 0, 0, 0.35);
+    -moz-box-shadow: 0px 0px 25px 0px rgba(0, 0, 0, 0.35);
+    box-shadow: 0px 0px 25px 0px rgba(0, 0, 0, 0.35);
 }
 
 .gp-modal .close-button {
@@ -470,7 +469,7 @@
 }
 
 .gp-modal .modal-content2 {
-    width: calc(100% - 10px);
+    width: calc(400px - 10px);
     height: calc(100% - 10px);
     background-color: #005ca7;
     margin: 5px;
@@ -522,3 +521,186 @@
     padding-top: 10px;
     cursor: pointer;
 }
+
+.gp-modal.modal-double-column {
+    margin-left: -400px;
+}
+
+.gp-modal.modal-double-column .modal-content2 {
+    width: calc(800px - 10px);
+}
+
+.gp-modal.modal-double-column .modal-content2 .group .test-button {
+    width: 100%;
+    height: 56px;
+    background-color: #bbbcc2;
+    margin: 12px 0;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+    text-align: center;
+    cursor: pointer;
+    color: #FFFFFF;
+    font-size: 1.80em;
+    padding-top: 10px;
+}
+
+.gp-modal.modal-double-column .modal-content2 .button {
+    width: 316px;
+    margin: 0 auto;
+}
+
+.gp-modal.modal-double-column .modal-content2 .group {
+    display: inline-block;
+    vertical-align: top;
+    width: 49%;
+    padding: 0 2%;
+}
+
+.gp-modal.modal-alternative .modal-content2 {
+    background-color: #00e08f;
+}
+
+.gp-modal.modal-alternative .modal-content2 .button {
+    width: 75%;
+    margin: 0 auto;
+    position: relative;
+    top: 45px;
+    background-color: #ffffff;
+    padding: 0;
+    overflow: hidden;
+
+    -webkit-box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.35);
+-moz-box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.35);
+box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.35);
+}
+
+.gp-modal.modal-alternative .modal-content2 .button .wrapper {
+    background-color: #005ca7;
+    margin: 5px;
+    padding-top: 5px;
+    height: calc(100% - 10px);
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+}
+
+.gp-modal.modal-alternative .modal-content2 .title {
+    color: #005ca7;
+    font-family: Sansation;
+}
+
+.gp-modal.modal-alternative .modal-content2 .text {
+    font-size: 1.60em;
+    color: #FFFFFF;
+    text-align: center;
+    padding-top: 20px;
+}
+
+/*Mismo css de landing */
+
+.content-body .apps-list .text2 {
+    font-family: "Sansation Light";
+    font-size: 3.00em;
+    color: #727277;
+    text-align: center;
+    padding-top: 2%;
+}
+
+.content-body .apps-list .search1 {
+    padding-top: 1%;
+}
+
+.content-body .apps-list .search1 .box {
+    width: 448px;
+    height: 40px;
+    position: relative;
+    margin: 0 auto;
+}
+
+.content-body .apps-list .search1 .box img {
+    position: absolute;
+    top: 25%;
+    left: 5%;
+}
+
+.content-body .apps-list .search1 .box input {
+    width: 100%;
+    height: 100%;
+    border: 0;
+
+    -webkit-border-radius: 15px;
+    -moz-border-radius: 15px;
+    border-radius: 15px;
+
+    font-family: 'Sansation';
+    font-size: 1.40em;
+    padding: 0 15%;
+
+    outline: none;
+    background-color: #ffffff;
+
+}
+
+.content-body .apps-list .nav {
+    padding-top: 1%;
+    text-align: center;
+}
+
+.content-body .apps-list .nav .item {
+    font-family: "Sansation Light";
+    font-size: 1.60em;
+    color: #727277;
+    display: inline-block;
+}
+
+.content-body .apps-list .nav .divider {
+    width: 1px;
+    height: 26px;
+    display: inline-block;
+    background-color: #e5e6e9;
+    position: relative;
+    top: 5px;
+    margin: 0 1%;
+}
+
+.content-body .apps-list .list-wrapper {
+    width: 80%;
+    max-height: 550px;
+    overflow: hidden;
+    margin: 5% auto;
+    overflow-y: scroll;
+}
+
+.content-body .apps-list .list-wrapper .list-item {
+    text-align: center;
+    margin: 5% 0 10% 0;
+}
+
+.content-body .apps-list .list-wrapper .list-item .image1 {
+
+}
+
+.content-body .apps-list .list-wrapper .list-item .divider {
+    width: 98px;
+    height: 1px;
+    display: inline-block;
+    background-color: #e5e6e9;
+    margin: 5% 0 1% 0;
+
+}
+
+.content-body .apps-list .list-wrapper .list-item.selected .image1 img {
+    border: 4px solid #00e08f;
+    border-radius: 25px;
+}
+
+.content-body .apps-list .list-wrapper .list-item .name1 {
+    font-family: "Sansation Light";
+    font-size: 1.40em;
+    color: #727277;
+}
+
+/* ****** */

@@ -1,34 +1,151 @@
-{% extends 'layouts/site_base.html' %}
-{% load static %}
+{% extends 'layouts/console_base.html' %}
+{% load static i18n %}
 
 
 {% block content %}
-    <div class="col-md-12">
-        <div class="col-md-4 steps_border">
-            1. Select an app
+    <div class="gp-modal modal-double-column" style="display: none">
+        <div class="close-button">
+            <img src="{% static 'img/console/g1688.png' %}" width="50">
         </div>
-        <div class="col-md-6">&nbsp;</div>
-        <div class="col-md-2">
-            <form>
-                <div>
-                    <input placeholder="Buscar" name="srch-term" id="srch-term" type="text">
-                    <button type="submit"><i class="glyphicon glyphicon-search"></i></button>
-
+        <div class="modal-content2">
+            <div class="form">
+                <div class="group">
+                    <label>Nombre:</label>
+                    <input>
                 </div>
-            </form>
+                <div class="group">
+                    <label>Base De Datos:</label>
+                    <input>
+                </div>
+                <div class="group">
+                    <label>Host:</label>
+                    <input>
+                </div>
+                <div class="group">
+                    <label>Tabla:</label>
+                    <input>
+                </div>
+                <div class="group">
+                    <label>Puerto:</label>
+                    <input>
+                </div>
+                <div class="group">
+                    <label>Usuario:</label>
+                    <input>
+                </div>
+                <div class="group">
+                    <label>Contraseña:</label>
+                    <input>
+                </div>
+                <div class="group">
+                    <label>Waiting for test</label>
+                    <div class="test-button">Test Connection</div>
+                </div>
+            </div>
+            <div class="button">
+                Crear Conexión
+            </div>
         </div>
     </div>
-    <br /><br />
-    <div class="col-md-12">
-        <ul>
-            {% for connector in object_list %}
-                <li style="display: inline-block; width:150px;">
-                    <div>
-                        <img src="{{ connector.icon.url }}" height="60" width="60">
-                        <p class="center-block">{{ connector.name }}</p>
-                    </div>
-                </li>
-            {% endfor %}
-        </ul>
+
+    <div class="gp-modal" style="display: none">
+        <div class="close-button">
+            <img src="{% static 'img/console/g1688.png' %}" width="50">
+        </div>
+        <div class="modal-content2">
+            <div class="title">
+                Función del Plug
+            </div>
+            <div class="form">
+                <div class="group">
+                    <input>
+                </div>
+            </div>
+            <div class="button">
+                Escoge tu 2do Gear
+            </div>
+        </div>
+    </div>
+
+    <div class="gp-modal modal-alternative" style="display: none">
+        <div class="close-button">
+            <img src="{% static 'img/console/g1688.png' %}" width="50">
+        </div>
+        <div class="modal-content2">
+            <div class="title">
+                Has escogido <span style="font-family: 'Sansation Bold'">Facebook</span>
+            </div>
+            <div class="text">
+                No existe ningún tipo de conexión
+            </div>
+            <div class="button">
+                <div class="wrapper">
+                    Crear Conexión
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="gp-modal modal-alternative" style="display: none">
+        <div class="close-button">
+            <img src="{% static 'img/console/g1688.png' %}" width="50">
+        </div>
+        <div class="modal-content2" style="width: 520px">
+            <div class="title">
+                Has escogido <span style="font-family: 'Sansation Bold'">Facebook</span> como destino
+            </div>
+            <div class="text">
+                Ya tu gear y tu plug están listos. Solo falta que empieces a usarlos.
+            </div>
+            <div class="button">
+                <div class="wrapper">
+                    Aceptar
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-body">
+        <div class="row apps-list">
+            <div class="text2">
+                {% trans 'Escoge Aplicación de Destino' %}
+            </div>
+            <div class="search1">
+                <div class="box">
+                    <img src="{% static 'img/landing/lupa.png' %}" width="21px" height="20px">
+                    <input type="text">
+                </div>
+            </div>
+            <div class="nav">
+                <div class="item">
+                    {% trans 'Más Usadas' %}
+                </div>
+                <div class="divider"></div>
+                <div class="item">
+                    {% trans 'Las Mejores Combinaciones' %}
+                </div>
+                <div class="divider"></div>
+                <div class="item">
+                    Lorem Ipsum
+                </div>
+            </div>
+            <div class="list-wrapper">
+                <div class="row">
+                    {% for connector in object_list %}
+                        <div class="col-md-2">
+                            <div class="list-item {% if forloop.first %}selected{% endif %}">
+                                <div class="image1">
+                                    <img src="{{ connector.icon.url }}" width="110" height="110">
+                                </div>
+                                <div class="divider"></div>
+                                <div class="name1">
+                                    {{ connector.name }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}
