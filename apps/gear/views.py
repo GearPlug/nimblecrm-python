@@ -29,6 +29,7 @@ class ListGearView(LoginRequiredMixin, ListView):
         return context
 
     def get_queryset(self):
+        print(self.request.user)
         return self.model.objects.filter(
             user=self.request.user).prefetch_related('gear')
 

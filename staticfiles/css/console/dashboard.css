@@ -418,14 +418,14 @@
     color: #9d9ba1;
 }
 
-.content-body .gears .add .button, .content-body .gears .add .text {
+.content-body .gears .add .button, .content-body .gears .add .text, .content-body .projects .folders .add .button, .content-body .projects .folders .add .text {
     display: inline-block;
     vertical-align: middle;
     font-size: 2.00em;
     color: #9d9ba1;
 }
 
-.content-body .gears .add .text {
+.content-body .gears .add .text, .content-body .folders .add .text{
     padding-left: 15px;
 }
 
@@ -563,9 +563,9 @@
     padding: 0;
     overflow: hidden;
 
-    -webkit-box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.35);
--moz-box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.35);
-box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.35);
+    -webkit-box-shadow: 0px 5px 5px 0px rgba(0, 0, 0, 0.35);
+    -moz-box-shadow: 0px 5px 5px 0px rgba(0, 0, 0, 0.35);
+    box-shadow: 0px 5px 5px 0px rgba(0, 0, 0, 0.35);
 }
 
 .gp-modal.modal-alternative .modal-content2 .button .wrapper {
