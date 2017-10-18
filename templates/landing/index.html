@@ -4,19 +4,26 @@
 {% block content %}
     <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
         <div class="carousel-inner">
-            <div class="item active container-fluid slide-item">
-                <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
-                <div class="carousel-caption slide-caption">
-                    {% blocktrans %}
-                        Conectándote <br/>
-                        <span class="slide-text-light"> en todos </span> <br/>
-                        <span class="slide-color-aqua"> lados </span>
-                    {% endblocktrans %}
+{#            {% if request.user.is_authenticated is False %}#}
+                <div class="item active container-fluid slide-item">
+                    <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
+                    <div class="carousel-caption slide-caption">
+                        {% blocktrans %}
+                            Conectándote <br/>
+                            <span class="slide-text-light"> en todos </span> <br/>
+                            <span class="slide-color-aqua"> lados </span>
+                        {% endblocktrans %}
+                    </div>
                 </div>
-            </div>
-            <div class="item">
-                <img src="{% static 'img/landing/slide1.png' %}" alt="Second slide" class="slide">
-            </div>
+                <div class="item">
+                    <img src="{% static 'img/landing/slide1.png' %}" alt="Second slide" class="slide">
+                </div>
+{#            {% else %}#}
+{#                <div class="item active bg_login1">#}
+{#                    &nbsp;#}
+{#                </div>#}
+{#            {% endif %}#}
+
         </div>
         <a class="left carousel-control" href="#carousel-example-generic" data-slide="prev">
             <span class="slide-arrow">
@@ -29,10 +36,15 @@
             </span>
         </a>
     </div>
-    {#    {% if request.user.is_authenticated is False %}#}
-    <div class="bg-form">
-        {% include 'landing/snippets/signup_form.html' %}
-    </div>
+{#    {% if request.user.is_authenticated is False %}#}
+        <div class="bg-form">
+            {% include 'landing/snippets/signup_form.html' %}
+        </div>
+{#    {% else %}#}
+{#        <div class="bg_login text-center">#}
+{#            <button type="button" class="btn-login">¡Ingresa Ya!</button>#}
+{#        </div>#}
+{#    {% endif %}#}
     <div class="col-md-12 text-center index-space1">
         <img src="{% static 'img/landing/logo_what.png' %}" style="height: 13%;">
     </div>
@@ -40,17 +52,19 @@
         <span class="text-what">{% trans '¿Qué es GearPlug?' %}</span>
         <br/>
         <p class="text-p">
+            {% blocktrans %}
             GearPlug es un software de automatización y optimización de todas las herramientas digitales para que su
             empresa logre todos los KPI (Indicadores de Rendimiento) dispuestos, los cuales pueden mejorar y hacer
             efectivos por medio de diferentes soluciones integrales de marketing digital que ofrece nuestro software.
+            {% endblocktrans %}
         </p>
     </div>
     <div class="col-md-12 index-space3">
         <hr class="hr-separator">
     </div>
     <div class="col-md-12 text-center index-space4">
-        <span class="text-what">¡Crea los Gear que quieras!</span> <br/>
-        <p class="text-two">(2 aplicaciones por gear)</p>
+        <span class="text-what">{% trans '¡Crea los Gear que quieras!' %}</span> <br/>
+        <p class="text-two">{% trans '(2 aplicaciones por gear)' %}</p>
     </div>
     <div class="col-md-12 index-space5">
         <div class="col-md-10 col-md-offset-1">
@@ -61,7 +75,7 @@
                 <div class="col-md-2">
                     <img src="{% static 'img/landing/bullet1.png' %}" class="height_bullet">
                 </div>
-                <div class="col-md-10 text-bullet">Selecciona el Origen</div>
+                <div class="col-md-10 text-bullet">{% trans 'Selecciona el Origen' %}</div>
             </div>
             <div class="col-md-4 text-center border_process">
                 <div class="col-md-12">
@@ -70,7 +84,9 @@
                 <div class="col-md-2">
                     <img src="{% static 'img/landing/bullet2.png' %}" class="height_bullet">
                 </div>
-                <div class="col-md-10 text-bullet1"> Selecciona la acción que deseas que realice el Gear.</div>
+                <div class="col-md-10 text-bullet1">
+                    {% trans 'Selecciona la acción que deseas que realice el Gear.' %}
+                </div>
             </div>
             <div class="col-md-4 text-center">
                 <div class="col-md-12">
@@ -79,12 +95,12 @@
                 <div class="col-md-2">
                     <img src="{% static 'img/landing/bullet3.png' %}" class="height_bullet">
                 </div>
-                <div class="col-md-10 text-bullet">Selecciona el destino</div>
+                <div class="col-md-10 text-bullet"> {% trans 'Selecciona el destino' %} </div>
             </div>
         </div>
     </div>
     <div class="col-md-12 text-center index-space7 text-connect">
-        TOP 6 de Aplicaciones más usadas
+        {% trans 'Las Aplicaciones más utilizadas' %}
     </div>
 
     <div class="col-md-12 "> &nbsp;</div>
