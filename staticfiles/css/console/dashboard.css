@@ -243,9 +243,9 @@ html {
 
     background: url("../../img/console/g6736.png") center/60% no-repeat, #00e08f;
 
-    border-radius: 30px 0px 0px 30px;
-    -moz-border-radius: 30px 0px 0px 30px;
-    -webkit-border-radius: 30px 0px 0px 30px;
+    border-radius: 45px 0px 0px 45px;
+    -moz-border-radius: 45px 0px 0px 45px;
+    -webkit-border-radius: 45px 0px 0px 45px;
     border: 0px solid #000000;
     cursor: pointer;
     z-index: 1;
