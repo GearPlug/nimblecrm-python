@@ -2,30 +2,7 @@
 {% load static %}
 
 {% block content %}
-    <div class="gp-modal" style="display:none;">
-        <div class="close-button">
-            <img src="{% static 'img/console/g1688.png' %}" width="50">
-        </div>
-        <div class="modal-content2">
-            <div class="title">
-                Nuevo Gear
-            </div>
-            <div class="form">
-                <div class="group">
-                    <label>Nombre:</label>
-                    <input>
-                </div>
-                <div class="group">
-                    <label>Grupo:</label>
-                    <input>
-                </div>
-            </div>
-            <div class="button">
-                Crear Grear
-            </div>
-        </div>
-    </div>
-    <div class="content-body">
+    <div class="content-body col-md-10 col-md-offset-1">
         <div class="projects">
             <div class="title">
                 <span>Proyectos</span>
@@ -33,31 +10,100 @@
             <div class="folders">
                 {% for group in object_list %}
                     {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=2 %}
-                {% endfor %}
-            </div>
-        </div>
-        <div class="gears">
-            <div class="title">
-                <span>Gears</span>
-            </div>
-            <div class="list">
-                {% for group in object_list %}
-                    <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;"
-                         id="group_gear_{{ group.id }}" data-show="True">
-                        {% for gear in group.gear.all %}
-                            {% include 'gear/snippets/gear_extend.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
-                        {% endfor %}
+                {% empty %}
+                    <div class="add">
+                        <div class="button">
+                            <img src="{% static 'img/console/g3261.png' %}" width="65">
+                        </div>
+                        <div class="text">
+                            <a href="{% url 'gear:create_group' %}">Nuevo Proyecto</a>
+                        </div>
                     </div>
                 {% endfor %}
-            </div>
-            <div class="add">
-                <div class="button">
-                    <img src="{% static 'img/console/g3261.png' %}" width="65">
-                </div>
-                <div class="text">
-                    <a href="{% url 'gear:create' %}">Nuevo Gear</a>
-                </div>
+                {% if object_list %}
+                    <div class="item">
+                        <div class="button">
+                            <a href="{% url 'gear:create_group' %}">
+                                <img src="{% static 'img/console/g3261.png' %}" width="65">
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
+        {% if object_list %}
+            <div class="gears">
+                <div class="title">
+                    <span>Gears</span>
+                </div>
+                <div class="list">
+                    {% for group in object_list %}
+                        <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;"
+                             id="group_gear_{{ group.id }}" data-show="True">
+                            {% for gear in group.gear.all %}
+                                {% include 'gear/snippets/gear_extend.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="add">
+                    <div class="button">
+                        <img src="{% static 'img/console/g3261.png' %}" width="65">
+                    </div>
+                    <div class="text">
+                        <a href="{% url 'gear:create' %}">Nuevo Gear</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     </div>
+    {% include 'gear/snippets/gear_form.html' %}
+    {% include 'gear/snippets/group_form.html' %}
+
+{% endblock %}
+
+{% block scripts %}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            var is_blocked = false;
+            $("a.toggle-gear-btn").click(function () {
+                var a = $(this);
+                var url = a.attr('href');
+                if (is_blocked == false) {
+                    is_blocked = true;
+                    $.ajax({
+                        method: "POST", url: url
+                    }).done(function (response) {
+                        if (response.data == true) {
+                            $(a).find("div.button").html('<img src="{% static "img/console/g3317.png" %}" width="50" ' +
+                                '"height="50"> <div class="status">ON</div>');
+                        } else if (response.data == false) {
+                            $(a).find("div.button").html('<img src="{% static "img/console/g3333.png" %}" width="50" ' +
+                                '"height="50"> <div class="status">OFF</div>');
+                        } else {
+                            $(a).find("div.button").html('<img src="{% static "img/console/g3333.png" %}" width="50" ' +
+                                '"height="50"> <div class="status">UNEXPECTED ERROR</div>');
+                        }
+                        is_blocked = false;
+                    });
+                }
+                return false;
+            });
+            $('div.folders div.item').on('click', function () {
+                var gear_list = $("#group_gear_" + $(this).attr('data-group-id'));
+                var show = $(gear_list).attr('data-show');
+                if (show == "True") {
+                    gear_list.hide();
+                    gear_list.attr('data-show', 'False');
+                    $(this).find('div.image img').attr('src', '{% static "img/console/g3277.png" %}');
+                } else {
+                    gear_list.show();
+                    gear_list.attr('data-show', 'True');
+                    $(this).find('div.image img').attr('src', '{% static "img/console/g3205.png" %}');
+                }
+            });
+        });
+
+
+    </script>
 {% endblock %}
