@@ -2,78 +2,73 @@
 {% load static i18n %}
 
 {% block content %}
-
-{#    <div class="row aboutus-banner">#}
-{#        <div class="col-md-7">#}
-{#            <div class="aboutus-text">#}
-{#                <div class="text1">#}
-{#                    GearPlug#}
-{#                </div>#}
-{#                <div class="text2">#}
-{#                    {% blocktrans %}#}
-{#                        es una herramienta de <span style="font-family: Sansation">optimización</span>#}
-{#                    {% endblocktrans %}#}
-{#                </div>#}
-{#            </div>#}
-{#        </div>#}
-{#        <div class="col-md-5"> &nbsp; </div>#}
-{#    </div>#}
-{#    <div class="row aboutus-description">#}
-{#        <div class="col-md-12">#}
-{#            <div class="text3">#}
-{#                {% blocktrans %}#}
-{#                    <p><span style="font-family: Sansation">GearPlug</span> es un software de automatización y#}
-{#                        optimización de todas las herramientas digitales para#}
-{#                        que su empresa logre todos los KPI (Indicadores de Rendimiento) dispuestos, los cuales pueden#}
-{#                        mejorar y hacer efectivos por medio de diferentes soluciones integrales de marketing digital que#}
-{#                        ofrece nuestro software.</p>#}
-{#                    <p>Podemos pensar en GearPlug como una plataforma de integración de servicios el cual utiliza las#}
-{#                        API’s de estos sistemas como interfaz para integrarlos entre ellos. En términos prácticos es una#}
-{#                        plataforma tecnológica que ofrece servicios que permiten la comunicación directa entre diversos#}
-{#                        sistemas de diferentes características, teniendo una homogeneidad al momento de mostrar los#}
-{#                        resultados de los datos obtenidos, siendo ésta una de las características claves.</p>#}
-{#                {% endblocktrans %}#}
-{#            </div>#}
-{#        </div>#}
-{#    </div>#}
-{#    <div class="row aboutus-services">#}
-{#        <div class="col-md-12">#}
-{#            <div class="title">#}
-{#                {% trans 'Servicios' %}#}
-{#            </div>#}
-{#            <hr class="hr_service" >#}
-{#            <div class="row boxes">#}
-{#                <div class="col-md-4">#}
-{#                    <div class="box">#}
-{#                        <div class="image">#}
-{#                            <img src="{% static 'img/landing/integrate.png' %}" class="img_integrate">#}
-{#                        </div>#}
-{#                        <div class="title2">#}
-{#                            {% trans 'Integrar' %}#}
-{#                        </div>#}
-{#                    </div>#}
-{#                </div>#}
-{#                <div class="col-md-4">#}
-{#                    <div class="box">#}
-{#                        <div class="image">#}
-{#                            <img src="{% static 'img/landing/automate.png' %}">#}
-{#                        </div>#}
-{#                        <div class="title2">#}
-{#                            {% trans 'Automatizar' %}#}
-{#                        </div>#}
-{#                    </div>#}
-{#                </div>#}
-{#                <div class="col-md-4">#}
-{#                    <div class="box">#}
-{#                        <div class="image">#}
-{#                            <img src="{% static 'img/landing/evolve.png' %}">#}
-{#                        </div>#}
-{#                        <div class="title2">#}
-{#                            {% trans 'Evolucionar' %}#}
-{#                        </div>#}
-{#                    </div>#}
-{#                </div>#}
-{#            </div>#}
-{#        </div>#}
-{#    </div>#}
+    <div class="col-md-7 aboutus-banner">
+        <div class="aboutus-text">
+            <div class="text1">
+                GearPlug
+            </div>
+            <div class="text2">
+                {% blocktrans %}
+                    es una herramienta de <span style="font-family: Sansation">optimización</span>
+                {% endblocktrans %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        &nbsp;
+    </div>
+    <div class="col-md-12 aboutus-description">
+        <div class="text3">
+            {% blocktrans %}
+                <p><span style="font-family: Sansation">GearPlug</span> es un software de automatización y
+                    optimización de todas las herramientas digitales para
+                    que su empresa logre todos los KPI (Indicadores de Rendimiento) dispuestos, los cuales pueden
+                    mejorar y hacer efectivos por medio de diferentes soluciones integrales de marketing digital que
+                    ofrece nuestro software.</p>
+                <p>Podemos pensar en GearPlug como una plataforma de integración de servicios el cual utiliza las
+                    API’s de estos sistemas como interfaz para integrarlos entre ellos. En términos prácticos es una
+                    plataforma tecnológica que ofrece servicios que permiten la comunicación directa entre diversos
+                    sistemas de diferentes características, teniendo una homogeneidad al momento de mostrar los
+                    resultados de los datos obtenidos, siendo ésta una de las características claves.</p>
+            {% endblocktrans %}
+        </div>
+    </div>
+    <div class="aboutus-services">
+        <div class="col-md-12 title">
+            {% trans 'Servicios' %}
+            <hr class="hr_service">
+        </div>
+        <div class="col-md-12 boxes">
+            <div class="col-md-4">
+                <div class="box">
+                    <div class="image">
+                        <img src="{% static 'img/landing/integrate.png' %}" class="img_integrate">
+                    </div>
+                    <div class="title2">
+                        {% trans 'Integrar' %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="box">
+                    <div class="image">
+                        <img src="{% static 'img/landing/automate.png' %}" class="img_automate">
+                    </div>
+                    <div class="title2">
+                        {% trans 'Automatizar' %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="box">
+                    <div class="image">
+                        <img src="{% static 'img/landing/evolve.png' %}" class="img_evolve">
+                    </div>
+                    <div class="title2">
+                        {% trans 'Evolucionar' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
