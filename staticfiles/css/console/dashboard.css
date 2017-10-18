@@ -283,6 +283,10 @@ html {
 
 }
 
+.content-body .projects .folders .item .image img {
+    cursor: pointer;
+}
+
 .content-body .projects .add-wrapper .add, .content-body .projects .add-wrapper .steps-tooltip {
     display: inline-block;
     vertical-align: top;
@@ -401,10 +405,11 @@ html {
     padding: 12px 25px 0 0;
 }
 
-.content-body .gears .list .item.extended .image-wrapper .control .edit, .content-body .gears .list .item.extended .image-wrapper .control .button, .content-body .gears .list .item.extended .image-wrapper .control .status {
+.content-body .gears .list .item.extended .image-wrapper .control .edit, .content-body .gears .list .item.extended .image-wrapper .control .button, .content-body .gears .list .item.extended .image-wrapper .control .status, .content-body .gears .list .item.extended .image-wrapper .control .history {
     display: inline-block;
     vertical-align: middle;
     padding: 0 4px;
+    cursor: pointer;
 }
 
 .content-body .gears .list .item.extended .image-wrapper .control .status {
@@ -714,7 +719,9 @@ box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.35);
 
 
 .content-body .connection .form .button {
-    width: 45%;
+    font-family: "Sansation Bold";
+    font-size: 1.80em;
+    width: 49%;
     height: 56px;
     margin: 12px 0;
     border-radius: 25px 25px 25px 25px;
@@ -722,4 +729,33 @@ box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.35);
     -webkit-border-radius: 25px 25px 25px 25px;
     border: 0px solid #000000;
     text-align: center;
+    background-color: #bbbcc2;
+    color: #FFFFFF;
+
+    display: inline-block;
+    vertical-align: top;
+    cursor: pointer;
+    padding-top: 10px;
 }
+
+.content-body .connection .form button {
+    font-family: "Sansation Bold";
+    font-size: 1.80em;
+    width: 49%;
+    height: 56px;
+    margin: 12px 0;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+    text-align: center;
+    background-color: #005ca7;
+    color: #FFFFFF;
+
+    display: inline-block;
+    vertical-align: top;
+
+    outline: none;
+    float: right;
+}
+
