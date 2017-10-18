@@ -1,10 +1,14 @@
 {# id: Group's id. Used for data attribute. #}
 {# name: Group's name. #}
+{# columns: columns for md?#}
 
-<div class="col-md-{{ columns }}" data-group-id="{{ id }}">
-    <div class="col-md-12 group_border_dash" onclick="js:show_gear({{ id }})">
-        <i class="fa fa-folder-o" aria-hidden="true"></i>
-        <br />
+{% load static %}
+<div class="col-md-2 item" data-group-id="{{ id }}">
+    <div class="image">
+{#        <img src="{% static 'img/console/g3277.png' %}" width="134">#}
+        <img src="{% static 'img/console/g3205.png' %}" width="98" height="98">
+    </div>
+    <div class="name">
         {{ name }}
     </div>
 </div>
