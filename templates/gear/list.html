@@ -3,7 +3,7 @@
 
 {% block content %}
     <div class="content-body col-md-10 col-md-offset-1">
-        <div class="projects">
+        <div class="row projects">
             <div class="title">
                 <span>Proyectos</span>
             </div>
@@ -31,12 +31,13 @@
                 {% endif %}
             </div>
         </div>
+
         {% if object_list %}
-            <div class="gears">
+            <div class="row gears">
                 <div class="title">
                     <span>Gears</span>
                 </div>
-                <div class="list">
+                <div class="row list">
                     {% for group in object_list %}
                         <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;"
                              id="group_gear_{{ group.id }}" data-show="True">
@@ -46,9 +47,10 @@
                         </div>
                     {% endfor %}
                 </div>
-                <div class="add">
+
+                <div class="row add">
                     <div class="button">
-                        <img src="{% static 'img/console/g3261.png' %}" width="65">
+                        <img src="{% static 'img/console/g3261.png' %}" width="38">
                     </div>
                     <div class="text">
                         <a href="{% url 'gear:create' %}">Nuevo Gear</a>
@@ -56,9 +58,10 @@
                 </div>
             </div>
         {% endif %}
+
+        {% include 'gear/snippets/gear_form.html' %}
+        {% include 'gear/snippets/group_form.html' %}
     </div>
-    {% include 'gear/snippets/gear_form.html' %}
-    {% include 'gear/snippets/group_form.html' %}
 
 {% endblock %}
 

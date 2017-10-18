@@ -1,13 +1,13 @@
 {% load static %}
 
-<div class="item extended" data-gear-id="{{ gear.id }}">
+<div class="col-md-7 item extended" data-gear-id="{{ gear.id }}">
     <div class="image-wrapper">
         <div class="image">
             <div class="connector">
-                <img src="{{ gear.source.connection.connector.icon73.url }}" width="55" height="55">
+                <img src="{{ gear.source.connection.connector.icon73.url }}" width="36" height="36">
             </div>
             <div class="connector">
-                <img src="{{ gear.target.connection.connector.icon73.url }}" width="55" height="55">
+                <img src="{{ gear.target.connection.connector.icon73.url }}" width="36" height="36">
             </div>
         </div>
         <div class="name">
@@ -22,7 +22,7 @@
             <a class="toggle-gear-btn" href="{% url 'gear:toggle' gear_id=gear.id %}">
                 <div class="button">
                     <img src="{% static gear.is_running|yesno:'img/console/g3317.png,img/console/g3333.png' %}"
-                         width="50" height="50">
+                         width="36" height="36">
                     <div class="status">{{ gear.is_running|yesno:"ON,OFF" }}</div>
                 </div>
             </a>

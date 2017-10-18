@@ -4,35 +4,37 @@
 
 .aboutus-text {
     width: 70%;
-    margin: 15% 0 0 38%;
-    line-height: 5em;
+    margin: 17.2% 0 30.2% 28.8%;
+    line-height: 79px;
 }
 
 .aboutus-text .text1 {
     font-family: 'Sansation';
     font-weight: 700;
-    font-size: 4.80em;
+    font-size: 5.4em;
     color: #005ca7;
+    letter-spacing: 4px;
 }
 
 .aboutus-text .text2 {
     font-family: 'Sansation Light';
-    /*font-weight: 300;*/
-    font-size: 4.80em;
+    font-size: 5.7em;
     color: #9d9ba1;
+    margin-top: 1.2%;
 }
 
 .aboutus-description {
-    background-color: #f7f8f8;
-
+    background-color: #F6F7F7;
 }
 
 .aboutus-description .text3 {
-    padding: 5% 16% 5% 16%;
+    padding: 5.4% 11.1% 6.7% 13.6%;
     font-family: 'Sansation Light';
-    font-size: 2.00em;
+    font-size: 2.1em;
     color: #727277;
     text-align: justify;
+    line-height: 42px;
+    letter-spacing: 0.2px;
 }
 
 .aboutus-description .text3 p {
@@ -40,7 +42,7 @@
 }
 
 .aboutus-services .title {
-    padding-top: 2%;
+    padding-top: 1.7%;
     font-family: 'Sansation';
     font-size: 5.33em;
     color: #9e9ba2;
@@ -60,5 +62,16 @@
     font-family: 'Sansation Light';
     font-size: 3.00em;
     color: #9d9ba1;
+}
 
+.hr_service {
+    border-bottom: #09DF8E solid 3px;
+    border-top: transparent;
+    margin: -0.8% 0 0 41.6%;
+    width: 16.6%;
+}
+
+.img_integrate{
+    height: 14.5%;
+    margin-top: 18%;
 }

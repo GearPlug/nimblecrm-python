@@ -284,3 +284,26 @@
 .height_bullet {
     height: 8.1%;
 }
+
+.bg_login{
+    background: url("../../img/landing/icons4.png") no-repeat scroll 0 0;
+    left: 53.8%;
+    padding: 5.5% 7.4% 6.5% 5.9%;
+    position: absolute;
+    top: 6.8%;
+}
+
+.bg_login1{
+    background-color: #005CA6;
+    height: 821px;
+}
+
+.btn-login{
+    background-color: #09DF8E;
+    color: white;
+    font-family: 'Sansation';
+    font-size: 5em;
+    height: 104px;
+    padding: 0;
+    width: 445px;
+}
