@@ -1,3 +1,7 @@
+html {
+    overflow-x: hidden;
+}
+
 .content {
     /*Mover*/
     font-family: "Sansation", sans-serif;
@@ -38,6 +42,7 @@
 .dashboard-header .right-side .user, .dashboard-header .right-side .divider, .dashboard-header .right-side .search {
     display: inline-block;
     vertical-align: top;
+    float: right;
 }
 
 .dashboard-header .right-side .user .name, .dashboard-header .right-side .user .icon {
@@ -88,7 +93,7 @@
 }
 
 .dashboard-panel {
-    height: 100%;
+    height: calc(100% - 108px);
     background: url('../../img/console/g5842.png') bottom center/100% no-repeat, #005ea7;
     padding: 35px 0 0 0;
     box-sizing: border-box;
@@ -134,7 +139,7 @@
 }
 
 .dashboard-content {
-    height: 100%;
+    height: auto;
     background-color: #ffffff;
 }
 
@@ -238,25 +243,26 @@
 
     background: url("../../img/console/g6736.png") center/60% no-repeat, #00e08f;
 
-    border-radius: 30px 0px 0px 30px;
-    -moz-border-radius: 30px 0px 0px 30px;
-    -webkit-border-radius: 30px 0px 0px 30px;
+    border-radius: 45px 0px 0px 45px;
+    -moz-border-radius: 45px 0px 0px 45px;
+    -webkit-border-radius: 45px 0px 0px 45px;
     border: 0px solid #000000;
     cursor: pointer;
+    z-index: 1;
 }
 
 .content-body {
     padding-top: 75px;
 }
 
-.content-body .projects .title, .content-body .gears .title {
+.content-body .projects .title, .content-body .gears .title, .content-body .connection .title {
     font-family: "Sansation Bold";
     font-size: 1.60em;
     color: #9d9ba1;
     padding-bottom: 35px;
 }
 
-.content-body .projects .title span, .content-body .gears .title span {
+.content-body .projects .title span, .content-body .gears .title span, .content-body .connection .title span {
     border-bottom: 3px solid #00e08f;
     display: inline-block;
     line-height: 1em;
@@ -267,15 +273,18 @@
 }
 
 .content-body .projects .folders .item {
-    display: inline-block;
-    vertical-align: top;
-    padding: 0 32px;
+
 }
 
 .content-body .projects .folders .item .name {
-    font-size: 2.00em;
+    font-size: 1.50em;
     color: #9d9ba1;
     padding-top: 20px;
+
+}
+
+.content-body .projects .folders .item .image img {
+    cursor: pointer;
 }
 
 .content-body .projects .add-wrapper .add, .content-body .projects .add-wrapper .steps-tooltip {
@@ -333,7 +342,7 @@
 
 .content-body .projects .add-wrapper .steps-tooltip .image {
     position: absolute;
-    top: 20px;
+    top: 12px;
     left: 55px;
 }
 
@@ -342,8 +351,6 @@
 }
 
 .content-body .gears .list .item {
-    display: inline-block;
-    vertical-align: top;
     text-align: center;
 }
 
@@ -354,11 +361,12 @@
 }
 
 .content-body .gears .list .item.extended .image-wrapper {
-    width: 60%;
+    height: 60px;
 }
 
 .content-body .gears .list .item .image-wrapper {
-    background-color: #FFFFFF;
+    height: 60px;
+    background-color: #f6f7f8;
     border-radius: 25px 25px 25px 25px;
     -moz-border-radius: 25px 25px 25px 25px;
     -webkit-border-radius: 25px 25px 25px 25px;
@@ -367,8 +375,8 @@
 
 .content-body .gears .list .item .image-wrapper .image {
     width: 180px;
-    height: 90px;
-    background: url('../../img/console/g7316.png') center/9% no-repeat;
+    height: 100%;
+    background: url('../../img/console/g7316.png') center/6% no-repeat;
     text-align: center;
 }
 
@@ -383,24 +391,25 @@
 
 .content-body .gears .list .item.extended .image-wrapper .name {
     width: 40%;
-    font-size: 1.90em;
+    font-size: 1.30em;
     color: #9d9ba1;
     text-align: center;
-    padding-top: 25px;
+    padding-top: 20px;
 }
 
 .content-body .gears .list .item.extended .image-wrapper .control {
     float: right;
     font-family: "Sansation Bold";
-    font-size: 1.70em;
+    font-size: 1.40em;
     color: #005ca7;
-    padding: 20px 25px 0 0;
+    padding: 12px 25px 0 0;
 }
 
-.content-body .gears .list .item.extended .image-wrapper .control .edit, .content-body .gears .list .item.extended .image-wrapper .control .button, .content-body .gears .list .item.extended .image-wrapper .control .status {
+.content-body .gears .list .item.extended .image-wrapper .control .edit, .content-body .gears .list .item.extended .image-wrapper .control .button, .content-body .gears .list .item.extended .image-wrapper .control .status, .content-body .gears .list .item.extended .image-wrapper .control .history {
     display: inline-block;
     vertical-align: middle;
     padding: 0 4px;
+    cursor: pointer;
 }
 
 .content-body .gears .list .item.extended .image-wrapper .control .status {
@@ -409,7 +418,7 @@
 
 .content-body .gears .list .item .image-wrapper .image .connector {
     display: inline-block;
-    padding: 20px 15px 0 15px;
+    padding: 12px 15px 0 15px;
 
 }
 
@@ -418,14 +427,15 @@
     color: #9d9ba1;
 }
 
-.content-body .gears .add .button, .content-body .gears .add .text {
+.content-body .gears .add .button, .content-body .gears .add .text, .content-body .projects .folders .add .button, .content-body .projects .folders .add .text {
     display: inline-block;
     vertical-align: middle;
-    font-size: 2.00em;
-    color: #9d9ba1;
+    font-size: 1.90em;
+    color: #005ca7;
+    cursor: pointer;
 }
 
-.content-body .gears .add .text {
+.content-body .gears .add .text, .content-body .folders .add .text{
     padding-left: 15px;
 }
 
@@ -476,7 +486,7 @@
     text-align: center;
 }
 
-.gp-modal .modal-content2 .form input, .gp-modal .modal-content2 .button {
+.gp-modal .modal-content2 .form input, .gp-modal .modal-content2 .button, .content-body .connection .form input {
     width: 100%;
     height: 56px;
     margin: 12px 0;
@@ -489,7 +499,7 @@
     text-align: center;
 }
 
-.gp-modal .modal-content2 .form input {
+.gp-modal .modal-content2 .form input, .content-body .connection .form input {
     font-size: 2.00em;
     padding: 0;
     border: none;
@@ -498,12 +508,22 @@
 
 }
 
-.gp-modal .modal-content2 .form label {
+.content-body .connection .form input {
+    background-color: #f6f7f8;
+    border: 1px solid #dbdbdd;
+}
+
+.gp-modal .modal-content2 .form label, .content-body .connection .form label {
     font-size: 1.80em;
     color: #FFFFFF;
     font-weight: 400;
     margin: 0;
 }
+
+.content-body .connection .form label {
+    color: #9d9ba1;
+}
+
 
 .gp-modal .modal-content2 .button {
     font-family: "Sansation Bold";
@@ -563,9 +583,9 @@
     padding: 0;
     overflow: hidden;
 
-    -webkit-box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.35);
--moz-box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.35);
-box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.35);
+    -webkit-box-shadow: 0px 5px 5px 0px rgba(0, 0, 0, 0.35);
+    -moz-box-shadow: 0px 5px 5px 0px rgba(0, 0, 0, 0.35);
+    box-shadow: 0px 5px 5px 0px rgba(0, 0, 0, 0.35);
 }
 
 .gp-modal.modal-alternative .modal-content2 .button .wrapper {
@@ -696,3 +716,46 @@ box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.35);
 }
 
 /* ****** */
+
+
+.content-body .connection .form .button {
+    font-family: "Sansation Bold";
+    font-size: 1.80em;
+    width: 49%;
+    height: 56px;
+    margin: 12px 0;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+    text-align: center;
+    background-color: #bbbcc2;
+    color: #FFFFFF;
+
+    display: inline-block;
+    vertical-align: top;
+    cursor: pointer;
+    padding-top: 10px;
+}
+
+.content-body .connection .form button {
+    font-family: "Sansation Bold";
+    font-size: 1.80em;
+    width: 49%;
+    height: 56px;
+    margin: 12px 0;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+    text-align: center;
+    background-color: #005ca7;
+    color: #FFFFFF;
+
+    display: inline-block;
+    vertical-align: top;
+
+    outline: none;
+    float: right;
+}
+

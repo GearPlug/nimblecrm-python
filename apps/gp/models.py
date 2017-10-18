@@ -13,8 +13,9 @@ class Category(models.Model):
 
 class Connector(models.Model):
     name = models.CharField('name', max_length=120)
+    short_description = models.TextField('short description', max_length=256, default='')
+    description = models.TextField('description', max_length=5000, default='')
     is_active = models.BooleanField('is active', default=False)
-    css_class = models.CharField('css class', max_length=40, blank=True)
     is_source = models.BooleanField('is source', default=False)
     is_target = models.BooleanField('is target', default=False)
     icon15 = models.ImageField('icon 15px', upload_to='connector/icon', null=True, default=None)

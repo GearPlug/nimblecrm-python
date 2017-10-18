@@ -1,24 +1,40 @@
-<div data-gear-id="{{ gear.id }}" class="col-md-12 gear_border_gear_0">
-    <div class="col-md-4">
-        <img src="{{ gear.source.connection.connector.icon.url }}" height="20" width="20">
-        <span> --- </span>
-        <img src="{{ gear.target.connection.connector.icon.url }}" height="20" width="20">
-    </div>
-    <div class="col-md-4">
-        {{ gear.name }}
-    </div>
-    <div class="col-md-4">
-        <a href="{% url 'gear:update' pk=gear.id %}"><i class="fa fa-wrench" aria-hidden="true"></i></a>
-        <a class="toggle-gear-btn" href="{% url 'gear:toggle' gear_id=gear.id %}">
-            {% if gear.is_running %}
-                <i class="fa fa-pause" aria-hidden="true"></i>
-            {% else %}
-                <i class="fa fa-play" aria-hidden="true"></i>
-            {% endif %}
-        </a>
+{% load static %}
 
-        <a href="{% url 'gear:send_history' pk=gear.id %}"><i class="fa fa-arrow-circle-up" aria-hidden="true"></i></a>
-        <a href="{% url 'gear:download_history' pk=gear.id %}"><i class="fa fa-arrow-circle-down" aria-hidden="true"></i></a>
+<div class="col-md-7 item extended" data-gear-id="{{ gear.id }}">
+    <div class="image-wrapper">
+        <div class="image">
+            <div class="connector">
+                <img src="{{ gear.source.connection.connector.icon73.url }}" width="36" height="36">
+            </div>
+            <div class="connector">
+                <img src="{{ gear.target.connection.connector.icon73.url }}" width="36" height="36">
+            </div>
+        </div>
+        <div class="name">
+            {{ gear.name }}
+        </div>
+        <div class="control">
+            <div class="history">
+                <a href="">
+                    <img src="{% static 'img/console/g8645.png' %}" width="36">
+                </a>
+            </div>
+            <div class="edit">
+                <a href="{% url 'gear:update' pk=gear.id %}">
+                    <img src="{% static 'img/console/g3125.png' %}" width="34">
+                </a>
+            </div>
+            <a class="toggle-gear-btn" href="{% url 'gear:toggle' gear_id=gear.id %}">
+                <div class="button">
+                    <img src="{% static gear.is_running|yesno:'img/console/g3317.png,img/console/g3333.png' %}"
+                         width="36" height="36">
+                    <div class="status">{{ gear.is_running|yesno:"ON,OFF" }}</div>
+                </div>
+            </a>
 
+        </div>
     </div>
 </div>
+
+{#        <a href="{% url 'gear:send_history' pk=gear.id %}">A</a>#}
+{#        <a href="{% url 'gear:download_history' pk=gear.id %}">B</a>#}

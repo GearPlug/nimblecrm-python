@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block body_base %}
-{#    <div class="info-tool"></div>#}
+    <div class="info-tool"></div>
     <div class="row content">
         <div class="col-md-12 dashboard-header">
             <div class="col-md-6 left-side">
@@ -25,75 +25,73 @@
                         <img src="{% static 'img/console/g6630.png' %}" width="56">
                     </div>
                 </div>
+                {#                <div class="divider"></div>#}
+                {#                <div class="search">#}
+                {#                    <img src="{% static 'img/landing/lupa.png' %}" width="21px" height="20px">#}
+                {#                    <input type="text">#}
+                {#                </div>#}
+            </div>
+        </div>
+        <div class="col-md-2 dashboard-panel">
+            <div class="menu">
+                <div class="item">
+                    <div class="image">
+                        <img src="{% static 'img/console/g6666.png' %}">
+                    </div>
+                    <a href="{% url 'gear:list' %}">
+                        <div class="text">
+                            Gears
+                        </div>
+                    </a>
+                </div>
+                <div class="item">
+                    <div class="image">
+                        <img src="{% static 'img/console/g5804.png' %}">
+                    </div>
+                    <a href="{% url 'home:apps' %}">
+                        <div class="text">
+                            Lista de Apps
+                        </div>
+                    </a>
+                </div>
                 <div class="divider"></div>
-                <div class="search">
-                    <img src="{% static 'img/landing/lupa.png' %}" width="21px" height="20px">
-                    <input type="text">
+                <div class="item">
+                    <div class="image">
+                        <img src="{% static 'img/console/g5752.png' %}">
+                    </div>
+                    <div class="text">
+                        Actividad
+                    </div>
+                </div>
+                <div class="item">
+                    <div class="image">
+                        <img src="{% static 'img/console/g6678.png' %}">
+                    </div>
+                    <div class="text">
+                        Ayuda
+                    </div>
+                </div>
+                <div class="item">
+                    <div class="image">
+                        <img src="{% static 'img/console/g5740.png' %}">
+                    </div>
+                    <div class="text">
+                        Administrar Conexiones
+                    </div>
+                </div>
+                <div class="item logout">
+                    <div class="image">
+                        <img src="{% static 'img/console/g6754.png' %}">
+                    </div>
+                    <div class="text">
+                        Cerrar Sesión
+                    </div>
                 </div>
             </div>
         </div>
-{#        <div class="row">#}
-            <div class="col-md-2 dashboard-panel">
-                <div class="menu">
-                    <div class="item">
-                        <div class="image">
-                            <img src="{% static 'img/console/g6666.png' %}">
-                        </div>
-                        <a href="{% url 'gear:list' %}">
-                            <div class="text">
-                                Gears
-                            </div>
-                        </a>
-                    </div>
-                    <div class="item">
-                        <div class="image">
-                            <img src="{% static 'img/console/g5804.png' %}">
-                        </div>
-                        <a href="{% url 'home:apps' %}">
-                            <div class="text">
-                                Lista de Apps
-                            </div>
-                        </a>
-                    </div>
-                    <div class="divider"></div>
-                    <div class="item">
-                        <div class="image">
-                            <img src="{% static 'img/console/g5752.png' %}">
-                        </div>
-                        <div class="text">
-                            Actividad
-                        </div>
-                    </div>
-                    <div class="item">
-                        <div class="image">
-                            <img src="{% static 'img/console/g6678.png' %}">
-                        </div>
-                        <div class="text">
-                            Ayuda
-                        </div>
-                    </div>
-                    <div class="item">
-                        <div class="image">
-                            <img src="{% static 'img/console/g5740.png' %}">
-                        </div>
-                        <div class="text">
-                            Administrar Conexiones
-                        </div>
-                    </div>
-                    <div class="item logout">
-                        <div class="image">
-                            <img src="{% static 'img/console/g6754.png' %}">
-                        </div>
-                        <div class="text">
-                            Cerrar Sesión
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-10 dashboard-content">
-                {% block content %}
-                {% endblock %}
-            </div>
-{#        </div>#}
+        <div class="col-md-10 dashboard-content">
+            {% block content %}
+            {% endblock %}
+        </div>
     </div>
 {% endblock %}
