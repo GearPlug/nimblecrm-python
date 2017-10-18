@@ -622,6 +622,8 @@ class TypeFormController(BaseController):
             return False
 
     def create_webhook(self):
+        print("create webhook")
+        token = "9QarwArtUyLtvv3fNuUoytjU7uMPuxKJu4TDnbxw1onY"
         action = self._plug.action.name
         if action.lower() == 'new answer':
             # creación de webhook
@@ -632,10 +634,31 @@ class TypeFormController(BaseController):
             webhook.generated_id = webhook.id
             webhook.is_active = True  # Cambiar a False
             webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            url_base = settings.WEBHOOK_HOST
+            url_path = reverse('home:webhook',
+                               kwargs={'connector': 'typeform',
+                                       'webhook_id': webhook.id})
+            #Código para crear el webhook, funciona con API
+            headers = {
+                'Authorization': 'bearer {0}'.format(token),
+                'Content-Type': 'application/json',
+            }
+            data = {
+                'url': url_base + url_path,
+                'enabled': True,
+            }
+            form_id = self._plug.plug_action_specification.get(action_specification__name='form')
+            _urr_webhook ='https://api.typeform.com/forms/{0}/webhooks/{1}'.format(form_id.value, webhook.id)
+            print("url webhook", _urr_webhook)
+            response = requests.put(_urr_webhook, headers=headers, data=json.dumps(data))
+            print("response", response.text)
+            print(response.status_code)
             return True
         return False
 
     def do_webhook_process(self, body=None, GET=None, POST=None, META=None, webhook_id=None, **kwargs):
+        print("body", body)
+        print("post", POST)
         webhook = Webhook.objects.filter(pk=webhook_id).prefetch_related('plug').first()
         if not webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
             if not webhook.plug.is_tested:
@@ -654,6 +677,9 @@ class TypeFormController(BaseController):
         return HttpResponse(status=200)
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, answer=None, **kwargs):
+        print("download to stored data")
+        # import pprint
+        # pprint.pprint(answer)
         form = self._plug.plug_action_specification.get(action_specification__name__iexact='form')
         list_data_answers = []
         if answer is not None:
@@ -673,10 +699,12 @@ class TypeFormController(BaseController):
                     obj_raw[data_questions[raw_answer['field']['id']]] = value
                 list_data_answers.append(obj_raw)
         else:
+            print("sin webhook")
             form_data = self._client.get_form_information(form.value)
             data_questions = self._client.get_form_questions(form=form_data)
             data_answers = self._client.get_form_metadata(form=form_data)
             dict_data_questions = {question['id']: question['question'] for question in data_questions}
+            print("aQ", dict_data_questions)
             for answer in data_answers:
                 obj_raw = {'completed': answer['completed'], 'token': answer['token']}
                 if answer['answers']:
