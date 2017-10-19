@@ -623,7 +623,9 @@ class TypeFormController(BaseController):
 
     def create_webhook(self):
         print("create webhook")
-        token = "9QarwArtUyLtvv3fNuUoytjU7uMPuxKJu4TDnbxw1onY"
+        #token = "9QarwArtUyLtvv3fNuUoytjU7uMPuxKJu4TDnbxw1onY"
+        #token = "6hZGQYsthVrXiEYnRJLhZSGBQJcTFgSWKvGvpGr3rnY3"
+        token = "7eZntdsyGTU2Y8RfxdnnKQBpT57Fp2ojhs4UAfpSnvNo"
         action = self._plug.action.name
         if action.lower() == 'new answer':
             # creación de webhook
@@ -657,10 +659,10 @@ class TypeFormController(BaseController):
         return False
 
     def do_webhook_process(self, body=None, GET=None, POST=None, META=None, webhook_id=None, **kwargs):
-        print("body", body)
-        print("post", POST)
+        print("do webhook process")
         webhook = Webhook.objects.filter(pk=webhook_id).prefetch_related('plug').first()
-        if not webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            print("is active")
             if not webhook.plug.is_tested:
                 webhook.plug.is_tested = True
                 webhook.plug.save()
@@ -669,7 +671,8 @@ class TypeFormController(BaseController):
                 PlugActionSpecification.objects.get(action_specification__name__iexact='form', plug=webhook.plug,
                                                     value=body['form_response']['form_id'])
                 if self.test_connection():
-                    self.download_source_data()
+                    print("si test")
+                    self.download_source_data(answer=body)
             except PlugActionSpecification.DoesNotExist:
                 print("The webhook {0} is not listening to the form {1}.".format(webhook_id,
                                                                                  body['form_response']['form_id']))
@@ -683,6 +686,7 @@ class TypeFormController(BaseController):
         form = self._plug.plug_action_specification.get(action_specification__name__iexact='form')
         list_data_answers = []
         if answer is not None:
+            print("con webhook")
             if 'event_type' in answer and answer['event_type'] == 'form_response':
                 data_questions = {question['id']: question['title'] for question in
                                   answer['form_response']['definition']['fields']}
@@ -745,7 +749,6 @@ class TypeFormController(BaseController):
         if action_specification.name.lower() == 'form':
             forms = self._client.get_forms()
             return tuple({'id': f['id'], 'name': f['name']} for f in forms)
-        else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
     def has_webhook(self):
