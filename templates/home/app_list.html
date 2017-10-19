@@ -10,31 +10,31 @@
             <div class="form">
                 <div class="group">
                     <label>Nombre:</label>
-                    <input>
+                    <input type="text">
                 </div>
                 <div class="group">
                     <label>Base De Datos:</label>
-                    <input>
+                    <input type="text">
                 </div>
                 <div class="group">
                     <label>Host:</label>
-                    <input>
+                    <input type="text">
                 </div>
                 <div class="group">
                     <label>Tabla:</label>
-                    <input>
+                    <input type="text">
                 </div>
                 <div class="group">
                     <label>Puerto:</label>
-                    <input>
+                    <input type="text">
                 </div>
                 <div class="group">
                     <label>Usuario:</label>
-                    <input>
+                    <input type="text">
                 </div>
                 <div class="group">
                     <label>Contraseña:</label>
-                    <input>
+                    <input type="text">
                 </div>
                 <div class="group">
                     <label>Waiting for test</label>
@@ -57,7 +57,7 @@
             </div>
             <div class="form">
                 <div class="group">
-                    <input>
+                    <input type="text">
                 </div>
             </div>
             <div class="button">
@@ -132,7 +132,7 @@
                 <div class="row">
                     {% for connector in object_list %}
                         <div class="col-md-2">
-                            <div class="list-item {% if forloop.first %}selected{% endif %}">
+                            <div class="list-item">
                                 <div class="image1">
                                     <img src="{{ connector.icon.url }}" width="110" height="110">
                                 </div>

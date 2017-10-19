@@ -99,6 +99,10 @@ html {
     box-sizing: border-box;
 }
 
+.dashboard-panel .menu {
+    background-color: #005ea7;
+}
+
 .dashboard-panel .menu .item {
     padding: 3% 15%;
     margin: 3% 0;
@@ -106,7 +110,7 @@ html {
 }
 
 .dashboard-panel .menu .item.logout {
-    background-color: #00e08f;
+    background-color: #005599;
 }
 
 .dashboard-panel .menu .item .image {
@@ -132,10 +136,6 @@ html {
     background-color: #0069c9;
     margin: 8% auto;
     display: block;
-}
-
-.dashboard-panel .menu .item.logout .text {
-    color: #0062a6;
 }
 
 .dashboard-content {
@@ -435,7 +435,7 @@ html {
     cursor: pointer;
 }
 
-.content-body .gears .add .text, .content-body .folders .add .text{
+.content-body .gears .add .text, .content-body .folders .add .text {
     padding-left: 15px;
 }
 
@@ -474,9 +474,13 @@ html {
     width: calc(400px - 10px);
     height: calc(100% - 10px);
     background-color: #005ca7;
-    margin: 5px;
+    margin: 2px;
 
     padding: 20px 36px;
+}
+
+.gp-modal.alternative2 .modal-content2 {
+    width: 530px;
 }
 
 .gp-modal .modal-content2 .title {
@@ -486,9 +490,9 @@ html {
     text-align: center;
 }
 
-.gp-modal .modal-content2 .form input, .gp-modal .modal-content2 .button, .content-body .connection .form input {
+.gp-modal .modal-content2 .form input[type="text"], .gp-modal .modal-content2 .form textarea, .gp-modal .modal-content2 .button, .content-body .connection .form input[type="text"], .content-body .connection .form textarea {
     width: 100%;
-    height: 56px;
+    height: 44px;
     margin: 12px 0;
 
     border-radius: 25px 25px 25px 25px;
@@ -499,31 +503,39 @@ html {
     text-align: center;
 }
 
-.gp-modal .modal-content2 .form input, .content-body .connection .form input {
+.gp-modal .modal-content2 .form textarea, .content-body .connection .form textarea {
+    height: 119px;
+}
+
+.gp-modal .modal-content2 .form input[type="text"], .gp-modal .modal-content2 .form textarea, .content-body .connection .form input[type="text"], .content-body .connection .form textarea {
     font-size: 2.00em;
     padding: 0;
     border: none;
     outline: none;
     color: #9d9ba1;
-
 }
 
-.content-body .connection .form input {
+.content-body .connection .form input[type="text"], .content-body .connection .form textarea {
+    text-align: left;
+    padding: 0 2%;
+}
+
+.content-body .connection .form input[type="text"], .content-body .connection .form textarea {
     background-color: #f6f7f8;
     border: 1px solid #dbdbdd;
+    resize: none;
 }
 
-.gp-modal .modal-content2 .form label, .content-body .connection .form label {
+.gp-modal .modal-content2 .form label, .content-body .connection .form label:not(.btn) {
     font-size: 1.80em;
     color: #FFFFFF;
     font-weight: 400;
     margin: 0;
 }
 
-.content-body .connection .form label {
+.content-body .connection .form label:not(.btn) {
     color: #9d9ba1;
 }
-
 
 .gp-modal .modal-content2 .button {
     font-family: "Sansation Bold";
@@ -574,6 +586,10 @@ html {
     background-color: #00e08f;
 }
 
+.gp-modal.modal-alternative.alternative2 .modal-content2 {
+    background-color: #005ca7;
+}
+
 .gp-modal.modal-alternative .modal-content2 .button {
     width: 75%;
     margin: 0 auto;
@@ -590,9 +606,8 @@ html {
 
 .gp-modal.modal-alternative .modal-content2 .button .wrapper {
     background-color: #005ca7;
-    margin: 5px;
     padding-top: 5px;
-    height: calc(100% - 10px);
+    height: 100%;
     border-radius: 25px 25px 25px 25px;
     -moz-border-radius: 25px 25px 25px 25px;
     -webkit-border-radius: 25px 25px 25px 25px;
@@ -602,6 +617,11 @@ html {
 .gp-modal.modal-alternative .modal-content2 .title {
     color: #005ca7;
     font-family: Sansation;
+}
+
+.gp-modal.modal-alternative.alternative2 .modal-content2 .title {
+    font-family: "Sansation Bold";
+    color: #00e48e;
 }
 
 .gp-modal.modal-alternative .modal-content2 .text {
@@ -680,10 +700,8 @@ html {
 
 .content-body .apps-list .list-wrapper {
     width: 80%;
-    max-height: 550px;
     overflow: hidden;
     margin: 5% auto;
-    overflow-y: scroll;
 }
 
 .content-body .apps-list .list-wrapper .list-item {
@@ -716,7 +734,6 @@ html {
 }
 
 /* ****** */
-
 
 .content-body .connection .form .button {
     font-family: "Sansation Bold";
@@ -759,3 +776,123 @@ html {
     float: right;
 }
 
+.btn {
+    padding: 10px 10px;
+}
+
+.btn-group, .btn-group-vertical {
+    width: 36px;
+    height: 36px;
+}
+
+.btn-success, .btn-success, .open > .dropdown-toggle.btn-success {
+    background-color: #00e08f !important;
+    border-color: #00e08f !important;
+}
+
+.btn span.glyphicon {
+    opacity: 0;
+}
+
+.btn.active span.glyphicon {
+    opacity: 1;
+    color: #005aa6;
+}
+
+input[type='radio'] {
+    -webkit-appearance: none;
+    width: 34px;
+    height: 34px;
+    border: 3px solid #005aa6;
+    border-radius: 50%;
+    outline: none;
+    box-shadow: 0 0 5px 0px #e7e8ec inset;
+}
+
+input[type='radio']:before {
+    content: '';
+    display: block;
+    width: 60%;
+    height: 60%;
+    margin: 20% auto;
+    border-radius: 50%;
+}
+
+input[type='radio']:checked:before {
+    background: #00e08f;
+}
+
+.rail-select {
+    position: relative;
+    width: 100%;
+}
+
+.rail-select select {
+    border: solid 1px grey;
+    border-radius: 3px;
+    font-size: 16px;
+    font-family: "Sansation";
+    font-size: 2.00em;
+    color: #9d9ba1;
+    height: 42px;
+    appearance: none;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    background: #f6f7f8;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 1px solid #dbdbdd;
+    text-align: center;
+}
+
+.rail-select select:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.rail-select .select-side {
+    width: 30px;
+    position: absolute;
+    top: 0px;
+    background-color: #00e08f;
+    height: 100%;
+    right: 0;
+    border-radius: 0px 3px 3px 0px;
+    border-right: solid 1px gray;
+    border-top: solid 1px gray;
+    border-bottom: solid 1px gray;
+    pointer-events: none;
+    border-radius: 0 25px 25px 25 px0;
+    -moz-border-radius: 0 25px 25px 0;
+    -webkit-border-radius: 0 25px 25px 0;
+    border: 0px solid #000000;
+}
+
+.rail-select .select-side:before {
+    border-left: solid 1px lightgrey;
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 100%;
+    width: 1px;
+    /* or 100px */
+}
+
+.rail-select .select-side i {
+    left: 30%;
+    top: 12px;
+}
+
+.rail-select .select-side i.blue {
+    color: #FFFFFF;
+}
+
+.rail-radio {
+    margin: 10px 0 20px 0;
+}
+
+.rail-checkbox{
+    margin: 20px 0;
+}
