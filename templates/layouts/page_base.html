@@ -11,8 +11,9 @@
     <link href="{% static 'css/landing/aboutus.css' %}" rel="stylesheet">
     <link href="{% static 'css/landing/contactus.css' %}" rel="stylesheet">
     <link href="{% static 'css/landing/apps.css' %}" rel="stylesheet">
+    <link href="{% static 'css/landing/steps.css' %}" rel="stylesheet">
 {% endblock %}
-{% block body_class %}{% endblock %}
+{% block body_class %}ayuda{% endblock %}
 {% block body_base %}
     <div class="content">
         {% block header_content %}
@@ -27,7 +28,8 @@
                         <div class="col-md-5 col-md-offset-2 text_menu">
                             <a {% if request.path == "/about/" %}class="selected_page"{% endif %}
                                href="{% url 'landing:about' %}">{% trans 'Nosotros' %}</a>
-                            <a href="#">{% trans 'Como Funciona' %}</a>
+                            <a {% if request.path == "/steps/" %}class="selected_page"{% endif %}
+                               href="{% url 'landing:steps' %}">{% trans 'Como Funciona' %}</a>
                             <a {% if request.path == "/apps/directory/" %}class="selected_page"{% endif %}
                                href="{% url 'landing:apps_directory' %}">{% trans 'Apps' %}</a>
                             <a {% if request.path == "/contact/" %}class="selected_page"{% endif %}
