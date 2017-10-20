@@ -255,14 +255,14 @@ html {
     padding-top: 75px;
 }
 
-.content-body .projects .title, .content-body .gears .title, .content-body .connection .title {
+.content-body .projects .title, .content-body .gears .title, .content-body .connection .title, .content-body .history .title {
     font-family: "Sansation Bold";
     font-size: 1.60em;
     color: #9d9ba1;
     padding-bottom: 35px;
 }
 
-.content-body .projects .title span, .content-body .gears .title span, .content-body .connection .title span {
+.content-body .projects .title span, .content-body .gears .title span, .content-body .connection .title span, .content-body .history .title span {
     border-bottom: 3px solid #00e08f;
     display: inline-block;
     line-height: 1em;
@@ -825,6 +825,7 @@ input[type='radio']:checked:before {
 .rail-select {
     position: relative;
     width: 100%;
+    cursor: pointer;
 }
 
 .rail-select select {
@@ -881,8 +882,8 @@ input[type='radio']:checked:before {
 }
 
 .rail-select .select-side i {
-    left: 30%;
-    top: 12px;
+    left: 25%;
+    top: 15px;
 }
 
 .rail-select .select-side i.blue {
@@ -893,6 +894,77 @@ input[type='radio']:checked:before {
     margin: 10px 0 20px 0;
 }
 
-.rail-checkbox{
+.rail-checkbox {
     margin: 20px 0;
+}
+
+.content-body .history .navbar {
+    height: 58px;
+    background-color: #005ca5;
+
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    padding-top: 7px;
+}
+
+.form-control {
+    padding: 2px 12px;
+}
+
+.content-body .history select.form-control {
+    font-size: 1.40em;
+}
+
+.content-body .history .indicator {
+    width: 100%;
+    height: 23px;
+    color: #FFFFFF;
+
+    padding-top: 4px;
+    font-family: "Sansation Bold";
+    font-size: 0.80em;
+    text-align: center;
+
+    border-radius: 20px 20px 20px 20px;
+    -moz-border-radius: 20px 20px 20px 20px;
+    -webkit-border-radius: 20px 20px 20px 20px;
+}
+
+.content-body .history .history-list .item {
+    padding: 9px 0;
+}
+
+.content-body .history .history-list .item .indicator.green {
+    background-color: #00e08f;
+}
+
+.content-body .history .history-list .item .indicator.red {
+    background-color: #d40032;
+}
+
+.content-body .history .history-list .item .text {
+    color: #adacb1;
+    font-size: 1.30em;
+}
+
+.content-body .history .navbar button {
+    width: 100%;
+    height: 42px;
+    color: #FFFFFF;
+    background-color: #00e08e;
+    font-size: 1.40em;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: none;
+}
+
+.content-body .history .navbar .rail-checkbox {
+    margin: 5px 0;
+}
+
+.content-body .history .navbar .rail-checkbox .btn-success, .btn-success, .open > .dropdown-toggle.btn-success {
+    background-color: #FFFFFF !important;
+    border-color: #FFFFFF !important;
 }
