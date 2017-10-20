@@ -1,32 +1,36 @@
 {% load static %}
-<div class="gp-modal" style="display:none;">
-    <div class="close-button">
-        <img src="{% static 'img/console/g1688.png' %}" width="50">
-    </div>
-    <div class="modal-content2">
-        <div class="title">
-            Nuevo Gear
-        </div>
-        <div class="form">
-            <div class="group">
-                <label>Nombre:</label>
-                <input>
+
+<div id="gear-modal" class="modal fade" role="dialog">
+    <div class="gp-modal modal-dialog">
+        <button type="button" class="close close-button" data-dismiss="modal">
+            <img src="{% static 'img/console/g1688.png' %}" width="50">
+        </button>
+        <div class="modal-content2">
+            <div class="title">
+                Nuevo Gear
             </div>
-            <div class="group">
-                <label>Grupo:</label>
-                <div class="rail-select">
-                    <div class="select-side">
-                        <i class="glyphicon glyphicon-menu-down blue"></i>
+            <div class="form">
+                <form action="" method="post" autocomplete="off">
+                    <div class="group">
+                        <div class="title">
+                            {{ gear_form.name.label }}
+                        </div>
+                        {{ gear_form.name }}
                     </div>
-                    <select class="form-control">
-                        <option>Test 1</option>
-                        <option>Test 2</option>
-                    </select>
-                </div>
+                    <div class="group">
+                        <div class="title">{{ gear_form.gear_group.label }}:</div>
+                        {{ gear_form.gear_group }}
+                    </div>
+                    <div class="button">
+                        Continuar
+                    </div>
+
+                    {% if form.error %}
+                        <div class="error">{{ form.error }}</div>
+                    {% endif %}
+                    {% csrf_token %}
+                </form>
             </div>
-        </div>
-        <div class="button">
-            Crear Grear
         </div>
     </div>
 </div>

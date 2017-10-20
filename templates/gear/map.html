@@ -1,18 +1,63 @@
-{% extends 'layouts/site_base.html' %}
+{% extends 'layouts/console_base.html' %}
 {% load static %}
 
 {% block content %}
-    MAP:
-    <form method="POST" action="" class="">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button>{{ action }} Map</button>
-    </form>
+
+    <div class="content-body col-md-10 col-md-offset-1">
+        <div class="row connection">
+            <form method="POST" action="" class="">
+
+                <div class="title">
+                    <span>Mapeo</span>
+                </div>
+                <div class="form">
+                    <div class="col-md-6">
+                        {% for field in form %}
+                            <div class="col-md-12 group">
+                                {{ field.label_tag }}
+                                {{ field }}
+                            </div>
+                        {% endfor %}
+                        {% csrf_token %}
+                    </div>
+                    <div class="col-md-9">
+                        <div class="col-md-6 group">
+                            <button type="submit">Finalizar</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+{#            <div class="col-md-12 group">#}
+{#                <div class="rail-select">#}
+{#                    <div class="select-side">#}
+{#                        <i class="glyphicon glyphicon-menu-down blue"></i>#}
+{#                    </div>#}
+{#                    <select class="form-control">#}
+{#                        <option>Test 1</option>#}
+{#                        <option>Test 2</option>#}
+{#                    </select>#}
+{#                </div>#}
+{#            </div>#}
+{#            <div class="col-md-12 group">#}
+{#                <div class="rail-checkbox btn-group" data-toggle="buttons">#}
+{#                    <label class="btn btn-success active">#}
+{#                        <input type="checkbox" autocomplete="off" checked>#}
+{#                        <span class="glyphicon glyphicon-ok"></span>#}
+{#                    </label>#}
+{#                </div>#}
+{#            </div>#}
+
 {% endblock %}
+
 {% block styles %}
     {{ block.super }}
     <link rel="stylesheet" href="{% static 'vendor/jquery-ui-1.12.0/jquery-ui.min.css' %}">
 {% endblock %}
+
 {% block scripts %}
     {{ block.super }}
     <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>

@@ -1,17 +1,52 @@
-{% extends 'layouts/site_base.html' %}
+{% extends 'layouts/console_base.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
-    <ul>
-        {% for connector in object_list %}
-            <li style="display: inline-block; width:150px;">
-                <a href="{% url 'connection:list' connector_id=connector.id type=type %}">
-                    <div>
-                        <img src="{{ connector.icon.url }}" height="60" width="60">
-                        <p>{{ connector.name }}</p>
-                    </div>
-                </a>
-            </li>
-        {% endfor %}
-    </ul>
+    <div class="content-body col-md-10 col-md-offset-1">
+        <div class="row apps-list">
+            <div class="text2">
+                {% trans 'Escoge Aplicación de Destino' %}
+            </div>
+            <div class="search1">
+                <div class="box">
+                    <img src="{% static 'img/landing/lupa.png' %}" width="21px" height="20px">
+                    <input type="text">
+                </div>
+            </div>
+            <div class="nav">
+                <div class="item">
+                    {% trans 'Más Usadas' %}
+                </div>
+                <div class="divider"></div>
+                <div class="item">
+                    {% trans 'Las Mejores Combinaciones' %}
+                </div>
+                <div class="divider"></div>
+                <div class="item">
+                    Lorem Ipsum
+                </div>
+            </div>
+            <div class="list-wrapper">
+                <div class="row">
+                    {% for connector in object_list %}
+                        <div class="col-md-2">
+                            <a href="{% url 'connection:list' connector_id=connector.id type=type %}">
+                                <div class="list-item">
+                                    <div class="image1">
+                                        <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}"
+                                             width="73" height="73">
+                                    </div>
+                                    <div class="divider"></div>
+                                    <div class="name1">
+                                        {{ connector.name }}
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

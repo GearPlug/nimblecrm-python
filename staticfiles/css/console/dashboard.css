@@ -449,7 +449,7 @@ html {
 .gp-modal {
     background-color: #FFFFFF;
     position: fixed;
-
+    width: auto;
     top: 50%;
     left: 50%;
     margin-top: -121px; /* Negative half of height. */
@@ -468,14 +468,13 @@ html {
     left: -10px;
     z-index: 9999;
     cursor: pointer;
+    opacity: 1;
 }
 
 .gp-modal .modal-content2 {
-    width: calc(400px - 10px);
+    width: 390px;
     height: calc(100% - 10px);
     background-color: #005ca7;
-    margin: 2px;
-
     padding: 20px 36px;
 }
 
@@ -863,7 +862,7 @@ input[type='radio']:checked:before {
     border-top: solid 1px gray;
     border-bottom: solid 1px gray;
     pointer-events: none;
-    border-radius: 0 25px 25px 25 px0;
+    border-radius: 0 25px 25px 0;
     -moz-border-radius: 0 25px 25px 0;
     -webkit-border-radius: 0 25px 25px 0;
     border: 0px solid #000000;

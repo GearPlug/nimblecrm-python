@@ -11,21 +11,19 @@
                 {% for group in object_list %}
                     {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=2 %}
                 {% empty %}
-                    <div class="add">
-                        <div class="button">
-                            <img src="{% static 'img/console/g3261.png' %}" width="65">
-                        </div>
-                        <div class="text">
-                            <a href="{% url 'gear:create_group' %}">Nuevo Proyecto</a>
+                    <div class="add col-md-2">
+                        <div data-toggle="modal" data-target="#gear-modal">
+                            <div class="button"><img src="{% static 'img/console/g3261.png' %}" width="65"></div>
+                            <div class="text">Nuevo Proyecto</div>
                         </div>
                     </div>
                 {% endfor %}
                 {% if object_list %}
-                    <div class="item">
+                    <div class="add col-md-1">
                         <div class="button">
-                            <a href="{% url 'gear:create_group' %}">
-                                <img src="{% static 'img/console/g3261.png' %}" width="65">
-                            </a>
+                            <div data-toggle="modal" data-target="#group-modal">
+                                <img src="{% static 'img/console/g3261.png' %}" width="38">
+                            </div>
                         </div>
                     </div>
                 {% endif %}
@@ -49,11 +47,9 @@
                 </div>
 
                 <div class="row add">
-                    <div class="button">
-                        <img src="{% static 'img/console/g3261.png' %}" width="38">
-                    </div>
-                    <div class="text">
-                        <a href="{% url 'gear:create' %}">Nuevo Gear</a>
+                    <div data-toggle="modal" data-target="#gear-modal">
+                        <div class="button"><img src="{% static 'img/console/g3261.png' %}" width="38"></div>
+                        <div class="text">Nuevo Gear</div>
                     </div>
                 </div>
             </div>
@@ -78,20 +74,21 @@
                         method: "POST", url: url
                     }).done(function (response) {
                         if (response.data == true) {
-                            $(a).find("div.button").html('<img src="{% static "img/console/g3317.png" %}" width="50" ' +
-                                '"height="50"> <div class="status">ON</div>');
+                            $(a).find("div.button").html('<img src="{% static "img/console/g3317.png" %}" width="36" ' +
+                                '"height="36"> <div class="status">ON</div>');
                         } else if (response.data == false) {
-                            $(a).find("div.button").html('<img src="{% static "img/console/g3333.png" %}" width="50" ' +
-                                '"height="50"> <div class="status">OFF</div>');
+                            $(a).find("div.button").html('<img src="{% static "img/console/g3333.png" %}" width="36" ' +
+                                '"height="36"> <div class="status">OFF</div>');
                         } else {
-                            $(a).find("div.button").html('<img src="{% static "img/console/g3333.png" %}" width="50" ' +
-                                '"height="50"> <div class="status">UNEXPECTED ERROR</div>');
+                            $(a).find("div.button").html('<img src="{% static "img/console/g3333.png" %}" width="36" ' +
+                                '"height="36"> <div class="status">UNEXPECTED ERROR</div>');
                         }
                         is_blocked = false;
                     });
                 }
                 return false;
             });
+
             $('div.folders div.item').on('click', function () {
                 var gear_list = $("#group_gear_" + $(this).attr('data-group-id'));
                 var show = $(gear_list).attr('data-show');
@@ -106,7 +103,5 @@
                 }
             });
         });
-
-
     </script>
 {% endblock %}
