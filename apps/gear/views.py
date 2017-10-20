@@ -1,12 +1,13 @@
-from apps.gp.models import GearGroup
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.forms import modelform_factory
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.views.generic.edit import FormMixin
 from django.http.response import JsonResponse, HttpResponseForbidden
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm
-from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.gp.enum import ConnectorEnum
+from apps.gp.models import GearGroup
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.history.models import DownloadHistory, SendHistory
 from oauth2client import client
@@ -26,10 +27,11 @@ class ListGearView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super(ListGearView, self).get_context_data(**kwargs)
+        context['gear_form'] = modelform_factory(Gear, fields=('name', 'gear_group'))
+        context['geargroup_form'] = modelform_factory(GearGroup, fields=('name',))
         return context
 
     def get_queryset(self):
-        print(self.request.user)
         return self.model.objects.filter(
             user=self.request.user).prefetch_related('gear')
 

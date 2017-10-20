@@ -66,6 +66,7 @@
         </div>
     </div>
 
+
     <div class="gp-modal modal-alternative" style="display: none">
         <div class="close-button">
             <img src="{% static 'img/console/g1688.png' %}" width="50">
@@ -134,9 +135,10 @@
                         <div class="col-md-2">
                             <div class="list-item">
                                 <div class="image1">
-                                    <img src="{{ connector.icon.url }}" width="110" height="110">
+                                    <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}"
+                                         width="73" height="73">
                                 </div>
-                                <div class="divider"></div>
+                                {#                                <div class="divider"></div>#}
                                 <div class="name1">
                                     {{ connector.name }}
                                 </div>

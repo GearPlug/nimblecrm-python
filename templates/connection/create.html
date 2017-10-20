@@ -2,69 +2,35 @@
 {% load static i18n %}
 
 {% block content %}
-    <div class="gp-modal modal-alternative alternative2">
-        <div class="close-button">
-            <img src="{% static 'img/console/g1688.png' %}" width="50">
-        </div>
-        <div class="modal-content2">
-            <div class="title">
-                ¡Felicitaciones!
-            </div>
-            <div class="text">
-                Acabas de crear un gear exitosamente, ahora puedes ir al home de tu consola y ver como funciona.
-            </div>
-        </div>
-    </div>
     <div class="content-body col-md-10 col-md-offset-1">
         <div class="row connection">
             <div class="title">
-                <span>Mapeo</span>
+                <span>Creación de Conexión: {% block connector_name %}{{ connector_name }}{% endblock %}</span>
             </div>
-            <form>
+            <form id="formCreateConnection" class="" action="" method="post" autocomplete="off" data-ajax="false">
                 <div class="form">
-                    <div class="col-md-6">
-                        <div class="col-md-12 group">
-                            <label>Nombre:</label>
-                            <input type="text">
-                        </div>
-                        <div class="col-md-12 group">
-                            <label>Area:</label>
-                            <textarea></textarea>
-                        </div>
-                        <div class="col-md-12 group">
-                            <div class="rail-radio">
-                                <input type="radio">
+                    <div class="col-md-9">
+                        {% for field in form %}
+                            <div class="col-md-6 group">
+                                <label>{{ field.label_tag }}:</label>
+                                {{ field }}
+                                <div>{{ field.errors }}</div>
                             </div>
-                        </div>
-                        <div class="col-md-12 group">
-                            <div class="rail-select">
-                                <div class="select-side">
-                                    <i class="glyphicon glyphicon-menu-down blue"></i>
-                                </div>
-                                <select class="form-control">
-                                    <option>Test 1</option>
-                                    <option>Test 2</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-12 group">
-                            <div class="rail-checkbox btn-group" data-toggle="buttons">
-                                <label class="btn btn-success active">
-                                    <input type="checkbox" autocomplete="off" checked>
-                                    <span class="glyphicon glyphicon-ok"></span>
-                                </label>
-                            </div>
-                        </div>
+                        {% endfor %}
                     </div>
                     <div class="col-md-9">
                         <div class="col-md-6 group">
-                            <button type="submit">
-                                Finalizar
+                            <button class="button btn" type="submit" id="btnCreateConnection" disabled="disabled">
+                                Crear Conexión
                             </button>
+                            <button class="button btn" type="submit" id="btnTestConnection">
+                                Test
+                            </button>
+                            <div id="connectionTestResult"></div>
                         </div>
                     </div>
-
                 </div>
+                {% csrf_token %}
             </form>
         </div>
     </div>

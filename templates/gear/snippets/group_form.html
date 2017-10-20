@@ -1,19 +1,22 @@
 {% load static %}
-<div class="gp-modal" style="display: none">
-    <div class="close-button">
-        <img src="{% static 'img/console/g1688.png' %}" width="50">
-    </div>
-    <div class="modal-content2">
-        <div class="title">
-            Nombre del Grupo
-        </div>
-        <div class="form">
-            <div class="group">
-                <input>
+
+<div id="group-modal" class="modal fade" role="dialog">
+    <div class="gp-modal modal-dialog">
+        <button type="button" class="close close-button" data-dismiss="modal">
+            <img src="{% static 'img/console/g1688.png' %}" width="50">
+        </button>
+        <div class="modal-content2">
+            <div class="title">
+                {{ geargroup_form.name.label }}
             </div>
-        </div>
-        <div class="button">
-            Crear Grupo
+            <div class="form">
+                <div class="group">
+                    {{ geargroup_form.name }}
+                </div>
+            </div>
+            <div class="button">
+                Continuar
+            </div>
         </div>
     </div>
 </div>
