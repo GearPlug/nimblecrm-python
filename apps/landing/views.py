@@ -46,3 +46,6 @@ class CustomSignup(SignupView):
 
     def form_invalid(self, form, **kwargs):
         return self.render_to_response(self.get_context_data(signup_form=form))
+
+class StepsView(TemplateView):
+    template_name = 'landing/steps.html'

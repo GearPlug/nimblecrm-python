@@ -110,7 +110,7 @@
             <div class="col-md-2">
                 <div class="list-item">
                     <div class="image1">
-                        <img src="{{ app.icon.url }}" width="110" height="110">
+                        <img src="{% if app.icon73 %}{{ app.icon73.url }}{% endif %}" width="110" height="110">
                     </div>
                     <div class="divider"></div>
                     <div class="name1">

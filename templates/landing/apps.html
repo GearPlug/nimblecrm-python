@@ -21,43 +21,20 @@
                 <option>Opción 1</option>
             </select>
         </div>
+        <div class="list-wrapper">
+            {% for connector in object_list %}
+                <div class="col-md-2">
+                    <div class="list-item">
+                        <div class="image1">
+                            <img src="{{ connector.icon73.url }}" width="110" height="110">
+                        </div>
+                        <div class="divider"></div>
+                        <div class="name1">
+                            {{ connector.name }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
     </div>
-    {#    <div class="row apps-list">#}
-    {#        <div class="search1">#}
-    {#            <div class="box">#}
-    {#                <img src="{% static 'img/landing/lupa.png' %}" width="21px" height="20px">#}
-    {#                <input type="text">#}
-    {#            </div>#}
-    {#        </div>#}
-    {#        <div class="nav">#}
-    {#            <div class="item">#}
-    {#                {% trans 'Más Usadas' %}#}
-    {#            </div>#}
-    {#            <div class="divider"></div>#}
-    {#            <div class="item">#}
-    {#                {% trans 'Las Mejores Combinaciones' %}#}
-    {#            </div>#}
-    {#            <div class="divider"></div>#}
-    {#            <div class="item">#}
-    {#                Lorem Ipsum#}
-    {#            </div>#}
-    {#        </div>#}
-    {#        <div class="list-wrapper">#}
-    {#            <div class="row">#}
-    {#                {% for connector in object_list %}#}
-    {#                    <div class="col-md-2">#}
-    {#                        <div class="list-item">#}
-    {#                            <div class="image1">#}
-    {#                                <img src="{{ connector.icon.url }}" width="110" height="110">#}
-    {#                            </div>#}
-    {#                            <div class="divider"></div>#}
-    {#                            <div class="name1">#}
-    {#                                {{ connector.name }}#}
-    {#                            </div>#}
-    {#                        </div>#}
-    {#                    </div>#}
-    {#                {% endfor %}#}
-    {#            </div>#}
-    {#        </div>#}
-    {#    </div>#}
 {% endblock %}
