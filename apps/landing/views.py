@@ -49,3 +49,9 @@ class CustomSignup(SignupView):
 
 class StepsView(TemplateView):
     template_name = 'landing/steps.html'
+
+class TermsView(TemplateView):
+    template_name = 'landing/terms.html'
+
+class PrivacyView(TemplateView):
+    template_name = 'landing/privacy.html'
