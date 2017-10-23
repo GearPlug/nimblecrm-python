@@ -56,7 +56,7 @@
         {% endif %}
 
         {% include 'gear/snippets/gear_form.html' %}
-        {% include 'gear/snippets/group_form.html' %}
+        {% include 'gear/snippets/group_form.html' with form=geargroup_form %}
     </div>
 
 {% endblock %}
@@ -89,19 +89,36 @@
                 return false;
             });
 
-            $('div.folders div.item').on('click', function () {
-                var gear_list = $("#group_gear_" + $(this).attr('data-group-id'));
+            $('div.folders div.item div.image img').on('click', function () {
+                var that = $(this).parent().parent();
+                var gear_list = $("#group_gear_" + $(that).attr('data-group-id'));
                 var show = $(gear_list).attr('data-show');
                 if (show == "True") {
                     gear_list.hide();
                     gear_list.attr('data-show', 'False');
-                    $(this).find('div.image img').attr('src', '{% static "img/console/g3277.png" %}');
+                    $(this).attr('src', '{% static "img/console/g3277.png" %}');
                 } else {
                     gear_list.show();
                     gear_list.attr('data-show', 'True');
-                    $(this).find('div.image img').attr('src', '{% static "img/console/g3205.png" %}');
+                    $(this).attr('src', '{% static "img/console/g3205.png" %}');
                 }
             });
+
+            $('form#group-form, form#gear-form').on('submit', function (e) {
+                e.preventDefault();
+                $.ajax({
+                    method: $(this).attr('method'), url: $(this).attr('action'), data: $(this).serialize()
+                }).done(function (response) {
+                    if (response.next_url){
+                        location.href = response.next_url;
+                    }else{
+                        console.log(response)
+                    }
+                });
+                return false;
+            });
+
+
         });
     </script>
 {% endblock %}

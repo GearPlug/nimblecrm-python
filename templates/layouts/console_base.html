@@ -35,10 +35,10 @@
         <div class="col-md-2 dashboard-panel">
             <div class="menu">
                 <div class="item">
-                    <div class="image">
-                        <img src="{% static 'img/console/g6666.png' %}">
-                    </div>
                     <a href="{% url 'gear:list' %}">
+                        <div class="image">
+                            <img src="{% static 'img/console/g6666.png' %}">
+                        </div>
                         <div class="text">
                             {% trans 'Gears' %}
                         </div>
@@ -46,12 +46,14 @@
                 </div>
                 <div class="divider"></div>
                 <div class="item">
-                    <div class="image">
-                        <img src="{% static 'img/console/g5752.png' %}">
-                    </div>
-                    <div class="text">
-                        {% trans 'Actividad' %}
-                    </div>
+                    <a href="">
+                        <div class="image">
+                            <img src="{% static 'img/console/g5752.png' %}">
+                        </div>
+                        <div class="text">
+                            {% trans 'Actividad' %}
+                        </div>
+                    </a>
                 </div>
                 <div class="item">
                     <div class="image">
@@ -62,12 +64,14 @@
                     </div>
                 </div>
                 <div class="item">
-                    <div class="image">
-                        <img src="{% static 'img/console/g5740.png' %}">
-                    </div>
-                    <div class="text">
-                        {% trans 'Administrar Conexiones' %}
-                    </div>
+                    <a href="{% url 'connection:manage' %}">
+                        <div class="image">
+                            <img src="{% static 'img/console/g5740.png' %}">
+                        </div>
+                        <div class="text">
+                            {% trans 'Administrar Conexiones' %}
+                        </div>
+                    </a>
                 </div>
                 <div class="item logout">
                     <div class="image">

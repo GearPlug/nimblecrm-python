@@ -61,6 +61,9 @@ class CreateGearView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.user = self.request.user
         response = super(CreateGearView, self).form_valid(form)
+        if self.request.is_ajax():
+            self.object = form.save()
+            response = JsonResponse({'result': 'created', 'next_url': self.get_success_url()})
         GearMap.objects.create(gear=self.object)
         return response
 
@@ -115,14 +118,20 @@ class UpdateGearView(LoginRequiredMixin, UpdateView):
 
 class CreateGearGroupView(CreateView):
     model = GearGroup
-    template_name = 'gear/create.html'
+    template_name = 'gear/snippets/gear_form.html'
     fields = ['name', ]
     login_url = '/accounts/login/'
     success_url = reverse_lazy('gear:list')
 
     def form_valid(self, form):
         form.instance.user = self.request.user
+        if self.request.is_ajax():
+            self.object = form.save()
+            return JsonResponse({'result': 'created', 'next_url': self.get_success_url()})
         return super(CreateGearGroupView, self).form_valid(form)
+
+    def form_invalid(self, form):
+        return super(CreateGearGroupView, self).form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super(CreateGearGroupView, self).get_context_data(**kwargs)
@@ -224,7 +233,6 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
     def form_invalid(self, form, *args, **kwargs):
-        print("fue invalido")
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):
@@ -387,7 +395,7 @@ def gear_toggle(request, gear_id):
                         {'data': 'There\'s no active gear map.'})
             else:
                 return JsonResponse(
-                    {'data': "You don't have permission to toogle this gear."})
+                    {'data': "You don't have permission to toggle this gear."})
         except Gear.DoesNotExist:
             return JsonResponse({'data': 'Error invalid gear id.'})
         except GearMap.DoesNotExist:
