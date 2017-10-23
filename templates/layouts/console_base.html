@@ -1,5 +1,5 @@
 {% extends 'layouts/base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block styles %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/console/dashboard.css' %}">
@@ -40,7 +40,7 @@
                             <img src="{% static 'img/console/g6666.png' %}">
                         </div>
                         <div class="text">
-                            Gears
+                            {% trans 'Gears' %}
                         </div>
                     </a>
                 </div>
@@ -51,7 +51,7 @@
                             <img src="{% static 'img/console/g5752.png' %}">
                         </div>
                         <div class="text">
-                            Actividad
+                            {% trans 'Actividad' %}
                         </div>
                     </a>
                 </div>
@@ -60,7 +60,7 @@
                         <img src="{% static 'img/console/g6678.png' %}">
                     </div>
                     <div class="text">
-                        Ayuda
+                        {% trans 'Ayuda' %}
                     </div>
                 </div>
                 <div class="item">
@@ -69,16 +69,16 @@
                             <img src="{% static 'img/console/g5740.png' %}">
                         </div>
                         <div class="text">
-                            Administrar Conexiones
+                            {% trans 'Administrar Conexiones' %}
                         </div>
                     </a>
                 </div>
                 <div class="item logout">
                     <div class="image">
-                        <img src="{% static 'img/console/g6754.png' %}">
+                        <img src="{% static 'img/console/logout.png' %}" width="30">
                     </div>
                     <div class="text">
-                        Cerrar Sesión
+                        {% trans 'Cerrar Sesión' %}
                     </div>
                 </div>
             </div>

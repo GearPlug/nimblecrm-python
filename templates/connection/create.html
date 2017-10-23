@@ -5,14 +5,14 @@
     <div class="content-body col-md-10 col-md-offset-1">
         <div class="row connection">
             <div class="title">
-                <span>Creación de Conexión: {% block connector_name %}{{ connector_name }}{% endblock %}</span>
+                <span>{% trans 'Creación de Conexión' %}: {% block connector_name %}{{ connector_name }}{% endblock %}</span>
             </div>
             <form id="formCreateConnection" class="" action="" method="post" autocomplete="off" data-ajax="false">
                 <div class="form">
                     <div class="col-md-9">
                         {% for field in form %}
                             <div class="col-md-6 group">
-                                <label>{{ field.label_tag }}:</label>
+                                {{ field.label_tag }}
                                 {{ field }}
                                 <div>{{ field.errors }}</div>
                             </div>
@@ -20,10 +20,10 @@
                     </div>
                     <div class="col-md-9">
                         <div class="col-md-6 group">
-                            <button class="button btn" type="submit" id="btnCreateConnection" disabled="disabled">
-                                Crear Conexión
+                            <button class="button btn button-create" type="submit" id="btnCreateConnection" disabled="disabled">
+                                {% trans 'Crear Conexión' %}
                             </button>
-                            <button class="button btn" type="submit" id="btnTestConnection">
+                            <button class="button btn button-test" type="submit" id="btnTestConnection">
                                 Test
                             </button>
                             <div id="connectionTestResult"></div>

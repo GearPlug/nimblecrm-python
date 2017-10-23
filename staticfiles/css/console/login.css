@@ -19,13 +19,13 @@
 }
 
 .login-wrapper {
-    width: 27%;
+    width: 25%;
     height: 636px;
 
     background-color: #f1f2f4;
 
     position: absolute;
-    margin: 10% auto 0 auto;
+    margin: 8% auto 0 auto;
     left: 0;
     right: 0;
 
@@ -43,7 +43,7 @@
 }
 
 .login-wrapper .form {
-    margin-top: 3%;
+    margin-top: 10%;
 }
 
 .login-wrapper .form input[type="text"], input[type="password"] {
@@ -89,7 +89,6 @@
     color: #9d9ba1;
 }
 
-
 /*Revisar*/
 .checkbox {
     width: 20px;
@@ -134,4 +133,25 @@
 .checkbox input[type=checkbox]:checked + label:after {
     opacity: 1;
 }
+
 /**/
+
+.btn span.glyphicon {
+    opacity: 0;
+}
+
+.btn.active span.glyphicon {
+    opacity: 1;
+    color: #005ca7;
+}
+
+.btn {
+    padding: 6px;
+    outline: none !important;
+}
+
+.rail-checkbox .btn-success, .btn-success, .open > .dropdown-toggle.btn-success {
+    background-color: #00e08f !important;
+    border-color: #00e08f !important;
+}
+

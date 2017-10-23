@@ -12,13 +12,11 @@
             <div class="form">
                 <form action="{% url 'gear:create' %}" method="post" autocomplete="off" id="gear-form">
                     <div class="group">
-                        <div class="title">
-                            {{ gear_form.name.label }}
-                        </div>
+                        {{ gear_form.name.label_tag }}
                         {{ gear_form.name }}
                     </div>
                     <div class="group">
-                        <div class="title">{{ gear_form.gear_group.label }}:</div>
+                        {{ gear_form.gear_group.label_tag }}
                         {{ gear_form.gear_group }}
                     </div>
                     {% if form.error %}
