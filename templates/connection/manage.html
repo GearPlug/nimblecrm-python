@@ -1,4 +1,4 @@
-{% extends 'layouts/site_base.html' %}
+{% extends 'layouts/console_base.html' %}
 {% load static %}
 {% block content %}
     {% for connections in object_list %}
@@ -7,9 +7,10 @@
                 <hr>
             </div>
             <div class="col-md-12">
-                <img src="{{ connections.0.connector.icon.url }}" height="40"
-                     width="40"> &nbsp;
-                {{ connections.0.connector.name }}
+                <div class="col-md-6">
+                    <img src="{{ connections.0.connector.icon73.url }}" height="40" width="40"> &nbsp;
+                    {{ connections.0.connector.name }}
+                </div>
             </div>
             {% for connection in connections %}
                 {% include 'connection/snippets/connector_state.html' with c=connection %}

@@ -7,15 +7,24 @@
         </button>
         <div class="modal-content2">
             <div class="title">
-                {{ geargroup_form.name.label }}
+                Nuevo Proyecto
             </div>
             <div class="form">
-                <div class="group">
-                    {{ geargroup_form.name }}
-                </div>
-            </div>
-            <div class="button">
-                Continuar
+                <form action="{% url 'gear:create_group' %}" method="post" autocomplete="off" id="group-form">
+                    <div class="group">
+                        <div class="title">
+                            {{ form.name.label }}
+                        </div>
+                        {{ form.name }}
+                    </div>
+                    {% if form.error %}
+                        <div class="error">{{ form.error }}</div>
+                    {% endif %}
+                    {% csrf_token %}
+                    <button class="button">
+                        Continuar
+                    </button>
+                </form>
             </div>
         </div>
     </div>

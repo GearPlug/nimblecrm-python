@@ -589,25 +589,6 @@ class ManageConnectionView(LoginRequiredMixin, ListView):
         return result
 
 
-def connection_toggle(request):
-    try:
-        gear_id = request.session['gear_id']
-    except Exception as e:
-        print(e)
-    try:
-        c = Connection.objects.get(pk=gear_id)
-        if c.is_active == True:
-            c.is_active = False
-            c.save()
-            return JsonResponse({'Connection State': 'NOT Active'})
-        else:
-            c.is_active = True
-            c.save()
-            return JsonResponse({'Connection State': 'ACTIVE'})
-    except Exception as e:
-        return JsonResponse(e)
-
-
 class UpdateConnectionView(UpdateView):
     model = Connection
     template_name = 'connection/update.html'

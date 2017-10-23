@@ -10,7 +10,7 @@
                 Nuevo Gear
             </div>
             <div class="form">
-                <form action="" method="post" autocomplete="off">
+                <form action="{% url 'gear:create' %}" method="post" autocomplete="off" id="gear-form">
                     <div class="group">
                         <div class="title">
                             {{ gear_form.name.label }}
@@ -21,14 +21,13 @@
                         <div class="title">{{ gear_form.gear_group.label }}:</div>
                         {{ gear_form.gear_group }}
                     </div>
-                    <div class="button">
-                        Continuar
-                    </div>
-
                     {% if form.error %}
                         <div class="error">{{ form.error }}</div>
                     {% endif %}
                     {% csrf_token %}
+                    <button class="button">
+                        Continuar
+                    </button>
                 </form>
             </div>
         </div>
