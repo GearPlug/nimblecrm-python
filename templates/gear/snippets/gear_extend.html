@@ -15,7 +15,7 @@
         </div>
         <div class="control">
             <div class="history">
-                <a href="">
+                <a href="{% url 'gear:send_history' pk=gear.id %}">
                     <img src="{% static 'img/console/g8645.png' %}" width="36">
                 </a>
             </div>
@@ -31,10 +31,8 @@
                     <div class="status">{{ gear.is_running|yesno:"ON,OFF" }}</div>
                 </div>
             </a>
-
         </div>
     </div>
 </div>
-
 {#        <a href="{% url 'gear:send_history' pk=gear.id %}">A</a>#}
 {#        <a href="{% url 'gear:download_history' pk=gear.id %}">B</a>#}
