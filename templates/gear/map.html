@@ -1,5 +1,5 @@
 {% extends 'layouts/console_base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
 
@@ -8,7 +8,7 @@
             <form method="POST" action="" class="">
 
                 <div class="title">
-                    <span>Mapeo</span>
+                    <span>{% trans 'Mapeo' %}</span>
                 </div>
                 <div class="form">
                     <div class="col-md-6">
@@ -22,7 +22,7 @@
                     </div>
                     <div class="col-md-9">
                         <div class="col-md-6 group">
-                            <button type="submit">Finalizar</button>
+                            <button type="submit">{% trans 'Finalizar' %}</button>
                         </div>
                     </div>
                 </div>
