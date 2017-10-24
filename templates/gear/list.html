@@ -17,6 +17,17 @@
                             <div class="text">{% trans 'Nuevo Proyecto' %}</div>
                         </div>
                     </div>
+{#                    <div class="steps-tooltip">#}
+{#                        <div class="bar"></div>#}
+{#                        <div class="box">#}
+{#                            <div class="text">#}
+{#                                Crear un grupo donde dirigirás todos tus gears.#}
+{#                            </div>#}
+{#                        </div>#}
+{#                        <div class="image">#}
+{#                            <img src="{% static 'img/console/g6712.png' %}" width="45">#}
+{#                        </div>#}
+{#                    </div>#}
                 {% endfor %}
                 {% if object_list %}
                     <div class="add col-md-1">
@@ -109,9 +120,9 @@
                 $.ajax({
                     method: $(this).attr('method'), url: $(this).attr('action'), data: $(this).serialize()
                 }).done(function (response) {
-                    if (response.next_url){
+                    if (response.next_url) {
                         location.href = response.next_url;
-                    }else{
+                    } else {
                         console.log(response)
                     }
                 });

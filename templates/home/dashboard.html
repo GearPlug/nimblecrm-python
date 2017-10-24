@@ -12,13 +12,13 @@
                 </div>
                 <div class="info">
                     <div class="user">
-                        Usuario
+                        {{ request.user.get_full_name|yesno:request.user.email }}
                     </div>
                     <div class="description">
-                        Descripción Trabajo
+                        Que es esta cosa
                     </div>
                     <div class="plan">
-                        Plan Premium
+                        Plan Bonitos
                     </div>
                 </div>
                 <div class="divider" style="float: right"></div>

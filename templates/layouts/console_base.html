@@ -19,7 +19,7 @@
             <div class="col-md-6 right-side">
                 <div class="user">
                     <div class="name">
-                        Usuario
+                        {{ request.user.get_full_name|yesno:request.user.email }}
                     </div>
                     <div class="icon">
                         <img src="{% static 'img/console/g6630.png' %}" width="56">
@@ -74,12 +74,14 @@
                     </a>
                 </div>
                 <div class="item logout">
-                    <div class="image">
-                        <img src="{% static 'img/console/logout.png' %}" width="30">
-                    </div>
-                    <div class="text">
-                        {% trans 'Cerrar Sesión' %}
-                    </div>
+                    <a href="{% url 'account_logout' %}">
+                        <div class="image">
+                            <img src="{% static 'img/console/logout.png' %}">
+                        </div>
+                        <div class="text">
+                            {% trans 'Cerrar Sesión' %}
+                        </div>
+                    </a>
                 </div>
             </div>
         </div>

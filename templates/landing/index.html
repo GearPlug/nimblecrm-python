@@ -110,7 +110,7 @@
             <div class="col-md-2">
                 <div class="list-item">
                     <div class="image1">
-                        <img src="{% if app.icon73 %}{{ app.icon73.url }}{% endif %}" width="110" height="110">
+                        <img src="{% if app.icon73 %}{{ app.icon73.url }}{% endif %}" width="73" height="73">
                     </div>
                     <div class="divider"></div>
                     <div class="name1">
@@ -142,14 +142,6 @@
                 {% endfor %}
             {% endwith %}
         </div>
-
-{#        <div class="col-md-1"> &nbsp;</div>#}
-{#        <div class="col-md-10 list-wrapper1">#}
-
-{##}
-{#        </div>#}
-{#        <div class="col-md-1"> &nbsp;</div>#}
-
     </div>
 {% endblock %}
 
@@ -157,7 +149,8 @@
     {{ super.block }}
     <script type="application/javascript">
         $(document).ready(function () {
-            $('form#signup_form').on('submit', function () {
+            $('form#signup_form').on('submit', function (e) {
+                e.preventDefault();
                 var form = $(this);
                 console.log(form.serialize())
                 $.ajax({
