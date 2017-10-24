@@ -12,7 +12,7 @@
                     {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=2 %}
                 {% empty %}
                     <div class="add col-md-2">
-                        <div data-toggle="modal" data-target="#gear-modal">
+                        <div data-toggle="modal" data-target="#group-modal">
                             <div class="button"><img src="{% static 'img/console/g3261.png' %}" width="65"></div>
                             <div class="text">{% trans 'Nuevo Proyecto' %}</div>
                         </div>

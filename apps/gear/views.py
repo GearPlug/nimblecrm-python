@@ -27,7 +27,9 @@ class ListGearView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super(ListGearView, self).get_context_data(**kwargs)
-        context['gear_form'] = modelform_factory(Gear, fields=('name', 'gear_group'))
+        gear_form = modelform_factory(Gear, fields=('name', 'gear_group'))
+        gear_form.base_fields["gear_group"].queryset = GearGroup.objects.filter(user=self.request.user)
+        context['gear_form'] = gear_form
         context['geargroup_form'] = modelform_factory(GearGroup, fields=('name',))
         return context
 
