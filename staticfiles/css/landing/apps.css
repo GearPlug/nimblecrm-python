@@ -92,7 +92,7 @@ button.btn-default, button.btn-default:hover, .open .dropdown-toggle.btn-default
 
 .bootstrap-select button.dropdown-toggle.bs-placeholder, .bootstrap-select button.dropdown-toggle.bs-placeholder:hover,
 .bootstrap-select button.dropdown-toggle.bs-placeholder:focus,
-.bootstrap-select button.dropdown-toggle.bs-placeholder:active {
+.bootstrap-select button.dropdown-toggle.bs-placeholder:active, button.btn-default:focus {
     color: white;
 }
 
