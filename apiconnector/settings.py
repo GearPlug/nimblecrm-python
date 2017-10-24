@@ -1,5 +1,6 @@
 from .app_settings import *
 import os
+import sys
 
 try:
     from .local_settings import *
@@ -64,11 +65,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'apiconnector.wsgi.application'
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
             'read_default_file': os.path.join(BASE_DIR, 'apiconnector/gearplug.cnf', )
+        },
+        'TEST': {
+            'DEPENDENCIES': [],
         },
     },
     'history': {
@@ -76,14 +81,32 @@ DATABASES = {
         'OPTIONS': {
             'read_default_file': os.path.join(BASE_DIR, 'apiconnector/history.cnf', )
         },
+        'TEST': {
+            'DEPENDENCIES': ['default'],
+        },
     },
     'landing': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
             'read_default_file': os.path.join(BASE_DIR, 'apiconnector/landing.cnf', )
         },
+        'TEST': {
+            'DEPENDENCIES': ['history'],
+        },
     },
 }
+
+if 'test' in sys.argv:
+    DATABASES= {
+        'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'default.db',
+        },
+        'history': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'history.db',
+        },
+    }
 
 DATABASE_ROUTERS = ['apps.gp.routers.DefaultRouter', 'apps.gp.routers.HistoryRouter', 'apps.gp.routers.LandingRouter', ]
 

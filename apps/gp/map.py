@@ -273,13 +273,16 @@ class MapField(object):
         elif controller == ConnectorEnum.WunderList:
             if 'name' in d:
                 self.name = d['name']
-                self.label = d['name']
+            if 'label' in d:
+                self.label = d['label']
             if 'required' in d:
                 self.required = d['required']
             if 'type' in d:
                 self.field_type = d['type']
-            self.field_type = 'text'
-
+            if 'choices' in d:
+                self.choices = [(choice, choice) for choice in d['choices']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
         elif controller == ConnectorEnum.GitLab:
             if 'name' in d:
                 self.name = d['name']
