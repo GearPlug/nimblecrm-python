@@ -14,16 +14,14 @@ def get_dict_with_source_data(source_data, target_fields, include_id=False):
     for obj in source_data:
         user_dict = OrderedDict()
         for field in valid_map:
-            kw = valid_map[field].split(' ')
             values = []
-            for i, w in enumerate(kw):
-                w = html_decode(w)
-                if w in ['%%{0}%%'.format(k) for k in obj['data'].keys()]:
-                    values.append(obj['data'][w.replace('%%', '')])
-                elif pattern.match(w):
-                    values.append('')
-                else:
-                    values.append(w)
+            w = html_decode(valid_map[field])
+            if w in ['%%{0}%%'.format(k) for k in obj['data'].keys()]:
+                values.append(obj['data'][w.replace('%%', '')])
+            elif pattern.match(w):
+                values.append('')
+            else:
+                values.append(w)
             user_dict[field] = ' '.join(values)
         if include_id is True:
             user_dict['id'] = obj['id']
