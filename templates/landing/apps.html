@@ -26,7 +26,8 @@
                 <div class="col-md-2">
                     <div class="list-item">
                         <div class="image1">
-                            <img src="{{ connector.icon73.url }}" width="110" height="110">
+                            <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}" width="73"
+                                 height="73">
                         </div>
                         <div class="divider"></div>
                         <div class="name1">

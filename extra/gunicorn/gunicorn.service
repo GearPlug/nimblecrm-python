@@ -3,11 +3,10 @@ Description=gunicorn daemon
 After=network.target
 
 [Service]
-User=user
-Group=user
-WorkingDirectory=/home/user/path/to/gearplug
-ExecStart=/home/user/path/to/environment/bin/gunicorn --access-logfile /home/user/tmp/app.log --workers 3 --bind unix:/home/user/path/to/gearplug/gearplug.sock --log-level=debug apiconnector.wsgi:application
-EnvironmentFile=/home/user/path/to/environment
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/web/gearplug
+ExecStart=/home/ubuntu/environment/gearplug/bin/gunicorn --access-logfile /var/log/gunicorn/access.log --workers 3 --log-level=debug --bind unix:/home/ubuntu/web/gearplug/gearplug.sock apiconnector.wsgi:application
 
 [Install]
 WantedBy=multi-user.target
