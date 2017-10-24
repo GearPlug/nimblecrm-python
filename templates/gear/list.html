@@ -7,38 +7,46 @@
             <div class="title">
                 <span>{% trans 'Proyectos' %}</span>
             </div>
-            <div class="folders">
-                {% for group in object_list %}
-                    {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=2 %}
-                {% empty %}
-                    <div class="add col-md-2">
-                        <div data-toggle="modal" data-target="#group-modal">
-                            <div class="button"><img src="{% static 'img/console/g3261.png' %}" width="65"></div>
-                            <div class="text">{% trans 'Nuevo Proyecto' %}</div>
+            {% if not object_list %}
+                <div data-toggle="modal" data-target="#group-modal">
+                    <div class="add-wrapper">
+                        <div class="add">
+                            <div class="image">
+                                <img src="{% static 'img/console/path6684.png' %}" width="176">
+                            </div>
+                            <div class="text">
+                                Crear Grupo
+                            </div>
                         </div>
-                    </div>
-{#                    <div class="steps-tooltip">#}
-{#                        <div class="bar"></div>#}
-{#                        <div class="box">#}
-{#                            <div class="text">#}
-{#                                Crear un grupo donde dirigirás todos tus gears.#}
-{#                            </div>#}
-{#                        </div>#}
-{#                        <div class="image">#}
-{#                            <img src="{% static 'img/console/g6712.png' %}" width="45">#}
-{#                        </div>#}
-{#                    </div>#}
-                {% endfor %}
-                {% if object_list %}
-                    <div class="add col-md-1">
-                        <div class="button">
-                            <div data-toggle="modal" data-target="#group-modal">
-                                <img src="{% static 'img/console/g3261.png' %}" width="38">
+                        <div class="steps-tooltip">
+                            <div class="bar"></div>
+                            <div class="box">
+                                <div class="text">
+                                    Crear un grupo donde dirigirás todos tus gears.
+                                </div>
+                            </div>
+                            <div class="image">
+                                <img src="{% static 'img/console/g6712.png' %}" width="45">
                             </div>
                         </div>
                     </div>
-                {% endif %}
-            </div>
+                </div>
+            {% else %}
+                <div class="folders">
+                    {% for group in object_list %}
+                        {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=2 %}
+                    {% endfor %}
+                    {% if object_list %}
+                        <div class="add col-md-1">
+                            <div class="button">
+                                <div data-toggle="modal" data-target="#group-modal">
+                                    <img src="{% static 'img/console/g3261.png' %}" width="38">
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
         </div>
 
         {% if object_list %}

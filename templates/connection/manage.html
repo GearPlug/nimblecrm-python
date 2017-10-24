@@ -2,20 +2,22 @@
 {% load static %}
 {% block content %}
     {% for connections in object_list %}
-        <div class="col-md-12" data-connector-id="{{ connections.0.connector.id }}">
+        {% with connector=connections.0.connector %}
+        <div class="col-md-12" data-connector-id="{{ connector.id }}">
             <div class="col-md-12">
                 <hr>
             </div>
             <div class="col-md-12">
                 <div class="col-md-6">
-                    <img src="{{ connections.0.connector.icon73.url }}" height="40" width="40"> &nbsp;
-                    {{ connections.0.connector.name }}
+                    <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}" height="40" width="40"> &nbsp;
+                    {{ connector.name }}
                 </div>
             </div>
             {% for connection in connections %}
                 {% include 'connection/snippets/connector_state.html' with c=connection %}
             {% endfor %}
         </div>
+        {% endwith %}
         <br>
     {% endfor %}
 {% endblock %}

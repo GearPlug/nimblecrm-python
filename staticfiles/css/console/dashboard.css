@@ -1,3 +1,14 @@
+.table2 {
+    display: table;
+    height: calc(100% - 108px);
+}
+
+.table-cell2 {
+    float: none;
+    display: table-cell;
+    vertical-align: top;
+}
+
 html {
     overflow-x: hidden;
 }
