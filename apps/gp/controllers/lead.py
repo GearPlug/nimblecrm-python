@@ -18,6 +18,7 @@ import requests
 import surveymonty
 from typeform.client import Client as TypeformClient
 from dateutil.parser import parse
+from datetime import datetime, timedelta
 
 
 class GoogleFormsController(GoogleBaseController):
@@ -599,6 +600,7 @@ class SurveyMonkeyController(BaseController):
 
 class TypeFormController(BaseController):
     _client = None
+    _token = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
         BaseController.__init__(self, connection=connection, plug=plug, **kwargs)
@@ -607,14 +609,16 @@ class TypeFormController(BaseController):
         super(TypeFormController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
-                self._client = TypeformClient(self._connection_object.api_key)
+                self._token = self._connection_object.token
+                self._client = TypeformClient(access_token=self._token)
             except Exception as e:
                 print("Error getting the Typeform attributes")
                 self._client = None
+                self._token = None
 
     def test_connection(self):
         try:
-            self._client = TypeformClient(self._connection_object.api_key)
+            self._client = TypeformClient(access_token=self._token)
             return self._client is not None
         except Exception as e:
             print("error Typeform test connection")
@@ -622,47 +626,35 @@ class TypeFormController(BaseController):
             return False
 
     def create_webhook(self):
-        print("create webhook")
-        #token = "9QarwArtUyLtvv3fNuUoytjU7uMPuxKJu4TDnbxw1onY"
-        #token = "6hZGQYsthVrXiEYnRJLhZSGBQJcTFgSWKvGvpGr3rnY3"
-        token = "7eZntdsyGTU2Y8RfxdnnKQBpT57Fp2ojhs4UAfpSnvNo"
         action = self._plug.action.name
         if action.lower() == 'new answer':
-            # creación de webhook
+            form_id = self._plug.plug_action_specification.get(action_specification__name='form')
             webhook = Webhook.objects.create(name='typeform', plug=self._plug, url='', expiration='')
             url_base = settings.WEBHOOK_HOST
             url_path = reverse('home:webhook', kwargs={'connector': 'typeform', 'webhook_id': webhook.id})
-            webhook.url = url_base + url_path
-            webhook.generated_id = webhook.id
-            webhook.is_active = True  # Cambiar a False
-            webhook.save(update_fields=['url', 'generated_id', 'is_active'])
-            url_base = settings.WEBHOOK_HOST
-            url_path = reverse('home:webhook',
-                               kwargs={'connector': 'typeform',
-                                       'webhook_id': webhook.id})
-            #Código para crear el webhook, funciona con API
-            headers = {
-                'Authorization': 'bearer {0}'.format(token),
-                'Content-Type': 'application/json',
-            }
-            data = {
-                'url': url_base + url_path,
-                'enabled': True,
-            }
-            form_id = self._plug.plug_action_specification.get(action_specification__name='form')
-            _urr_webhook ='https://api.typeform.com/forms/{0}/webhooks/{1}'.format(form_id.value, webhook.id)
-            print("url webhook", _urr_webhook)
-            response = requests.put(_urr_webhook, headers=headers, data=json.dumps(data))
-            print("response", response.text)
-            print(response.status_code)
+            try:
+                response = self._client.create_webhook(url_webhook=url_base + url_path, tag_webhook=webhook.id, uid=form_id.value)
+                webhook.url = url_base + url_path
+                webhook.generated_id = response['id']
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            except:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
             return True
         return False
 
+    def view_webhook(self, webhook_id):
+        form_id = self._plug.plug_action_specification.get(action_specification__name__iexact='form').value
+        return self._client.view_webhook(tag_webhook=webhook_id, uid=form_id)
+
+    def delete_webhook(self, webhook_id):
+        form_id = self._plug.plug_action_specification.get(action_specification__name__iexact='form').value
+        return self._client.delete_webhook(tag_webhook=webhook_id, uid=form_id)
+
     def do_webhook_process(self, body=None, GET=None, POST=None, META=None, webhook_id=None, **kwargs):
-        print("do webhook process")
         webhook = Webhook.objects.filter(pk=webhook_id).prefetch_related('plug').first()
         if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
-            print("is active")
             if not webhook.plug.is_tested:
                 webhook.plug.is_tested = True
                 webhook.plug.save()
@@ -671,7 +663,6 @@ class TypeFormController(BaseController):
                 PlugActionSpecification.objects.get(action_specification__name__iexact='form', plug=webhook.plug,
                                                     value=body['form_response']['form_id'])
                 if self.test_connection():
-                    print("si test")
                     self.download_source_data(answer=body)
             except PlugActionSpecification.DoesNotExist:
                 print("The webhook {0} is not listening to the form {1}.".format(webhook_id,
@@ -680,45 +671,47 @@ class TypeFormController(BaseController):
         return HttpResponse(status=200)
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, answer=None, **kwargs):
-        print("download to stored data")
-        # import pprint
-        # pprint.pprint(answer)
         form = self._plug.plug_action_specification.get(action_specification__name__iexact='form')
         list_data_answers = []
         if answer is not None:
-            print("con webhook")
+            #con webhook
             if 'event_type' in answer and answer['event_type'] == 'form_response':
                 data_questions = {question['id']: question['title'] for question in
                                   answer['form_response']['definition']['fields']}
                 obj_raw = {'completed': '1', 'token': answer['form_response']['token'],
                            'submitted_at': answer['form_response']['submitted_at'], }
                 for raw_answer in answer['form_response']['answers']:
-                    type = raw_answer['type']
-                    if type == 'choice':
+                    type_answer = raw_answer['type']
+                    if type_answer == 'choice':
                         value = raw_answer[type]['label']
-                    elif type == 'boolean':
-                        value = '1' if type == True else '0'
+                    elif type_answer == 'boolean':
+                        value = '1' if type_answer == True else '0'
                     else:
-                        value = str(raw_answer[type])
+                        value = str(raw_answer[type_answer])
                     obj_raw[data_questions[raw_answer['field']['id']]] = value
                 list_data_answers.append(obj_raw)
         else:
-            print("sin webhook")
+            #sin webhook
             form_data = self._client.get_form_information(form.value)
-            data_questions = self._client.get_form_questions(form=form_data)
-            data_answers = self._client.get_form_metadata(form=form_data)
-            dict_data_questions = {question['id']: question['question'] for question in data_questions}
-            print("aQ", dict_data_questions)
+            data_questions = self._client.get_form_questions(uid=form.value)
+            since = (datetime.utcnow() - timedelta(days=1)).isoformat()
+            until = datetime.utcnow().isoformat()
+            data_answers = self._client.get_form_metadata(uid=form.value, since=since, until=until)
+            dict_data_questions = {question['id']: question['title'] for question in data_questions}
             for answer in data_answers:
-                obj_raw = {'completed': answer['completed'], 'token': answer['token']}
+                obj_raw = {'token': answer['token']}
                 if answer['answers']:
-                    for k, v in answer['answers'].items():
-                        if k in dict_data_questions.keys():
-                            obj_raw[dict_data_questions[k]] = v
-                else:
-                    for k in dict_data_questions.keys():
-                        obj_raw[dict_data_questions[k]] = ''
-                obj_raw['submitted_at'] = answer['metadata']['date_submit']
+                    for a in answer['answers']:
+                        if type(a[a['type']]) is dict:
+                            response = a[a['type']]['label']
+                        else:
+                            response = a[a['type']]
+                        if a['field']['id'] in dict_data_questions.keys():
+                            obj_raw[dict_data_questions[a['field']['id']]] = response
+                        else:
+                            for k in dict_data_questions.keys():
+                                obj_raw[dict_data_questions[k]] = ''
+                obj_raw['submitted_at'] = answer['submitted_at']
                 list_data_answers.append(obj_raw)
         new_data = []
         for item in list_data_answers:
@@ -741,15 +734,15 @@ class TypeFormController(BaseController):
             obj_raw = None
             result_list.append({'identifier': {'name': 'token', 'value': stored_data.object_id}, 'is_stored': is_stored,
                                 'raw': list_data_answers[0]})
-        obj_last_source_record = False
+        obj_last_source_record = result_list[-1]['identifier']['value']
         return {'downloaded_data': result_list, 'last_source_record': obj_last_source_record}
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'form':
-            forms = self._client.get_forms()
-            return tuple({'id': f['id'], 'name': f['name']} for f in forms)
+            forms = self._client.get_forms()['items']
+            return tuple({'id': f['id'], 'name': f['title']} for f in forms)
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
-    def has_webhook(self):
-        return True
+    # def has_webhook(self):
+    #     return True

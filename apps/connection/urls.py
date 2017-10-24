@@ -4,7 +4,7 @@ from apps.connection.views import CreateConnectionView, ListConnectionView, List
     GoogleAuthView, SlackAuthView, TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, \
     ShopifyAuthView, EvernoteAuthView, AsanaAuthView, MercadoLibreAuthView, WunderListAuthView, HubspotAuthView, \
     AjaxMercadoLibrePostSiteView, GitLabAuthView, AjaxMercadoLibrePostSiteView, ManageConnectionView, MailchimpAuthView, \
-    GitLabAuthView, connection_toggle, UpdateConnectionView, InfusionSoftAuthView  # ,AJAXGetSurveyListView
+    GitLabAuthView, connection_toggle, UpdateConnectionView, InfusionSoftAuthView, TypeFormAuthView  # ,AJAXGetSurveyListView,
 
 urlpatterns = [
     # Create Connection
@@ -39,6 +39,7 @@ urlpatterns = [
     url(r'^auth-callback/gitlab/', GitLabAuthView.as_view(), name="gitlab_auth"),
     url(r'^auth-callback/mailchimp/', MailchimpAuthView.as_view(), name="mailchimp_auth"),
     url(r'^auth-callback/infusionsoft/', InfusionSoftAuthView.as_view(), name="infusionsoft_auth"),
+    url(r'^auth-callback/typeform/', TypeFormAuthView.as_view(), name="typeform_auth"),
 
     # Create Authorizated Connection
     url(r'^create/authorizated/', CreateTokenAuthorizedConnectionView.as_view(),

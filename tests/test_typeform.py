@@ -101,11 +101,24 @@ class TypeFormControllerTestCases(TestCase):
     def test_create_webhook(self):
         """Testea que se cree un webhook en la aplicación y que se cree en la tabla Webhook, al final se borra el
         webhook de la aplicación"""
-        count_start = Webhook.objects.filter(plug=self.plug).count()
         result = self.controller.create_webhook()
         count_end = Webhook.objects.filter(plug=self.plug).count()
         webhook = Webhook.objects.last()
-        self.assertEqual(count_start + 1, count_end)
+        result_view = self.controller.view_webhook
+        self.assertEqual(count_end,1)
+        self.assertTrue(result)
+        self.assertEqual(result_view['id'], webhook.generated_id)
+        self.controller.delete_webhook(webhook_id=webhook.id)
+
+    def test_delete_webhook(self):
+        result_create = self.controller.create_webhook()
+        webhook = Webhook.objects.last()
+        self.controller.delete_webhook(webhook_id=webhook.id)
+        try:
+            result_view = self.controller.view_webhook(webhook_id=webhook.id)
+            result = False
+        except:
+            result = True
         self.assertTrue(result)
 
     def test_get_action_specification_options(self):

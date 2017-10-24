@@ -218,6 +218,14 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
             }
             authorization_url = '%s%s' % (settings.INFUSIONSOFT_AUTHORIZATION_URL, urlencode(data))
             context['authorization_url'] = authorization_url
+        elif connector == ConnectorEnum.TypeForm:
+            data = {
+                "client_id": settings.TYPEFORM_CLIENT_ID,
+                "redirect_uri": settings.TYPEFORM_REDIRECT_URL,
+                "scope": settings.TYPEFROM_SCOPES
+            }
+            authorization_url = '%s%s' % (settings.TYPEFORM_AUTHORIZATION_URL, urlencode(data))
+            context['authorization_url'] = authorization_url
         return context
 
 
@@ -424,6 +432,18 @@ class SurveyMonkeyAuthView(View):
         self.request.session['connector_name'] = ConnectorEnum.SurveyMonkey.name
         return redirect(reverse('connection:create_token_authorized_connection'))
 
+class TypeFormAuthView(View):
+    def get(self, request, *args, **kwargs):
+        auth_code = request.GET.get('code', None)
+        data = {'client_id': settings.TYPEFORM_CLIENT_ID,
+                'client_secret': settings.TYPEFORM_CLIENT_SECRET,
+                'code': auth_code,
+                'redirect_uri': settings.TYPEFORM_REDIRECT_URL}
+        url = "https://api.typeform.com/oauth/token"
+        response = requests.post(url, data=data).json()
+        self.request.session['connection_data'] = {'token': response["access_token"], }
+        self.request.session['connector_name'] = ConnectorEnum.TypeForm.name
+        return redirect(reverse('connection:create_token_authorized_connection'))
 
 class HubspotAuthView(View):
     def get(self, request, *args, **kwargs):
