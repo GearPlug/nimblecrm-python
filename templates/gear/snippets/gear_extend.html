@@ -4,10 +4,18 @@
     <div class="image-wrapper">
         <div class="image">
             <div class="connector">
-                <img src="{{ gear.source.connection.connector.icon73.url }}" width="36" height="36">
+                {% with icon73=gear.source.connection.connector.icon73 %}
+                    {% if icon73 %}
+                        <img src="{{ icon73.url }}" width="36" height="36">
+                    {% endif %}
+                {% endwith %}
             </div>
             <div class="connector">
-                <img src="{{ gear.target.connection.connector.icon73.url }}" width="36" height="36">
+                {% with icon73=gear.target.connection.connector.icon73 %}
+                    {% if icon73 %}
+                        <img src="{{ icon73.url }}" width="36" height="36">
+                    {% endif %}
+                {% endwith %}
             </div>
         </div>
         <div class="name">

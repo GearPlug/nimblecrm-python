@@ -93,7 +93,7 @@ html {
 }
 
 .dashboard-panel {
-    height: calc(100% - 108px);
+    height: calc(100% + 108px);
     background: url('../../img/console/g5842.png') bottom center/100% no-repeat, #005ea7;
     padding: 35px 0 0 0;
     box-sizing: border-box;
