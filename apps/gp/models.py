@@ -20,6 +20,7 @@ class Connector(models.Model):
     is_target = models.BooleanField('is target', default=False)
     icon15 = models.ImageField('icon 15px', upload_to='connector/icon', null=True, default=None)
     icon73 = models.ImageField('icon 73px', upload_to='connector/icon', null=True, default=None)
+    icon110 = models.ImageField('icon 110px', upload_to='connector/icon', null=True, default=None)
     category = models.ManyToManyField(Category, through='ConnectorCategory')
     connection_help_text = models.CharField('connection help text', max_length=3000, default='')
 
