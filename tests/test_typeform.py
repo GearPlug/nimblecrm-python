@@ -12,8 +12,8 @@ from apps.gp.controllers.lead import TypeFormController
 
 class TypeFormControllerTestCases(TestCase):
     """
-        TEST_TYPEFORM_API_KEY : String: Api Key de la aplicación
-        TEST_TYPEFORM_FORM : String: Api ID de un formulario existente en la aplicacion
+        TEST_TYPEFORM_TOKEN : String: Api Key de la aplicación
+        TEST_TYPEFORM_FORM : String: Token autorizado
     """
     fixtures = ["gp_base.json"]
 
@@ -30,7 +30,7 @@ class TypeFormControllerTestCases(TestCase):
         _dict_typeform_connection = {
             'connection':cls.connection,
             'name':'ConnectionTest',
-            'api_key':os.environ.get('TEST_TYPEFORM_API_KEY')
+            'token':os.environ.get('TEST_TYPEFORM_TOKEN')
         }
 
         cls.typeform_connection = TypeFormConnection.objects.create(**_dict_typeform_connection)
@@ -73,15 +73,7 @@ class TypeFormControllerTestCases(TestCase):
         """
         self.controller= TypeFormController(self.plug.connection.related_connection,self.plug)
 
-        self.hook = {"event_id":"hQJi65uTRz","event_type":"form_response",
-                     "form_response":{"form_id":"YDJ9dj","token":"4969bac7b56e83a82ad060f0ae57faed",
-                        "submitted_at":"2017-10-04T20:42:05Z","definition":{"id":"YDJ9dj",
-                        "title":"nuevo","fields":[{"id":"62757082","title":"hola","type":"short_text",
-                        "allow_multiple_selections":False,"allow_other_choice":False},{"id":"62757145",
-                        "title":"si","type":"multiple_choice","allow_multiple_selections":False,"allow_other_choice":False}]},
-                        "answers":[{"type":"text","text":"Lorem ipsum dolor","field":{"id":"62757082","type":"short_text"}},
-                        {"type":"choice","choice":{"label":"Barcelona"},"field":{"id":"62757145","type":"multiple_choice"}}]}}
-
+        self.hook = {'event_id': '2NfvffM6iA', 'event_type': 'form_response', 'form_response': {'answers': [{'type': 'choice', 'choice': {'label': 'si'}, 'field': {'type': 'multiple_choice', 'id': '64076019'}}, {'type': 'text', 'text': 'm', 'field': {'type': 'long_text', 'id': '64076047'}}], 'submitted_at': '2017-10-25T15:46:14Z', 'token': '0c5d07d7de7e52bc05ddcc29e4246ddf', 'definition': {'title': 'Mytypeform', 'fields': [{'title': 'Pregunta1', 'type': 'multiple_choice', 'id': '64076019', 'allow_multiple_selections': False, 'allow_other_choice': False}, {'title': 'pregunta2', 'type': 'long_text', 'id': '64076047', 'allow_multiple_selections': False, 'allow_other_choice': False}], 'id': 'y3we5I'}, 'form_id': 'y3we5I'}}
 
     def test_controller(self):
         """
@@ -104,7 +96,7 @@ class TypeFormControllerTestCases(TestCase):
         result = self.controller.create_webhook()
         count_end = Webhook.objects.filter(plug=self.plug).count()
         webhook = Webhook.objects.last()
-        result_view = self.controller.view_webhook
+        result_view = self.controller.view_webhook(webhook_id=webhook.id)
         self.assertEqual(count_end,1)
         self.assertTrue(result)
         self.assertEqual(result_view['id'], webhook.generated_id)
@@ -145,7 +137,6 @@ class TypeFormControllerTestCases(TestCase):
         self.assertNotEqual(count_store, 0)
         self.assertNotEqual(count_history, 0)
 
-
     def test_download_to_store_data(self):
         """Simula un dato de entrada por webhook (self.hook), y se verifica que retorne una lista de acuerdo a:
         {'downloaded_data':[
@@ -157,7 +148,6 @@ class TypeFormControllerTestCases(TestCase):
         """
         result = self.controller.download_to_stored_data(self.plug.connection.related_connection, self.plug,
                                                          answer=self.hook)
-
         self.assertIn('downloaded_data', result)
         self.assertIsInstance(result['downloaded_data'], list)
         self.assertIsInstance(result['downloaded_data'][-1], dict)

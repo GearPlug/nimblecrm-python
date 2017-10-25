@@ -618,8 +618,8 @@ class TypeFormController(BaseController):
 
     def test_connection(self):
         try:
-            self._client = TypeformClient(access_token=self._token)
-            return self._client is not None
+            self._client.get_forms()
+            return self._token is not None
         except Exception as e:
             print("error Typeform test connection")
             print(e)
@@ -633,12 +633,16 @@ class TypeFormController(BaseController):
             url_base = settings.WEBHOOK_HOST
             url_path = reverse('home:webhook', kwargs={'connector': 'typeform', 'webhook_id': webhook.id})
             try:
-                response = self._client.create_webhook(url_webhook=url_base + url_path, tag_webhook=webhook.id, uid=form_id.value)
+                response = self._client.create_webhook(url_webhook=url_base+url_path, tag_webhook=webhook.id, uid=form_id.value)
+                _create = True
+            except:
+                _create = False
+            if _create is True:
                 webhook.url = url_base + url_path
                 webhook.generated_id = response['id']
                 webhook.is_active = True
                 webhook.save(update_fields=['url', 'generated_id', 'is_active'])
-            except:
+            else:
                 webhook.is_deleted = True
                 webhook.save(update_fields=['is_deleted', ])
             return True
@@ -681,14 +685,16 @@ class TypeFormController(BaseController):
                 obj_raw = {'completed': '1', 'token': answer['form_response']['token'],
                            'submitted_at': answer['form_response']['submitted_at'], }
                 for raw_answer in answer['form_response']['answers']:
-                    type_answer = raw_answer['type']
-                    if type_answer == 'choice':
-                        value = raw_answer[type]['label']
-                    elif type_answer == 'boolean':
-                        value = '1' if type_answer == True else '0'
+
+                    if type(raw_answer[raw_answer['type']]) is dict:
+                        response = raw_answer[raw_answer['type']]['label']
                     else:
-                        value = str(raw_answer[type_answer])
-                    obj_raw[data_questions[raw_answer['field']['id']]] = value
+                        response = raw_answer[raw_answer['type']]
+                    if raw_answer['field']['id'] in data_questions.keys():
+                        obj_raw[data_questions[raw_answer['field']['id']]] = response
+                    else:
+                        for k in data_questions.keys():
+                            obj_raw[data_questions[k]] = ''
                 list_data_answers.append(obj_raw)
         else:
             #sin webhook
@@ -727,10 +733,10 @@ class TypeFormController(BaseController):
             for stored_data in item:
                 try:
                     stored_data.save()
+                    is_stored = True
                 except Exception as e:
                     is_stored = False
                     break
-                is_stored = True
             obj_raw = None
             result_list.append({'identifier': {'name': 'token', 'value': stored_data.object_id}, 'is_stored': is_stored,
                                 'raw': list_data_answers[0]})
@@ -744,5 +750,5 @@ class TypeFormController(BaseController):
             return tuple({'id': f['id'], 'name': f['title']} for f in forms)
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
-    # def has_webhook(self):
-    #     return True
+    def has_webhook(self):
+        return True
