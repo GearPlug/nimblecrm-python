@@ -1,30 +1,13 @@
-<div class="col-md-4">
+<div class=" col-md-12">
     {% block content %}
-    Cuentas:
-    <br />
-    {{ c.related_connection.name }}
-</div>
-<div class="col-md-4">
-    Estado:
-    <br />
-    {% if c.is_active == True%}
-        <i class="fa fa-check-square" aria-hidden="true"></i>&nbsp;
-    {% else %}
-        <i class="fa fa-minus-square" aria-hidden="true"></i>
-    {% endif %}
-</div>
-<div class="col-md-4">
-    Acción:
-    <br />
-    <a href="javascript:popUp('{% url "connection:update" pk=c.id %}')"><i class="fa fa-wrench"
-                                                                           aria-hidden="true"></i></a>
-    <a class="toggle-gear-btn" href="#">
-        {% if gear.is_running %}
-            <i class="fa fa-pause" aria-hidden="true"></i>
-        {% else %}
-            <i class="fa fa-play" aria-hidden="true"></i>
-        {% endif %}
-        <a href="{% url "connection:connection_toggle" %}"><i class="fa fa-power-off" aria-hidden="true"></i></a>
-    </a>
-{% endblock %}
+        <div class="col-md-4">
+            {{ c.related_connection.name }}
+        </div>
+        <div class="col-md-4">
+            Activa: {{ c.is_active|yesno:'Si,No' }}
+        </div>
+        <div class="col-md-4">
+            <a href="javascript:popUp('{% url "connection:update" pk=c.id %}')">Editar</a>
+        </div>
+    {% endblock %}
 </div>

@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'apps.connection',
     'apps.gp',
     'apps.history',
+    'apps.landing'
 ]
 
 MIDDLEWARE = [

@@ -13,12 +13,16 @@ class Category(models.Model):
 
 class Connector(models.Model):
     name = models.CharField('name', max_length=120)
+    short_description = models.TextField('short description', max_length=256, default='')
+    description = models.TextField('description', max_length=5000, default='')
     is_active = models.BooleanField('is active', default=False)
-    css_class = models.CharField('css class', max_length=40, blank=True)
     is_source = models.BooleanField('is source', default=False)
     is_target = models.BooleanField('is target', default=False)
-    icon = models.ImageField('icon', upload_to='connector/icon', null=True, default=None)
+    icon15 = models.ImageField('icon 15px', upload_to='connector/icon', null=True, default=None)
+    icon73 = models.ImageField('icon 73px', upload_to='connector/icon', null=True, default=None)
+    icon110 = models.ImageField('icon 110px', upload_to='connector/icon', null=True, default=None)
     category = models.ManyToManyField(Category, through='ConnectorCategory')
+    connection_help_text = models.CharField('connection help text', max_length=3000, default='')
 
     class Meta:
         verbose_name = 'connector'
@@ -28,7 +32,7 @@ class Connector(models.Model):
 
 
 class ConnectorCategory(models.Model):
-    Connector = models.ForeignKey(Connector)
+    connector = models.ForeignKey(Connector)
     category = models.ForeignKey(Category)
 
     class Meta:

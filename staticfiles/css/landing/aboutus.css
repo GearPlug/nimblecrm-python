@@ -1,0 +1,83 @@
+.aboutus-banner {
+    background: url("../../img/landing/icons1.png") no-repeat left bottom;
+}
+
+.aboutus-text {
+    margin: 14.9% 0 28% 27.5%;
+}
+
+.aboutus-text .text1 {
+    font-family: 'Sansation';
+    font-weight: 700;
+    font-size: 5.4em;
+    color: #005ca7;
+    letter-spacing: 2px;
+}
+
+.aboutus-text .text2 {
+    font-family: 'Sansation Light';
+    font-size: 5.7em;
+    color: #9d9ba1;
+    margin-top: -2.2%;
+    line-height: 103%;
+}
+
+.aboutus-description {
+    background-color: #F6F7F7;
+}
+
+.aboutus-description .text3 {
+    padding: 5.5% 13% 3.7% 13%;
+    font-family: 'Sansation Light';
+    font-size: 2.1em;
+    color: #727277;
+    text-align: justify;
+    line-height: 42px;
+    letter-spacing: 0.2px;
+}
+
+.aboutus-description .text3 p {
+    margin: 0 0 45px 0;
+}
+
+.aboutus-services .title {
+    font-family: 'Sansation';
+    font-size: 5.33em;
+    color: #9e9ba2;
+    text-align: center;
+    margin-top: 4.7%;
+}
+
+.aboutus-services .boxes .box {
+    text-align: center;
+}
+
+.aboutus-services .boxes .box .title2 {
+    padding-top: 5px;
+    font-family: 'Sansation Light';
+    font-size: 3.5em;
+    color: #9d9ba1;
+    padding-bottom: 90px;
+}
+
+.hr_service {
+    border-bottom: #09DF8E solid 6px;
+    border-top: transparent;
+    margin: -0.9% 0 0 41.6%;
+    width: 16.6%;
+}
+
+.img_integrate{
+    height: 14%;
+    margin: 21.5% 0 2.5% 0;
+}
+
+.img_automate{
+    height: 13%;
+    margin: 22.3% 0 3.4% 0;
+}
+
+.img_evolve{
+    height: 18.6%;
+    margin: 13.3% 0 3.2% 0;
+}
