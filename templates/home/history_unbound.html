@@ -1,0 +1,93 @@
+{% extends 'layouts/console_base.html' %}
+{% load static i18n %}
+
+{% block content %}
+    <div class="content-body col-md-10 col-md-offset-1">
+        <div class="row history">
+            <div class="title">
+                <span>Historial Entrante</span>
+            </div>
+            <div class="col-md-12 navbar">
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="rail-select">
+                            <div class="select-side">
+                                <img src="{% static 'img/console/calendar.png' %}">
+                            </div>
+                            <select class="form-control">
+                                <option>Test 1</option>
+                                <option>Test 2</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="rail-select">
+                            <div class="select-side">
+                                <img src="{% static 'img/console/calendar.png' %}">
+                            </div>
+                            <select class="form-control">
+                                <option>Test 1</option>
+                                <option>Test 2</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="rail-select">
+                            <div class="select-side">
+                                <img src="{% static 'img/console/arrow-up.png' %}">
+                            </div>
+                            <select class="form-control">
+                                <option>Test 1</option>
+                                <option>Test 2</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="rail-select">
+                            <div class="select-side">
+                                <i class="glyphicon glyphicon-menu-down blue"></i>
+                            </div>
+                            <select class="form-control">
+                                <option>Test 1</option>
+                                <option>Test 2</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="rail-checkbox btn-group" data-toggle="buttons">
+                            <label class="btn btn-success active">
+                                <input type="checkbox" autocomplete="off" checked>
+                                <span class="glyphicon glyphicon-ok"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-2 pull-right">
+                        <button type="submit">
+                            Filtrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12 history-list">
+                {% for i in 'xxxxx' %}
+                    <div class="row">
+                        <div class="item">
+                            <div class="col-md-1">
+                                {% if forloop.first %}
+                                    <div class="indicator green">SUCCESS</div>
+                                {% else %}
+                                    <div class="indicator red">FAILED</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-5">
+                                <div class="text">
+                                    {% lorem 5 w random %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

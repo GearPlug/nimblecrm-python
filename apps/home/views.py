@@ -1,15 +1,11 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
-from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
-from django.views.generic import TemplateView, View, ListView
+from django.views.generic import TemplateView, View
 from django.views.decorators.csrf import csrf_exempt
-from allauth.account.views import LoginView
-from apps.gp.models import GearGroup, Gear, PlugActionSpecification, Plug, \
-    Webhook, Connector
+from apps.gp.models import GearGroup, Gear
 from apps.gp.enum import ConnectorEnum
 import json
-import pprint
 
 
 class DashBoardView(LoginRequiredMixin, TemplateView):
@@ -24,31 +20,6 @@ class DashBoardView(LoginRequiredMixin, TemplateView):
             user=self.request.user)[:3]
         context['used_gears'] = Gear.objects.filter(user=self.request.user)[:3]
         return context
-
-
-class AppsView(LoginRequiredMixin, ListView):
-    """
-    Lists all connectors that can be used as the type requested.
-
-    - Called after creating a gear.
-    - Called after testing the source plug.
-
-    """
-    model = Connector
-    template_name = 'home/app_list.html'
-    login_url = '/accounts/login/'
-
-    def get_queryset(self):
-        return self.model.objects.filter(is_active=True)
-
-
-class HomeView(LoginView):
-    success_url = '/dashboard/'
-
-    def get(self, *args, **kwargs):
-        if self.request.user.is_authenticated():
-            return redirect(self.get_success_url())
-        return super(HomeView, self).get(*args, **kwargs)
 
 
 class IncomingWebhook(View):

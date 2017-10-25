@@ -1,10 +1,9 @@
 from django.conf.urls import url
 from apps.connection.views import CreateConnectionView, ListConnectionView, ListConnectorView, AuthSuccess, \
-    TestConnectionView, CreateConnectionSuccessView, CreateTokenAuthorizedConnectionView, \
-    GoogleAuthView, SlackAuthView, TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, \
-    ShopifyAuthView, EvernoteAuthView, AsanaAuthView, MercadoLibreAuthView, WunderListAuthView, HubspotAuthView, \
-    AjaxMercadoLibrePostSiteView, GitLabAuthView, AjaxMercadoLibrePostSiteView, ManageConnectionView, MailchimpAuthView, \
-    GitLabAuthView, connection_toggle, UpdateConnectionView, InfusionSoftAuthView  # ,AJAXGetSurveyListView
+    TestConnectionView, CreateConnectionSuccessView, CreateTokenAuthorizedConnectionView, GoogleAuthView, SlackAuthView, \
+    TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, ShopifyAuthView, EvernoteAuthView, \
+    AsanaAuthView, MercadoLibreAuthView, WunderListAuthView, HubspotAuthView, AjaxMercadoLibrePostSiteView, \
+    ManageConnectionView, MailchimpAuthView, GitLabAuthView, UpdateConnectionView, InfusionSoftAuthView
 
 urlpatterns = [
     # Create Connection
@@ -19,7 +18,6 @@ urlpatterns = [
     url(r'^list/connector/(?P<type>(source|target)+)/$', ListConnectorView.as_view(), name='connector_list'),
 
     url(r'manage/', ManageConnectionView.as_view(), name="manage"),
-    url(r'connection_toggle/', connection_toggle, name='connection_toggle'),
     url(r'update/(?P<pk>\d+)/', UpdateConnectionView.as_view(), name='update'),
 
     # Auth Callbacks

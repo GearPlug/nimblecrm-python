@@ -1,32 +1,40 @@
 {% extends 'layouts/base.html' %}
-{% load static %}
+{% load static i18n %}
+
+{% block styles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/console/login.css' %}">
+{% endblock %}
 
 {% block body_base %}
-    <div class="col-md-12">
-        <div class="col-md-4"> &nbsp;</div>
-        <div class="col-md-4 card card-container">
-            <img id="profile-img" class="profile-img-card" src={% static 'img/gp_logo.png' %}/>
-            <p id="profile-name" class="profile-name-card"></p>
-            {{ form.error }}
-            <form class="form-signin" method="post" action="">
-                {% csrf_token %}
-                <span id="reauth-email" class="reauth-email"></span>
-                {{ form.login }}
-                {{ form.password }}
-                {{ form.remember }} <label for="{{ form.remember.auto_id }}">{{ form.remember.label }} </label>
-                {% if form.error %}
-                    <div class="error">{{ form.error }}</div>
-                {% endif %}
-                <button class="btn btn-lg btn-primary btn-block btn-signin" type="submit">Sign in</button>
-            </form><!-- /form -->
-            <a href="#" class="forgot-password">
-                Forgot the password?
-            </a>
-            <br /><br />
-            <p class="message"> Not registered?
-                <a href="{% url 'account_signup' %}" class="create-account">Create an account</a>
-            </p>
+    <div class="content">
+        <div class="login-wrapper">
+            <div class="logo">
+                <img src="{% static 'img/console/logo1.png' %}" width="35%">
+            </div>
+            <div class="form">
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form.login }}
+                    {{ form.password }}
+                    <div class="rail-checkbox btn-group" data-toggle="buttons">
+                        <label class="btn btn-success active">
+                            {{ form.remember }}
+                            <span class="glyphicon glyphicon-ok"></span>
+                        </label>
+                    </div>
+                    <label for="{{ form.remember.auto_id }}" class="account-link">{{ form.remember.label }}</label>
+                    <button type="submit">{% trans 'Iniciar Sesión' %}</button>
+                </form>
+                <div class="account-link">
+                    <a href="#" class="forgot-password">
+                        {% trans '¿Olvidaste la contraseña?' %}
+                    </a>
+                </div>
+                <div class="account-link">
+                    {% trans '¿Aún no registrado?' %}
+                    <a href="{% url 'account_signup' %}" class="create-account" style="font-family: 'Sansation Bold'">{% trans 'Crea una cuenta' %}</a>
+                </div>
+            </div>
         </div>
-        <div class="col-md-4"> &nbsp;</div>
     </div>
 {% endblock %}

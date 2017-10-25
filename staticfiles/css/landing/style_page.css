@@ -1,0 +1,73 @@
+.ayuda {
+    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 0 0;*/
+    /*background-size: cover;*/
+}
+
+.bg_page {
+    background-color: white;
+}
+
+.row {
+    margin: 0;
+    padding: 0;
+}
+
+.sp {
+    padding: 0;
+}
+
+/* Header */
+.nav_spaces {
+    margin: 2.62% 0 2.1% 0;
+}
+
+.logo_header {
+    display: inherit;
+}
+
+.text_menu {
+    padding-left: 6.4%;
+    padding-top: 25px;
+}
+
+.text_menu a {
+    color: #9C9BA0;
+    font-family: 'Sansation Light';
+    font-size: 2.1em;
+    letter-spacing: 0.3px;
+    padding-left: 3.6%;
+    text-decoration: none;
+}
+
+.border_login {
+    border-left: #09DF8E solid 5px;
+    margin-top: 8%;
+    padding: 1% 0 2% 7.5%;
+}
+
+.border_login a {
+    color: #005CA6;
+    font-family: 'Sansation';
+    font-size: 2.1em;
+    letter-spacing: 0.3px;
+    text-decoration: none;
+}
+
+/* Footer */
+.bg_footer {
+    background-color: black;
+    color: #00E08F;
+    font-family: 'Sansation';
+    font-size: 1.55em;
+    letter-spacing: -0.62px;
+    padding: 25px 0 30px 0;
+}
+
+.bg_footer a {
+    color: #00E08F;
+    text-decoration: none;
+}
+
+footer {
+    background: transparent;
+}
