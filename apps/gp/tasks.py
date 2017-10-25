@@ -47,10 +47,10 @@ def update_plug(plug_id, gear_id, **query_params):
                 return
             if plug.plug_type.lower() == 'source':
                 try:
-                    if plug.webhook.is_active:
+                    if plug.webhook.is_active is True:
                         has_new_data = False
                     else:
-                        has_new_data = True
+                        raise AttributeError("El webhook esta desactivado")
                 except AttributeError as e:
                     # print("LAST IS: {}".format(gear.gear_map.last_source_order_by_field_value))
                     has_new_data = controller.download_source_data(

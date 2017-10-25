@@ -1,9 +1,10 @@
 from django.conf.urls import url
 from apps.connection.views import CreateConnectionView, ListConnectionView, ListConnectorView, AuthSuccess, \
-    TestConnectionView, CreateConnectionSuccessView, CreateTokenAuthorizedConnectionView, GoogleAuthView, SlackAuthView, \
-    TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, ShopifyAuthView, EvernoteAuthView, \
-    AsanaAuthView, MercadoLibreAuthView, WunderListAuthView, HubspotAuthView, AjaxMercadoLibrePostSiteView, \
-    ManageConnectionView, MailchimpAuthView, GitLabAuthView, UpdateConnectionView, InfusionSoftAuthView
+    TypeFormAuthView, TestConnectionView, CreateConnectionSuccessView, CreateTokenAuthorizedConnectionView, \
+    GoogleAuthView, SlackAuthView, TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, \
+    ShopifyAuthView, EvernoteAuthView, AsanaAuthView, MercadoLibreAuthView, WunderListAuthView, HubspotAuthView, \
+    AjaxMercadoLibrePostSiteView, ManageConnectionView, MailchimpAuthView, GitLabAuthView, UpdateConnectionView, \
+    InfusionSoftAuthView
 
 urlpatterns = [
     # Create Connection
@@ -37,6 +38,7 @@ urlpatterns = [
     url(r'^auth-callback/gitlab/', GitLabAuthView.as_view(), name="gitlab_auth"),
     url(r'^auth-callback/mailchimp/', MailchimpAuthView.as_view(), name="mailchimp_auth"),
     url(r'^auth-callback/infusionsoft/', InfusionSoftAuthView.as_view(), name="infusionsoft_auth"),
+    url(r'^auth-callback/typeform/', TypeFormAuthView.as_view(), name="typeform_auth"),
 
     # Create Authorizated Connection
     url(r'^create/authorizated/', CreateTokenAuthorizedConnectionView.as_view(),
