@@ -56,6 +56,7 @@ class ConnectorEnum(Enum):
     ActiveCampaign = 45, 'crm', 'form'
     TypeForm = 46, 'lead', 'form'
     InfusionSoft = 47, 'crm', 'authorization'
+    BatchBook = 49, 'crm', 'form'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)

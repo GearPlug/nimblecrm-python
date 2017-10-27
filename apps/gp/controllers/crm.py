@@ -16,6 +16,7 @@ from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 from django.conf import settings
 from django.http import HttpResponse
+from batchbook.client import Client as ClientBatchBook
 import time
 import requests
 import re
@@ -1915,3 +1916,32 @@ class InfusionSoftController(BaseController):
                     self._log.info('Item: failed to send.', extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
+
+class BatchBookController(BaseController):
+    _account_name = None
+    _api_key = None
+    _client = None
+
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(BatchBookController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(BatchBookController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._account_name = self._connection_object.account_name
+                self._api_key = self._connection_object.api_key
+                self._client = ClientBatchBook(api_key=self._api_key, account_name=self._account_name)
+            except Exception as e:
+                print(e)
+
+    def test_connection(self):
+        try:
+            self._client.get_contacts()
+            return self._api_key is not None
+        except:
+            return self._api_key is None
+
+    def download_to_stored_data(self, connection_object, plug, **kwargs):
+        since = ""
+        contacts = self._client.get_contacts()

@@ -472,6 +472,15 @@ class ActiveCampaignConnection(models.Model):
     def __str__(self):
         return self.name
 
+class BatchBookConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_batchbook')
+    name = models.CharField('name', max_length=200)
+    account_name = models.CharField('account_name', max_length=200)
+    access_key = models.CharField('access key', max_length=100)
+
+    def __str__(self):
+        return self.name
+
 
 class TypeFormConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_typeform')
