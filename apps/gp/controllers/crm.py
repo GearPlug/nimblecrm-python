@@ -16,6 +16,7 @@ from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 from django.conf import settings
 from django.http import HttpResponse
+from odoocrm.client import Client as OdooCRMClient
 import time
 import requests
 import re
@@ -1915,3 +1916,143 @@ class InfusionSoftController(BaseController):
                     self._log.info('Item: failed to send.', extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
+
+
+class OdooCRMController(BaseController):
+    _user = None
+    _password = None
+    _url = None
+    _database = None
+    _client = None
+
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(OdooCRMController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(OdooCRMController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._user = self._connection_object.connection_user
+                self._password = self._connection_object.connection_password
+                self._url = self._connection_object.url
+                self._database = self._connection_object.database
+            except AttributeError as e:
+                raise ControllerError(code=1, controller=ConnectorEnum.OdooCRM, message='Error getting the OdooCRM attributes args. {}'.format(str(e)))
+        else:
+            raise ControllerError('No connection.')
+        if self._url is not None and self._database is not None and self._user is not None and self._password is not None:
+            try:
+                self._client = OdooCRMClient(self._url, self._database, self._user, self._password)
+            except requests.exceptions.MissingSchema:
+                raise
+            except InvalidLogin as e:
+                raise ControllerError(code=2, controller=ConnectorEnum.OdooCRM, message='Invalid login. {}'.format(str(e)))
+
+    def test_connection(self):
+        return self._client is not None
+
+    def get_search_partner(self):
+        try:
+            return self._client.search_partner()
+        except BaseError as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.OdooCRM, message='Error. {}'.format(str(e)))
+
+    def get_read_partner(self):
+        try:
+            return self._client.read_partner()
+        except BaseError as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.OdooCRM, message='Error. {}'.format(str(e)))
+
+    def get_list_fields(self):
+        try:
+            return self._client.list_fields_partner()
+        except BaseError as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.OdooCRM, message='Error. {}'.format(str(e)))
+
+    def download_to_stored_data(self, connection_object, plug, limit=49, order_by="date_entered DESC", query='',
+                                last_source_record=None, **kwargs):
+
+        """
+            NOTE: Se ordena por el campo: 'date_entered'.
+        :param connection_object:
+        :param plug:
+        :param limit:
+        :param order_by:
+        :param query:
+        :param last_source_record:
+        :param kwargs:
+        :return:
+        """
+        if last_source_record is not None:
+            if query.isspace() or query == '':
+                query = "{0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
+            else:
+                query += " AND {0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
+        entries = self.get_entry_list(self._module, max_results=limit, order_by=order_by, query=query)['entry_list']
+        raw_data = []
+        new_data = []
+        for item in entries:
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
+            if not q.exists():
+                item_data = []
+                obj_raw = self.dictfy(item['name_value_list'])
+                for k, v in obj_raw.items():
+                    if isinstance(v, str) and v.isspace():
+                        obj_raw[k] = ''
+                for k, v in obj_raw.items():
+                    item_data.append(StoredData(name=k, value=v or '', object_id=item['id'],
+                                                connection=connection_object.connection, plug=plug))
+                raw_data.append(obj_raw)
+                new_data.append(item_data)
+        if new_data:
+            result_list = []
+            for item in new_data:
+                for stored_data in item:
+                    try:
+                        stored_data.save()
+                    except Exception as e:
+                        is_stored = False
+                        break
+                    is_stored = True
+                obj_raw = "RAW DATA NOT FOUND."
+                for obj in raw_data:
+                    if stored_data.object_id == obj['id']:
+                        obj_raw = obj
+                        break
+                raw_data.remove(obj_raw)
+                result_list.append({'identifier': {'name': 'id', 'value': stored_data.object_id},
+                                    'is_stored': is_stored, 'raw': obj_raw, })
+            return {'downloaded_data': result_list, 'last_source_record': result_list[0]['raw']['date_entered']}
+        return False
+
+    def dictfy(self, _dict):
+        return {k: v['value'] for k, v in _dict.items()}
+
+    def send_stored_data(self, data_list, **kwargs):
+        obj_list = []
+        for item in data_list:
+            obj_result = {'data': dict(item)}
+            try:
+                res = self.set_entry(self._module, item)
+                obj_result['response'] = res
+                obj_result['sent'] = True
+                obj_result['identifier'] = res['id']
+            except Exception as e:
+                obj_result['response'] = str(e)
+                obj_result['sent'] = False
+                obj_result['identifier'] = '-1'
+            obj_list.append(obj_result)
+        return obj_list
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_list_fields()
+        return [MapField(f, controller=ConnectorEnum.OdooCRM) for f in fields.items()]
+
+    def get_action_specification_options(self, action_specification_id):
+        pass
+    #     action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+    #     if action_specification.name.lower() == 'module':
+    #         return tuple({'id': m['module_key'], 'name': m['module_label']}
+    #                      for m in self.get_available_modules()['modules'] if m['module_key'] != 'Home')
+    #     else:
+    #         raise ControllerError("That specification doesn't belong to an action in this connector.")
