@@ -1,12 +1,13 @@
-from apps.gp.models import GearGroup
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.forms import modelform_factory
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.views.generic.edit import FormMixin
 from django.http.response import JsonResponse, HttpResponseForbidden
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm
-from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.gp.enum import ConnectorEnum
+from apps.gp.models import GearGroup
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
 from apps.history.models import DownloadHistory, SendHistory
 from oauth2client import client
@@ -26,6 +27,10 @@ class ListGearView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super(ListGearView, self).get_context_data(**kwargs)
+        gear_form = modelform_factory(Gear, fields=('name', 'gear_group'))
+        gear_form.base_fields["gear_group"].queryset = GearGroup.objects.filter(user=self.request.user)
+        context['gear_form'] = gear_form
+        context['geargroup_form'] = modelform_factory(GearGroup, fields=('name',))
         return context
 
     def get_queryset(self):
@@ -58,6 +63,9 @@ class CreateGearView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.user = self.request.user
         response = super(CreateGearView, self).form_valid(form)
+        if self.request.is_ajax():
+            self.object = form.save()
+            response = JsonResponse({'result': 'created', 'next_url': self.get_success_url()})
         GearMap.objects.create(gear=self.object)
         return response
 
@@ -112,14 +120,20 @@ class UpdateGearView(LoginRequiredMixin, UpdateView):
 
 class CreateGearGroupView(CreateView):
     model = GearGroup
-    template_name = 'gear/create.html'
+    template_name = 'gear/snippets/gear_form.html'
     fields = ['name', ]
     login_url = '/accounts/login/'
     success_url = reverse_lazy('gear:list')
 
     def form_valid(self, form):
         form.instance.user = self.request.user
+        if self.request.is_ajax():
+            self.object = form.save()
+            return JsonResponse({'result': 'created', 'next_url': self.get_success_url()})
         return super(CreateGearGroupView, self).form_valid(form)
+
+    def form_invalid(self, form):
+        return super(CreateGearGroupView, self).form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super(CreateGearGroupView, self).get_context_data(**kwargs)
@@ -221,7 +235,6 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
     def form_invalid(self, form, *args, **kwargs):
-        print("fue invalido")
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):
@@ -384,7 +397,7 @@ def gear_toggle(request, gear_id):
                         {'data': 'There\'s no active gear map.'})
             else:
                 return JsonResponse(
-                    {'data': "You don't have permission to toogle this gear."})
+                    {'data': "You don't have permission to toggle this gear."})
         except Gear.DoesNotExist:
             return JsonResponse({'data': 'Error invalid gear id.'})
         except GearMap.DoesNotExist:

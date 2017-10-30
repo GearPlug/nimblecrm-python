@@ -1,125 +1,309 @@
-.slide-item{
-    height: 710px;
+.slide-item {
     padding: 0;
 }
-.slide{
-    /*opacity: 0.4;*/
+
+.slide {
     width: 100%;
 }
-.slide-caption{
+
+.slide-caption {
     color: white;
     font-family: 'Sansation';
-    font-size: 4.6em;
+    font-size: 5.6em;
     height: 30%;
-    left: 12%;
-    letter-spacing: -0.005px;
-    line-height: 57px;
+    left: 6.6%;
+    letter-spacing: -1px;
+    line-height: 67px;
     text-align: justify;
     text-shadow: inherit;
-    top: 5.9%;
+    top: 6.4%;
 }
-.slide-text-light{ font-family: 'Sansation Light'; }
-.slide-color-aqua{ color: #00E08F; }
-.slide-control{ background-image: none !important; }
+
+.slide-text-light {
+    font-family: 'Sansation Light';
+}
+
+.slide-color-aqua {
+    color: #00E08F;
+}
+
+.slide-control {
+    background-image: none !important;
+}
+
 .slide-arrow {
     position: absolute;
-    top: 44%;
+    top: 45%;
 }
-.bg-form{
+
+.slide-img {
+    height: 13.5%;
+}
+
+.bg-form {
     background-color: #F1F2F4;
-    border-radius: 43px 43px 51px 51px;
-    -moz-border-radius: 43px 43px 51px 51px;
-    -webkit-border-radius: 43px 43px 51px 51px;
-    height: 520px; /* Quitar */
-    margin: 56px 0 0 33px; /* Cambiar a margin top */
-    /*opacity: 0.4; !* Quitar *!*/
-    padding: 48px 0 0 0; /* Modificar */
-    width: 60.5%;
+    border-radius: 40px 40px 51px 51px;
+    -moz-border-radius: 40px 40px 51px 51px;
+    -webkit-border-radius: 40px 40px 51px 51px;
+    left: 63.4%;
+    padding: 2.9% 0 0 0.4%;
+    position: absolute;
+    right: 9.7%;
+    top: 3.7%;
 }
-.input-form{
+
+.input-form {
     background-color: white;
     border-radius: 15px;
     -moz-border-radius: 15px;
     -webkit-border-radius: 15px;
-    border-style: none;
+    border: 1px solid #F1F2F4;
     color: #9E9BA2;
     font-family: 'Sansation';
     font-size: 1.6em;
-    height: 49px;
+    height: 63px;
     margin: 0 0 30px 23px;
     padding-left: 22px;
-    width: 88%;
+    width: 89%;
 }
-.checkbox-form{
+
+.checkbox-form {
     color: black;
     font-family: 'Sansation';
-    font-size: 1.42em;
-    padding-left: 13px;
+    font-size: 1.67em;
+    padding-left: 10px;
 }
-.padding-checkbox{ padding-left: 41px; }
-.button_form{
+
+.padding-checkbox {
+    padding-left: 43px;
+}
+
+.button_form {
     background-color: #005CA7;
-    color: #00E08F;
+    color: white;
     font-size: 1.9em;
     height: 12%;
-    margin: 26px 0 0 24px;
+    margin: 38px 0 56px 24px;
     width: 88%;
 }
+
+.index-space1 {
+    margin-top: 6.7%;
+}
+
+.index-space2 {
+    margin-top: 1.8%;
+}
+
+.index-space3 {
+    margin-top: 4.4%;
+}
+
+.index-space4 {
+    margin-top: 3.6%;
+}
+
+.index-space5 {
+    margin-top: 4.6%;
+}
+
+.index-space7 {
+    margin-top: 6.3%;
+}
+
+.index-space8 {
+    margin-top: 3.6%;
+}
+
+.text-what {
+    color: #9E9BA2;
+    font-family: 'Sansation';
+    font-size: 4.8em;
+}
+
+.text-p {
+    color: #727277;
+    font-family: 'Sansation Light';
+    font-size: 1.9em;
+    letter-spacing: 0.5px;
+    line-height: 44px;
+    padding: 2.8% 20% 0;
+}
+
+.hr-separator {
+    color: #E9EAED;
+    width: 85%;
+}
+
+.text-two {
+    color: #005CA7;
+    font-family: 'Sansation';
+    font-size: 2.3em;
+    margin-top: -0.4%;
+}
+
+.text-bullet {
+    color: #727277;
+    font-family: 'Sansation Light';
+    font-size: 2em;
+    margin-left: -6%;
+    padding-top: 4.0%;
+}
+
+.text-bullet1 {
+    font-family: 'Sansation Light';
+    font-size: 2em;
+    color: #727277;
+    line-height: 28px;
+    margin-bottom: 10.5%;
+    padding: 1.4% 0 0 4%;
+}
+
+.banner {
+    position: relative;
+    width: 100%;
+    z-index: 1;
+}
+
+.text-connect {
+    background: url("../../img/landing/bg_banner1.png") no-repeat #09DF8E;
+    background-size: cover;
+    color: #005CA6;
+    font-family: 'Sansation Bold';
+    font-size: 5.1em;
+    padding: 1.9% 0 2.4% 0;
+}
+
+.text-us {
+    color: #727277;
+    font-family: 'Sansation Light';
+    font-size: 2.8em;
+}
+
+.list-item {
+    text-align: center;
+    margin: 5% 0 10% 0;
+}
+
+.list-item .divider {
+    width: 210px;
+    height: 1px;
+    display: inline-block;
+    background-color: #E5E6E9;
+    margin: 5% 0 1% 0;
+
+}
+
+.list-item .name1 {
+    font-family: "Sansation Light";
+    font-size: 1.6em;
+    color: #727277;
+}
+
+.bg_comments {
+    background: url("../../img/landing/icons3.png") no-repeat scroll top right #005CA6;
+    margin-top: 3.6%;
+    padding-bottom: 42px;
+}
+
+.title-comments {
+    color: white;
+    font-family: "Sansation Bold";
+    font-size: 4.9em;
+    margin-bottom: 6%;
+    margin-top: 87px;
+}
+
+.hr-comments {
+    border-bottom: #00E08F solid 4px;
+    border-top: transparent;
+    margin: -0.7% 0 0 37.5%;
+    width: 19.3%;
+}
+
+.list-wrapper1 {
+    margin-bottom: 4.5%;
+    margin-top: 4.5%;
+}
+
+.name11 {
+    color: white;
+    font-family: "Sansation";
+    font-size: 1.3em;
+    margin-top: 0.6%;
+}
+
+.selected_page {
+    color: #005CA7 !important;
+    font-family: 'Sansation Bold' !important;;
+}
+
 .main-text {
     position: absolute;
     top: 50px;
     width: 96.66666666666666%;
     color: #FFF;
 }
-.btn-min-block {
-    min-width: 170px;
-    line-height: 26px;
+
+.carousel-control {
+    width: 6%;
 }
-.btn-clear {
-    color: #FFF;
-    background-color: transparent;
-    border-color: #FFF;
-    margin-right: 15px;
+
+.btn span.glyphicon {
+	opacity: 0;
 }
-.btn-clear:hover {
-    color: #000;
-    background-color: #FFF;
+
+.btn.active span.glyphicon {
+	opacity: 1;
 }
-.index-space1{ height: 87px; }
-.index-space2{ height: 30px; }
-.index-space3{ height: 60px; }
-.index-space4{ height: 34px; }
-.index-space5{ height: 84px; }
-.index-space6{ height: 72px; }
-.text-what{
-    color: #9E9BA2;
+
+.btn {
+    padding: 3px 3px;
+}
+
+.facebook {
+    height: 13.6%;
+    margin: 20% 0 11.7% 0;
+}
+
+.generator {
+    height: 14%;
+    margin: 13.5% 0 18.4% 0;
+}
+
+.gmail {
+    height: 14.4%;
+    margin: 19.5% 0 11.6% 0;
+}
+
+.border_process {
+    border-left: #E9EAED solid 1px;
+    border-right: #E9EAED solid 1px;
+}
+
+.height_bullet {
+    height: 8.1%;
+}
+
+.bg_login{
+    background: url("../../img/landing/icons4.png") no-repeat scroll 0 0;
+    left: 53.8%;
+    padding: 5.5% 7.4% 6.5% 5.9%;
+    position: absolute;
+    top: 6.8%;
+}
+
+.bg_login1{
+    background-color: #005CA6;
+    height: 821px;
+}
+
+.btn-login{
+    background-color: #09DF8E;
+    color: white;
     font-family: 'Sansation';
-    font-size: 4.6em;
-}
-.text-p{
-    color: #727277;
-    font-family: 'Sansation Light';
-    font-size: 1.9em;
-    line-height: 41px;
-    padding: 2.6% 20% 0;
-}
-.hr-separator{ color: #E9EAED; }
-.text-two{
-    color: #005CA7;
-    font-family: 'Sansation';
-    font-size: 2.3em;
-    margin-top: -0.8%;
-}
-.text-bullet{
-    font-family: 'Sansation Light';
-    font-size: 2em;
-    color: #727277;
-    padding: 2.5% 0 0 4%;
-}
-.text-bullet1{
-    font-family: 'Sansation Light';
-    font-size: 2em;
-    color: #727277;
-    line-height: 28px;
-    padding: 1.4% 0 0 4%;
+    font-size: 5em;
+    height: 104px;
+    padding: 0;
+    width: 445px;
 }

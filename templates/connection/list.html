@@ -1,4 +1,4 @@
-{% extends 'layouts/site_base.html' %}
+{% extends 'layouts/console_base.html' %}
 {% load static %}
 
 {% block content %}
@@ -16,16 +16,14 @@
                 </li>
             {% empty %}
                 There are no connections.
-                <a href="javascript:window.open('{% url 'connection:create' connector_id=connector_id %}',
-                'New Connection', 'width=972,height=660,modal=yes,alwaysRaised=yes')" style="color:blue;">
+                <a href="{% url 'connection:create' connector_id=connector_id %}" style="color:blue;">
                     New Connection</a>
             {% endfor %}
         </ul>
         <button>Use this connection</button>
         <br/>
 
-        <a href="javascript:popUp('{% url 'connection:create' connector_id=connector_id %}')" style="color:blue;">New
-            Connection</a>
+        <a href="{% url 'connection:create' connector_id=connector_id %}" style="color:blue;">New Connection</a>
     </form>
 {% endblock %}
 

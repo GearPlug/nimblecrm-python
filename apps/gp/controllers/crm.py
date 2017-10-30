@@ -16,7 +16,7 @@ from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 from django.conf import settings
 from django.http import HttpResponse
-from batchbook.client import Client as ClientBatchBook
+from batchbook.client import Client as ClientBatchbook
 from datetime import datetime, timedelta
 import time
 import requests
@@ -1918,34 +1918,36 @@ class InfusionSoftController(BaseController):
             return obj_list
         raise ControllerError("There's no plug")
 
-class BatchBookController(BaseController):
+class BatchbookController(BaseController):
     _account_name = None
     _api_key = None
     _client = None
-
     def __init__(self, connection=None, plug=None, **kwargs):
-        super(BatchBookController, self).__init__(connection=connection, plug=plug, **kwargs)
+        super(BatchbookController, self).__init__(connection=connection, plug=plug, **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
-        super(BatchBookController, self).create_connection(connection=connection, plug=plug)
+        super(BatchbookController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
                 self._account_name = self._connection_object.account_name
-                self._api_key = self._connection_object.api_key
-                self._client = ClientBatchBook(api_key=self._api_key, account_name=self._account_name)
+                self._api_key = self._connection_object.access_key
+                self._client = ClientBatchbook(api_key=self._api_key, account_name=self._account_name)
             except Exception as e:
                 print(e)
+                raise
 
     def test_connection(self):
         try:
-            self._client.get_contacts()
+            result=self._client.get_contacts()
             return self._api_key is not None
         except:
-            return self._api_key is None
+            return None
 
-    def download_to_stored_data(self, connection_object, plug, **kwargs):
-        since = (datetime.utcnow() - timedelta(days=1)).isoformat()
-        contacts = self._client.get_contacts(since=since)
+    def download_to_stored_data(self, connection_object, plug, last_source_record=None, **kwargs):
+        if last_source_record:
+            contacts = self._client.get_contacts(since=last_source_record)
+        else:
+            contacts = self._client.get_contacts()
         new_data=[]
         for contact in contacts:
             q = StoredData.objects.filter(
@@ -1953,28 +1955,68 @@ class BatchBookController(BaseController):
                 plug=plug,
                 object_id=contact['id'])
             if not q.exists():
-                for k,v in contact.items:
-                    new_data.append(
-                        StoredData(
-                            name=k,
-                            value=v or '',
-                            object_id=contact['id'],
-                            connection=connection_object.connection,
-                            plug=plug))
+                for k,v in contact.items():
+                    if type(v) is list:
+                        for dic in v:
+                            for kk,vv in dic.items():
+                                new_data.append(
+                                    StoredData(
+                                        name=kk,
+                                        value=vv or '',
+                                        object_id=contact['id'],
+                                        connection=connection_object.connection,
+                                        plug=plug))
+                    else:
+                        new_data.append(
+                            StoredData(
+                                name=k,
+                                value=v or '',
+                                object_id=contact['id'],
+                                connection=connection_object.connection,
+                                plug=plug))
         result_list=[]
+        _obj=""
         if new_data:
             for item in new_data:
                 is_stored = False
-                raw = {}
-                for stored_data in item:
-                    raw[stored_data.name]=stored_data.value
-                    try:
-                        stored_data.save()
-                        is_stored = True
-                    except Exception as e:
-                        break
-                    if stored_data.name == "created_at":
-                        last_source_record=stored_data.value
-                result_list.append({'identifier':{'name': 'id', 'values': item.object_id}, 'is_stored':is_stored,
-                                    'raw':raw})
+                try:
+                    item.save()
+                    is_stored = True
+                except Exception as e:
+                    break
+                if item.name == "created_at":
+                    last_source_record = item.value
+                if _obj != item.object_id:
+                    for contact in contacts:
+                        if contact['id'] == item.object_id:
+                            raw = contact
+                            _obj = item.object_id
+                            result_list.append({'identifier':{'name': 'id', 'values': item.object_id}, 'is_stored':is_stored,
+                                                'raw':raw})
         return {'downloaded_data': result_list, 'last_source_record' : last_source_record}
+
+    def get_target_fields(self, **kwargs):
+        return [
+            {'name': 'prefix', 'label': 'Prefix', 'type': 'varchar', 'required': False},
+            {'name': 'first_name', 'label': 'First Name', 'type': 'varchar', 'required': True},
+            {'name': 'middle_name', 'label': 'Middle Name', 'type': 'varchar', 'required': False},
+            {'name': 'last_name', 'label': 'Last Name', 'type': 'varchar', 'required': True},
+        ]
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.Batchbook) for f in fields]
+
+    def send_stored_data(self, data_list):
+        result_list = []
+        for item in data_list:
+            sent = False
+            identifier = ""
+            data = self.create_data()
+
+            result_list.append({'data': dict(item), 'response': response['result_message'], 'sent': sent, 'identifier': identifier})
+        return result_list
+
+    def create_data(self, item):
+        return {"person": item}
+
