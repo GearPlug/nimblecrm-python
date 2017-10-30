@@ -17,6 +17,7 @@ from apps.gp.enum import ConnectorEnum
 from django.conf import settings
 from django.http import HttpResponse
 from batchbook.client import Client as ClientBatchBook
+from datetime import datetime, timedelta
 import time
 import requests
 import re
@@ -1943,5 +1944,37 @@ class BatchBookController(BaseController):
             return self._api_key is None
 
     def download_to_stored_data(self, connection_object, plug, **kwargs):
-        since = ""
-        contacts = self._client.get_contacts()
+        since = (datetime.utcnow() - timedelta(days=1)).isoformat()
+        contacts = self._client.get_contacts(since=since)
+        new_data=[]
+        for contact in contacts:
+            q = StoredData.objects.filter(
+                connection=connection_object.connection,
+                plug=plug,
+                object_id=contact['id'])
+            if not q.exists():
+                for k,v in contact.items:
+                    new_data.append(
+                        StoredData(
+                            name=k,
+                            value=v or '',
+                            object_id=contact['id'],
+                            connection=connection_object.connection,
+                            plug=plug))
+        result_list=[]
+        if new_data:
+            for item in new_data:
+                is_stored = False
+                raw = {}
+                for stored_data in item:
+                    raw[stored_data.name]=stored_data.value
+                    try:
+                        stored_data.save()
+                        is_stored = True
+                    except Exception as e:
+                        break
+                    if stored_data.name == "created_at":
+                        last_source_record=stored_data.value
+                result_list.append({'identifier':{'name': 'id', 'values': item.object_id}, 'is_stored':is_stored,
+                                    'raw':raw})
+        return {'downloaded_data': result_list, 'last_source_record' : last_source_record}
