@@ -41,7 +41,7 @@ class MapForm(forms.Form):
                             del (params['choices'])
                         custom_field = forms.CharField  # DateTimeField
                     elif field_type == 'float':
-                        length = int(params.pop('max_length', 6))
+                        length = int(params.pop('max_length'))
                         params['max_digits'] = length
                         params['decimal_places'] = 2
                         custom_field = forms.DecimalField

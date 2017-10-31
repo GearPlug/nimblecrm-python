@@ -316,6 +316,8 @@ class MapField(object):
                 self.name = d['name']
             if 'type' in d:
                 self.field_type = d['type']
+                if self.field_type == 'float':
+                    self.max_length = 6
         else:
             if 'name' in d:
                 self.name = d['name']
