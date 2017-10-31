@@ -2051,10 +2051,10 @@ class OdooCRMController(BaseController):
         for item in data_list:
             obj_result = {'data': dict(item)}
             try:
-                res = self.set_entry(self._module, item)
+                res = self.set_entry([dict(item)])
                 obj_result['response'] = res
                 obj_result['sent'] = True
-                obj_result['identifier'] = res['id']
+                obj_result['identifier'] = res
             except Exception as e:
                 obj_result['response'] = str(e)
                 obj_result['sent'] = False
@@ -2062,11 +2062,11 @@ class OdooCRMController(BaseController):
             obj_list.append(obj_result)
         return obj_list
 
-    def set_entry(self, module, item):
+    def set_entry(self, item):
         try:
-            return self._client.(module, item)
+            return self._client.create_partner(item)
         except WrongParameter as e:
-            raise ControllerError(code=4, controller=ConnectorEnum.SugarCRM,
+            raise ControllerError(code=4, controller=ConnectorEnum.OdooCRM,
                                   message='Wrong Parameter. {}'.format(str(e)))
         except BaseError as e:
             raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
