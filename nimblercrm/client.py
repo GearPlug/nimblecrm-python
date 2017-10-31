@@ -1,6 +1,7 @@
 import requests
-from exception import exception
+from exception.exception import *
 from enumerator import ErrorEnum
+
 
 class Client(object):
     _VALID_VERSIONS = ['v1']
@@ -46,27 +47,27 @@ class Client(object):
                 except Exception as e:
                     print(e)
             except Exception:
-                raise exception.UnexpectedError('Error:{0}{1}.Message{2}'.format(code, response.status_code, message))
+                raise UnexpectedError('Error:{0}{1}.Message{2}'.format(code, response.status_code, message))
             if error_enum == ErrorEnum.Forbidden:
-                raise exception.Forbidden(message)
+                raise Forbidden(message)
             if error_enum == ErrorEnum.Not_Found:
-                raise exception.Not_Found(message)
+                raise Not_Found(message)
             if error_enum == ErrorEnum.Payment_Required:
-                raise exception.Payment_Required(message)
+                raise Payment_Required(message)
             if error_enum == ErrorEnum.Internal_Server_Error:
-                raise exception.Internal_Server_Error(message)
+                raise Internal_Server_Error(message)
             if error_enum == ErrorEnum.Service_Unavailable:
-                raise exception.Service_Unavailable(message)
+                raise Service_Unavailable(message)
             if error_enum == ErrorEnum.Bad_Request:
-                raise exception.Bad_Request(message)
+                raise Bad_Request(message)
             if error_enum == ErrorEnum.Unauthorized:
-                raise exception.Unauthorized(message)
+                raise Unauthorized(message)
             if error_enum == ErrorEnum.InvalidParameters:
-                raise exception.Unauthorized(message)
+                raise Unauthorized(message)
             if error_enum == ErrorEnum.QuotaExceeded:
-                raise exception.Unauthorized(message)
+                raise Unauthorized(message)
             else:
-                raise exception.BaseError('Error: {0}{1}. Message {2}'.format(code, response.status_code, message))
+                raise BaseError('Error: {0}{1}. Message {2}'.format(code, response.status_code, message))
             return data
         else:
             return response
