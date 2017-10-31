@@ -7,7 +7,7 @@ setup(name='nimblecrm',
       author='Nerio Rincon',
       author_email='nrincon.mr@gmail.com',
       license='GPL',
-      packages=['nimblecrm-python'],
+      packages=['nimblecrm'],
       install_requires=[
           'requests',
       ],
