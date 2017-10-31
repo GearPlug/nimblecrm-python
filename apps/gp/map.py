@@ -309,6 +309,15 @@ class MapField(object):
                 self.required = d['required']
             if 'type' in d:
                 self.field_type = d['type']
+        elif controller == ConnectorEnum.Batchbook:
+            if 'name' in d:
+                self.name = d['name']
+            if 'label' in d:
+                self.label = d['label']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
         else:
             if 'name' in d:
                 self.name = d['name']

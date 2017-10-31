@@ -1938,7 +1938,7 @@ class BatchbookController(BaseController):
 
     def test_connection(self):
         try:
-            result=self._client.get_contacts()
+            self._client.get_contacts()
             return self._api_key is not None
         except:
             return None
@@ -1991,7 +1991,7 @@ class BatchbookController(BaseController):
                         if contact['id'] == item.object_id:
                             raw = contact
                             _obj = item.object_id
-                            result_list.append({'identifier':{'name': 'id', 'values': item.object_id}, 'is_stored':is_stored,
+                            result_list.append({'identifier':{'name': 'id', 'value': item.object_id}, 'is_stored':is_stored,
                                                 'raw':raw})
         return {'downloaded_data': result_list, 'last_source_record' : last_source_record}
 
@@ -2010,11 +2010,17 @@ class BatchbookController(BaseController):
     def send_stored_data(self, data_list):
         result_list = []
         for item in data_list:
-            sent = False
-            identifier = ""
-            data = self.create_data()
-
-            result_list.append({'data': dict(item), 'response': response['result_message'], 'sent': sent, 'identifier': identifier})
+            data = self.create_data(item)
+            try:
+                response = self._client.create_contact(data=data)
+            except:
+                response = ""
+                sent = False
+                identifier = ""
+            if 'id' in response:
+                sent = True
+                identifier = response['id']
+            result_list.append({'data': dict(item), 'response': response, 'sent': sent, 'identifier': identifier})
         return result_list
 
     def create_data(self, item):
