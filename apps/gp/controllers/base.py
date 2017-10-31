@@ -101,6 +101,7 @@ class BaseController(object):
         """
         if self._connection_object is not None and self._plug is not None:
             data_list = get_dict_with_source_data(source_data, target_fields)
+            self.filter(data_list, "", 2, "")
             if is_first:
                 try:
                     data_list = [data_list[-1]]
@@ -124,6 +125,25 @@ class BaseController(object):
                 return self.send_stored_data(source_data, target_fields, **kwargs)
         raise ControllerError(code=0, controller=self.connector.name,
                               message="Please check you're using a valid connection and a valid plug.")
+
+    def options(self, x):
+        return {1: 'Contain',
+                2: 'Does not contain'}[x]
+
+    def filter(self, data_list, source_field, option, compare_field):
+        _select = self.options(option)
+        if option == 1 or 2:
+            for data in data_list:
+                for d in data:
+                    if d == source_field:
+                        if compare_field in data_list[d]:
+                            _position = data_list.index(data)
+                            if option == 2:
+                               data_list.pop(_position)
+                        else:
+                            if option == 1:
+                                data_list.pop(_position)
+        return data_list
 
     def get_target_fields(self, **kwargs):
         raise ControllerError('Not implemented yet.')
