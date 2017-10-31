@@ -1,5 +1,5 @@
 import requests
-import exception
+from exception import exception
 from enumerator import ErrorEnum
 
 class Client(object):
