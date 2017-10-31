@@ -1,13 +1,13 @@
 from setuptools import setup
 
-setup(name='typeform',
+setup(name='nimblecrm',
       version='0.1',
-      description='API wrapper for Typeform written in Python',
-      url='https://github.com/GearPlug/typeform-python',
-      author='Luisa Torres',
-      author_email='hanna860@gmail.com',
+      description='API wrapper for NimbleCRM written in Python',
+      url='https://github.com/GearPlug/nimblecrm-python',
+      author='Nerio Rincon',
+      author_email='nrincon.mr@gmail.com',
       license='GPL',
-      packages=['typeform'],
+      packages=['nimblecrm-python'],
       install_requires=[
           'requests',
       ],
