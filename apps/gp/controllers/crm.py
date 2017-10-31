@@ -16,6 +16,7 @@ from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 from django.conf import settings
 from django.http import HttpResponse
+from actcrm.client import Client as ActCRMClient
 import time
 import requests
 import re
@@ -26,6 +27,7 @@ import base64
 import urllib.error
 import urllib.request
 import pprint
+
 
 class SugarCRMController(BaseController):
     _user = None
@@ -726,6 +728,7 @@ class SalesforceController(BaseController):
     def has_webhook(self):
         return True
 
+
 class HubSpotController(BaseController):
     _token = None
     _refresh_token = None
@@ -775,7 +778,7 @@ class HubSpotController(BaseController):
                 "That specification doesn't belong to an action in this connector."
             )
 
-    def download_to_stored_data(self,connection_object,plug, ):
+    def download_to_stored_data(self, connection_object, plug, ):
         module_id = self._plug.plug_action_specification.all()[0].value
         new_data = []
         data = self.get_data(module_id)
@@ -932,7 +935,6 @@ class VtigerController(BaseController):
     _token = None
     _user_id = None
 
-
     def __init__(self, connection=None, plug=None, **kwargs):
         super(VtigerController, self).__init__(connection=connection, plug=plug, **kwargs)
 
@@ -1042,7 +1044,7 @@ class VtigerController(BaseController):
         url = self._base_url + endpoint_url
         query = "SELECT * FROM {0} ".format(module)
         if gt is not None:
-            query+="createdtime > {}".format(gt)
+            query += "createdtime > {}".format(gt)
         query += " ORDER BY createdtime desc;"
         values = {'sessionName': self._session_name, 'operation': 'query',
                   'query': query}
@@ -1134,10 +1136,11 @@ class VtigerController(BaseController):
         new_data = []
         for product in data:
             unique_value = product['id']
-            q = StoredData.objects.filter(connection=connection_object.connection,plug=plug,object_id = unique_value)
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
-                new_item = [StoredData(name= key, value= value or '', object_id=unique_value,
-                                       connection=connection_object.connection, plug=plug) for key, value in product.items()]
+                new_item = [StoredData(name=key, value=value or '', object_id=unique_value,
+                                       connection=connection_object.connection, plug=plug) for key, value in
+                            product.items()]
             new_data.append(new_item)
         obj_last_source_record = None
         result_list = []
@@ -1157,7 +1160,8 @@ class VtigerController(BaseController):
                 if object_id != obj_id:
                     print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id))
                     # TODO: CHECK RAISE
-                result_list.append({'identifier': {'name':'id', 'value':object_id}, 'raw': obj_raw, 'is_stored': is_stored})
+                result_list.append(
+                    {'identifier': {'name': 'id', 'value': object_id}, 'raw': obj_raw, 'is_stored': is_stored})
             for item in result_list:
                 for k, v in item['raw'].items():
                     if k == 'createdtime':
@@ -1308,7 +1312,7 @@ class ActiveCampaignController(BaseController):
         action = 'subscribe'
         if action_name == 'new subscriber' or 'new unsubscriber':
             selected_list = self._plug.plug_action_specification.get(
-            action_specification__name='list')
+                action_specification__name='list')
             list_id = selected_list.value
             if action_name == 'new unsubscriber':
                 action = 'unsubscribe'
@@ -1361,7 +1365,7 @@ class ActiveCampaignController(BaseController):
     def get_target_fields(self, **kwargs):
         action = self._plug.action.name
         if action == 'unsubscribe a contact':
-            return[ {'name': 'email', 'label': 'Email', 'type': 'varchar', 'required': True}]
+            return [{'name': 'email', 'label': 'Email', 'type': 'varchar', 'required': True}]
         return [
             {'name': 'email', 'label': 'Email', 'type': 'varchar', 'required': True},
             {'name': 'first_name', 'label': 'First Name', 'type': 'varchar', 'required': False},
@@ -1444,7 +1448,8 @@ class ActiveCampaignController(BaseController):
                     'Item: %s failed to send.' % (
                         list(item.items())[0][1]),
                     extra=extra)
-            result_list.append({'data': dict(item), 'response': response['result_message'], 'sent': sent, 'identifier': identifier})
+            result_list.append(
+                {'data': dict(item), 'response': response['result_message'], 'sent': sent, 'identifier': identifier})
         return result_list
 
     def download_to_stored_data(self, connection_object=None, plug=None, last_source_record=None, data=None, **kwargs):
@@ -1481,8 +1486,8 @@ class ActiveCampaignController(BaseController):
                             % (item.object_id, item.name, item.plug.id,
                                item.connection.id),
                             extra=extra)
-                result_list=[{'raw':data, 'is_stored':is_stored, 'identifier' :{'name':'id','value':object_id}}]
-            return {'downloaded_data' : result_list, 'last_source_record': object_id}
+                result_list = [{'raw': data, 'is_stored': is_stored, 'identifier': {'name': 'id', 'value': object_id}}]
+            return {'downloaded_data': result_list, 'last_source_record': object_id}
         return False
 
     def contact_view(self, id):
@@ -1915,3 +1920,117 @@ class InfusionSoftController(BaseController):
                     self._log.info('Item: failed to send.', extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
+
+
+class ActEssentialsController(BaseController):
+    client = None
+
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(ActEssentialsController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(ActEssentialsController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self.client = ActCRMClient(self._connection_object.api_key, settings.ACTESSENTIALS_DEVELOPER_KEY)
+            except Exception as e:
+                print(e)
+                self.client = None
+
+    def test_connection(self):
+        try:
+            metadata = self.client.get_metadata()
+            return metadata is not None
+        except:
+            return False
+
+    def has_webhook(self):
+        return False
+
+    def download_to_stored_data(self, connection_object, plug, limit=49, order_by="created desc",
+                                last_source_record=None, **kwargs):
+        params = {}
+        if limit:
+            params['top'] = limit
+        if order_by:
+            params['order_by'] = order_by
+        if last_source_record is not None:
+            params['filter'] = 'created gt {0}'.format(last_source_record)
+
+        if plug.action.name.lower() == 'new opportunity':
+            data_list = self.client.get_opportunities(**params)
+        elif plug.action.name.lower() == 'new contact':
+            data_list = self.client.get_contacts(**params)
+        new_data = []
+        for item in data_list:
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
+            if not q.exists():
+                item_data = []
+                for k, v in item.items():
+                    item_data.append(StoredData(name=k, value=v or '', object_id=item['id'],
+                                                connection=connection_object.connection, plug=plug))
+                new_data.append(item_data)
+        downloaded_data = []
+        for new_item in new_data:
+            history_obj = {'identifier': None, 'is_stored': False, 'raw': {}}
+            for field in new_item:
+                field.save()
+                history_obj['raw'][field.name] = field.value
+                history_obj['is_stored'] = True
+            history_obj['identifier'] = {'name': 'id', 'value': field.object_id}
+            downloaded_data.append(history_obj)
+        if downloaded_data:
+            return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw']['created']}
+        return False
+
+    def send_stored_data(self, data_list, *args, **kwargs):
+        if self._plug.action.name.lower() == 'create opportunity':
+            method = self.client.create_opportunity
+        elif self._plug.action.name.lower() == 'create contact':
+            method = self.client.create_contact
+        obj_list = []
+        for item in data_list:
+            try:
+                obj_result = {'data': dict(item)}
+                result = method(**obj_result['data'])
+                obj_result['response'] = result
+                obj_result['identifier'] = result['id']
+                obj_result['sent'] = True
+            except Exception as e:
+                obj_result['response'] = str(e)
+                obj_result['identifier'] = '-1'
+                obj_result['sent'] = False
+            obj_list.append(obj_result)
+        return obj_list
+
+    def get_target_fields(self, **kwargs):
+        if self._plug.action.name.lower() == 'create opportunity':
+            return [
+                {'name': 'title', 'label': 'title', 'type': 'varchar', 'required': True},
+                {'name': 'stage', 'label': 'stage', 'type': 'varchar', 'required': True},
+                {'name': 'description', 'label': 'description', 'type': 'varchar', 'required': False},
+                {'name': 'total', 'label': 'total', 'type': 'varchar', 'required': False},
+                {'name': 'currency', 'label': 'currency', 'type': 'varchar', 'required': False},
+                {'name': 'notes', 'label': 'notes', 'type': 'varchar', 'required': False},
+                {'name': 'estimatedClose', 'label': 'estimatedClose', 'type': 'varchar', 'required': False},
+                {'name': 'actualClose', 'label': 'actualClose', 'type': 'varchar', 'required': False},
+                {'name': 'notes', 'label': 'notes', 'type': 'varchar', 'required': False},
+            ]
+        elif self._plug.action.name.lower() == 'create contact':
+            return [
+                {'name': 'firstName', 'label': 'firstName', 'type': 'varchar', 'required': True},
+                {'name': 'lastName', 'label': 'lastName', 'type': 'varchar', 'required': False},
+                {'name': 'company', 'label': 'company', 'type': 'varchar', 'required': False},
+                {'name': 'jobTitle', 'label': 'jobTitle', 'type': 'varchar', 'required': False},
+                {'name': 'emailAddress', 'label': 'emailAddress', 'type': 'email', 'required': False},
+                {'name': 'altEmailAddress', 'label': 'altEmailAddress', 'type': 'email', 'required': False},
+                {'name': 'businessPhone', 'label': 'businessPhone', 'type': 'varchar', 'required': False},
+                {'name': 'mobilePhone', 'label': 'mobilePhone', 'type': 'varchar', 'required': False},
+                {'name': 'homePhone', 'label': 'homePhone', 'type': 'varchar', 'required': False},
+                {'name': 'website', 'label': 'website', 'type': 'varchar', 'required': False},
+                {'name': 'linkedinUrl', 'label': 'linkedinUrl', 'type': 'varchar', 'required': False},
+                {'name': 'birthday', 'label': 'birthday', 'type': 'varchar', 'required': False},
+            ]
+
+    def get_mapping_fields(self, **kwargs):
+        return [MapField(f, controller=ConnectorEnum.ActEssentials) for f in self.get_target_fields()]

@@ -486,6 +486,15 @@ class TypeFormConnection(models.Model):
         return self.name
 
 
+class ActEssentialsConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_actessentials')
+    name = models.CharField('name', max_length=200)
+    api_key = models.CharField('API Key', max_length=400)
+
+    def __str__(self):
+        return self.name
+
+
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
     name = models.CharField('name', max_length=120)
