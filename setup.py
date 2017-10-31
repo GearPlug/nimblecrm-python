@@ -1,13 +1,13 @@
 from setuptools import setup
 
-setup(name='nimblecrm',
+setup(name='nimblercrm',
       version='0.1',
-      description='API wrapper for NimbleCRM written in Python',
+      description='API wrapper for NimblerCRM written in Python',
       url='https://github.com/GearPlug/nimblecrm-python',
       author='Nerio Rincon',
       author_email='nrincon.mr@gmail.com',
       license='GPL',
-      packages=['nimblecrm'],
+      packages=['nimblercrm'],
       install_requires=[
           'requests',
       ],
