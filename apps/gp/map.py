@@ -309,6 +309,15 @@ class MapField(object):
                 self.required = d['required']
             if 'type' in d:
                 self.field_type = d['type']
+        elif controller == ConnectorEnum.OdooCRM:
+            if 'string' in d:
+                self.label = d['string']
+            if 'name' in d:
+                self.name = d['name']
+            if 'type' in d:
+                self.field_type = d['type']
+                if self.field_type == 'float':
+                    self.max_length = 6
         elif controller == ConnectorEnum.Batchbook:
             if 'name' in d:
                 self.name = d['name']
