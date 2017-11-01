@@ -3,6 +3,8 @@ from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.models import Connection
 from apps.history.models import DownloadHistory, SendHistory
 from django.core.serializers import serialize
+from datetime import datetime
+import timestring
 import logging
 import httplib2
 import json
@@ -102,7 +104,9 @@ class BaseController(object):
         if self._connection_object is not None and self._plug is not None:
             data_list = get_dict_with_source_data(source_data, target_fields)
             print("data list", data_list)
-            self.filter(data_list, "target_fields", 5, "hola pepe")
+            _filters = [{'name_field': 'field1', 'option': 12, 'compare_field': 'monday, aug 15th 2015 at 8:40 pm'},
+                        {'name_field': 'field2', 'option': 11, 'compare_field': 'monday, aug 15th 2015 at 8:40 pm'}]
+            data_list = self.filter(data_list, _filters)
             print("modify", data_list)
             if is_first:
                 try:
@@ -129,39 +133,80 @@ class BaseController(object):
                               message="Please check you're using a valid connection and a valid plug.")
 
     def options(self, x):
-        return {'Contain' : 1,
-                'Does not contain' : 2,
-                'Equals' : 3,
-                'Does not equal' : 4,
-                'Is empty' : 5,
-                'Is not empty' : 6,
+        return {'Contain': 1,
+                'Does not contain': 2,
+                'Equals': 3,
+                'Does not equal': 4,
+                'Is empty': 5,
+                'Is not empty': 6,
+                'Start with': 7,
+                'Does not start with': 8,
+                'Ends with': 9,
+                'Does not end with': 10,
+                'Is less than': 11,
+                'Is greater than': 12,
                 }[x]
 
-    def filter(self, data_list, target_field, option, compare_field):
-        #_select = self.options(option)
-        _select = option
-        new_data = data_list
+    def filter(self, data_list, filter_dict):
+        new_data = []
+        _length = len(filter_dict)
         for data in data_list:
-            print("data", data)
-            for k,v in data.items():
-                if k == target_field:
-                    _position = new_data.index(data)
-                    if _select in (1,2):
-                        if compare_field in v:
-                            if _select == 2:
-                                new_data.pop(_position)
-                        else:
-                            if _select == 1:
-                                new_data.pop(_position)
-                    elif _select in (3,4,5,6):
-                        if _select in (5,6):
-                            compare_field = ""
-                        if compare_field == v:
-                            if _select in (4,6):
-                                new_data.pop(_position)
-                        else:
-                            if _select in (3,5):
-                                new_data.pop(_position)
+            _count = 0
+            for f in filter_dict:
+                # _select = self.options(filter_dict['option'])
+                _select = f['option']
+                for k, v in data.items():
+                    if k == f['name_field']:
+                        if _select in (1, 2):
+                            if f['compare_field'] in v:
+                                if _select == 1:
+                                    _count += 1
+                            else:
+                                if _select == 2:
+                                    _count += 1
+                        elif _select in (3, 4, 5, 6):
+                            if _select in (5, 6):
+                                f['compare_field'] = ""
+                            if f['compare_field'] == v:
+                                if _select in (3, 5):
+                                    _count += 1
+                            else:
+                                if _select in (4, 6):
+                                    _count += 1
+                        elif _select in (7, 8):
+                            if v.startswith(f['compare_field']):
+                                if _select == 7:
+                                    _count += 1
+                            else:
+                                if _select == 8:
+                                    _count += 1
+                        elif _select in (9, 10):
+                            if v.endswith(f['compare_field']):
+                                if _select == 9:
+                                    _count += 1
+                            else:
+                                if _select == 10:
+                                    _count += 1
+                        elif _select in (11, 12):
+                            try:
+                                _compare = int(f['compare_field'])
+                                _value = int(v)
+                            except:
+                                try:
+                                    _compare = timestring.Date(f['compare_field'])
+                                    _value = timestring.Date(v)
+                                except:
+                                    _compare = ""
+                                    _value = ""
+                            print(_compare, _value)
+                            if (type(_compare) is int and type(_value) is int) or (
+                                    type(_compare) is datetime.date() and type(_value) is datetime.date()):
+                                if _value <= _compare and _select == 11:
+                                    _count += 1
+                                elif _value >= _compare and _select == 12:
+                                    _count += 1
+            if _count == _length:
+                new_data.append(data)
         return new_data
 
     def get_target_fields(self, **kwargs):
