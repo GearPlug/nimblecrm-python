@@ -101,7 +101,9 @@ class BaseController(object):
         """
         if self._connection_object is not None and self._plug is not None:
             data_list = get_dict_with_source_data(source_data, target_fields)
-            self.filter(data_list, "", 2, "")
+            print("data list", data_list)
+            self.filter(data_list, "target_fields", 5, "hola pepe")
+            print("modify", data_list)
             if is_first:
                 try:
                     data_list = [data_list[-1]]
@@ -127,23 +129,40 @@ class BaseController(object):
                               message="Please check you're using a valid connection and a valid plug.")
 
     def options(self, x):
-        return {1: 'Contain',
-                2: 'Does not contain'}[x]
+        return {'Contain' : 1,
+                'Does not contain' : 2,
+                'Equals' : 3,
+                'Does not equal' : 4,
+                'Is empty' : 5,
+                'Is not empty' : 6,
+                }[x]
 
-    def filter(self, data_list, source_field, option, compare_field):
-        _select = self.options(option)
-        if option == 1 or 2:
-            for data in data_list:
-                for d in data:
-                    if d == source_field:
-                        if compare_field in data_list[d]:
-                            _position = data_list.index(data)
-                            if option == 2:
-                               data_list.pop(_position)
+    def filter(self, data_list, target_field, option, compare_field):
+        #_select = self.options(option)
+        _select = option
+        new_data = data_list
+        for data in data_list:
+            print("data", data)
+            for k,v in data.items():
+                if k == target_field:
+                    _position = new_data.index(data)
+                    if _select in (1,2):
+                        if compare_field in v:
+                            if _select == 2:
+                                new_data.pop(_position)
                         else:
-                            if option == 1:
-                                data_list.pop(_position)
-        return data_list
+                            if _select == 1:
+                                new_data.pop(_position)
+                    elif _select in (3,4,5,6):
+                        if _select in (5,6):
+                            compare_field = ""
+                        if compare_field == v:
+                            if _select in (4,6):
+                                new_data.pop(_position)
+                        else:
+                            if _select in (3,5):
+                                new_data.pop(_position)
+        return new_data
 
     def get_target_fields(self, **kwargs):
         raise ControllerError('Not implemented yet.')
