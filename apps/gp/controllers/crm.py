@@ -16,6 +16,8 @@ from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 from django.conf import settings
 from django.http import HttpResponse
+from batchbook.client import Client as ClientBatchbook
+from datetime import datetime, timedelta
 import time
 import requests
 import re
@@ -1915,3 +1917,112 @@ class InfusionSoftController(BaseController):
                     self._log.info('Item: failed to send.', extra=extra)
             return obj_list
         raise ControllerError("There's no plug")
+
+class BatchbookController(BaseController):
+    _account_name = None
+    _api_key = None
+    _client = None
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(BatchbookController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(BatchbookController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._account_name = self._connection_object.account_name
+                self._api_key = self._connection_object.access_key
+                self._client = ClientBatchbook(api_key=self._api_key, account_name=self._account_name)
+            except Exception as e:
+                print(e)
+                raise
+
+    def test_connection(self):
+        try:
+            self._client.get_contacts()
+            return self._api_key is not None
+        except:
+            return None
+
+    def download_to_stored_data(self, connection_object, plug, last_source_record=None, **kwargs):
+        if last_source_record:
+            contacts = self._client.get_contacts(since=last_source_record)
+        else:
+            contacts = self._client.get_contacts()
+        new_data=[]
+        for contact in contacts:
+            q = StoredData.objects.filter(
+                connection=connection_object.connection,
+                plug=plug,
+                object_id=contact['id'])
+            if not q.exists():
+                for k,v in contact.items():
+                    if type(v) is list:
+                        for dic in v:
+                            for kk,vv in dic.items():
+                                new_data.append(
+                                    StoredData(
+                                        name=kk,
+                                        value=vv or '',
+                                        object_id=contact['id'],
+                                        connection=connection_object.connection,
+                                        plug=plug))
+                    else:
+                        new_data.append(
+                            StoredData(
+                                name=k,
+                                value=v or '',
+                                object_id=contact['id'],
+                                connection=connection_object.connection,
+                                plug=plug))
+        result_list=[]
+        _obj=""
+        if new_data:
+            for item in new_data:
+                is_stored = False
+                try:
+                    item.save()
+                    is_stored = True
+                except Exception as e:
+                    break
+                if item.name == "created_at":
+                    last_source_record = item.value
+                if _obj != item.object_id:
+                    for contact in contacts:
+                        if contact['id'] == item.object_id:
+                            raw = contact
+                            _obj = item.object_id
+                            result_list.append({'identifier':{'name': 'id', 'value': item.object_id}, 'is_stored':is_stored,
+                                                'raw':raw})
+        return {'downloaded_data': result_list, 'last_source_record' : last_source_record}
+
+    def get_target_fields(self, **kwargs):
+        return [
+            {'name': 'prefix', 'label': 'Prefix', 'type': 'varchar', 'required': False},
+            {'name': 'first_name', 'label': 'First Name', 'type': 'varchar', 'required': True},
+            {'name': 'middle_name', 'label': 'Middle Name', 'type': 'varchar', 'required': False},
+            {'name': 'last_name', 'label': 'Last Name', 'type': 'varchar', 'required': True},
+        ]
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.Batchbook) for f in fields]
+
+    def send_stored_data(self, data_list):
+        result_list = []
+        for item in data_list:
+            data = self.create_data(item)
+            try:
+                response = self._client.create_contact(data=data)
+            except:
+                response = ""
+                sent = False
+                identifier = ""
+            if 'id' in response:
+                sent = True
+                identifier = response['id']
+            result_list.append({'data': dict(item), 'response': response, 'sent': sent, 'identifier': identifier})
+        return result_list
+
+    def create_data(self, item):
+        return {"person": item}
+
