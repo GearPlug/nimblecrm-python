@@ -50,13 +50,14 @@ class ClientAuth(object):
                       'redirect_uri': self.redirect_uri,
                       'code': self.code,
                       'grant_type': 'authorization_code'}
-        body = urllib.parse.urlencode(oauth_vars)
+        # body = urllib.parse.urlencode(oauth_vars)
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
         }
         try:
-            response = requests.post(self.oauth_url, headers=headers, data=body)
+            response = requests.post(self.oauth_url, headers=headers, 
+                                     params=oauth_vars)
             return response
         except Exception as e:
             print(e)
