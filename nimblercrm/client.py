@@ -80,8 +80,15 @@ class Client(object):
         else:
             return response
 
-    def get_token(self):
-        ca = ClientAuth()
+    def get_token(self, code):
+        ca = ClientAuth(
+            client_id=self.client_id,
+            client_secret=self.client_secret,
+            oauth_url=self.oauth_url,
+            redirect_url=self.redirect_uri,
+            code_url=None,
+            base_url=self.base_url)
+        ca.get_token(code=code)
 
     def get_contact_list(self):
         """Returns all contacts.
