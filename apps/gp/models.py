@@ -486,6 +486,18 @@ class TypeFormConnection(models.Model):
         return self.name
 
 
+class OdooCRMConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_odoocrm')
+    name = models.CharField('name', max_length=200)
+    url = models.CharField('url', max_length=200)
+    database = models.CharField('database', max_length=200)
+    connection_user = models.CharField('user', max_length=200)
+    connection_password = models.CharField('password', max_length=200)
+
+    def __str__(self):
+        return self.name
+
+
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
     name = models.CharField('name', max_length=120)
