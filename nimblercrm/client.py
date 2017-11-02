@@ -8,7 +8,7 @@ class Client(object):
     _VALID_VERSIONS = ['v1']
 
     def __init__(self, client_id=None, client_secret=None, redirect_url=None, oauth_url=None, base_url=None,
-                 code_url=None):
+                 code_url=None, token=None):
 
         self.client_id = client_id
         self.client_secret = client_secret
