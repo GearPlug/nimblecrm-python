@@ -25,6 +25,7 @@ class SendHistory(models.Model):
     response = models.CharField(max_length=25000)
     sent = models.BooleanField('sent', default=False)
     identifier = models.CharField('identifier', max_length=500)
+    tries = models.IntegerField(default=1)
 
     class Meta:
         db_table = "gp_sendhistory"
