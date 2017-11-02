@@ -3,6 +3,7 @@ from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.models import Connection
 from apps.history.models import DownloadHistory, SendHistory
 from django.core.serializers import serialize
+from dateutil.parser import *
 from datetime import datetime
 import timestring
 import logging
@@ -102,35 +103,39 @@ class BaseController(object):
         }
         """
         if self._connection_object is not None and self._plug is not None:
-            data_list = get_dict_with_source_data(source_data, target_fields)
-            print("data list", data_list)
-            _filters = [{'name_field': 'field1', 'option': 12, 'compare_field': 'monday, aug 15th 2015 at 8:40 pm'},
-                        {'name_field': 'field2', 'option': 11, 'compare_field': 'monday, aug 15th 2015 at 8:40 pm'}]
-            data_list = self.filter(data_list, _filters)
-            print("modify", data_list)
-            if is_first:
+            raw_data_list = get_dict_with_source_data(source_data, target_fields)
+            data_list = self.filter(raw_data_list, self.get_filters())
+            if is_first or len(data_list) != len(raw_data_list):
                 try:
-                    data_list = [data_list[-1]]
+                    data_list = [data_list[0]]
                 except IndexError:
                     data_list = []
                 except Exception as e:
                     raise ControllerError(message="Unexpected Exception. Please report this error: {}.".format(str(e)))
-            try:
-                result = self.send_stored_data(data_list, **kwargs)
-                serialized_connection = serialize('json', [self._connection_object, ])
-                for item in result:
-                    SendHistory.objects.create(connector_id=self.connector.id, connection=serialized_connection,
-                                               gear_id=str(self._plug.gear_target.first().id),
-                                               plug_id=str(self._plug.id),
-                                               data=json.dumps(item['data']), response=item['response'],
-                                               sent=item['sent'], identifier=item['identifier'])
-                return [i['identifier'] for i in result]
-            except KeyError:
-                return result
-            except TypeError:
-                return self.send_stored_data(source_data, target_fields, **kwargs)
+            if data_list:
+                try:
+                    result = self.send_stored_data(data_list, **kwargs)
+                    serialized_connection = serialize('json', [self._connection_object, ])
+                    for item in result:
+                        SendHistory.objects.create(connector_id=self.connector.id, connection=serialized_connection,
+                                                   gear_id=str(self._plug.gear_target.first().id),
+                                                   plug_id=str(self._plug.id),
+                                                   data=json.dumps(item['data']), response=item['response'],
+                                                   sent=item['sent'], identifier=item['identifier'])
+                    return [i['identifier'] for i in result]
+                except KeyError:
+                    return result
+                except TypeError:
+                    return self.send_stored_data(source_data, target_fields, **kwargs)
+            elif len(data_list) != len(raw_data_list):
+                return source_data[-1]['id']
+            return []
         raise ControllerError(code=0, controller=self.connector.name,
                               message="Please check you're using a valid connection and a valid plug.")
+
+    def get_filters(self):
+        return [{'name_field': 'field1', 'option': 1, 'compare_field': 'hola'},
+                {'name_field': 'field2', 'option': 1, 'compare_field': 'hola'}]
 
     def options(self, x):
         return {'Contain': 1,
@@ -145,7 +150,9 @@ class BaseController(object):
                 'Does not end with': 10,
                 'Is less than': 11,
                 'Is greater than': 12,
-                }[x]
+                'Length equals': 13,
+                'Length is less than': 14,
+                'Length is greater than': 15, }[x]
 
     def filter(self, data_list, filter_dict):
         new_data = []
@@ -164,11 +171,14 @@ class BaseController(object):
                             else:
                                 if _select == 2:
                                     _count += 1
-                        elif _select in (3, 4, 5, 6):
+                        elif _select in (3, 4, 5, 6, 13):
                             if _select in (5, 6):
                                 f['compare_field'] = ""
-                            if f['compare_field'] == v:
-                                if _select in (3, 5):
+                            if _select == 13:
+                                v = len(v)
+                                _compare = int(f['compare_field'])
+                            if f['compare_field'] == v or _compare == v:
+                                if _select in (3, 5, 13):
                                     _count += 1
                             else:
                                 if _select in (4, 6):
@@ -187,23 +197,24 @@ class BaseController(object):
                             else:
                                 if _select == 10:
                                     _count += 1
-                        elif _select in (11, 12):
+                        elif _select in (11, 12, 14, 15):
+                            if _select in (14, 15):
+                                v = len(v)
                             try:
                                 _compare = int(f['compare_field'])
                                 _value = int(v)
                             except:
                                 try:
-                                    _compare = timestring.Date(f['compare_field'])
-                                    _value = timestring.Date(v)
+                                    _compare = parse(f['compare_field'])
+                                    _value = parse(v)
                                 except:
                                     _compare = ""
                                     _value = ""
-                            print(_compare, _value)
-                            if (type(_compare) is int and type(_value) is int) or (
-                                    type(_compare) is datetime.date() and type(_value) is datetime.date()):
-                                if _value <= _compare and _select == 11:
+                            if (type(_value) is datetime and type(_compare) is datetime) or (
+                                            type(_value) is int and type(_compare) is int):
+                                if _value < _compare and _select in [11, 14]:
                                     _count += 1
-                                elif _value >= _compare and _select == 12:
+                                elif _value > _compare and _select in [12, 15]:
                                     _count += 1
             if _count == _length:
                 new_data.append(data)
