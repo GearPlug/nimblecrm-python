@@ -4,13 +4,6 @@ import json
 import pprint
 import webbrowser
 
-# OAUTH_URL = 'https://api.nimble.com/oauth/token'
-# CODE_URL = 'https://api.nimble.com/oauth/authorize/'
-# REDIRECT_URL = 'https://813f6169.ngrok.io',
-# CLIENT_ID = "xayovk4a4w5pbvylpa7ac2nqtzkzbd2xliadk"
-# CLIENT_SECRET = "5qi0zzudmnq3yxgyonz"
-# BASE_URL = 'https://api.nimble.com/api/v1'
-
 class ClientAuth(object):
 
     def __init__(self, client_id=None, client_secret=None, oauth_url=None, redirect_url=None, code_url=None, 
@@ -56,5 +49,8 @@ class ClientAuth(object):
                       'redirect_uri': self.redirect_uri,
                       'code': code,
                       'grant_type': 'authorization_code'}
-        response = self._get(endpoint=self.oauth_url, data=oauth_vars)
-        return response
+        try:
+            response = self._get(endpoint=self.oauth_url, data=oauth_vars)
+            return response
+        except Exception as e:
+            print(e)
