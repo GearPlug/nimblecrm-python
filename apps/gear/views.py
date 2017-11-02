@@ -13,6 +13,7 @@ from apps.history.models import DownloadHistory, SendHistory
 from oauth2client import client
 import httplib2
 import json
+from django.apps import apps
 
 
 class ListGearView(LoginRequiredMixin, ListView):
@@ -410,3 +411,22 @@ def get_authorization(request):
     credentials = client.OAuth2Credentials.from_json(
         request.session['google_credentials'])
     return credentials.authorize(httplib2.Http())
+
+
+def retry_send_history(request):
+    if request.is_ajax() is True and request.method == 'POST':
+        history_id = request.POST.get('history_id')
+        history = SendHistory.objects.get(pk=history_id)
+        d = json.loads(history.connection)
+        model = apps.get_model(*d[0]['model'].split("."))
+        connection = model.objects.get(pk=d[0]['pk'])
+        controller = ConnectorEnum.get_controller(ConnectorEnum.get_connector(connection.connection.connector_id))
+        controller_instance = controller(connection.connection.related_connection, connection.connection.plug)
+        data = json.loads(history.data)
+        response = controller_instance.send_stored_data([data])
+        history.identifier = response[0]['identifier']
+        history.sent = response[0]['sent']
+        history.tries = history.tries + 1
+        history.save()
+        return JsonResponse({'data': True})
+    return JsonResponse({'data': False})
