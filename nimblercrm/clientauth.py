@@ -44,13 +44,20 @@ class ClientAuth(object):
         return response
 
     def get_token(self, code):
+        self.code = code
+        print(self.code)
         oauth_vars = {'client_id': self.client_id,
                       'client_secret': self.client_secret,
                       'redirect_uri': self.redirect_uri,
-                      'code': code,
+                      'code': self.code,
                       'grant_type': 'authorization_code'}
+        headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        }
         try:
-            response = self._post(endpoint=self.oauth_url, data=oauth_vars)
+            response = requests.post(self.oauth_url, headers=headers,
+                                     data=oauth_vars)
             return response
         except Exception as e:
             print(e)
