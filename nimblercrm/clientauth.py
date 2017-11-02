@@ -6,7 +6,7 @@ import webbrowser
 
 class ClientAuth(object):
 
-    def __init__(self, client_id=None, client_secret=None, oauth_url=None, redirect_url=None, code_url=None, 
+    def __init__(self, client_id=None, client_secret=None, oauth_url=None, redirect_url=None, code_url=None,
                 base_url=None):
         self.client_id = client_id
         self.client_secret = client_secret
@@ -45,19 +45,18 @@ class ClientAuth(object):
 
     def get_token(self, code):
         self.code = code
-        print(self.code)
         oauth_vars = {'client_id': self.client_id,
                       'client_secret': self.client_secret,
                       'redirect_uri': self.redirect_uri,
                       'code': self.code,
                       'grant_type': 'authorization_code'}
+        body = urllib.parse.urlencode(oauth_vars)
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
         }
         try:
-            response = requests.post(self.oauth_url, headers=headers,
-                                     data=oauth_vars)
+            response = requests.post(self.oauth_url, headers=headers, body=body)
             return response
         except Exception as e:
             print(e)
