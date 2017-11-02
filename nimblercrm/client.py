@@ -80,6 +80,9 @@ class Client(object):
         else:
             return response
 
+    def get_token(self):
+        ca = ClientAuth()
+
     def get_contact_list(self):
         """Returns all contacts.
         """
