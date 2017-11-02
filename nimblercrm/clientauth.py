@@ -56,7 +56,7 @@ class ClientAuth(object):
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
         }
         try:
-            response = requests.post(self.oauth_url, headers=headers, body=body)
+            response = requests.post(self.oauth_url, headers=headers, data=body)
             return response
         except Exception as e:
             print(e)
