@@ -50,7 +50,7 @@ class ClientAuth(object):
                       'code': code,
                       'grant_type': 'authorization_code'}
         try:
-            response = self._get(endpoint=self.oauth_url, data=oauth_vars)
+            response = self._post(endpoint=self.oauth_url, data=oauth_vars)
             return response
         except Exception as e:
             print(e)
