@@ -424,8 +424,8 @@ def retry_send_history(request):
         controller_instance = controller(connection.connection.related_connection, connection.connection.plug)
         data = json.loads(history.data)
         response = controller_instance.send_stored_data([data])
-        sent = response[0]['sent']
-        history.sent = sent
+        history.identifier = response[0]['identifier']
+        history.sent = response[0]['sent']
         history.tries = history.tries + 1
         history.save()
         return JsonResponse({'data': True})
