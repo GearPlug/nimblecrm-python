@@ -88,7 +88,7 @@ class Client(object):
             redirect_url=self.redirect_uri,
             code_url=None,
             base_url=self.base_url)
-        ca.get_token(code=code)
+        return ca.get_token(code=code)
 
     def get_contact_list(self):
         """Returns all contacts.
