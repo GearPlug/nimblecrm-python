@@ -1,15 +1,23 @@
 import requests
 from .exceptions import *
 from .enumerator import ErrorEnum
+from .clientauth import ClientAuth
 
 
 class Client(object):
     _VALID_VERSIONS = ['v1']
 
-    def __init__(self, access_token=None, base_url=None):
+    def __init__(self, client_id=None, client_secret=None, redirect_url=None, oauth_url=None, base_url=None,
+                 code_url=None):
 
-        self.api_key = access_token
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.redirect_uri = redirect_url
+        self.oauth_url = oauth_url
+        self.code_url = code_url
         self.base_url = base_url
+        self.code = None
+        self.token = None
 
     def _post(self, endpoint, data=None):
         return self._request('POST', endpoint, data=data)
