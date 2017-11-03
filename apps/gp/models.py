@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib import admin
 from apps.gp.model_fields import JSONField
 from django.contrib.auth.models import User
-from apps.gp.enum import ConnectorEnum
+from apps.gp.enum import ConnectorEnum, FilterEnum
 
 connections = ['connection_{0}'.format(connector.name.lower()) for connector in ConnectorEnum.get_connector_list()]
 
@@ -556,28 +556,13 @@ class Gear(models.Model):
 
 
 class GearFilter(models.Model):
-    OPTIONS = (
-        (1, 'Contain'),
-        (2, 'Does not contain'),
-        (3, 'Equals'),
-        (4, 'Does not equal'),
-        (5, 'Is empty'),
-        (6, 'Is not empty'),
-        (7, 'Start with'),
-        (8, 'Does not start with'),
-        (9, 'Ends with'),
-        (10, 'Does not end with'),
-        (11, 'Is less than'),
-        (12, 'Is greater than'),
-        (13, 'Length equals'),
-        (14, 'Length is less than'),
-        (15, 'Length is greater than'),
-    )
+    OPTIONS = tuple(tuple(field.value, field.name) for field in FilterEnum)
     gear = models.ForeignKey(Gear, related_name='gear_filter')
     field_name = models.CharField('field name', max_length=256)
     option = models.CharField('option', max_length=100, choices=OPTIONS)
     comparison_data = models.CharField('comparison data', max_length=100)
     is_active = models.BooleanField('is active', default=False)
+
 
 class GearMap(models.Model):
     gear = models.OneToOneField(Gear, related_name='gear_map')
