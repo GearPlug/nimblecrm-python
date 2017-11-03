@@ -122,3 +122,29 @@ class GoogleAPIEnum(Enum):
         for field in GoogleAPIEnum:
             if name.lower() == field.name.lower():
                 return field
+
+
+class FilterEnum(Enum):
+    CONTAINS = 1
+    DOES_NOT_CONTAIN = 2
+    EQUALS = 3
+    DOES_NOT_EQUAL = 4
+    IS_EMPTY = 5
+    IS_NOT_EMPTY = 6
+    STARTS_WITH = 7
+    DOES_NOT_START_WITH = 8
+    ENDS_WITH = 9
+    DOES_NOT_END_WITH = 10
+    LESSER_THAN = 11
+    GREATER_THAN = 12
+    LENGTH_EQUALS = 13
+    LENGHT_IS_LESSER_THAN = 14
+    LENGHT_IS_GREATER_THAN = 15
+
+    def __new__(cls, *args, **kwargs):
+        obj = object.__new__(cls)
+        obj._value_ = args[0]
+        return obj
+
+    def get_filter(filter):
+        return dynamic_import(filter.name.lower(), path="apps.gp.controllers.filters")
