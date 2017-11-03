@@ -45,6 +45,7 @@ class Client(object):
         # }
 
         response = requests.request(method, url, headers=headers, data=data)
+        print(response.text)
         return self._parse(response)
 
     def _parse(self, response):
