@@ -1,0 +1,11 @@
+{% extends 'layouts/console_base.html' %}
+{% load static %}
+
+{% block content %}
+   <form method="POST" action="{% url 'gear:filters' %}" autocomplete="off" id="signup_form">
+        {% csrf_token %}
+        {{ form }}
+        <br>
+        <input type='submit' value='Submit' />
+    </form>
+{% endblock %}

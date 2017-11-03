@@ -5,14 +5,14 @@ from django.views.generic import CreateView, UpdateView, DeleteView, ListView, F
 from django.views.generic.edit import FormMixin
 from django.http.response import JsonResponse, HttpResponseForbidden
 from apps.gear.apps import APP_NAME as app_name
-from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm
+from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm, FiltersForm
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import GearGroup
-from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
+from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, GearGroup
 from apps.history.models import DownloadHistory, SendHistory
 from oauth2client import client
 import httplib2
 import json
+import request
 
 
 class ListGearView(LoginRequiredMixin, ListView):
@@ -383,6 +383,22 @@ class GearDownloadHistoryView(GearSendHistoryView):
                  'id': item.id,
                  } for item in self.model.objects.filter(gear_id=self.kwargs['pk'], **kwargs).order_by(order)]
 
+
+class GearFiltersView(FormView, LoginRequiredMixin):
+
+    login_url = '/accounts/login/'
+    template_name = 'gear/filters.html'
+    form_class = FiltersForm
+    success_url = reverse_lazy('%s:list' % app_name)
+    exists = False
+
+    def get_queryset(self, **kwargs):
+        if self.request.method == "POST":
+            print(request.POST.get('field_name'))
+    # DownloadHistory.objects.create(gear_id=str(self._plug.gear_source.first().id),
+    #                                plug_id=str(self._plug.id), connection=serialized_connection,
+    #                                raw=json.dumps(item['raw']), connector_id=self.connector.id,
+    #                                identifier=item['identifier'], )
 
 def gear_toggle(request, gear_id):
     if request.is_ajax() is True and request.method == 'POST':

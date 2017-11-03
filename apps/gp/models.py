@@ -555,6 +555,30 @@ class Gear(models.Model):
         return self.is_active and self.gear_map.is_active
 
 
+class GearFilter(models.Model):
+    OPTIONS = (
+        (1, 'Contain'),
+        (2, 'Does not contain'),
+        (3, 'Equals'),
+        (4, 'Does not equal'),
+        (5, 'Is empty'),
+        (6, 'Is not empty'),
+        (7, 'Start with'),
+        (8, 'Does not start with'),
+        (9, 'Ends with'),
+        (10, 'Does not end with'),
+        (11, 'Is less than'),
+        (12, 'Is greater than'),
+        (13, 'Length equals'),
+        (14, 'Length is less than'),
+        (15, 'Length is greater than'),
+    )
+    gear = models.ForeignKey(Gear, related_name='gear_filter')
+    field_name = models.CharField('field name', max_length=256)
+    option = models.CharField('option', max_length=100, choices=OPTIONS)
+    comparison_data = models.CharField('comparison data', max_length=100)
+    is_active = models.BooleanField('is active', default=False)
+
 class GearMap(models.Model):
     gear = models.OneToOneField(Gear, related_name='gear_map')
     created = models.DateTimeField('created', auto_now_add=True)
