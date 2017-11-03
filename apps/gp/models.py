@@ -556,7 +556,7 @@ class Gear(models.Model):
 
 
 class GearFilter(models.Model):
-    OPTIONS = tuple(tuple(field.value, field.name) for field in FilterEnum)
+    OPTIONS = tuple((field.value, field.name) for field in FilterEnum)
     gear = models.ForeignKey(Gear, related_name='gear_filter')
     field_name = models.CharField('field name', max_length=256)
     option = models.IntegerField('option', max_length=100, choices=OPTIONS)
