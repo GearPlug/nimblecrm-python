@@ -18,7 +18,7 @@ class Client(object):
         self.code_url = code_url
         self.base_url = base_url
         self.code = None
-        self.token = None
+        self.token = token
 
     def _post(self, endpoint, data=None):
         return self._request('POST', endpoint, data=data)
@@ -34,7 +34,6 @@ class Client(object):
 
     def _request(self, method, endpoint, data=None):
         url = '{0}/{1}'.format(self.base_url, endpoint)
-
         headers = {
             'Authorization': 'Bearer {0}'.format(self.token),
             'Content-Type': 'application/json; charset=utf-8',
