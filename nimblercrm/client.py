@@ -54,7 +54,6 @@ class Client(object):
         }
 
         response = requests.request(method, url, headers=headers, data=data)
-        print(response.text)
         return (response)
 
     def _parse(self, response):
@@ -132,7 +131,6 @@ class Client(object):
         except Exception as e:
             print(e)
 
-        
     def get_contact_list(self):
         """Returns all contacts.
         """
