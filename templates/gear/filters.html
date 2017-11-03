@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-   <form method="POST" action="{% url 'gear:filters' %}" autocomplete="off" id="signup_form">
+   <form method="POST" action="{% url 'gear:filters' pk=request.session.gear_id%}" autocomplete="off" />
         {% csrf_token %}
         {{ form }}
         <br>

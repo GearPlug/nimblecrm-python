@@ -4,7 +4,8 @@
 {% block content %}
     <h1>Plug test.</h1>
     <br>
-    <h2><a href="{% url 'gear:filters' %}">ADD FILTERS</a></h2>
+    <h2><a href="{% url 'gear:filters' pk=request.session.gear_id %}">ADD FILTERS</a></h2>
+
     {% if plug_type == 'source' %}
         {% for o in object_list %}
             <div>

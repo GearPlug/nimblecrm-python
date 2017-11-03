@@ -3,16 +3,17 @@ from django.forms import modelform_factory
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.views.generic.edit import FormMixin
-from django.http.response import JsonResponse, HttpResponseForbidden
+from django.http.response import JsonResponse, HttpResponseForbidden, HttpResponseRedirect
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm, FiltersForm
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, GearGroup
+from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, GearGroup, GearFilter
 from apps.history.models import DownloadHistory, SendHistory
+from django.shortcuts import render
+from django.urls import reverse
 from oauth2client import client
 import httplib2
 import json
-import request
 
 
 class ListGearView(LoginRequiredMixin, ListView):
@@ -385,20 +386,25 @@ class GearDownloadHistoryView(GearSendHistoryView):
 
 
 class GearFiltersView(FormView, LoginRequiredMixin):
-
     login_url = '/accounts/login/'
     template_name = 'gear/filters.html'
     form_class = FiltersForm
-    success_url = reverse_lazy('%s:list' % app_name)
+    success_url = reverse_lazy('connection:connector_list', kwargs={'type': 'target'})
     exists = False
 
-    def get_queryset(self, **kwargs):
-        if self.request.method == "POST":
-            print(request.POST.get('field_name'))
-    # DownloadHistory.objects.create(gear_id=str(self._plug.gear_source.first().id),
-    #                                plug_id=str(self._plug.id), connection=serialized_connection,
-    #                                raw=json.dumps(item['raw']), connector_id=self.connector.id,
-    #                                identifier=item['identifier'], )
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid:
+            if request.POST.get('is_active') == 'on':
+                active = True
+            else:
+                active = False
+            GearFilter.objects.create(gear_id=kwargs['pk'],
+                                      field_name=request.POST.get('field_name'),
+                                      option=request.POST.get('option'),
+                                      comparison_data=request.POST.get('comparison_data'),
+                                      is_active=active)
+        return HttpResponseRedirect(self.success_url)
 
 def gear_toggle(request, gear_id):
     if request.is_ajax() is True and request.method == 'POST':
