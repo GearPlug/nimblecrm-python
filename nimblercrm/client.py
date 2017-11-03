@@ -125,13 +125,15 @@ class Client(object):
         try:
             token = requests.post(url='https://api.nimble.com/oauth/token', headers=headers, params=oauth_vars)
             token = token.json()
+            print(token)
+            self.token = token['access_token']
+            self.token_expiration_time = token['expires_in']
+            self.refresh_token = token['refresh_token']
+
         except Exception as e:
             print(e)
 
-        self.token = token['access_token']
-        self.token_expiration_time = token['expires_in']
-        self.refresh_token = token['refresh_token']
-
+        
     def get_contact_list(self):
         """Returns all contacts.
         """
