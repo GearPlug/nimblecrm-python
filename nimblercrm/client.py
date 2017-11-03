@@ -55,7 +55,7 @@ class Client(object):
 
         response = requests.request(method, url, headers=headers, data=data)
         print(response.text)
-        return self._parse(response)
+        return (response)
 
     def _parse(self, response):
         if not response.ok:
@@ -125,11 +125,10 @@ class Client(object):
         try:
             token = requests.post(url='https://api.nimble.com/oauth/token', headers=headers, params=oauth_vars)
             token = token.json()
-            print(token)
             self.token = token['access_token']
             self.token_expiration_time = token['expires_in']
             self.refresh_token = token['refresh_token']
-
+            print("TOKEN REFRESHED")
         except Exception as e:
             print(e)
 
