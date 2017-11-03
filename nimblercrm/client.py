@@ -33,9 +33,10 @@ class Client(object):
 
     def _request(self, method, endpoint, data=None):
         url = '{0}/{1}'.format(self.base_url, endpoint)
-        headers = {'Authorization': 'Bearer {0}'.format(self.token),
-                   "Content-Type": "application/json",
-                   }
+        headers = {
+            'Authorization': 'Bearer {0}'.format(self.token),
+            "Content-Type": "application/json; charset=utf-8",
+        }
         response = requests.request(method, url, headers=headers, data=data)
         return self._parse(response)
 
