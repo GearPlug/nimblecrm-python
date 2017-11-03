@@ -33,20 +33,14 @@ class Client(object):
         return self._request('DELETE', endpoint, data=data)
 
     def _request(self, method, endpoint, data=None):
-        values = {
-            'access_token': self.token,
-            'endpoint': endpoint,
-        }
-        endpoint = urllib.parse.urlencode(values).encode('utf-8')
         url = '{0}/{1}'.format(self.base_url, endpoint)
 
-        # headers = {
-        #     'Authorization': 'Bearer {0}'.format(self.token),
-        #     "Content-Type": "application/json; charset=utf-8",
-        # }
+        headers = {
+            'Authorization': 'Bearer {0}'.format(self.token),
+            'Content-Type': 'application/json; charset=utf-8',
+        }
 
-        # response = requests.request(method, url, headers=headers, data=data)
-        response = requests.request(method, url, data=data)
+        response = requests.request(method, url, headers=headers, data=data)
         print(response.text)
         return self._parse(response)
 
