@@ -31,7 +31,7 @@ class Client(object):
         self.token_expiration_time = token_expiration_time
         self.refresh_token = refresh_token
 
-        self.top_time = datetime.now() + timedelta(minutes=self.token_expiration_time)
+        self.top_time = datetime.now() + timedelta(seconds=self.token_expiration_time)
 
     def _post(self, endpoint, data=None):
         return self._request('POST', endpoint, data=data)
