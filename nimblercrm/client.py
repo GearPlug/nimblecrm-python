@@ -2,6 +2,7 @@ import requests
 from .exceptions import *
 from .enumerator import ErrorEnum
 from .clientauth import ClientAuth
+import urllib.parse
 
 
 class Client(object):
