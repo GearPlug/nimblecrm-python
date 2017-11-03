@@ -3,13 +3,22 @@ from .exceptions import *
 from .enumerator import ErrorEnum
 from .clientauth import ClientAuth
 import urllib.parse
+from datetime import datetime, timedelta
 
 
 class Client(object):
     _VALID_VERSIONS = ['v1']
 
-    def __init__(self, client_id=None, client_secret=None, redirect_url=None, oauth_url=None, base_url=None,
-                 code_url=None, token=None):
+    def __init__(self,
+                 client_id=None,
+                 client_secret=None,
+                 redirect_url=None,
+                 oauth_url=None,
+                 base_url=None,
+                 code_url=None,
+                 token=None,
+                 token_expiration_time=None,
+                 refresh_token=None):
 
         self.client_id = client_id
         self.client_secret = client_secret
@@ -19,6 +28,10 @@ class Client(object):
         self.base_url = base_url
         self.code = None
         self.token = token
+        self.token_expiration_time = token_expiration_time
+        self.refresh_token = refresh_token
+
+        self.top_time = datetime.now() + timedelta(minutes=self.token_expiration_time)
 
     def _post(self, endpoint, data=None):
         return self._request('POST', endpoint, data=data)
@@ -33,6 +46,7 @@ class Client(object):
         return self._request('DELETE', endpoint, data=data)
 
     def _request(self, method, endpoint, data=None):
+        self.token_expiration_checker()
         url = '{0}/{1}'.format(self.base_url, endpoint)
         headers = {
             'Authorization': 'Bearer {0}'.format(self.token),
@@ -93,6 +107,30 @@ class Client(object):
             code_url=None,
             base_url=self.base_url)
         return ca.get_token(code=code)
+
+    def token_expiration_checker(self):
+        if datetime.now() > self.top_time:
+            self.to_refresh_token()
+
+    def to_refresh_token(self):
+        oauth_vars = {'client_id': self.client_id,
+                      'client_secret': self.client_secret,
+                      'redirect_uri': self.redirect_uri,
+                      'refresh_token': self.refresh_token,
+                      'grant_type': 'refresh_token'}
+        headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        }
+        try:
+            token = requests.post(url='https://api.nimble.com/oauth/token', headers=headers, params=oauth_vars)
+            token = token.json()
+        except Exception as e:
+            print(e)
+
+        self.token = token['access_token']
+        self.token_expiration_time = token['expires_in']
+        self.refresh_token = token['refresh_token']
 
     def get_contact_list(self):
         """Returns all contacts.
