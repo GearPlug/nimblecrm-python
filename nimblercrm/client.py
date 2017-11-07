@@ -108,6 +108,7 @@ class Client(object):
         return ca.get_token(code=code)
 
     def token_expiration_checker(self):
+        print(self.top_time)
         if datetime.now() > self.top_time:
             self.to_refresh_token()
 
