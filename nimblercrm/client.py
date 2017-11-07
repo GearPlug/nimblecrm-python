@@ -46,7 +46,10 @@ class Client(object):
         return self._request('DELETE', endpoint, data=data)
 
     def _request(self, method, endpoint, data=None):
-        self.token_expiration_checker()
+        try:
+            self.token_expiration_checker()
+        except Exception as e:
+            print(e)
         url = '{0}/{1}'.format(self.base_url, endpoint)
         headers = {
             'Authorization': 'Bearer {0}'.format(self.token),
@@ -108,10 +111,10 @@ class Client(object):
         return ca.get_token(code=code)
 
     def token_expiration_checker(self):
-        print('{0} y {1}'.format(datetime.now(), self.top_time))
-        print(type(self.top_time))
         if datetime.now() > self.top_time:
             self.to_refresh_token()
+        else:
+            print('token still valid.')
 
     def to_refresh_token(self):
         oauth_vars = {'client_id': self.client_id,
