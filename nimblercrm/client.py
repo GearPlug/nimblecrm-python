@@ -111,12 +111,16 @@ class Client(object):
         return ca.get_token(code=code)
 
     def token_expiration_checker(self):
+        print(datetime.now())
+        print(self.top_time)
+        print(datetime.now() > self.top_time)
         if datetime.now() > self.top_time:
             self.to_refresh_token()
         else:
             print('token still valid.')
 
     def to_refresh_token(self):
+        print(1)
         oauth_vars = {'client_id': self.client_id,
                       'client_secret': self.client_secret,
                       'redirect_uri': self.redirect_uri,
