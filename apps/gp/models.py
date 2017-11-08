@@ -397,6 +397,10 @@ class SMTPConnection(models.Model):
         return self.name
 
 
+class WebhookConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_webhook')
+
+
 class AsanaConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_asana')
     name = models.CharField('name', max_length=200)

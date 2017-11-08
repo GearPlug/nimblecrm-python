@@ -10,8 +10,7 @@ from django.core.urlresolvers import reverse
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from apps.gp.enum import ConnectorEnum, GoogleAPIEnum
-from apps.gp.models import Gear, Plug, PlugActionSpecification, Connection, \
-    Connector, MercadoLibreConnection
+from apps.gp.models import Connection, Connector, MercadoLibreConnection
 from oauth2client import client
 from requests_oauthlib import OAuth2Session
 from slacker import Slacker
@@ -65,6 +64,12 @@ class ListConnectionView(LoginRequiredMixin, ListView):
     login_url = '/accounts/login/'
 
     def get(self, request, *args, **kwargs):
+        connector = ConnectorEnum.get_connector(kwargs['connector_id'])
+        if connector.connection_type is None:
+            # TODO: Agregar connection default para el connector. SMS, SMTP y Webhook
+            c = Connection.objects.filter(connector_id=connector.value).first()
+            request.session['%s_connection_id' % kwargs['type']] = c.id
+            return redirect(reverse('plug:create', kwargs={'plug_type': kwargs['type']}))
         request.session['plug_type'] = kwargs['type']
         return super(ListConnectionView, self).get(request, *args, **kwargs)
 
@@ -444,6 +449,7 @@ class SurveyMonkeyAuthView(View):
         self.request.session['connector_name'] = ConnectorEnum.SurveyMonkey.name
         return redirect(reverse('connection:create_token_authorized_connection'))
 
+
 class TypeFormAuthView(View):
     def get(self, request, *args, **kwargs):
         auth_code = request.GET.get('code', None)
@@ -456,6 +462,7 @@ class TypeFormAuthView(View):
         self.request.session['connection_data'] = {'token': response["access_token"], }
         self.request.session['connector_name'] = ConnectorEnum.TypeForm.name
         return redirect(reverse('connection:create_token_authorized_connection'))
+
 
 class HubspotAuthView(View):
     def get(self, request, *args, **kwargs):
