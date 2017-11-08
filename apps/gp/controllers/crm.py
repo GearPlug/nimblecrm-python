@@ -17,6 +17,7 @@ from django.conf import settings
 from django.http import HttpResponse
 from odoocrm.client import Client as OdooCRMClient
 from batchbook.client import Client as ClientBatchbook
+from actcrm.client import Client as ActCRMClient
 from datetime import datetime, timedelta
 import time
 import requests
@@ -2085,6 +2086,7 @@ class BatchbookController(BaseController):
     _account_name = None
     _api_key = None
     _client = None
+
     def __init__(self, connection=None, plug=None, **kwargs):
         super(BatchbookController, self).__init__(connection=connection, plug=plug, **kwargs)
 
@@ -2111,17 +2113,17 @@ class BatchbookController(BaseController):
             contacts = self._client.get_contacts(since=last_source_record)
         else:
             contacts = self._client.get_contacts()
-        new_data=[]
+        new_data = []
         for contact in contacts:
             q = StoredData.objects.filter(
                 connection=connection_object.connection,
                 plug=plug,
                 object_id=contact['id'])
             if not q.exists():
-                for k,v in contact.items():
+                for k, v in contact.items():
                     if type(v) is list:
                         for dic in v:
-                            for kk,vv in dic.items():
+                            for kk, vv in dic.items():
                                 new_data.append(
                                     StoredData(
                                         name=kk,
@@ -2137,8 +2139,8 @@ class BatchbookController(BaseController):
                                 object_id=contact['id'],
                                 connection=connection_object.connection,
                                 plug=plug))
-        result_list=[]
-        _obj=""
+        result_list = []
+        _obj = ""
         if new_data:
             for item in new_data:
                 is_stored = False
@@ -2154,9 +2156,10 @@ class BatchbookController(BaseController):
                         if contact['id'] == item.object_id:
                             raw = contact
                             _obj = item.object_id
-                            result_list.append({'identifier':{'name': 'id', 'value': item.object_id}, 'is_stored':is_stored,
-                                                'raw':raw})
-        return {'downloaded_data': result_list, 'last_source_record' : last_source_record}
+                            result_list.append(
+                                {'identifier': {'name': 'id', 'value': item.object_id}, 'is_stored': is_stored,
+                                 'raw': raw})
+        return {'downloaded_data': result_list, 'last_source_record': last_source_record}
 
     def get_target_fields(self, **kwargs):
         return [
@@ -2188,3 +2191,117 @@ class BatchbookController(BaseController):
 
     def create_data(self, item):
         return {"person": item}
+
+
+class ActEssentialsController(BaseController):
+    client = None
+
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(ActEssentialsController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(ActEssentialsController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self.client = ActCRMClient(self._connection_object.api_key, settings.ACTESSENTIALS_DEVELOPER_KEY)
+            except Exception as e:
+                print(e)
+                self.client = None
+
+    def test_connection(self):
+        try:
+            metadata = self.client.get_metadata()
+            return metadata is not None
+        except:
+            return False
+
+    def has_webhook(self):
+        return False
+
+    def download_to_stored_data(self, connection_object, plug, limit=49, order_by="created desc",
+                                last_source_record=None, **kwargs):
+        params = {}
+        if limit:
+            params['top'] = limit
+        if order_by:
+            params['order_by'] = order_by
+        if last_source_record is not None:
+            params['filter'] = 'created gt {0}'.format(last_source_record)
+
+        if plug.action.name.lower() == 'new opportunity':
+            data_list = self.client.get_opportunities(**params)
+        elif plug.action.name.lower() == 'new contact':
+            data_list = self.client.get_contacts(**params)
+        new_data = []
+        for item in data_list:
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
+            if not q.exists():
+                item_data = []
+                for k, v in item.items():
+                    item_data.append(StoredData(name=k, value=v or '', object_id=item['id'],
+                                                connection=connection_object.connection, plug=plug))
+                new_data.append(item_data)
+        downloaded_data = []
+        for new_item in new_data:
+            history_obj = {'identifier': None, 'is_stored': False, 'raw': {}}
+            for field in new_item:
+                field.save()
+                history_obj['raw'][field.name] = field.value
+                history_obj['is_stored'] = True
+            history_obj['identifier'] = {'name': 'id', 'value': field.object_id}
+            downloaded_data.append(history_obj)
+        if downloaded_data:
+            return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw']['created']}
+        return False
+
+    def send_stored_data(self, data_list, *args, **kwargs):
+        if self._plug.action.name.lower() == 'create opportunity':
+            method = self.client.create_opportunity
+        elif self._plug.action.name.lower() == 'create contact':
+            method = self.client.create_contact
+        obj_list = []
+        for item in data_list:
+            try:
+                obj_result = {'data': dict(item)}
+                result = method(**obj_result['data'])
+                obj_result['response'] = result
+                obj_result['identifier'] = result['id']
+                obj_result['sent'] = True
+            except Exception as e:
+                obj_result['response'] = str(e)
+                obj_result['identifier'] = '-1'
+                obj_result['sent'] = False
+            obj_list.append(obj_result)
+        return obj_list
+
+    def get_target_fields(self, **kwargs):
+        if self._plug.action.name.lower() == 'create opportunity':
+            return [
+                {'name': 'title', 'label': 'title', 'type': 'varchar', 'required': True},
+                {'name': 'stage', 'label': 'stage', 'type': 'varchar', 'required': True},
+                {'name': 'description', 'label': 'description', 'type': 'varchar', 'required': False},
+                {'name': 'total', 'label': 'total', 'type': 'varchar', 'required': False},
+                {'name': 'currency', 'label': 'currency', 'type': 'varchar', 'required': False},
+                {'name': 'notes', 'label': 'notes', 'type': 'varchar', 'required': False},
+                {'name': 'estimatedClose', 'label': 'estimatedClose', 'type': 'varchar', 'required': False},
+                {'name': 'actualClose', 'label': 'actualClose', 'type': 'varchar', 'required': False},
+                {'name': 'notes', 'label': 'notes', 'type': 'varchar', 'required': False},
+            ]
+        elif self._plug.action.name.lower() == 'create contact':
+            return [
+                {'name': 'firstName', 'label': 'firstName', 'type': 'varchar', 'required': True},
+                {'name': 'lastName', 'label': 'lastName', 'type': 'varchar', 'required': False},
+                {'name': 'company', 'label': 'company', 'type': 'varchar', 'required': False},
+                {'name': 'jobTitle', 'label': 'jobTitle', 'type': 'varchar', 'required': False},
+                {'name': 'emailAddress', 'label': 'emailAddress', 'type': 'email', 'required': False},
+                {'name': 'altEmailAddress', 'label': 'altEmailAddress', 'type': 'email', 'required': False},
+                {'name': 'businessPhone', 'label': 'businessPhone', 'type': 'varchar', 'required': False},
+                {'name': 'mobilePhone', 'label': 'mobilePhone', 'type': 'varchar', 'required': False},
+                {'name': 'homePhone', 'label': 'homePhone', 'type': 'varchar', 'required': False},
+                {'name': 'website', 'label': 'website', 'type': 'varchar', 'required': False},
+                {'name': 'linkedinUrl', 'label': 'linkedinUrl', 'type': 'varchar', 'required': False},
+                {'name': 'birthday', 'label': 'birthday', 'type': 'varchar', 'required': False},
+            ]
+
+    def get_mapping_fields(self, **kwargs):
+        return [MapField(f, controller=ConnectorEnum.ActEssentials) for f in self.get_target_fields()]

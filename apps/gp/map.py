@@ -341,6 +341,7 @@ class MapField(object):
                                      d['options'][choice]['value'])
                                     for choice in d['options']]
                     self.choices.insert(0, ('', ''))
+            self.field_type = d['type'] or 'text'
             self.required = False
 
     @property
