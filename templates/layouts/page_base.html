@@ -34,6 +34,16 @@
     <div class="page-footer">
         {% block footer_base %}
             {% block footer_content %}
+                <div class="row">
+                    <div class="col-md-12 bg_footer text-center">
+                        <a href="#"> <img src="{% static 'img/landing/facebook1.png' %}"> </a>
+                        <a href="#"> <img src="{% static 'img/landing/twitter.png' %}"> </a>
+                        <a href="#"> <img src="{% static 'img/landing/facebook1.png' %}"> </a>
+{#                        <a href="{% url 'landing:index' %}">www.gearplug.com</a> - All rights reserved &reg; -#}
+{#                        <a href="{% url 'landing:terms' %}">Términos y Condiciones</a> -#}
+{#                        <a href="{% url 'landing:privacy' %}">Políticas de Privacidad</a>#}
+                    </div>
+                </div>
             {% endblock %}
         {% endblock %}
     </div>
