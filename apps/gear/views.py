@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.forms import modelform_factory
+from django.forms import modelform_factory, modelformset_factory
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.views.generic.edit import FormMixin
@@ -14,6 +14,7 @@ from django.urls import reverse
 from oauth2client import client
 import httplib2
 import json
+from django.apps import apps
 
 
 class ListGearView(LoginRequiredMixin, ListView):
@@ -393,18 +394,28 @@ class GearFiltersView(FormView, LoginRequiredMixin):
     exists = False
 
     def post(self, request, *args, **kwargs):
-        form = self.get_form()
-        if form.is_valid:
-            if request.POST.get('is_active') == 'on':
-                active = True
-            else:
-                active = False
-            GearFilter.objects.create(gear_id=kwargs['pk'],
-                                      field_name=request.POST.get('field_name'),
-                                      option=request.POST.get('option'),
-                                      comparison_data=request.POST.get('comparison_data'),
-                                      is_active=active)
+        modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
+        formset = modelformset(self.request.POST, queryset=GearFilter.objects.filter(gear_id=kwargs['pk']))
+        if formset.is_valid():
+            filters = formset.save(commit=False)
+            for filter in filters:
+                _gear = Gear.objects.get(id=kwargs['pk'])
+                filter.gear = _gear
+                filter.save()
+            for filter in formset.deleted_forms:
+                if 'DELETE' in filter.cleaned_data and filter.cleaned_data['DELETE'] is True:
+                    filter.cleaned_data['id'].delete()
+        else:
+            print("no es valido")
         return HttpResponseRedirect(self.success_url)
+
+    def get_context_data(self, **kwargs):
+        context = super(GearFiltersView, self).get_context_data(**kwargs)
+        modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
+        formset = modelformset(queryset=GearFilter.objects.filter(gear_id=self.kwargs['pk']))
+        context['formset'] = formset
+        return context
+
 
 def gear_toggle(request, gear_id):
     if request.is_ajax() is True and request.method == 'POST':
@@ -432,3 +443,22 @@ def get_authorization(request):
     credentials = client.OAuth2Credentials.from_json(
         request.session['google_credentials'])
     return credentials.authorize(httplib2.Http())
+
+
+def retry_send_history(request):
+    if request.is_ajax() is True and request.method == 'POST':
+        history_id = request.POST.get('history_id')
+        history = SendHistory.objects.get(pk=history_id)
+        d = json.loads(history.connection)
+        model = apps.get_model(*d[0]['model'].split("."))
+        connection = model.objects.get(pk=d[0]['pk'])
+        controller = ConnectorEnum.get_controller(ConnectorEnum.get_connector(connection.connection.connector_id))
+        controller_instance = controller(connection.connection.related_connection, connection.connection.plug)
+        data = json.loads(history.data)
+        response = controller_instance.send_stored_data([data])
+        history.identifier = response[0]['identifier']
+        history.sent = response[0]['sent']
+        history.tries = history.tries + 1
+        history.save()
+        return JsonResponse({'data': True})
+    return JsonResponse({'data': False})

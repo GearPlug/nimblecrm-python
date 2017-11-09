@@ -124,6 +124,7 @@ class BaseController(FilterBaseController):
         }
         """
         if self._connection_object is not None and self._plug is not None:
+            print("target data")
             raw_data_list = get_dict_with_source_data(source_data, target_fields)
             print(raw_data_list)
             # data_list = self.filter(raw_data_list, self.get_filters())
@@ -157,96 +158,6 @@ class BaseController(FilterBaseController):
         raise ControllerError(code=0, controller=self.connector.name,
                               message="Please check you're using a valid connection and a valid plug.")
 
-    # def get_filters(self):
-    #     return [{'name_field': 'nombre', 'option': 1, 'compare_field': 'diego'}, ]
-    #
-    # def options(self, x):
-    #     return {'Contain': 1,
-    #             'Does not contain': 2,
-    #             'Equals': 3,
-    #             'Does not equal': 4,
-    #             'Is empty': 5,
-    #             'Is not empty': 6,
-    #             'Start with': 7,
-    #             'Does not start with': 8,
-    #             'Ends with': 9,
-    #             'Does not end with': 10,
-    #             'Is less than': 11,
-    #             'Is greater than': 12,
-    #             'Length equals': 13,
-    #             'Length is less than': 14,
-    #             'Length is greater than': 15, }[x]
-    #
-    # def filter(self, data_list, filter_dict):
-    #     print(filter_dict)
-    #     new_data = []
-    #     _length = len(filter_dict)
-    #     for data in data_list:
-    #         _count = 0
-    #         for f in filter_dict:
-    #             # _select = self.options(filter_dict['option'])
-    #             _select = f['option']
-    #             print("SELECT: {}".format(_select))
-    #             print(f)
-    #             for k, v in data.items():
-    #                 print("K: {}  -  V: {}   f: {}".format(k, v, f['name_field']))
-    #                 if k == f['name_field']:
-    #                     if _select in (1, 2):
-    #                         print("QUE HACE")
-    #                         if f['compare_field'] in v:
-    #                             if _select == 1:
-    #                                 _count += 1
-    #                         else:
-    #                             if _select == 2:
-    #                                 _count += 1
-    #                     elif _select in (3, 4, 5, 6, 13):
-    #                         if _select in (5, 6):
-    #                             f['compare_field'] = ""
-    #                         if _select == 13:
-    #                             v = len(v)
-    #                             _compare = int(f['compare_field'])
-    #                         if f['compare_field'] == v or _compare == v:
-    #                             if _select in (3, 5, 13):
-    #                                 _count += 1
-    #                         else:
-    #                             if _select in (4, 6):
-    #                                 _count += 1
-    #                     elif _select in (7, 8):
-    #                         if v.startswith(f['compare_field']):
-    #                             if _select == 7:
-    #                                 _count += 1
-    #                         else:
-    #                             if _select == 8:
-    #                                 _count += 1
-    #                     elif _select in (9, 10):
-    #                         if v.endswith(f['compare_field']):
-    #                             if _select == 9:
-    #                                 _count += 1
-    #                         else:
-    #                             if _select == 10:
-    #                                 _count += 1
-    #                     elif _select in (11, 12, 14, 15):
-    #                         if _select in (14, 15):
-    #                             v = len(v)
-    #                         try:
-    #                             _compare = int(f['compare_field'])
-    #                             _value = int(v)
-    #                         except:
-    #                             try:
-    #                                 _compare = parse(f['compare_field'])
-    #                                 _value = parse(v)
-    #                             except:
-    #                                 _compare = ""
-    #                                 _value = ""
-    #                         if (type(_value) is datetime and type(_compare) is datetime) or (
-    #                                         type(_value) is int and type(_compare) is int):
-    #                             if _value < _compare and _select in [11, 14]:
-    #                                 _count += 1
-    #                             elif _value > _compare and _select in [12, 15]:
-    #                                 _count += 1
-    #         if _count == _length:
-    #             new_data.append(data)
-    #     return new_data
 
     def get_target_fields(self, **kwargs):
         raise ControllerError('Not implemented yet.')

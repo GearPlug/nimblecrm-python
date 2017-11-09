@@ -135,11 +135,11 @@ class FilterEnum(Enum):
     DOES_NOT_START_WITH = 8
     ENDS_WITH = 9
     DOES_NOT_END_WITH = 10
-    LESSER_THAN = 11
+    LESS_THAN = 11
     GREATER_THAN = 12
     LENGTH_EQUALS = 13
-    LENGHT_IS_LESSER_THAN = 14
-    LENGHT_IS_GREATER_THAN = 15
+    LENGTH_IS_LESS_THAN = 14
+    LENGTH_IS_GREATER_THAN = 15
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)

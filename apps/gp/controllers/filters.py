@@ -5,10 +5,13 @@ from dateutil.parser import parse
 
 
 def contains(data, gear_filter):
+    print(1)
+    print(data)
     valid_data = []
     excluded_data = []
     for item in data:
-        if item[gear_filter.field_name] in gear_filter.comparison_data:
+        print(2)
+        if gear_filter.comparison_data in item[gear_filter.field_name]:
             valid_data.append(item)
         else:
             excluded_data.append(item)
@@ -19,7 +22,7 @@ def does_not_contain(data, gear_filter):
     valid_data = []
     excluded_data = []
     for item in data:
-        if item[gear_filter.field_name] not in gear_filter.comparison_data:
+        if gear_filter.comparison_data not in item[gear_filter.field_name]:
             valid_data.append(item)
         else:
             excluded_data.append(item)
@@ -96,7 +99,7 @@ def ends_with(data, gear_filter):
     valid_data = []
     excluded_data = []
     for item in data:
-        if item[gear_filter.field_name].endswtih(gear_filter.comparison_data):
+        if item[gear_filter.field_name].endswith(gear_filter.comparison_data):
             valid_data.append(item)
         else:
             excluded_data.append(item)
@@ -107,14 +110,14 @@ def does_not_end_with(data, gear_filter):
     valid_data = []
     excluded_data = []
     for item in data:
-        if not item[gear_filter.field_name].endswtih(gear_filter.comparison_data):
+        if not item[gear_filter.field_name].endswith(gear_filter.comparison_data):
             valid_data.append(item)
         else:
             excluded_data.append(item)
     return valid_data, excluded_data
 
 
-def lesser_than(data, gear_filter):
+def less_than(data, gear_filter):
     valid_data = []
     excluded_data = []
     for item in data:
@@ -128,8 +131,8 @@ def lesser_than(data, gear_filter):
             except Exception as e:
                 item_value = None
                 comparison_data = None
-        if item_value is not None and comparison_data is not None and \
-                not item[gear_filter.field_name] < gear_filter.comparison_data:
+        if (item_value is not None and comparison_data is not None) and \
+                item_value < comparison_data:
             valid_data.append(item)
         else:
             excluded_data.append(item)
@@ -150,8 +153,8 @@ def greater_than(data, gear_filter):
             except Exception as e:
                 item_value = None
                 comparison_data = None
-        if item_value is not None and comparison_data is not None and \
-                not item[gear_filter.field_name] > gear_filter.comparison_data:
+        if (item_value is not None and comparison_data is not None) and \
+                item_value > comparison_data:
             valid_data.append(item)
         else:
             excluded_data.append(item)
@@ -161,19 +164,27 @@ def greater_than(data, gear_filter):
 def length_equals(data, gear_filter):
     valid_data = []
     excluded_data = []
+    try:
+        comparison_data = int(gear_filter.comparison_data)
+    except Exception as e:
+        comparison_data = None
     for item in data:
-        if len(item[gear_filter.field_name]) == len(gear_filter.comparison_data):
+        if comparison_data is not None and len(item[gear_filter.field_name]) == comparison_data:
             valid_data.append(item)
         else:
             excluded_data.append(item)
     return valid_data, excluded_data
 
 
-def length_is_lesser_than(data, gear_filter):
+def length_is_less_than(data, gear_filter):
     valid_data = []
     excluded_data = []
+    try:
+        comparison_data = int(gear_filter.comparison_data)
+    except Exception as e:
+        comparison_data = None
     for item in data:
-        if len(item[gear_filter.field_name]) < len(gear_filter.comparison_data):
+        if comparison_data is not None and len(item[gear_filter.field_name]) < comparison_data:
             valid_data.append(item)
         else:
             excluded_data.append(item)
@@ -183,8 +194,12 @@ def length_is_lesser_than(data, gear_filter):
 def length_is_greater_than(data, gear_filter):
     valid_data = []
     excluded_data = []
+    try:
+        comparison_data = int(gear_filter.comparison_data)
+    except Exception as e:
+        comparison_data = None
     for item in data:
-        if len(item[gear_filter.field_name]) > len(gear_filter.comparison_data):
+        if comparison_data is not None and len(item[gear_filter.field_name]) > comparison_data:
             valid_data.append(item)
         else:
             excluded_data.append(item)

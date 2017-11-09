@@ -1,7 +1,7 @@
 from django import forms
 from apps.gp.map import MapField
 from apps.gp.models import GearFilter
-
+from django.forms import modelformset_factory
 
 class MapForm(forms.Form):
     def __init__(self, *args, **kwargs):
@@ -90,4 +90,4 @@ class FiltersForm(forms.ModelForm):
     class Meta:
         model = GearFilter
         fields = ('field_name', 'option', 'comparison_data', 'is_active')
-        widgets = ('gear' , forms.HiddenInput())
+        exclude = ('gear',)

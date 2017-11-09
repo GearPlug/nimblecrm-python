@@ -16,6 +16,7 @@
         }
     </style>
     <br>
+    <input type="hidden" id="retry_url" value="{% url 'gear:retry_send_history' %}">
     <form action="" method="POST">
         {% csrf_token %}
         <div class='col-md-2'>
@@ -76,6 +77,9 @@
                             {{ obj.sent|yesno:"succesfully sent,error" }}
                         </b>
                     </div>
+                    {% if not obj.sent %}
+                        <b class="resend">resend</b>
+                    {% endif %}
                 </div>
                 <ul style="display:none;" data-show="false" data-history="{{ obj.id }}">
                     {% if obj.sent == False %}
@@ -160,5 +164,19 @@
                 $('#datepicker-from input').data("DateTimePicker").maxDate(e.date);
             });
         });
+
+        $('.resend').click(function () {
+            var button = $(this);
+            $.ajax({
+                method: "POST",
+                url: $('#retry_url').val(),
+                data: {history_id: $(this).parent().data('history')}
+            }).done(function (response) {
+                if (response.data) {
+                    button.text('sent');
+                }
+            });
+            return false;
+        })
     </script>
 {% endblock %}

@@ -476,11 +476,32 @@ class ActiveCampaignConnection(models.Model):
     def __str__(self):
         return self.name
 
+class BatchbookConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_batchbook')
+    name = models.CharField('name', max_length=200)
+    account_name = models.CharField('account_name', max_length=200)
+    access_key = models.CharField('access key', max_length=100)
+
+    def __str__(self):
+        return self.name
+
 
 class TypeFormConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_typeform')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=400)
+
+    def __str__(self):
+        return self.name
+
+
+class OdooCRMConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_odoocrm')
+    name = models.CharField('name', max_length=200)
+    url = models.CharField('url', max_length=200)
+    database = models.CharField('database', max_length=200)
+    connection_user = models.CharField('user', max_length=200)
+    connection_password = models.CharField('password', max_length=200)
 
     def __str__(self):
         return self.name
@@ -559,7 +580,7 @@ class GearFilter(models.Model):
     OPTIONS = tuple((field.value, field.name) for field in FilterEnum)
     gear = models.ForeignKey(Gear, related_name='gear_filter')
     field_name = models.CharField('field name', max_length=256)
-    option = models.IntegerField('option', max_length=100, choices=OPTIONS)
+    option = models.IntegerField('option', choices=OPTIONS)
     comparison_data = models.CharField('comparison data', max_length=100)
     is_active = models.BooleanField('is active', default=False)
 

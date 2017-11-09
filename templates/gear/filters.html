@@ -2,10 +2,75 @@
 {% load static %}
 
 {% block content %}
-   <form method="POST" action="{% url 'gear:filters' pk=request.session.gear_id%}" autocomplete="off" />
-        {% csrf_token %}
-        {{ form }}
-        <br>
-        <input type='submit' value='Submit' />
+    <form method="POST" action="{% url 'gear:filters' pk=request.session.gear_id %}" autocomplete="off"/>
+    {% csrf_token %}
+    {{ formset.management_form }}
+    <div class="formset-list">
+        {% for form in formset %}
+            <div id="id-form-{{ forloop.counter }}" class="formset-form">
+                {{ form.id }}
+                {{ form.field_name.label_tag }}
+                {{ form.field_name }}
+                {{ form.option.label_tag }}
+                {{ form.option }}
+                {{ form.comparison_data.label_tag }}
+                {{ form.comparison_data }}
+                {{ form.is_active.label_tag }}
+                {{ form.is_active }}
+                {{ form.DELETE.label_tag }}
+                {{ form.DELETE }}
+
+            </div>
+        {% endfor %}
+    </div>
+    <br>
+
+    <button type="button" id="btnAdd"> Add</button>
+    <button type="submit"> Submit</button>
     </form>
+{% endblock %}
+
+{% block scripts %}
+    <script type="application/javascript">
+        var pattern = /\d+/g;
+        var pattern2 = new RegExp('\\b' + "DELETE" + '\\b');
+        function add_new_form() {
+            var new_form = $("div.formset-form:last").clone().find("input, select").val("").end();
+            $(new_form).find("input, select").each(function (index, element) {
+                init_value = element.name.match(pattern);
+                final_value = Number(init_value) + 1;
+                element.name = element.name.replace(init_value, final_value);
+                element.id = element.id.replace(init_value, final_value);
+                var btnremove = '<button type="button" class="removeClass"> Remove </button>';
+                if (pattern2.test(element.name)) {
+                    _delete = element.id;
+                    new_form.append(btnremove);
+                }
+            })
+            $(new_form).find("label").each(function (index, element) {
+                if ($(element).text() == 'Delete:') {
+                    $(element).remove()
+                }
+            })
+            var form_count = Number($("#id_form-TOTAL_FORMS").val()) + 1;
+            $("#id_form-TOTAL_FORMS").val(form_count);
+            $("form div.formset-list").append(new_form);
+        };
+        function delete_element(id) {
+            $('#' + id).remove();
+        };
+        $(document).ready(function () {
+            $(document).on("click", "button#btnAdd", function () {
+                add_new_form();
+                delete_element(_delete)
+            });
+            $(document).on("click", "button.removeClass", function () {
+                console.log("in")
+                $(this).parent().remove();
+            });
+        })
+
+
+    </script>
+
 {% endblock %}
