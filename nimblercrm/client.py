@@ -262,3 +262,21 @@ class Client(object):
                 print(e)
         else:
             raise ErrorEnum.DataRequired("Please verified that the ids were sent.")
+
+    def get_last_register(self, limit=None, date=None):
+        """Returns register from certain date.
+        query:
+        {"created": {"range": {"start_date": "2012-10-16","end_date": "2012-10-18"}}}
+
+        """
+        endpoint = 'contacts'
+        values = {
+            'query': {"created": {"range": {"start_date": "2012-10-16","end_date": "2012-10-18"}}},
+            'per_page': limit,
+            'fields': 'created'
+        }
+        data = urllib.parse.urlencode(values).encode('utf-8')
+        try:
+            return self._get(endpoint=endpoint)
+        except Exception as e:
+            print(e)
