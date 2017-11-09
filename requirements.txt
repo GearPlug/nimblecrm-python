@@ -86,3 +86,4 @@ git+git://github.com/GearPlug/mercadolibre-python.git
 git+git://github.com/GearPlug/typeform-python.git
 git+git://github.com/GearPlug/odoocrm-python.git
 git+git://github.com/GearPlug/batchbook-python.git
+git+git://github.com/GearPlug/actcrm-python.git

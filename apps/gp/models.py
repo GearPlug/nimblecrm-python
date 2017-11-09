@@ -476,6 +476,7 @@ class ActiveCampaignConnection(models.Model):
     def __str__(self):
         return self.name
 
+
 class BatchbookConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_batchbook')
     name = models.CharField('name', max_length=200)
@@ -502,6 +503,15 @@ class OdooCRMConnection(models.Model):
     database = models.CharField('database', max_length=200)
     connection_user = models.CharField('user', max_length=200)
     connection_password = models.CharField('password', max_length=200)
+
+    def __str__(self):
+        return self.name
+
+
+class ActEssentialsConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_actessentials')
+    name = models.CharField('name', max_length=200)
+    api_key = models.CharField('API Key', max_length=400)
 
     def __str__(self):
         return self.name

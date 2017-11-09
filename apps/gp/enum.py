@@ -58,7 +58,7 @@ class ConnectorEnum(Enum):
     InfusionSoft = 47, 'crm', 'authorization'
     OdooCRM = 48, 'crm', 'form'
     Batchbook = 49, 'crm', 'form'
-    ActCRM = 50, 'crm', 'form'
+    ActEssentials = 50, 'crm', 'form'
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
