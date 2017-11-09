@@ -1,15 +1,16 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.forms import modelform_factory
+from django.forms import modelform_factory, modelformset_factory
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.views.generic.edit import FormMixin
-from django.http.response import JsonResponse, HttpResponseForbidden
+from django.http.response import JsonResponse, HttpResponseForbidden, HttpResponseRedirect
 from apps.gear.apps import APP_NAME as app_name
-from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm
+from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm, FiltersForm
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import GearGroup
-from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
+from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, GearGroup, GearFilter
 from apps.history.models import DownloadHistory, SendHistory
+from django.shortcuts import render
+from django.urls import reverse
 from oauth2client import client
 import httplib2
 import json
@@ -383,6 +384,37 @@ class GearDownloadHistoryView(GearSendHistoryView):
                  'connector_name': ConnectorEnum.get_connector(item.connector_id).name,
                  'id': item.id,
                  } for item in self.model.objects.filter(gear_id=self.kwargs['pk'], **kwargs).order_by(order)]
+
+
+class GearFiltersView(FormView, LoginRequiredMixin):
+    login_url = '/accounts/login/'
+    template_name = 'gear/filters.html'
+    form_class = FiltersForm
+    success_url = reverse_lazy('connection:connector_list', kwargs={'type': 'target'})
+    exists = False
+
+    def post(self, request, *args, **kwargs):
+        modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
+        formset = modelformset(self.request.POST, queryset=GearFilter.objects.filter(gear_id=kwargs['pk']))
+        if formset.is_valid():
+            filters = formset.save(commit=False)
+            for filter in filters:
+                _gear = Gear.objects.get(id=kwargs['pk'])
+                filter.gear = _gear
+                filter.save()
+            for filter in formset.deleted_forms:
+                if 'DELETE' in filter.cleaned_data and filter.cleaned_data['DELETE'] is True:
+                    filter.cleaned_data['id'].delete()
+        else:
+            print("no es valido")
+        return HttpResponseRedirect(self.success_url)
+
+    def get_context_data(self, **kwargs):
+        context = super(GearFiltersView, self).get_context_data(**kwargs)
+        modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
+        formset = modelformset(queryset=GearFilter.objects.filter(gear_id=self.kwargs['pk']))
+        context['formset'] = formset
+        return context
 
 
 def gear_toggle(request, gear_id):
