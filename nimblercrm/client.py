@@ -35,8 +35,8 @@ class Client(object):
     def _post(self, endpoint, data=None):
         return self._request('POST', endpoint, data=data)
 
-    def _get(self, endpoint):
-        return self._request('GET', endpoint)
+    def _get(self, endpoint, payload=None):
+        return self._request('GET', endpoint, data=payload)
 
     def _put(self, endpoint, data=None):
         return self._request('PUT', endpoint, data=data)
@@ -146,24 +146,25 @@ class Client(object):
 
     def get_persons(self):
         endpoint = 'contacts?'
-        values = {"record_type": {"is":"person"}}
-        params = urllib.parse.urlencode(
-            values, quote_via=urllib.parse.quote)
-        endpoint = endpoint + params
-        print('URL', endpoint)
+        values = {"record_type": {"is": "person"}}
+        # params = urllib.parse.urlencode(
+        #     values, quote_via=urllib.parse.quote)
+        # endpoint = endpoint + params
+        payload = json.dumps(values)
         try:
-            return self._get(endpoint=endpoint)
+            return self._get(endpoint=endpoint, payload=payload)
         except Exception as e:
             print(e)
 
     def get_organizations(self):
         endpoint = 'contacts?'
-        values = {"record_type": {"is":"company"}}
-        params = urllib.parse.urlencode(
-            values, quote_via=urllib.parse.quote)
-        endpoint = endpoint + params
+        values = {"record_type": {"is": "company"}}
+        # params = urllib.parse.urlencode(
+        #     values, quote_via=urllib.parse.quote)
+        # endpoint = endpoint + params
+        payload = json.dumps(values)
         try:
-            return self._get(endpoint=endpoint)
+            return self._get(endpoint=endpoint, payload=payload)
         except Exception as e:
             print(e)
 
