@@ -3,6 +3,7 @@ from .exceptions import *
 from .enumerator import ErrorEnum
 from .clientauth import ClientAuth
 import urllib.parse
+from urllib.parse import parse_qsl
 import json
 from datetime import datetime, timedelta
 
