@@ -62,7 +62,6 @@ class ConnectorEnum(Enum):
     NimbleCRM = 51, 'crm', 'authorization'
     Webhook = 52, 'various', None
 
-
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
         obj._value_ = args[0]

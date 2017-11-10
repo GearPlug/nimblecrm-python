@@ -604,6 +604,7 @@ class GearMap(models.Model):
 
 class GearMapData(models.Model):
     gear_map = models.ForeignKey(GearMap, related_name='gear_map_data')
+    version = models.SmallIntegerField('version', default=1)
     target_name = models.CharField('target name', max_length=300)
     source_value = models.CharField('source value', max_length=300)
 

@@ -7,7 +7,6 @@ from django.urls import reverse_lazy
 from django.shortcuts import redirect
 from django.views.generic import CreateView, ListView, View, TemplateView, UpdateView
 from apps.gp.enum import ConnectorEnum, GoogleAPIEnum
-from apps.gp.models import Gear, Plug, PlugActionSpecification, Connection, Connector, MercadoLibreConnection
 from apps.gp.models import Connection, Connector, MercadoLibreConnection
 from urllib.parse import urlencode
 from oauth2client import client
@@ -453,6 +452,7 @@ class SurveyMonkeyAuthView(View):
         self.request.session['connector_name'] = ConnectorEnum.SurveyMonkey.name
         return redirect(reverse('connection:create_token_authorized_connection'))
 
+
 class TypeFormAuthView(View):
     def get(self, request, *args, **kwargs):
         auth_code = request.GET.get('code', None)
@@ -465,6 +465,7 @@ class TypeFormAuthView(View):
         self.request.session['connection_data'] = {'token': response["access_token"], }
         self.request.session['connector_name'] = ConnectorEnum.TypeForm.name
         return redirect(reverse('connection:create_token_authorized_connection'))
+
 
 class HubspotAuthView(View):
     def get(self, request, *args, **kwargs):
