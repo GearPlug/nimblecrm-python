@@ -48,6 +48,7 @@ class Client(object):
             self.token_expiration_checker()
         except Exception as e:
             print(e)
+
         url = '{0}/{1}'.format(self.base_url, endpoint)
         headers = {
             'Authorization': 'Bearer {0}'.format(self.token),
@@ -137,6 +138,28 @@ class Client(object):
         """Returns all contacts.
         """
         endpoint = 'contacts'
+        try:
+            return self._get(endpoint=endpoint)
+        except Exception as e:
+            print(e)
+
+    def get_persons(self):
+        endpoint = 'contacts?'
+        values = {"record type": {"is": "person"}}
+        params = urllib.parse.urlencode(
+            values, quote_via=urllib.parse.quote)
+        endpoint = endpoint + params
+        try:
+            return self._get(endpoint=endpoint)
+        except Exception as e:
+            print(e)
+
+    def get_organizations(self):
+        endpoint = 'contacts?'
+        values = {"record type": {"is": "company"}}
+        params = urllib.parse.urlencode(
+            values, quote_via=urllib.parse.quote)
+        endpoint = endpoint + params
         try:
             return self._get(endpoint=endpoint)
         except Exception as e:
@@ -264,7 +287,9 @@ class Client(object):
             raise ErrorEnum.DataRequired("Please verified that the ids were sent.")
 
     def get_last_register(self, limit=None, date=None):
-        """Returns register from certain date.
+        """
+        TODO
+        Returns register from certain date.
         query:
         {"created": {"range": {"start_date": "2012-10-16","end_date": "2012-10-18"}}}
 
@@ -276,6 +301,7 @@ class Client(object):
             'fields': 'created'
         }
         data = urllib.parse.urlencode(values).encode('utf-8')
+        endpoint = endpoint+data
         try:
             return self._get(endpoint=endpoint)
         except Exception as e:
