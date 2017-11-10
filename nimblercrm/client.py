@@ -147,7 +147,7 @@ class Client(object):
 
     def get_persons(self):
         endpoint = "contacts?query="
-        values = {"record_type": {"is": "person"}}
+        values = {"record type": {"is": "person"}}
         values = json.dumps(values)
         values = urllib.parse.quote_plus(values)
         endpoint = endpoint+values
