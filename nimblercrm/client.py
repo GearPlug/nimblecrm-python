@@ -55,9 +55,8 @@ class Client(object):
             'Authorization': 'Bearer {0}'.format(self.token),
             'Content-Type': 'application/json; charset=utf-8',
         }
-
+        print('123123', url)
         response = requests.request(method, url, headers=headers, data=data)
-        print(response.url)
         return (response)
 
     def _parse(self, response):
@@ -146,12 +145,12 @@ class Client(object):
             print(e)
 
     def get_persons(self):
-        endpoint = 'contacts?'
-        values = {"query": {"record_type": {"is": "person"}}}
-        # params = urllib.parse.urlencode(
-        #     values, quote_via=urllib.parse.quote)
-        # endpoint = endpoint + params
-        payload = json.dumps(values)
+        endpoint = 'contacts?query='
+        values = {"record_type": {"is": "person"}}
+        params = urllib.parse.urlencode(
+            values, quote_via=urllib.parse.quote)
+        endpoint = endpoint + params
+        # payload = json.dumps(values)
         try:
             return self._get(endpoint=endpoint, payload=payload)
         except Exception as e:
