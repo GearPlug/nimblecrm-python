@@ -5,23 +5,23 @@
     <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
         <div class="carousel-inner">
 {#            {% if request.user.is_authenticated is False %}#}
-                <div class="item active container-fluid slide-item">
-                    <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
-                    <div class="carousel-caption slide-caption">
-                        {% blocktrans %}
-                            Conectándote <br/>
-                            <span class="slide-text-light"> en todos </span> <br/>
-                            <span class="slide-color-aqua"> lados </span>
-                        {% endblocktrans %}
-                    </div>
-                </div>
-                <div class="item">
-                    <img src="{% static 'img/landing/slide1.png' %}" alt="Second slide" class="slide">
-                </div>
-{#            {% else %}#}
-{#                <div class="item active bg_login1">#}
-{#                    &nbsp;#}
+{#                <div class="item active container-fluid slide-item">#}
+{#                    <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">#}
+{#                    <div class="carousel-caption slide-caption">#}
+{#                        {% blocktrans %}#}
+{#                            Conectándote <br/>#}
+{#                            <span class="slide-text-light"> en todos </span> <br/>#}
+{#                            <span class="slide-color-aqua"> lados </span>#}
+{#                        {% endblocktrans %}#}
+{#                    </div>#}
 {#                </div>#}
+{#                <div class="item">#}
+{#                    <img src="{% static 'img/landing/slide1.png' %}" alt="Second slide" class="slide">#}
+{#                </div>#}
+{#            {% else %}#}
+                <div class="item active bg_login1">
+                    &nbsp;
+                </div>
 {#            {% endif %}#}
 
         </div>
@@ -37,13 +37,13 @@
         </a>
     </div>
 {#    {% if request.user.is_authenticated is False %}#}
-        <div class="bg-form">
-            {% include 'landing/snippets/signup_form.html' %}
-        </div>
-{#    {% else %}#}
-{#        <div class="bg_login text-center">#}
-{#            <button type="button" class="btn-login">¡Ingresa Ya!</button>#}
+{#        <div class="bg-form">#}
+{#            {% include 'landing/snippets/signup_form.html' %}#}
 {#        </div>#}
+{#    {% else %}#}
+        <div class="bg_login text-center">
+            <button type="button" class="btn-login">¡Ingresa Ya!</button>
+        </div>
 {#    {% endif %}#}
     <div class="col-md-12 text-center index-space1">
         <img src="{% static 'img/landing/logo_what.png' %}" style="height: 13%;">

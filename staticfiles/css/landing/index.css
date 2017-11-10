@@ -294,8 +294,10 @@
 }
 
 .bg_login1{
-    background-color: #005CA6;
+    background: url("../../img/landing/slide2.png") no-repeat scroll 0 0;
     height: 821px;
+    background-size: contain;
+    /*width: 100%;*/
 }
 
 .btn-login{
