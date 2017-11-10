@@ -152,7 +152,7 @@ class Client(object):
         endpoint = endpoint + params
         # payload = json.dumps(values)
         try:
-            return self._get(endpoint=endpoint, payload=payload)
+            return self._get(endpoint=endpoint)
         except Exception as e:
             print(e)
 
