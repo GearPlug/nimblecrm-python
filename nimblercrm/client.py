@@ -158,7 +158,7 @@ class Client(object):
 
     def get_organizations(self):
         endpoint = "contacts?query="
-        values = {"record_type": {"is": "company"}}
+        values = {"record type": {"is": "company"}}
         values = json.dumps(values)
         values = urllib.parse.quote_plus(values)
         endpoint = endpoint+values
