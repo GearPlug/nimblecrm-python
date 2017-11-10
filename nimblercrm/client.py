@@ -149,6 +149,7 @@ class Client(object):
         params = urllib.parse.urlencode(
             values, quote_via=urllib.parse.quote)
         endpoint = endpoint + params
+        print('URL', endpoint)
         try:
             return self._get(endpoint=endpoint)
         except Exception as e:
