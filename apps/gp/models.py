@@ -1,14 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
-<< << << < Updated
-upstream
 from apps.gp.enum import ConnectorEnum, FilterEnum
-== == == =
 from django.db import models
 from apps.gp.model_fields import JSONField
-from apps.gp.enum import ConnectorEnum
->> >> >> > Stashed
-changes
 
 connections = ['connection_{0}'.format(connector.name.lower()) for connector in ConnectorEnum.get_connector_list()]
 
