@@ -32,6 +32,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form, *args, **kwargs):
+        print(1)
         form.instance.user = self.request.user
         n = int(Plug.objects.filter(connection__user=self.request.user).count()) + 1
         form.instance.name = "Plug # %s for user %s" % (n, self.request.user.email)
@@ -69,6 +70,9 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         self.request.session['target_connection_id'] = None
         return HttpResponseRedirect(self.get_success_url())
 
+    # def form_invalid(self, form):
+    #     return super(CreatePlugView, self).form_invalid(form)
+
     def get_success_url(self):
         return reverse('plug:test', kwargs={'pk': self.object.id})
 
@@ -94,8 +98,15 @@ class ActionListView(LoginRequiredMixin, ListView):
         kw = {'action_type': plug_type}
         connection_key = '{0}_connection_id'.format(plug_type)
         if plug_type in ['source', 'target']:
-            if connection_key in self.request.session:
-                kw['connector_id'] = Connection.objects.get(pk=self.request.session[connection_key]).connector_id
+            if connection_key in self.request.session and self.request.session[connection_key] is not None:
+                try:
+                    kw['connector_id'] = Connection.objects.get(pk=self.request.session[connection_key]).connector_id
+                except ValueError:
+                    pass
+                    kw['connector_id'] = ConnectorEnum.get_connector(name=self.request.session[connection_key]).value
+                    # TODO ADD SUPPORT FOR SMS, SMTP AND WEBHOOKS
+            else:
+                print("Nei")
         return self.model.objects.filter(**kw)
 
 
