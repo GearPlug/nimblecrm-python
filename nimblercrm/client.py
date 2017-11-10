@@ -145,7 +145,7 @@ class Client(object):
 
     def get_persons(self):
         endpoint = 'contacts?'
-        values = {"record_type": {"is": "person"}}
+        values = {"record_type": {"is":"person"}}
         params = urllib.parse.urlencode(
             values, quote_via=urllib.parse.quote)
         endpoint = endpoint + params
@@ -157,7 +157,7 @@ class Client(object):
 
     def get_organizations(self):
         endpoint = 'contacts?'
-        values = {"record_type": {"is": "company"}}
+        values = {"record_type": {"is":"company"}}
         params = urllib.parse.urlencode(
             values, quote_via=urllib.parse.quote)
         endpoint = endpoint + params
