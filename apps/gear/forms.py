@@ -1,6 +1,7 @@
 from django import forms
 from apps.gp.map import MapField
-
+from apps.gp.models import GearFilter
+from django.forms import modelformset_factory
 
 class MapForm(forms.Form):
     def __init__(self, *args, **kwargs):
@@ -75,10 +76,18 @@ class SendHistoryForm(forms.Form):
     order = forms.ChoiceField(required=True, choices=(('asc', 'Ascending'), ('desc', 'Descending')),
                               widget=forms.Select(attrs={'class': 'form-control'}))
     sent = forms.ChoiceField(required=True, choices=((0, 'All'), (True, 'Successful'), (False, 'Failed')),
-                               widget=forms.Select(attrs={'class': 'form-control'}))
+                             widget=forms.Select(attrs={'class': 'form-control'}))
+
 
 class DownloadHistoryForm(forms.Form):
     date_from = forms.DateTimeField(required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
     date_to = forms.DateTimeField(required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
     order = forms.ChoiceField(required=True, choices=(('asc', 'Ascending'), ('desc', 'Descending')),
                               widget=forms.Select(attrs={'class': 'form-control'}))
+
+
+class FiltersForm(forms.ModelForm):
+    class Meta:
+        model = GearFilter
+        fields = ('field_name', 'option', 'comparison_data', 'is_active')
+        exclude = ('gear',)

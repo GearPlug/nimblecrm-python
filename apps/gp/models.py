@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib import admin
 from apps.gp.model_fields import JSONField
 from django.contrib.auth.models import User
-from apps.gp.enum import ConnectorEnum
+from apps.gp.enum import ConnectorEnum, FilterEnum
 
 connections = ['connection_{0}'.format(connector.name.lower()) for connector in ConnectorEnum.get_connector_list()]
 
@@ -588,6 +588,15 @@ class Gear(models.Model):
     @property
     def is_running(self):
         return self.is_active and self.gear_map.is_active
+
+
+class GearFilter(models.Model):
+    OPTIONS = tuple((field.value, field.name) for field in FilterEnum)
+    gear = models.ForeignKey(Gear, related_name='gear_filter')
+    field_name = models.CharField('field name', max_length=256)
+    option = models.IntegerField('option', choices=OPTIONS)
+    comparison_data = models.CharField('comparison data', max_length=100)
+    is_active = models.BooleanField('is active', default=False)
 
 
 class GearMap(models.Model):
