@@ -514,5 +514,6 @@ class MandrillController(BaseController):
                 webhook.save(update_fields=['is_deleted', ])
                 return False
 
+    @property
     def has_webhook(self):
         return True

@@ -57,6 +57,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         controller = controller_class(connection=self.object.connection.related_connection, plug=self.object)
         if controller.test_connection():
             if self.object.is_source:
+                print("webhook:", controller.has_webhook)
                 if controller.has_webhook is True:
                     controller.create_webhook()
                 else:

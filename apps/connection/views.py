@@ -1,26 +1,27 @@
-import tweepy
-import httplib2
-from instagram.client import InstagramAPI
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
-from django.views.generic import CreateView, ListView, View, TemplateView, \
-    UpdateView
 from django.core.urlresolvers import reverse
+from django.db.models.aggregates import Count
 from django.http import JsonResponse
+from django.urls import reverse_lazy
 from django.shortcuts import redirect
+from django.views.generic import CreateView, ListView, View, TemplateView, UpdateView
 from apps.gp.enum import ConnectorEnum, GoogleAPIEnum
-from apps.gp.models import Gear, Plug, PlugActionSpecification, Connection, \
-    Connector, MercadoLibreConnection
+from apps.gp.models import Gear, Plug, PlugActionSpecification, Connection, Connector, MercadoLibreConnection
+from apps.gp.models import Connection, Connector, MercadoLibreConnection
+from urllib.parse import urlencode
 from oauth2client import client
 from requests_oauthlib import OAuth2Session
 from slacker import Slacker
-import json
-import urllib
-from urllib.parse import urlencode
-import requests
 from evernote.api.client import EvernoteClient
 from mercadolibre.client import Client as MercadolibreClient
+from instagram.client import InstagramAPI
+import tweepy
+import httplib2
+import json
+import urllib
+import requests
+from random import randint
 
 
 class ListConnectorView(LoginRequiredMixin, ListView):
@@ -65,6 +66,14 @@ class ListConnectionView(LoginRequiredMixin, ListView):
     login_url = '/accounts/login/'
 
     def get(self, request, *args, **kwargs):
+        connector = ConnectorEnum.get_connector(kwargs['connector_id'])
+        if connector.connection_type is None:
+            # TODO: Agregar connection default para el connector. SMS, SMTP y Webhook
+            count = Connection.objects.filter(connector_id=connector.value).aggregate(ids=Count('id'))['ids']
+            random_index = randint(0, count - 1)
+            request.session['%s_connection_id' % kwargs['type']] = Connection.objects.filter(
+                connector_id=connector.value)[random_index].id
+            return redirect(reverse('plug:create', kwargs={'plug_type': kwargs['type']}))
         request.session['plug_type'] = kwargs['type']
         return super(ListConnectionView, self).get(request, *args, **kwargs)
 

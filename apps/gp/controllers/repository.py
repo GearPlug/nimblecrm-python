@@ -275,6 +275,7 @@ class BitbucketController(BaseController):
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
+    @property
     def has_webhook(self):
         return True
 
@@ -506,5 +507,6 @@ class GitLabController(BaseController):
                 webhook.plug.save()
         return HttpResponse(status=200)
 
+    @property
     def has_webhook(self):
         return True
