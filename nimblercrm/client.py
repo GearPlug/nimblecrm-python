@@ -56,7 +56,6 @@ class Client(object):
             'Authorization': 'Bearer {0}'.format(self.token),
             'Content-Type': 'application/json; charset=utf-8',
         }
-        print('123123', url)
         response = requests.request(method, url, headers=headers, data=data)
         return (response)
 
