@@ -1,5 +1,14 @@
 from django.conf.urls import url
-from apps.landing.views import IndexView
+from apps.landing.views import IndexView, AboutUsView, ContactUsView, AppsView, CustomSignup, StepsView, TermsView, \
+    PrivacyView
+
 urlpatterns = [
-    url(r'^$', IndexView.as_view(), name='indexpage'),
+    url(r'^$', IndexView.as_view(), name='index'),
+    url(r'^accounts/signup/$', CustomSignup.as_view(), name='signup'),
+    url(r'^about/$', AboutUsView.as_view(), name='about'),
+    url(r'^contact/$', ContactUsView.as_view(), name='contact'),
+    url(r'^apps/directory/$', AppsView.as_view(), name='apps_directory'),
+    url(r'^steps/$', StepsView.as_view(), name='steps'),
+    url(r'^terms/$', TermsView.as_view(), name='terms'),
+    url(r'^privacy/$', PrivacyView.as_view(), name='privacy'),
 ]

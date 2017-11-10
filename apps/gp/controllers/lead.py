@@ -18,6 +18,7 @@ import requests
 import surveymonty
 from typeform.client import Client as TypeformClient
 from dateutil.parser import parse
+from datetime import datetime, timedelta
 
 
 class GoogleFormsController(GoogleBaseController):
@@ -25,12 +26,10 @@ class GoogleFormsController(GoogleBaseController):
     _spreadsheet_id = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
-        GoogleBaseController.__init__(self, connection=connection, plug=plug,
-                                      **kwargs)
+        GoogleBaseController.__init__(self, connection=connection, plug=plug, **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
-        super(GoogleFormsController, self).create_connection(
-            connection=connection, plug=plug)
+        super(GoogleFormsController, self).create_connection(connection=connection, plug=plug)
         credentials_json = None
         if self._connection_object is not None:
             try:
@@ -40,14 +39,12 @@ class GoogleFormsController(GoogleBaseController):
                         self._spreadsheet_id = self._plug.plug_action_specification.get(
                             action_specification__name__iexact='form').value
                     except Exception as e:
-                        print(
-                            "Error asignando los specifications GoogleForms 2")
+                        print("Error asignando los specifications GoogleForms 2")
             except Exception as e:
                 print("Error getting the GoogleForms attributes 1")
                 print(e)
         if credentials_json is not None:
-            self._credential = GoogleClient.OAuth2Credentials.from_json(
-                json.dumps(credentials_json))
+            self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
 
     def test_connection(self):
         try:
@@ -63,45 +60,47 @@ class GoogleFormsController(GoogleBaseController):
             files = None
         return files is not None
 
-    def download_to_stored_data(self, connection_object, plug, *args,
-                                **kwargs):
-        if plug is None:
-            plug = self._plug
+    def download_to_stored_data(self, connection_object, plug, last_source_record=None, **kwargs):
         if not self._spreadsheet_id:
             return False
-        sheet_values = self.get_worksheet_values()
+        data = self.get_worksheet_values()
+        raw_data = []
         new_data = []
-        for idx, item in enumerate(sheet_values[1:]):
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=idx + 1)
+        for idx, item in enumerate(data[1:], 1):
+            unique_value = idx
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=unique_value)
             if not q.exists():
+                item_data = []
+                item_raw = {}
                 for idx2, cell in enumerate(item):
-                    new_data.append(
-                        StoredData(name=sheet_values[0][idx2], value=cell,
-                                   object_id=idx + 1,
-                                   connection=connection_object.connection,
-                                   plug=plug))
+                    item_data.append(StoredData(name=data[0][idx2], value=cell, object_id=unique_value,
+                                                connection=connection_object.connection, plug=plug))
+                    _dict = {data[0][idx2]: cell}
+                    item_raw.update(_dict)
+
+                new_data.append(item_data)
+                item_raw['id'] = idx
+                raw_data.append(item_raw)
+        # Nueva forma
         if new_data:
-            field_count = len(sheet_values)
-            extra = {'controller': 'google_forms'}
-            for i, item in enumerate(new_data):
-                try:
-                    item.save()
-                    if (i + 1) % field_count == 0:
-                        extra['status'] = 's'
-                        self._log.info(
-                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                                item.object_id, item.plug.id,
-                                item.connection.id), extra=extra)
-                except:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.' % (
-                            item.object_id, item.name, item.plug.id,
-                            item.connection.id), extra=extra)
-            # raise IndexError("hola")
-            return True
+            result_list = []
+            for item in new_data:
+                for stored_data in item:
+                    try:
+                        stored_data.save()
+                    except Exception as e:
+                        is_stored = False
+                        break
+                    is_stored = True
+                obj_raw = "ROW DATA NOT FOUND."
+                for obj in raw_data:
+                    if stored_data.object_id == obj['id']:
+                        obj_raw = obj
+                        break
+                raw_data.remove(obj_raw)
+                result_list.append({'identifier': {'name': 'id', 'value': stored_data.object_id},
+                                    'is_stored': is_stored, 'raw': obj_raw, })
+            return {'downloaded_data': result_list, 'last_source_record': result_list[-1]['identifier']['value']}
         return False
 
     def get_sheet_list(self):
@@ -110,16 +109,14 @@ class GoogleFormsController(GoogleBaseController):
         drive_service = discovery.build('drive', 'v3', http=http_auth)
         files = drive_service.files().list().execute()
         sheet_list = tuple(
-            f for f in files['files'] if 'mimeType' in f and f[
-                'mimeType'] == 'application/vnd.google-apps.spreadsheet')
+            f for f in files['files'] if 'mimeType' in f and f['mimeType'] == 'application/vnd.google-apps.spreadsheet')
         return sheet_list
 
     def get_worksheet_list(self, sheet_id):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
-        result = sheets_service.spreadsheets().get(
-            spreadsheetId=sheet_id).execute()
+        result = sheets_service.spreadsheets().get(spreadsheetId=sheet_id).execute()
         worksheet_list = tuple(i['properties'] for i in result['sheets'])
         return worksheet_list
 
@@ -128,9 +125,8 @@ class GoogleFormsController(GoogleBaseController):
         http_auth = credential.authorize(httplib2.Http())
         sheets_service = discovery.build('sheets', 'v4', http=http_auth)
         range = self.get_worksheet_list(self._spreadsheet_id)
-        res = sheets_service.spreadsheets().values().get(
-            spreadsheetId=self._spreadsheet_id,
-            range=range[0]['title']).execute()
+        res = sheets_service.spreadsheets().values().get(spreadsheetId=self._spreadsheet_id,
+                                                         range=range[0]['title']).execute()
         values = res['values']
         if from_row is None and limit is None:
             return values
@@ -149,16 +145,12 @@ class GoogleFormsController(GoogleBaseController):
     def get_target_fields(self, **kwargs):
         return self.get_worksheet_first_row(**kwargs)
 
-    def get_action_specification_options(self, action_specification_id,
-                                         **kwargs):
-        action_specification = ActionSpecification.objects.get(
-            pk=action_specification_id)
+    def get_action_specification_options(self, action_specification_id, **kwargs):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'form':
-            return tuple({'id': p['id'], 'name': p['name']} for p in
-                         self.get_sheet_list())  # TODO SOLO CARGAR FORMS
+            return tuple({'id': p['id'], 'name': p['name']} for p in self.get_sheet_list())  # TODO SOLO CARGAR FORMS
         else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector.")
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class FacebookLeadsController(BaseController):
@@ -190,6 +182,7 @@ class FacebookLeadsController(BaseController):
                 raise ControllerError(code=1, controller=ConnectorEnum.FacebookLeads,
                                       message='Failed to get the token. \n{}'.format(str(e)))
             try:
+
                 self._client = Client(settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET, 'v2.10')
                 self._client.set_access_token(self._token)
             except UnknownError as e:
@@ -317,7 +310,7 @@ class FacebookLeadsController(BaseController):
                 for d in raw_data:
                     for k, v in d.items():
                         new_lead.append(StoredData(name=k, value=v or '', object_id=leadgen_id,
-                                               connection=connection_object.connection, plug=plug))
+                                                   connection=connection_object.connection, plug=plug))
                     new_leads.append(new_lead)
         if new_leads:
             leads_result = []
@@ -331,9 +324,11 @@ class FacebookLeadsController(BaseController):
                 for lead in raw_data:
                     # TODO: Corregir
                     if stored_data.object_id == lead['leadgen_id']:
-                        leads_result.append({'identifier': {'name': 'leadgen_id', 'value': lead['leadgen_id']}, 'raw': lead, 'is_stored': is_stored})
+                        leads_result.append(
+                            {'identifier': {'name': 'leadgen_id', 'value': lead['leadgen_id']}, 'raw': lead,
+                             'is_stored': is_stored})
                         break
-                # data.remove(lead)
+                        # data.remove(lead)
             obj_last_source_record = leads_result[-1]['raw']['created_time_timestamp']
             return {'downloaded_data': leads_result, 'last_source_record': obj_last_source_record}
         return False
@@ -425,6 +420,9 @@ class FacebookLeadsController(BaseController):
                         plug.save(update_fields=['is_tested', ])
             response.status_code = 200
         return response
+
+    def has_webhook(self):
+        return True
 
 
 class SurveyMonkeyController(BaseController):
@@ -596,9 +594,13 @@ class SurveyMonkeyController(BaseController):
                 webhook.plug.save()
         return HttpResponse(status=200)
 
+    def has_webhook(self):
+        return True
+
 
 class TypeFormController(BaseController):
     _client = None
+    _token = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
         BaseController.__init__(self, connection=connection, plug=plug, **kwargs)
@@ -607,15 +609,17 @@ class TypeFormController(BaseController):
         super(TypeFormController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
-                self._client = TypeformClient(self._connection_object.api_key)
+                self._token = self._connection_object.token
+                self._client = TypeformClient(access_token=self._token)
             except Exception as e:
                 print("Error getting the Typeform attributes")
                 self._client = None
+                self._token = None
 
     def test_connection(self):
         try:
-            self._client = TypeformClient(self._connection_object.api_key)
-            return self._client is not None
+            self._client.get_forms()
+            return self._token is not None
         except Exception as e:
             print("error Typeform test connection")
             print(e)
@@ -624,20 +628,37 @@ class TypeFormController(BaseController):
     def create_webhook(self):
         action = self._plug.action.name
         if action.lower() == 'new answer':
-            # creación de webhook
+            form_id = self._plug.plug_action_specification.get(action_specification__name='form')
             webhook = Webhook.objects.create(name='typeform', plug=self._plug, url='', expiration='')
             url_base = settings.WEBHOOK_HOST
             url_path = reverse('home:webhook', kwargs={'connector': 'typeform', 'webhook_id': webhook.id})
-            webhook.url = url_base + url_path
-            webhook.generated_id = webhook.id
-            webhook.is_active = True  # Cambiar a False
-            webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            try:
+                response = self._client.create_webhook(url_webhook=url_base+url_path, tag_webhook=webhook.id, uid=form_id.value)
+                _create = True
+            except:
+                _create = False
+            if _create is True:
+                webhook.url = url_base + url_path
+                webhook.generated_id = response['id']
+                webhook.is_active = True
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            else:
+                webhook.is_deleted = True
+                webhook.save(update_fields=['is_deleted', ])
             return True
         return False
 
+    def view_webhook(self, webhook_id):
+        form_id = self._plug.plug_action_specification.get(action_specification__name__iexact='form').value
+        return self._client.view_webhook(tag_webhook=webhook_id, uid=form_id)
+
+    def delete_webhook(self, webhook_id):
+        form_id = self._plug.plug_action_specification.get(action_specification__name__iexact='form').value
+        return self._client.delete_webhook(tag_webhook=webhook_id, uid=form_id)
+
     def do_webhook_process(self, body=None, GET=None, POST=None, META=None, webhook_id=None, **kwargs):
         webhook = Webhook.objects.filter(pk=webhook_id).prefetch_related('plug').first()
-        if not webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
             if not webhook.plug.is_tested:
                 webhook.plug.is_tested = True
                 webhook.plug.save()
@@ -646,7 +667,7 @@ class TypeFormController(BaseController):
                 PlugActionSpecification.objects.get(action_specification__name__iexact='form', plug=webhook.plug,
                                                     value=body['form_response']['form_id'])
                 if self.test_connection():
-                    self.download_source_data()
+                    self.download_source_data(answer=body)
             except PlugActionSpecification.DoesNotExist:
                 print("The webhook {0} is not listening to the form {1}.".format(webhook_id,
                                                                                  body['form_response']['form_id']))
@@ -657,36 +678,46 @@ class TypeFormController(BaseController):
         form = self._plug.plug_action_specification.get(action_specification__name__iexact='form')
         list_data_answers = []
         if answer is not None:
+            #con webhook
             if 'event_type' in answer and answer['event_type'] == 'form_response':
                 data_questions = {question['id']: question['title'] for question in
                                   answer['form_response']['definition']['fields']}
                 obj_raw = {'completed': '1', 'token': answer['form_response']['token'],
                            'submitted_at': answer['form_response']['submitted_at'], }
                 for raw_answer in answer['form_response']['answers']:
-                    type = raw_answer['type']
-                    if type == 'choice':
-                        value = raw_answer[type]['label']
-                    elif type == 'boolean':
-                        value = '1' if type == True else '0'
+
+                    if type(raw_answer[raw_answer['type']]) is dict:
+                        response = raw_answer[raw_answer['type']]['label']
                     else:
-                        value = str(raw_answer[type])
-                    obj_raw[data_questions[raw_answer['field']['id']]] = value
+                        response = raw_answer[raw_answer['type']]
+                    if raw_answer['field']['id'] in data_questions.keys():
+                        obj_raw[data_questions[raw_answer['field']['id']]] = response
+                    else:
+                        for k in data_questions.keys():
+                            obj_raw[data_questions[k]] = ''
                 list_data_answers.append(obj_raw)
         else:
+            #sin webhook
             form_data = self._client.get_form_information(form.value)
-            data_questions = self._client.get_form_questions(form=form_data)
-            data_answers = self._client.get_form_metadata(form=form_data)
-            dict_data_questions = {question['id']: question['question'] for question in data_questions}
+            data_questions = self._client.get_form_questions(uid=form.value)
+            since = (datetime.utcnow() - timedelta(days=1)).isoformat()
+            until = datetime.utcnow().isoformat()
+            data_answers = self._client.get_form_metadata(uid=form.value, since=since, until=until)
+            dict_data_questions = {question['id']: question['title'] for question in data_questions}
             for answer in data_answers:
-                obj_raw = {'completed': answer['completed'], 'token': answer['token']}
+                obj_raw = {'token': answer['token']}
                 if answer['answers']:
-                    for k, v in answer['answers'].items():
-                        if k in dict_data_questions.keys():
-                            obj_raw[dict_data_questions[k]] = v
-                else:
-                    for k in dict_data_questions.keys():
-                        obj_raw[dict_data_questions[k]] = ''
-                obj_raw['submitted_at'] = answer['metadata']['date_submit']
+                    for a in answer['answers']:
+                        if type(a[a['type']]) is dict:
+                            response = a[a['type']]['label']
+                        else:
+                            response = a[a['type']]
+                        if a['field']['id'] in dict_data_questions.keys():
+                            obj_raw[dict_data_questions[a['field']['id']]] = response
+                        else:
+                            for k in dict_data_questions.keys():
+                                obj_raw[dict_data_questions[k]] = ''
+                obj_raw['submitted_at'] = answer['submitted_at']
                 list_data_answers.append(obj_raw)
         new_data = []
         for item in list_data_answers:
@@ -702,21 +733,21 @@ class TypeFormController(BaseController):
             for stored_data in item:
                 try:
                     stored_data.save()
+                    is_stored = True
                 except Exception as e:
                     is_stored = False
                     break
-                is_stored = True
             obj_raw = None
-            result_list.append({'identifier': {'name': 'token', 'value': stored_data.object_id}, 'is_stored': is_stored, 'raw': list_data_answers[0]})
-        obj_last_source_record = False
+            result_list.append({'identifier': {'name': 'token', 'value': stored_data.object_id}, 'is_stored': is_stored,
+                                'raw': list_data_answers[0]})
+        obj_last_source_record = result_list[-1]['identifier']['value']
         return {'downloaded_data': result_list, 'last_source_record': obj_last_source_record}
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'form':
-            forms = self._client.get_forms()
-            return tuple({'id': f['id'], 'name': f['name']} for f in forms)
-        else:
+            forms = self._client.get_forms()['items']
+            return tuple({'id': f['id'], 'name': f['title']} for f in forms)
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
     def has_webhook(self):

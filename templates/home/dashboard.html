@@ -1,34 +1,95 @@
-{% extends 'layouts/site_base.html' %}
+
+
+{% extends 'layouts/console_base.html' %}
 {% load static %}
 
 {% block content %}
-    {# USER INFO #}
-    <div class="col-md-12 dashboard_border">
-        <div class="col-md-4">
-            User: {{ request.user }}
+    <div class="content-header col-md-10 col-md-offset-1">
+        <div class="row">
+            <div class="col-md-7">
+                <div class="image">
+                    <img src="{% static 'img/console/g6064.png' %}" width="148">
+                </div>
+                <div class="info">
+                    <div class="user">
+                        {{ request.user.get_full_name|yesno:request.user.email }}
+                    </div>
+                    <div class="description">
+                        Que es esta cosa
+                    </div>
+                    <div class="plan">
+                        Plan Bonitos
+                    </div>
+                </div>
+                <div class="divider" style="float: right"></div>
+            </div>
+            <div class="col-md-5">
+                <div class="gp-info">
+                    <div class="connectors">
+                        Conectores: <span style="font-family: 'Sansation Bold'">1000</span>
+                    </div>
+                    <div class="credits">
+                        Crédito: <span style="font-family: 'Sansation Bold'">$10 USD</span>
+                    </div>
+                    <div class="available">
+                        100 Disponibles
+                    </div>
+                </div>
+                <div class="gp-bar">
+                    <img src="{% static 'img/console/g6064.png' %}" width="160">
+                </div>
+            </div>
         </div>
-        <div class="col-md-4">
-            Connectors and Credits Information
-        </div>
-        <div class="col-md-4">
-            Availability graph
-        </div>
+        <div class="divider2"></div>
     </div>
-
-    {# GROUPS (CARPETAS) #}
-    <div class="col-md-12 dashboard_border">
-        Groups:
-        <br />
-        {% for group in gear_groups %}
-            {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=4%}
-        {% endfor %}
-    </div>
-    {# GEARS "MAS USADOS" #}
-    <div class="col-md-12 dashboard_border">
-        Gears:
-        <br />
-        {% for gear in used_gears %}
-            {% include 'gear/snippets/gear_small.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
-        {% endfor %}
+    <div class="content-body col-md-10 col-md-offset-1">
+        <div class="projects">
+            <div class="title">
+                <span>Proyectos</span>
+            </div>
+            <div class="add-wrapper">
+                <div class="add">
+                    <div class="image">
+                        <img src="{% static 'img/console/path6684.png' %}" width="176">
+                    </div>
+                    <div class="text">
+                        Crear Grupo
+                    </div>
+                </div>
+                <div class="steps-tooltip">
+                    <div class="bar"></div>
+                    <div class="box">
+                        <div class="text">
+                            Crear un grupo donde dirigirás todos tus gears.
+                        </div>
+                    </div>
+                    <div class="image">
+                        <img src="{% static 'img/console/g6712.png' %}" width="45">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="gears">
+            <div class="title">
+                <span>Gears</span>
+            </div>
+            <div class="list">
+                <div class="col-md-2 item">
+                    <div class="image-wrapper">
+                        <div class="image">
+                            <div class="connector">
+                                <img src="{% static 'img/landing/logo_mysql.png' %}" width="36">
+                            </div>
+                            <div class="connector">
+                                <img src="{% static 'img/landing/logo_mysql.png' %}" width="36">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="name">
+                        CO_1
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}

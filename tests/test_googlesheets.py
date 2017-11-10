@@ -1,6 +1,7 @@
 from apps.gp.controllers.ofimatic import GoogleSpreadSheetsController
 from apps.gp.models import Connection, ConnectorEnum, Action, Plug, ActionSpecification, PlugActionSpecification, \
-    GoogleSpreadSheetsConnection, StoredData, DownloadHistory, SendHistory, Gear, GearMap, GearMapData
+    GoogleSpreadSheetsConnection, StoredData, Gear, GearMap, GearMapData
+from apps.history.models import DownloadHistory, SendHistory
 from django.contrib.auth.models import User
 from django.test import TestCase, Client
 from collections import OrderedDict

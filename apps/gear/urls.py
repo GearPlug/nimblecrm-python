@@ -1,6 +1,7 @@
 from django.conf.urls import url
 from apps.gear.views import CreateGearView, CreateGearGroupView, UpdateGearView, UpdateGearGroupView, DeleteGearView, \
-    ListGearView, CreateGearMapView, gear_toggle, ActivityView, GearDownloadHistoryView, GearSendHistoryView
+ListGearView, CreateGearMapView, gear_toggle, ActivityView, GearDownloadHistoryView, GearSendHistoryView, GearFiltersView, \
+retry_send_history
 
 urlpatterns = [
     url(r'^create/$', CreateGearView.as_view(), name='create'),
@@ -18,4 +19,7 @@ urlpatterns = [
 
     url(r'^download-history/(?P<pk>\d+)/$', GearDownloadHistoryView.as_view(), name='download_history'),
     url(r'^send-history/(?P<pk>\d+)/$', GearSendHistoryView.as_view(), name='send_history'),
+
+    url(r'^filters/(?P<pk>\d+)/$', GearFiltersView.as_view(), name='filters'),
+    url(r'^retry-send-history/$', retry_send_history, name='retry_send_history'),
 ]

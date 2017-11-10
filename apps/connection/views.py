@@ -64,6 +64,10 @@ class ListConnectionView(LoginRequiredMixin, ListView):
     template_name = 'connection/list.html'
     login_url = '/accounts/login/'
 
+    def get(self, request, *args, **kwargs):
+        request.session['plug_type'] = kwargs['type']
+        return super(ListConnectionView, self).get(request, *args, **kwargs)
+
     def get_queryset(self):
         return self.model.objects.filter(user=self.request.user,
                                          connector_id=self.kwargs['connector_id']).prefetch_related()
@@ -78,6 +82,7 @@ class ListConnectionView(LoginRequiredMixin, ListView):
         connection_id = request.POST.get('connection', None)
         connector_type = kwargs['type']
         request.session['%s_connection_id' % connector_type] = connection_id
+        del request.session['plug_type']
         return redirect(reverse('plug:create', kwargs={'plug_type': connector_type}))
 
 
@@ -93,7 +98,14 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
     login_url = '/accounts/login/'
     fields = []
     template_name = 'connection/create.html'
-    success_url = reverse_lazy('connection:create_success')
+    success_url = ''
+
+    def get_success_url(self):
+        if 'plug_type' in self.request.session:
+            plug_type = self.request.session['plug_type']
+        else:
+            plug_type = 'source'
+        return reverse('connection:list', kwargs={'connector_id': self.kwargs['connector_id'], 'type': plug_type})
 
     def form_valid(self, form, *args, **kwargs):
         connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
@@ -217,6 +229,14 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                 "scope": "full|gn389.infusionsoft.com"
             }
             authorization_url = '%s%s' % (settings.INFUSIONSOFT_AUTHORIZATION_URL, urlencode(data))
+            context['authorization_url'] = authorization_url
+        elif connector == ConnectorEnum.TypeForm:
+            data = {
+                "client_id": settings.TYPEFORM_CLIENT_ID,
+                "redirect_uri": settings.TYPEFORM_REDIRECT_URL,
+                "scope": settings.TYPEFROM_SCOPES
+            }
+            authorization_url = '%s%s' % (settings.TYPEFORM_AUTHORIZATION_URL, urlencode(data))
             context['authorization_url'] = authorization_url
         return context
 
@@ -424,6 +444,18 @@ class SurveyMonkeyAuthView(View):
         self.request.session['connector_name'] = ConnectorEnum.SurveyMonkey.name
         return redirect(reverse('connection:create_token_authorized_connection'))
 
+class TypeFormAuthView(View):
+    def get(self, request, *args, **kwargs):
+        auth_code = request.GET.get('code', None)
+        data = {'client_id': settings.TYPEFORM_CLIENT_ID,
+                'client_secret': settings.TYPEFORM_CLIENT_SECRET,
+                'code': auth_code,
+                'redirect_uri': settings.TYPEFORM_REDIRECT_URL}
+        url = "https://api.typeform.com/oauth/token"
+        response = requests.post(url, data=data).json()
+        self.request.session['connection_data'] = {'token': response["access_token"], }
+        self.request.session['connector_name'] = ConnectorEnum.TypeForm.name
+        return redirect(reverse('connection:create_token_authorized_connection'))
 
 class HubspotAuthView(View):
     def get(self, request, *args, **kwargs):
@@ -575,25 +607,6 @@ class ManageConnectionView(LoginRequiredMixin, ListView):
             result.append(
                 all_connections.filter(connector__name__iexact=connector))
         return result
-
-
-def connection_toggle(request):
-    try:
-        gear_id = request.session['gear_id']
-    except Exception as e:
-        print(e)
-    try:
-        c = Connection.objects.get(pk=gear_id)
-        if c.is_active == True:
-            c.is_active = False
-            c.save()
-            return JsonResponse({'Connection State': 'NOT Active'})
-        else:
-            c.is_active = True
-            c.save()
-            return JsonResponse({'Connection State': 'ACTIVE'})
-    except Exception as e:
-        return JsonResponse(e)
 
 
 class UpdateConnectionView(UpdateView):

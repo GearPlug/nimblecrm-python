@@ -1,0 +1,100 @@
+{% extends 'layouts/base.html' %}
+{% load static i18n %}
+
+{% block styles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/console/dashboard.css' %}">
+{% endblock %}
+
+{% block body_base %}
+    <div class="info-tool"></div>
+    <div class="content">
+        <div class="row">
+            <div class="col-md-12 dashboard-header">
+                <div class="col-md-6 left-side">
+                    <a href="{% url 'home:dashboard' %}">
+                        <div class="logo">
+                            <img src="{% static 'img/landing/logo_header.png' %}" width="220">
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6 right-side">
+                    <div class="user">
+                        <div class="name">
+                            {{ request.user.get_full_name|yesno:request.user.email }}
+                        </div>
+                        <div class="icon">
+                            <img src="{% static 'img/console/g6630.png' %}" width="56">
+                        </div>
+                    </div>
+                    {#                <div class="divider"></div>#}
+                    {#                <div class="search">#}
+                    {#                    <img src="{% static 'img/landing/lupa.png' %}" width="21px" height="20px">#}
+                    {#                    <input type="text">#}
+                    {#                </div>#}
+                </div>
+            </div>
+        </div>
+        <div class="row table2">
+            <div class="col-md-2 table-cell2 dashboard-panel">
+
+                    <div class="menu">
+                        <div class="item">
+                            <a href="{% url 'gear:list' %}">
+                                <div class="image">
+                                    <img src="{% static 'img/console/g6666.png' %}">
+                                </div>
+                                <div class="text">
+                                    {% trans 'Gears' %}
+                                </div>
+                            </a>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="item">
+                            <a href="">
+                                <div class="image">
+                                    <img src="{% static 'img/console/g5752.png' %}">
+                                </div>
+                                <div class="text">
+                                    {% trans 'Actividad' %}
+                                </div>
+                            </a>
+                        </div>
+                        <div class="item">
+                            <div class="image">
+                                <img src="{% static 'img/console/g6678.png' %}">
+                            </div>
+                            <div class="text">
+                                {% trans 'Ayuda' %}
+                            </div>
+                        </div>
+                        <div class="item">
+                            <a href="{% url 'connection:manage' %}">
+                                <div class="image">
+                                    <img src="{% static 'img/console/g5740.png' %}">
+                                </div>
+                                <div class="text">
+                                    {% trans 'Administrar Conexiones' %}
+                                </div>
+                            </a>
+                        </div>
+                        <div class="item logout">
+                            <a href="{% url 'account_logout' %}">
+                                <div class="image">
+                                    <img src="{% static 'img/console/logout.png' %}">
+                                </div>
+                                <div class="text">
+                                    {% trans 'Cerrar Sesión' %}
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+            </div>
+            <div class="col-md-10 table-cell2">
+                <div class="dashboard-content">
+                    {% block content %}
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

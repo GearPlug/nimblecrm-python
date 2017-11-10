@@ -273,13 +273,16 @@ class MapField(object):
         elif controller == ConnectorEnum.WunderList:
             if 'name' in d:
                 self.name = d['name']
-                self.label = d['name']
+            if 'label' in d:
+                self.label = d['label']
             if 'required' in d:
                 self.required = d['required']
             if 'type' in d:
                 self.field_type = d['type']
-            self.field_type = 'text'
-
+            if 'choices' in d:
+                self.choices = [(choice, choice) for choice in d['choices']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
         elif controller == ConnectorEnum.GitLab:
             if 'name' in d:
                 self.name = d['name']
@@ -306,6 +309,24 @@ class MapField(object):
                 self.required = d['required']
             if 'type' in d:
                 self.field_type = d['type']
+        elif controller == ConnectorEnum.OdooCRM:
+            if 'string' in d:
+                self.label = d['string']
+            if 'name' in d:
+                self.name = d['name']
+            if 'type' in d:
+                self.field_type = d['type']
+                if self.field_type == 'float':
+                    self.max_length = 6
+        elif controller == ConnectorEnum.Batchbook:
+            if 'name' in d:
+                self.name = d['name']
+            if 'label' in d:
+                self.label = d['label']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
         else:
             if 'name' in d:
                 self.name = d['name']
@@ -320,6 +341,7 @@ class MapField(object):
                                      d['options'][choice]['value'])
                                     for choice in d['options']]
                     self.choices.insert(0, ('', ''))
+            self.field_type = d['type'] or 'text'
             self.required = False
 
     @property

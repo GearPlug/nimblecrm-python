@@ -200,9 +200,9 @@ class MailChimpController(BaseController):
                 obj_result['sent'] = True
                 obj_result['identifier'] = res['id']
             except Exception as e:
-                obj_result['response'] = res
+                obj_result['response'] = str(e)
                 obj_result['sent'] = False
-                obj_result['identifier'] = res['id']
+                obj_result['identifier'] = '-1'
             obj_list.append(obj_result)
         return obj_list
 
@@ -513,3 +513,6 @@ class MandrillController(BaseController):
                 webhook.is_deleted = True
                 webhook.save(update_fields=['is_deleted', ])
                 return False
+
+    def has_webhook(self):
+        return True

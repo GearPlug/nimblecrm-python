@@ -1,37 +1,59 @@
 {% extends 'layouts/base.html' %}
-{% load static %}
+{% load static i18n %}
 
 
 {% block scripts %}
     {{ block.super }}
 {% endblock %}
 {% block styles %}
-    <link href="{% static 'css/style_page.css' %}" rel="stylesheet">
+    <link href="{% static 'css/landing/style_page.css' %}" rel="stylesheet">
+    <link href="{% static 'css/landing/index.css' %}" rel="stylesheet">
+    <link href="{% static 'css/landing/aboutus.css' %}" rel="stylesheet">
+    <link href="{% static 'css/landing/contactus.css' %}" rel="stylesheet">
+    <link href="{% static 'css/landing/apps.css' %}" rel="stylesheet">
+    <link href="{% static 'css/landing/steps.css' %}" rel="stylesheet">
+    <link href="{% static 'css/landing/terms.css' %}" rel="stylesheet">
+    <link href="{% static 'css/landing/privacy.css' %}" rel="stylesheet">
 {% endblock %}
-{% block body_class %}ayuda-gp-index{% endblock %}
+{% block body_class %}ayuda{% endblock %}
 {% block body_base %}
     <div class="content">
-        <header>
-            <nav>
-                <div class="row">
-                    <div class="col-md-7">
-                        <a href="#">
-                            <img src="{% static 'img/landing/logo_header.png' %}" class="img-responsive logo_header">
-                        </a>
+        {% block header_content %}
+            <header>
+                <nav class="nav_spaces">
+                    <div class="row">
+                        <div class="col-md-2 col-md-offset-1">
+                            <a href="{% url 'landing:index' %}">
+                                <img src="{% static 'img/landing/logo_header.png' %}" class="img-responsive logo_header">
+                            </a>
+                        </div>
+                        <div class="col-md-5 col-md-offset-2 text_menu">
+                            <a {% if request.path == "/about/" %}class="selected_page"{% endif %}
+                               href="{% url 'landing:about' %}">{% trans 'Nosotros' %}</a>
+                            <a {% if request.path == "/steps/" %}class="selected_page"{% endif %}
+                               href="{% url 'landing:steps' %}">{% trans 'Cómo Funciona' %}</a>
+                            <a {% if request.path == "/apps/directory/" %}class="selected_page"{% endif %}
+                               href="{% url 'landing:apps_directory' %}">{% trans 'Apps' %}</a>
+                            <a {% if request.path == "/contact/" %}class="selected_page"{% endif %}
+                               href="{% url 'landing:contact' %}">{% trans 'Contacto' %}</a>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="border_login">
+                                <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>
+                            </div>
+
+                        </div>
                     </div>
-                    <div class="col-md-5">
-                        
-                    </div>
-                </div>
-            </nav>
-        </header>
+                </nav>
+            </header>
+        {% endblock %}
         <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-12 sp">
                 {% block content %}{% endblock %}
             </div>
         </div>
     </div>
-    <div class="page-footer">
+    <footer>
         {% block footer_base %}
             {% block footer_content %}
                 <div class="row">
@@ -46,7 +68,7 @@
                 </div>
             {% endblock %}
         {% endblock %}
-    </div>
+    </footer>
     {% block scripts_gear %}{% endblock %}
 {% endblock %}
 
