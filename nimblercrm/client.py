@@ -145,14 +145,14 @@ class Client(object):
             print(e)
 
     def get_persons(self):
-        endpoint = 'contacts?query=%7B%22record_type%22%3A%20%7B%22is%22%3A%20%22person%22%7D%7D'
-        # values = {"record_type": {"is": "person"}}
+        endpoint = 'contacts'
+        values = {"record_type": {"is": "person"}}
         # params = urllib.parse.urlencode(
         #     values, quote_via=urllib.parse.quote)
         # endpoint = endpoint + params
-        # payload = json.dumps(values)
+        payload = json.dumps(values)
         try:
-            return self._get(endpoint=endpoint)
+            return self._get(endpoint=endpoint, payload=payload)
         except Exception as e:
             print(e)
 
