@@ -5,12 +5,9 @@ from dateutil.parser import parse
 
 
 def contains(data, gear_filter):
-    print(1)
-    print(data)
     valid_data = []
     excluded_data = []
     for item in data:
-        print(2)
         if gear_filter.comparison_data in item[gear_filter.field_name]:
             valid_data.append(item)
         else:

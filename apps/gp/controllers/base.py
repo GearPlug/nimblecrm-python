@@ -23,8 +23,8 @@ class FilterBaseController(object):
         filter_method = FilterEnum.get_filter(FilterEnum(int(filter.option)))
         return filter_method(values, filter)
 
-    def apply_filters(self, data_list):
-        filters = self._get_gear_filters()
+    def apply_filters(self, data_list, target_fields):
+        filters = self.replace_fields_in_filters(target_fields)
         new_data_list = data_list.copy()
         excluded_data_list = []
         if bool(filters):
@@ -32,6 +32,16 @@ class FilterBaseController(object):
                 new_data_list, excluded_data = self._apply_filter(f, new_data_list)
                 excluded_data_list.append(excluded_data)
         return new_data_list, excluded_data_list
+
+    def replace_fields_in_filters(self, target_fields):
+        filters = self._get_gear_filters()
+        for t in target_fields:
+            if "%%" in target_fields[t]:
+                _value = target_fields[t].replace("%%", "")
+                for f in filters:
+                    if f.field_name == _value:
+                        f.field_name = t
+        return filters
 
 
 class BaseController(FilterBaseController):
@@ -124,12 +134,10 @@ class BaseController(FilterBaseController):
         }
         """
         if self._connection_object is not None and self._plug is not None:
-            print("target data")
             raw_data_list = get_dict_with_source_data(source_data, target_fields)
-            print(raw_data_list)
             # data_list = self.filter(raw_data_list, self.get_filters())
-            data_list, excluded_data = self.apply_filters(raw_data_list)
-            print(11111, data_list, excluded_data)
+            print('data', raw_data_list)
+            data_list, excluded_data = self.apply_filters(raw_data_list, target_fields)
             if is_first or len(data_list) != len(raw_data_list):
                 try:
                     data_list = [data_list[0]]
