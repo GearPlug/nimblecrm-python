@@ -150,10 +150,10 @@ class SugarCRMController(BaseController):
                 for stored_data in item:
                     try:
                         stored_data.save()
+                        is_stored = True
                     except Exception as e:
                         is_stored = False
                         break
-                    is_stored = True
                 obj_raw = "RAW DATA NOT FOUND."
                 for obj in raw_data:
                     if stored_data.object_id == obj['id']:
@@ -726,6 +726,7 @@ class SalesforceController(BaseController):
             raise ControllerError(
                 "That specification doesn't belong to an action in this connector.")
 
+    @property
     def has_webhook(self):
         return True
 
@@ -1567,6 +1568,7 @@ class ActiveCampaignController(BaseController):
                 webhook.plug.save()
         return HttpResponse(status=200)
 
+    @property
     def has_webhook(self):
         return True
 
@@ -2215,6 +2217,7 @@ class ActEssentialsController(BaseController):
         except:
             return False
 
+    @property
     def has_webhook(self):
         return False
 

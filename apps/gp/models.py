@@ -1,8 +1,9 @@
-from django.db import models
 from django.contrib import admin
-from apps.gp.model_fields import JSONField
 from django.contrib.auth.models import User
 from apps.gp.enum import ConnectorEnum, FilterEnum
+from django.db import models
+from apps.gp.model_fields import JSONField
+from apps.gp.enum import ConnectorEnum
 
 connections = ['connection_{0}'.format(connector.name.lower()) for connector in ConnectorEnum.get_connector_list()]
 
@@ -288,19 +289,6 @@ class YouTubeConnection(models.Model):
         return self.name
 
 
-class GooglePushWebhook(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='google_push_webhook')
-    channel_id = models.CharField('channel_id', max_length=200)
-    resource_id = models.CharField('resource_id', max_length=200)
-    expiration = models.CharField('expiration', max_length=200)
-    raw_expiration = models.CharField('raw_expiration', max_length=200)
-    created = models.DateTimeField('created', auto_now_add=True)
-    last_update = models.DateTimeField('last update', auto_now=True)
-
-    def __str__(self):
-        return self.channel_id
-
-
 class SlackConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_slack')
     name = models.CharField('name', max_length=200)
@@ -399,6 +387,7 @@ class SMTPConnection(models.Model):
 
 class WebhookConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_webhook')
+    name = models.CharField('name', max_length=200)
 
 
 class AsanaConnection(models.Model):
@@ -616,6 +605,7 @@ class GearMap(models.Model):
 
 class GearMapData(models.Model):
     gear_map = models.ForeignKey(GearMap, related_name='gear_map_data')
+    version = models.SmallIntegerField('version', default=1)
     target_name = models.CharField('target name', max_length=300)
     source_value = models.CharField('source value', max_length=300)
 
