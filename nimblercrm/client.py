@@ -154,7 +154,7 @@ class Client(object):
         # payload = json.dumps(values)
         endpoint = "contacts?query="
         # values = {"query": {"record_type": {"is": "person"}}}
-        values = {"query": "[{"is": "person"}]"}
+        values = {"query": "[{\"is\": \"person\"}]"}
         values = json.dumps(values)
         values = urllib.parse.quote_plus(values)
         endpoint = endpoint+values
