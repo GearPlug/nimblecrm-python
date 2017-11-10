@@ -1,8 +1,13 @@
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import Connection
+from apps.gp.controllers.filters import *
+from apps.gp.enum import FilterEnum
+from apps.gp.models import Connection, GearFilter
 from apps.history.models import DownloadHistory, SendHistory
 from django.core.serializers import serialize
+from django.db.models import Q
+from dateutil.parser import parse
+from datetime import datetime
 import logging
 import httplib2
 import json
@@ -10,7 +15,26 @@ import json
 logger = logging.getLogger('controller')
 
 
-class BaseController(object):
+class FilterBaseController(object):
+    def _get_gear_filters(self):
+        return GearFilter.objects.filter(Q(gear__source=self._plug) | Q(gear__target=self._plug))
+
+    def _apply_filter(self, filter, values):
+        filter_method = FilterEnum.get_filter(FilterEnum(int(filter.option)))
+        return filter_method(values, filter)
+
+    def apply_filters(self, data_list):
+        filters = self._get_gear_filters()
+        new_data_list = data_list.copy()
+        excluded_data_list = []
+        if bool(filters):
+            for f in filters:
+                new_data_list, excluded_data = self._apply_filter(f, new_data_list)
+                excluded_data_list.append(excluded_data)
+        return new_data_list, excluded_data_list
+
+
+class BaseController(FilterBaseController):
     """
     Abstract controller class.
     - The init calls the create_connection method.
@@ -75,7 +99,7 @@ class BaseController(object):
                     for item in result['downloaded_data']:
                         DownloadHistory.objects.create(gear_id=str(self._plug.gear_source.first().id),
                                                        plug_id=str(self._plug.id), connection=serialized_connection,
-                                                       raw=json.dumps(item['raw']), connector_id=self.connector.id,
+                                                       raw=json.dumps(item['raw']), connector_id=self._connector.id,
                                                        identifier=item['identifier'], )
                     return result['last_source_record']
                 except KeyError:
@@ -100,53 +124,67 @@ class BaseController(object):
         }
         """
         if self._connection_object is not None and self._plug is not None:
-            data_list = get_dict_with_source_data(source_data, target_fields)
-            if is_first:
+            raw_data_list = get_dict_with_source_data(source_data, target_fields)
+            # data_list = self.filter(raw_data_list, self.get_filters())
+            data_list, excluded_data = self.apply_filters(raw_data_list)
+
+            if is_first and len(data_list) > 0:
                 try:
-                    data_list = [data_list[-1]]
+                    data_list = [data_list[0]]
                 except IndexError:
                     data_list = []
                 except Exception as e:
                     raise ControllerError(message="Unexpected Exception. Please report this error: {}.".format(str(e)))
-            try:
-                result = self.send_stored_data(data_list, **kwargs)
+            print(data_list)
+            if data_list:
+                try:
+                    result = self.send_stored_data(data_list, **kwargs)
+                    serialized_connection = serialize('json', [self._connection_object, ])
+                    for item in result:
+                        SendHistory.objects.create(connector_id=self._connector.id, connection=serialized_connection,
+                                                   gear_id=str(self._plug.gear_target.first().id),
+                                                   plug_id=str(self._plug.id),
+                                                   data=json.dumps(item['data']), response=item['response'],
+                                                   sent=int(item['sent']), identifier=item['identifier'])
+                    data_list_result = [i['identifier'] for i in result]
+                except KeyError:
+                    data_list_result = result
+                except TypeError:
+                    data_list_result = self.send_stored_data(source_data, target_fields, **kwargs)
+            if excluded_data:
                 serialized_connection = serialize('json', [self._connection_object, ])
-                for item in result:
-                    SendHistory.objects.create(connector_id=self.connector.id, connection=serialized_connection,
+                for item in excluded_data:
+                    SendHistory.objects.create(connector_id=self._connector.id, connection=serialized_connection,
                                                gear_id=str(self._plug.gear_target.first().id),
                                                plug_id=str(self._plug.id),
-                                               data=json.dumps(item['data']), response=item['response'],
-                                               sent=item['sent'], identifier=item['identifier'])
-                return [i['identifier'] for i in result]
-            except KeyError:
-                return result
-            except TypeError:
-                return self.send_stored_data(source_data, target_fields, **kwargs)
-        raise ControllerError(code=0, controller=self.connector.name,
-                              message="Please check you're using a valid connection and a valid plug.")
+                                               response='ITEM FILTERED', sent=2, identifier='-1',
+                                               data=json.dumps(item), )
+            return data_list_result
+            # raise ControllerError(code=0, controller=self._connector.name,
+            #                       message="Please check you're using a valid connection and a valid plug.")
 
-    def get_target_fields(self, **kwargs):
-        raise ControllerError('Not implemented yet.')
+        def get_target_fields(self, **kwargs):
+            raise ControllerError('Not implemented yet.')
 
-    def get_mapping_fields(self, **kwargs):
-        raise ControllerError('Not implemented yet.')
+        def get_mapping_fields(self, **kwargs):
+            raise ControllerError('Not implemented yet.')
 
-    def get_action_specification_options(self, action_specification_id):
-        raise ControllerError('Not implemented yet.')
+        def get_action_specification_options(self, action_specification_id):
+            raise ControllerError('Not implemented yet.')
 
-    def create_webhook(self, **kwargs):
-        raise ControllerError('Webhooks are not supported.')
+        def create_webhook(self, **kwargs):
+            raise ControllerError('Webhooks are not supported.')
 
-    def do_webhook_process(self, **kwargs):
-        raise ControllerError('Not implemented yet.')
+        def do_webhook_process(self, **kwargs):
+            raise ControllerError('Not implemented yet.')
 
-    @property
-    def has_webhook(self):
-        return False
+        @property
+        def has_webhook(self):
+            return False
 
-    @property
-    def connector(self):
-        return self._connector
+        @property
+        def connector(self):
+            return self._connector
 
 
 class GoogleBaseController(BaseController):

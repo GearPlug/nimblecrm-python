@@ -1,18 +1,20 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.forms import modelform_factory
+from django.forms import modelform_factory, modelformset_factory
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.views.generic.edit import FormMixin
-from django.http.response import JsonResponse, HttpResponseForbidden
+from django.http.response import JsonResponse, HttpResponseForbidden, HttpResponseRedirect
 from apps.gear.apps import APP_NAME as app_name
-from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm
+from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm, FiltersForm
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import GearGroup
-from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData
+from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, GearGroup, GearFilter
 from apps.history.models import DownloadHistory, SendHistory
+from django.shortcuts import render
+from django.urls import reverse
 from oauth2client import client
 import httplib2
 import json
+from django.apps import apps
 
 
 class ListGearView(LoginRequiredMixin, ListView):
@@ -384,6 +386,37 @@ class GearDownloadHistoryView(GearSendHistoryView):
                  } for item in self.model.objects.filter(gear_id=self.kwargs['pk'], **kwargs).order_by(order)]
 
 
+class GearFiltersView(FormView, LoginRequiredMixin):
+    login_url = '/accounts/login/'
+    template_name = 'gear/filters.html'
+    form_class = FiltersForm
+    success_url = reverse_lazy('connection:connector_list', kwargs={'type': 'target'})
+    exists = False
+
+    def post(self, request, *args, **kwargs):
+        modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
+        formset = modelformset(self.request.POST, queryset=GearFilter.objects.filter(gear_id=kwargs['pk']))
+        if formset.is_valid():
+            filters = formset.save(commit=False)
+            for filter in filters:
+                _gear = Gear.objects.get(id=kwargs['pk'])
+                filter.gear = _gear
+                filter.save()
+            for filter in formset.deleted_forms:
+                if 'DELETE' in filter.cleaned_data and filter.cleaned_data['DELETE'] is True:
+                    filter.cleaned_data['id'].delete()
+        else:
+            print("no es valido")
+        return HttpResponseRedirect(self.success_url)
+
+    def get_context_data(self, **kwargs):
+        context = super(GearFiltersView, self).get_context_data(**kwargs)
+        modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
+        formset = modelformset(queryset=GearFilter.objects.filter(gear_id=self.kwargs['pk']))
+        context['formset'] = formset
+        return context
+
+
 def gear_toggle(request, gear_id):
     if request.is_ajax() is True and request.method == 'POST':
         try:
@@ -410,3 +443,22 @@ def get_authorization(request):
     credentials = client.OAuth2Credentials.from_json(
         request.session['google_credentials'])
     return credentials.authorize(httplib2.Http())
+
+
+def retry_send_history(request):
+    if request.is_ajax() is True and request.method == 'POST':
+        history_id = request.POST.get('history_id')
+        history = SendHistory.objects.get(pk=history_id)
+        d = json.loads(history.connection)
+        model = apps.get_model(*d[0]['model'].split("."))
+        connection = model.objects.get(pk=d[0]['pk'])
+        controller = ConnectorEnum.get_controller(ConnectorEnum.get_connector(connection.connection.connector_id))
+        controller_instance = controller(connection.connection.related_connection, connection.connection.plug)
+        data = json.loads(history.data)
+        response = controller_instance.send_stored_data([data])
+        history.identifier = response[0]['identifier']
+        history.sent = response[0]['sent']
+        history.tries = history.tries + 1
+        history.save()
+        return JsonResponse({'data': True})
+    return JsonResponse({'data': False})

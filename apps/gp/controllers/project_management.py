@@ -212,6 +212,7 @@ class JIRAController(BaseController):
         response = requests.get(url, headers=self._get_header())
         return response.json()
 
+    @property
     def has_webhook(self):
         return True
 
@@ -532,5 +533,6 @@ class AsanaController(BaseController):
                         self.download_source_data(event=event)
         return HttpResponse(status=200)
 
+    @property
     def has_webhook(self):
         return True

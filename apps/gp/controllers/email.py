@@ -229,6 +229,7 @@ class GmailController(BaseController):
             response.status_code = 200
         return response
 
+    @property
     def has_webhook(self):
         return True
 

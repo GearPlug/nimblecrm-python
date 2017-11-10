@@ -21,8 +21,8 @@ html {
 }
 
 .dashboard-header {
-    height: 108px;
-    padding: 1% 3%;
+    height: 80px;
+    padding: .4% 3%;
     box-sizing: border-box;
     background-color: #f8f8f8;
 }
@@ -1016,6 +1016,10 @@ input[type='radio']:checked:before {
 
 .content-body .history .history-list .item .indicator.red {
     background-color: #d40032;
+}
+
+.content-body .history .history-list .item .indicator.orange {
+    background-color: #e65100;
 }
 
 .content-body .history .history-list .item .text {
