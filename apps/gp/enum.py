@@ -59,6 +59,8 @@ class ConnectorEnum(Enum):
     OdooCRM = 48, 'crm', 'form'
     Batchbook = 49, 'crm', 'form'
     ActEssentials = 50, 'crm', 'form'
+    NimbleCRM = 51, 'crm', 'authorization'
+    Webhook = 52, 'various', None
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)

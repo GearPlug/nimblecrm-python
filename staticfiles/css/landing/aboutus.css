@@ -81,3 +81,13 @@
     height: 18.6%;
     margin: 13.3% 0 3.2% 0;
 }
+
+@media only screen and (max-width:1600px) {
+    .aboutus-text {
+        margin: 14.9% 0 28% 29.5%;
+    }
+    .hr_service {
+        margin: -0.9% 0 0 40.4%;
+        width: 19.6%;
+    }
+}

@@ -309,3 +309,34 @@
     padding: 0;
     width: 445px;
 }
+
+@media only screen and (max-width:1600px) {
+    .text_menu {
+        padding-left: 0.4%;
+    }
+
+    .slide-arrow {
+        top: 43%;
+    }
+
+    .bg-form {
+        top: 0.8%;
+    }
+
+    .text-bullet {
+        margin-left: -1%;
+    }
+
+    .list-item .divider {
+        width: 206px;
+    }
+
+    .hr-comments {
+        margin: -0.7% 0 0 35%;
+        width: 23%;
+    }
+
+    .name11 {
+        padding-left: 6%;
+    }
+}
