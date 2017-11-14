@@ -22,25 +22,12 @@ html {
 
 .dashboard-header {
     height: 80px;
-    padding: .4% 3%;
+    padding-top: 10px;
     box-sizing: border-box;
     background-color: #f8f8f8;
 }
 
-.dashboard-header .left-side {
-    display: inline-block;
-    vertical-align: top;
-}
 
-.dashboard-header .left-side .logo {
-    display: inline-block;
-}
-
-.dashboard-header .left-side .name {
-    font-size: 2.50em;
-    color: #9d9ba1;
-    display: inline-block;
-}
 
 .dashboard-header .right-side {
     float: right;
@@ -266,14 +253,24 @@ html {
     padding-top: 75px;
 }
 
-.content-body .projects .title, .content-body .gears .title, .content-body .connection .title, .content-body .mapping .title, .content-body .history .title {
+.content-body .projects .title,
+.content-body .gears .title,
+.content-body .connection .title,
+.content-body .mapping .title,
+.content-body .history .title,
+.content-body .connections .title {
     font-family: "Sansation Bold";
     font-size: 1.60em;
-    color: #9d9ba1;
+    color: #005ca7;
     padding-bottom: 35px;
 }
 
-.content-body .projects .title span, .content-body .gears .title span, .content-body .connection .title span, .content-body .mapping .title span, .content-body .history .title span {
+.content-body .projects .title span,
+.content-body .gears .title span,
+.content-body .connection .title span,
+.content-body .mapping .title span,
+.content-body .history .title span,
+.content-body .connections .title span {
     border-bottom: 3px solid #00e08f;
     display: inline-block;
     line-height: 1em;
@@ -365,23 +362,33 @@ html {
     text-align: center;
 }
 
-.content-body .gears .list .item.extended {
+.content-body .gears .list .item.extended,
+.content-body .connections .list .item.extended {
     display: block;
     text-align: left;
     padding-bottom: 35px;
+}
+
+.content-body .connections .list .item.extended {
+    padding-bottom: 15px;
 }
 
 .content-body .gears .list .item.extended .image-wrapper {
     height: 60px;
 }
 
-.content-body .gears .list .item .image-wrapper {
+.content-body .gears .list .item .image-wrapper,
+.content-body .connections .list .item .image-wrapper {
     height: 60px;
     background-color: #f6f7f8;
     border-radius: 25px 25px 25px 25px;
     -moz-border-radius: 25px 25px 25px 25px;
     -webkit-border-radius: 25px 25px 25px 25px;
     border: 0px solid #000000;
+}
+
+.content-body .connections .list .item .image-wrapper {
+    height: 48px;
 }
 
 .content-body .gears .list .item .image-wrapper .image {
@@ -391,21 +398,79 @@ html {
     text-align: center;
 }
 
-.content-body .gears .list .item.extended .image-wrapper .image, .content-body .gears .list .item.extended .image-wrapper .name, .content-body .gears .list .item.extended .image-wrapper .control {
+.content-body .gears .list .item.extended .image-wrapper .image,
+.content-body .gears .list .item.extended .image-wrapper .name,
+.content-body .gears .list .item.extended .image-wrapper .control,
+.content-body .connections .list .item.extended .image-wrapper .button,
+.content-body .connections .list .item.extended .image-wrapper .name {
     display: inline-block;
     vertical-align: top;
 }
 
-.content-body .gears .list .item.extended .image-wrapper .name {
-    width: 30%;
-}
-
-.content-body .gears .list .item.extended .image-wrapper .name {
+.content-body .gears .list .item.extended .image-wrapper .name,
+.content-body .connections .list .item.extended .image-wrapper .name {
     width: 40%;
     font-size: 1.30em;
     color: #9d9ba1;
     text-align: center;
     padding-top: 20px;
+}
+
+.content-body .connections .list .item.extended .image-wrapper .name {
+    padding-top: 12px;
+    text-align: left;
+}
+
+.content-body .connections .list .item.extended .image-wrapper .button {
+    width: 18px;
+    height: 18px;
+    background-color: #00e08f;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+    margin: 15px 5px 0 15px;
+    cursor: pointer;
+}
+
+.content-body .connections .list .item.extended .image-wrapper .button.active {
+    background-color: #005ca7;
+    border: solid 5px #00e08f;
+}
+
+.content-body .connections .list .test-button {
+    padding-top: 10px;
+    font-size: 0;
+}
+
+.content-body .connections .list .test-button .button {
+    /*padding-top: 10px;*/
+    cursor: pointer;
+
+}
+
+.content-body .connections .list .test-button .button,
+.content-body .connections .list .test-button .text-line,
+.content-body .connections .list .test-button .text {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.content-body .connections .list .test-button .text-line {
+    width: 10px;
+    height: 1px;
+    background-color: #00e08f;
+    margin-left: 5px;
+}
+
+.content-body .connections .list .test-button .text {
+    padding: 5px 10px;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: solid 1px #00e08f;
+    font-size: 14px;
+    color: #005ca7;
 }
 
 .content-body .gears .list .item.extended .image-wrapper .control {
@@ -815,11 +880,13 @@ html {
     padding-top: 10px;
 }
 
-.content-body .connection .form button.button-create, .content-body .mapping .form button.button-create {
+.content-body .connection .form button.button-create,
+.content-body .mapping .form button.button-create,
+.content-body .connections .form button.button-create {
     font-family: "Sansation Bold";
-    font-size: 1.80em;
+    font-size: 1.60em;
     width: 49%;
-    height: 56px;
+    height: 45px;
     margin: 12px 0;
     border-radius: 25px 25px 25px 25px;
     -moz-border-radius: 25px 25px 25px 25px;
@@ -836,7 +903,8 @@ html {
     float: right;
 }
 
-.content-body .mapping .form button.button-create {
+.content-body .mapping .form button.button-create,
+.content-body .connections .form button.button-create{
     float: none;
 }
 
@@ -1046,4 +1114,49 @@ input[type='radio']:checked:before {
 .content-body .history .navbar .rail-checkbox .btn-success, .btn-success, .open > .dropdown-toggle.btn-success {
     background-color: #FFFFFF !important;
     border-color: #FFFFFF !important;
+}
+
+.gear-progress-bar {
+    width: 100%;
+    font-size: 0;
+    text-align: center;
+    padding-top: 15px;
+}
+
+.gear-progress-bar .bar-line {
+    width: 19%;
+    height: 2px;
+    background-color: #005ca7;
+}
+
+.gear-progress-bar .bar-line, .gear-progress-bar .bar-step-wrapper {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.gear-progress-bar .bar-line {
+    position: relative;
+    top: 8px;
+}
+
+.gear-progress-bar .bar-step-wrapper .bar-circle {
+    width: 18px;
+    height: 18px;
+    background-color: #dfe0e3;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+}
+
+.gear-progress-bar .bar-step-wrapper .bar-circle.active {
+    background-color: #005ca7;
+    border: solid 5px #00e08f;
+}
+
+.gear-progress-bar .bar-step-wrapper .bar-step {
+    font-family: "Sansation";
+    font-size: 14px;
+    text-align: center;
+    color: #9d9ba1ff;
 }
