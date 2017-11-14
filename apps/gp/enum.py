@@ -46,7 +46,7 @@ class ConnectorEnum(Enum):
     PipeDrive = 35, 'crm'
     DynamicCRM = 36, 'crm'
     FreshDesk = 37, 'crm'
-    AgileCRM = 38, 'crm'
+    AgileCRM = 38, 'crm', 'form'
     GitLab = 39, 'repository', 'authorization'
     Shopify = 40, 'ecomerce', 'special'
     Dropbox = 41, '', 'authorization'

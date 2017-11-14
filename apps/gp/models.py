@@ -517,6 +517,17 @@ class ActEssentialsConnection(models.Model):
         return self.name
 
 
+class AgileCRMConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_agilecrm')
+    name = models.CharField('name', max_length=200)
+    api_key = models.CharField('api_key', max_length=200)
+    email = models.CharField('email', max_length=200)
+    domain = models.CharField('domain', max_length=200)
+
+    def __str__(self):
+        return self.name
+
+
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
     name = models.CharField('name', max_length=120)

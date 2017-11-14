@@ -18,6 +18,7 @@ from django.http import HttpResponse
 from odoocrm.client import Client as OdooCRMClient
 from batchbook.client import Client as ClientBatchbook
 from actcrm.client import Client as ActCRMClient
+from agilecrm.client import Client as AgileCRMClient
 from datetime import datetime, timedelta
 import time
 import requests
@@ -2305,3 +2306,160 @@ class ActEssentialsController(BaseController):
 
     def get_mapping_fields(self, **kwargs):
         return [MapField(f, controller=ConnectorEnum.ActEssentials) for f in self.get_target_fields()]
+
+
+class AgileCRMController(BaseController):
+    _api_key = None
+    _email = None
+    _domain = None
+    _client = None
+
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(AgileCRMController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(AgileCRMController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._api_key = self._connection_object.api_key
+                self._email = self._connection_object.email
+                self._domain = self._connection_object.domain
+            except AttributeError as e:
+                raise ControllerError(code=1, controller=ConnectorEnum.AgileCRM,
+                                      message='Error getting the AgileCRM attributes args. {}'.format(str(e)))
+        else:
+            raise ControllerError('No connection.')
+        if self._api_key is not None and self._email is not None and self._domain is not None:
+            try:
+                self._client = AgileCRMClient(self._api_key, self._email, self._domain)
+            except requests.exceptions.MissingSchema:
+                raise
+            except InvalidLogin as e:
+                raise ControllerError(code=2, controller=ConnectorEnum.AgileCRM,
+                                      message='Invalid login. {}'.format(str(e)))
+
+    def test_connection(self):
+        return self._client is not None
+
+    def get_search_partner(self, query, params):
+        try:
+            return self._client.search_partner(query, params)
+        except BaseError as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.OdooCRM, message='Error. {}'.format(str(e)))
+
+    def get_read_partner(self, query):
+        try:
+            return self._client.read_partner(query)
+        except BaseError as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.OdooCRM, message='Error. {}'.format(str(e)))
+
+    def get_list_fields(self):
+        try:
+            fields = self._client.list_fields_partner()
+            _list = []
+            for k, v in fields.items():
+                v['name'] = k
+                _list.append(v)
+            return _list
+        except BaseError as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.OdooCRM, message='Error. {}'.format(str(e)))
+
+    def download_to_stored_data(self, connection_object, plug, limit=50, last_source_record=None, **kwargs):
+
+        """
+            NOTE: Se ordena por el campo: 'date_entered'.
+        :param connection_object:
+        :param plug:
+        :param limit:
+        :param last_source_record:
+        :param kwargs:
+        :return:
+        """
+        query = [[]]
+        if last_source_record is not None:
+            query = [[['create_date', '>', last_source_record]]]
+        entries_id = self.get_search_partner(query, {'limit': limit, 'order': 'id desc'})
+        if not entries_id:
+            return False
+        entries = self.get_read_partner([entries_id])
+        raw_data = []
+        new_data = []
+        for item in entries:
+            try:
+                del item['image']
+            except KeyError:
+                pass
+            try:
+                del item['image_small']
+            except KeyError:
+                pass
+            try:
+                del item['image_medium']
+            except KeyError:
+                pass
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
+            if not q.exists():
+                item_data = []
+                obj_raw = item
+                for k, v in obj_raw.items():
+                    if isinstance(v, str) and v.isspace():
+                        obj_raw[k] = ''
+                for k, v in obj_raw.items():
+                    item_data.append(
+                        StoredData(name=k, value=v or '', object_id=item['id'], connection=connection_object.connection,
+                                   plug=plug))
+                raw_data.append(obj_raw)
+                new_data.append(item_data)
+        if new_data:
+            result_list = []
+            for item in new_data:
+                for stored_data in item:
+                    try:
+                        stored_data.save()
+                    except Exception as e:
+                        is_stored = False
+                        break
+                    is_stored = True
+                obj_raw = "RAW DATA NOT FOUND."
+                for obj in raw_data:
+                    if stored_data.object_id == obj['id']:
+                        obj_raw = obj
+                        break
+                raw_data.remove(obj_raw)
+                result_list.append(
+                    {'identifier': {'name': 'id', 'value': stored_data.object_id}, 'is_stored': is_stored,
+                     'raw': obj_raw, })
+            return {'downloaded_data': result_list, 'last_source_record': result_list[0]['raw']['create_date']}
+        return False
+
+    def send_stored_data(self, data_list, **kwargs):
+        obj_list = []
+        for item in data_list:
+            obj_result = {'data': dict(item)}
+            try:
+                res = self.set_entry([dict(item)])
+                obj_result['response'] = res
+                obj_result['sent'] = True
+                obj_result['identifier'] = res
+            except Exception as e:
+                obj_result['response'] = str(e)
+                obj_result['sent'] = False
+                obj_result['identifier'] = '-1'
+            obj_list.append(obj_result)
+        return obj_list
+
+    def set_entry(self, item):
+        try:
+            return self._client.create_partner(item)
+        except WrongParameter as e:
+            raise ControllerError(code=4, controller=ConnectorEnum.OdooCRM,
+                                  message='Wrong Parameter. {}'.format(str(e)))
+        except BaseError as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_list_fields()
+        return [MapField(f, controller=ConnectorEnum.OdooCRM) for f in fields]
+
+    def get_action_specification_options(self, action_specification_id):
+        pass
