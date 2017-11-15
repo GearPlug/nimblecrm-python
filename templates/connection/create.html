@@ -5,7 +5,8 @@
     <div class="content-body col-md-10 col-md-offset-1">
         <div class="row connection">
             <div class="title">
-                <span>{% trans 'Creación de Conexión' %}: {% block connector_name %}{{ connector_name }}{% endblock %}</span>
+                <span>{% trans 'Creación de Conexión' %}:
+                    {% block connector_name %}{{ connector_name }}{% endblock %}</span>
             </div>
             <form id="formCreateConnection" class="" action="" method="post" autocomplete="off" data-ajax="false">
                 <div class="form">
@@ -20,11 +21,12 @@
                     </div>
                     <div class="col-md-9">
                         <div class="col-md-6 group">
-                            <button class="button btn button-create" type="submit" id="btnCreateConnection" disabled="disabled">
-                                {% trans 'Crear Conexión' %}
-                            </button>
                             <button class="button btn button-test" type="submit" id="btnTestConnection">
                                 Test
+                            </button>
+                            <button class="button btn button-create" type="submit" id="btnCreateConnection"
+                                    disabled="disabled">
+                                {% trans 'Crear Conexión' %}
                             </button>
                             <div id="connectionTestResult"></div>
                         </div>

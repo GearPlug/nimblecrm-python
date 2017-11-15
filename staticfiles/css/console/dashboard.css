@@ -27,7 +27,9 @@ html {
     background-color: #f8f8f8;
 }
 
-
+.dashboard-header .logo {
+    text-align: center;
+}
 
 .dashboard-header .right-side {
     float: right;
@@ -37,13 +39,16 @@ html {
     vertical-align: top;
 }
 
-.dashboard-header .right-side .user, .dashboard-header .right-side .divider, .dashboard-header .right-side .search {
+.dashboard-header .right-side .user,
+.dashboard-header .right-side .divider,
+.dashboard-header .right-side .search {
     display: inline-block;
     vertical-align: top;
     float: right;
 }
 
-.dashboard-header .right-side .user .name, .dashboard-header .right-side .user .icon {
+.dashboard-header .right-side .user .name,
+.dashboard-header .right-side .user .icon {
     display: inline-block;
     vertical-align: top;
 }
@@ -91,7 +96,7 @@ html {
 }
 
 .dashboard-panel {
-    height: calc(100% + 108px);
+    height: calc(100% + 80px);
     background: url('../../img/console/g5842.png') bottom center/100% no-repeat, #005ea7;
     padding: 35px 0 0 0;
     box-sizing: border-box;
@@ -145,7 +150,8 @@ html {
     padding-top: 75px;
 }
 
-.content-header .image, .content-header .info {
+.content-header .image,
+.content-header .info {
     display: inline-block;
     vertical-align: top;
 }
@@ -195,7 +201,8 @@ html {
     margin: 22px auto 0 auto;
 }
 
-.content-header .gp-info, .content-header .gp-bar {
+.content-header .gp-info,
+.content-header .gp-bar {
     display: inline-block;
     vertical-align: top;
 }
@@ -208,7 +215,8 @@ html {
     margin-left: 60px;
 }
 
-.content-header .gp-info .connectors, .content-header .gp-info .credits {
+.content-header .gp-info .connectors,
+.content-header .gp-info .credits {
     font-size: 1.20em;
     color: #9d9ba1;
 }
@@ -258,7 +266,9 @@ html {
 .content-body .connection .title,
 .content-body .mapping .title,
 .content-body .history .title,
-.content-body .connections .title {
+.content-body .connections .title,
+.content-body .specifications .title,
+.content-body .plug-test .title {
     font-family: "Sansation Bold";
     font-size: 1.60em;
     color: #005ca7;
@@ -270,7 +280,9 @@ html {
 .content-body .connection .title span,
 .content-body .mapping .title span,
 .content-body .history .title span,
-.content-body .connections .title span {
+.content-body .connections .title span,
+.content-body .specifications .title span,
+.content-body .plug-test .title span {
     border-bottom: 3px solid #00e08f;
     display: inline-block;
     line-height: 1em;
@@ -295,7 +307,8 @@ html {
     cursor: pointer;
 }
 
-.content-body .projects .add-wrapper .add, .content-body .projects .add-wrapper .steps-tooltip {
+.content-body .projects .add-wrapper .add,
+.content-body .projects .add-wrapper .steps-tooltip {
     display: inline-block;
     vertical-align: top;
 }
@@ -318,7 +331,8 @@ html {
     margin: 35px 0 0 20px;
 }
 
-.content-body .projects .add-wrapper .steps-tooltip .bar, .content-body .projects .add-wrapper .steps-tooltip .box {
+.content-body .projects .add-wrapper .steps-tooltip .bar,
+.content-body .projects .add-wrapper .steps-tooltip .box {
     display: inline-block;
     vertical-align: middle;
 }
@@ -389,6 +403,7 @@ html {
 
 .content-body .connections .list .item .image-wrapper {
     height: 48px;
+    cursor: pointer;
 }
 
 .content-body .gears .list .item .image-wrapper .image {
@@ -422,20 +437,7 @@ html {
 }
 
 .content-body .connections .list .item.extended .image-wrapper .button {
-    width: 18px;
-    height: 18px;
-    background-color: #00e08f;
-    border-radius: 25px 25px 25px 25px;
-    -moz-border-radius: 25px 25px 25px 25px;
-    -webkit-border-radius: 25px 25px 25px 25px;
-    border: 0px solid #000000;
-    margin: 15px 5px 0 15px;
-    cursor: pointer;
-}
-
-.content-body .connections .list .item.extended .image-wrapper .button.active {
-    background-color: #005ca7;
-    border: solid 5px #00e08f;
+    margin: 10px 10px 0 20px;
 }
 
 .content-body .connections .list .test-button {
@@ -444,9 +446,40 @@ html {
 }
 
 .content-body .connections .list .test-button .button {
-    /*padding-top: 10px;*/
+    -webkit-appearance: none;
+    width: 36px;
+    height: 36px;
+    border: 4px solid #e7e8ec;
+    border-radius: 50%;
+    outline: none;
+    box-shadow: 0 0 5px 0px #FFFFFF inset;
     cursor: pointer;
+}
 
+.content-body .connections .list .test-button .button:before {
+    content: '';
+    display: block;
+    width: 65%;
+    height: 65%;
+    margin: 17% auto;
+    border-radius: 50%;
+    background: #e7e8ec;
+}
+
+.content-body .connections .list .test-button .button.passed {
+    border: 4px solid #005ca7;
+}
+
+.content-body .connections .list .test-button .button.passed:before {
+    background: #00e08f;
+}
+
+.content-body .connections .list .test-button .button.failed {
+    border: 4px solid #ce050e;
+}
+
+.content-body .connections .list .test-button .button.failed:before {
+    background: #ce050e;
 }
 
 .content-body .connections .list .test-button .button,
@@ -468,9 +501,19 @@ html {
     border-radius: 25px 25px 25px 25px;
     -moz-border-radius: 25px 25px 25px 25px;
     -webkit-border-radius: 25px 25px 25px 25px;
-    border: solid 1px #00e08f;
+    border: solid 1px #9d9ba1;
     font-size: 14px;
+    color: #9d9ba1;
+}
+
+.content-body .connections .list .test-button .text.passed {
+    border: solid 1px #00e08f;
     color: #005ca7;
+}
+
+.content-body .connections .list .test-button .text.failed {
+    border: solid 1px #ce050e;
+    color: #9d9ba1;
 }
 
 .content-body .gears .list .item.extended .image-wrapper .control {
@@ -481,7 +524,10 @@ html {
     padding: 12px 25px 0 0;
 }
 
-.content-body .gears .list .item.extended .image-wrapper .control .edit, .content-body .gears .list .item.extended .image-wrapper .control .button, .content-body .gears .list .item.extended .image-wrapper .control .status, .content-body .gears .list .item.extended .image-wrapper .control .history {
+.content-body .gears .list .item.extended .image-wrapper .control .edit,
+.content-body .gears .list .item.extended .image-wrapper .control .button,
+.content-body .gears .list .item.extended .image-wrapper .control .status,
+.content-body .gears .list .item.extended .image-wrapper .control .history {
     display: inline-block;
     vertical-align: middle;
     padding: 0 4px;
@@ -503,7 +549,10 @@ html {
     color: #9d9ba1;
 }
 
-.content-body .gears .add .button, .content-body .gears .add .text, .content-body .projects .folders .add .button, .content-body .projects .folders .add .text {
+.content-body .gears .add .button,
+.content-body .gears .add .text,
+.content-body .projects .folders .add .button,
+.content-body .projects .folders .add .text {
     display: inline-block;
     vertical-align: middle;
     font-size: 1.90em;
@@ -511,11 +560,13 @@ html {
     cursor: pointer;
 }
 
-.content-body .gears .add .text, .content-body .folders .add .text {
+.content-body .gears .add .text,
+.content-body .folders .add .text {
     padding-left: 15px;
 }
 
-.gp-modal, .gp-modal .modal-content2 {
+.gp-modal,
+.gp-modal .modal-content2 {
     border-radius: 25px 25px 25px 25px;
     -moz-border-radius: 25px 25px 25px 25px;
     -webkit-border-radius: 25px 25px 25px 25px;
@@ -565,7 +616,13 @@ html {
     text-align: center;
 }
 
-.gp-modal .modal-content2 .form input[type="text"], .gp-modal .modal-content2 .form textarea, .gp-modal .modal-content2 .button, .content-body .connection .form input[type="text"], .content-body .connection .form textarea, .content-body .mapping .form input[type="text"], .content-body .mapping .form textarea {
+.gp-modal .modal-content2 .form input[type="text"],
+.gp-modal .modal-content2 .form textarea,
+.gp-modal .modal-content2 .button,
+.content-body .connection .form input[type="text"],
+.content-body .connection .form textarea,
+.content-body .mapping .form input[type="text"],
+.content-body .mapping .form textarea {
     width: 100%;
     height: 44px;
     margin: 12px 0;
@@ -578,11 +635,18 @@ html {
     text-align: center;
 }
 
-.gp-modal .modal-content2 .form textarea, .content-body .connection .form textarea, .content-body .mapping .form textarea {
+.gp-modal .modal-content2 .form textarea,
+.content-body .connection .form textarea,
+.content-body .mapping .form textarea {
     height: 119px;
 }
 
-.gp-modal .modal-content2 .form input[type="text"], .gp-modal .modal-content2 .form textarea, .content-body .connection .form input[type="text"], .content-body .connection .form textarea, .content-body .mapping .form input[type="text"], .content-body .mapping .form textarea {
+.gp-modal .modal-content2 .form input[type="text"],
+.gp-modal .modal-content2 .form textarea,
+.content-body .connection .form input[type="text"],
+.content-body .connection .form textarea,
+.content-body .mapping .form input[type="text"],
+.content-body .mapping .form textarea {
     font-size: 2.00em;
     padding: 0;
     border: none;
@@ -590,7 +654,10 @@ html {
     color: #9d9ba1;
 }
 
-.content-body .connection .form input[type="text"], .content-body .connection .form textarea, .content-body .mapping .form input[type="text"], .content-body .mapping .form textarea {
+.content-body .connection .form input[type="text"],
+.content-body .connection .form textarea,
+.content-body .mapping .form input[type="text"],
+.content-body .mapping .form textarea {
     text-align: left;
     padding: 0 2%;
     background-color: #f6f7f8;
@@ -598,14 +665,17 @@ html {
     resize: none;
 }
 
-.gp-modal .modal-content2 .form label, .content-body .connection .form label:not(.btn), .content-body .mapping .form label:not(.btn) {
+.gp-modal .modal-content2 .form label,
+.content-body .connection .form label:not(.btn),
+.content-body .mapping .form label:not(.btn) {
     font-size: 1.80em;
     color: #FFFFFF;
     font-weight: 400;
     margin: 0;
 }
 
-.content-body .connection .form label:not(.btn), .content-body .mapping .form label:not(.btn) {
+.content-body .connection .form label:not(.btn),
+.content-body .mapping .form label:not(.btn) {
     color: #9d9ba1;
 }
 
@@ -860,11 +930,13 @@ html {
 
 /* ****** */
 
-.content-body .connection .form button.button-test, .content-body .mapping .form button.button-test {
+.content-body .connection .form button.button-test,
+.content-body .mapping .form button.button-test {
     font-family: "Sansation Bold";
     font-size: 1.80em;
-    width: 49%;
-    height: 56px;
+    min-width: 200px;
+    padding: 5px 15px 0 15px;
+    height: 45px;
     margin: 12px 0;
     border-radius: 25px 25px 25px 25px;
     -moz-border-radius: 25px 25px 25px 25px;
@@ -877,15 +949,17 @@ html {
     display: inline-block;
     vertical-align: top;
     cursor: pointer;
-    padding-top: 10px;
 }
 
-.content-body .connection .form button.button-create,
-.content-body .mapping .form button.button-create,
-.content-body .connections .form button.button-create {
+.content-body .connection .form .button-create,
+.content-body .mapping .form .button-create,
+.content-body .connections .form .button-create,
+.content-body .specifications .form .button-create,
+.content-body .plug-test .form .button-create {
     font-family: "Sansation Bold";
     font-size: 1.60em;
-    width: 49%;
+    min-width: 200px;
+    padding: 0 15px;
     height: 45px;
     margin: 12px 0;
     border-radius: 25px 25px 25px 25px;
@@ -900,24 +974,39 @@ html {
     vertical-align: top;
 
     outline: none;
-    float: right;
+
+    text-decoration: none;
+
 }
 
-.content-body .mapping .form button.button-create,
-.content-body .connections .form button.button-create{
-    float: none;
+.content-body .connections .form a.button-create,
+.content-body .plug-test .form a.button-create {
+    padding-top: 7px;
+}
+
+.content-body .plug-test .text {
+    font-size: 16px;
+    color: #9d9ba1;
+
+}
+
+.content-body .button-create.green {
+    background-color: #00e08f !important;
 }
 
 .btn {
     padding: 10px 10px;
 }
 
-.btn-group, .btn-group-vertical {
+.btn-group,
+.btn-group-vertical {
     width: 36px;
     height: 36px;
 }
 
-.btn-success, .btn-success, .open > .dropdown-toggle.btn-success {
+.btn-success,
+.btn-success,
+.open > .dropdown-toggle.btn-success {
     background-color: #00e08f !important;
     border-color: #00e08f !important;
 }
@@ -933,12 +1022,12 @@ html {
 
 input[type='radio'] {
     -webkit-appearance: none;
-    width: 34px;
-    height: 34px;
-    border: 3px solid #005aa6;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #00e08f;
     border-radius: 50%;
     outline: none;
-    box-shadow: 0 0 5px 0px #e7e8ec inset;
+    background: #00e08f;
 }
 
 input[type='radio']:before {
@@ -951,7 +1040,7 @@ input[type='radio']:before {
 }
 
 input[type='radio']:checked:before {
-    background: #00e08f;
+    background: #005ca7;
 }
 
 .rail-select {
@@ -1111,7 +1200,9 @@ input[type='radio']:checked:before {
     margin: 5px 0;
 }
 
-.content-body .history .navbar .rail-checkbox .btn-success, .btn-success, .open > .dropdown-toggle.btn-success {
+.content-body .history .navbar .rail-checkbox .btn-success,
+.btn-success,
+.open > .dropdown-toggle.btn-success {
     background-color: #FFFFFF !important;
     border-color: #FFFFFF !important;
 }
@@ -1129,7 +1220,8 @@ input[type='radio']:checked:before {
     background-color: #005ca7;
 }
 
-.gear-progress-bar .bar-line, .gear-progress-bar .bar-step-wrapper {
+.gear-progress-bar .bar-line,
+.gear-progress-bar .bar-step-wrapper {
     display: inline-block;
     vertical-align: top;
 }
@@ -1155,8 +1247,39 @@ input[type='radio']:checked:before {
 }
 
 .gear-progress-bar .bar-step-wrapper .bar-step {
-    font-family: "Sansation";
     font-size: 14px;
     text-align: center;
     color: #9d9ba1ff;
+}
+
+.context-menu {
+    width: 140px;
+    padding: 10px 0;
+    background-color: #005ca7;
+
+    border-radius: 0px 20px 20px 20px;
+    -moz-border-radius: 0px 20px 20px 20px;
+    -webkit-border-radius: 0px 20px 20px 20px;
+    border: 0px solid #000000;
+
+    overflow: hidden;
+    z-index: 9999;
+}
+
+.context-menu .menu-item {
+    font-size: 15px;
+    color: #FFFFFF;
+    padding: 5px 15px;
+    cursor: pointer;
+}
+
+.context-menu .menu-item:hover {
+    background-color: #004a88;
+}
+
+.context-menu .menu-separator {
+    width: calc(100% - 30px);
+    height: 1px;
+    background-color: #008fc5;
+    margin: 0 auto;
 }

@@ -2,6 +2,36 @@
 {% load static i18n %}
 
 {% block content %}
+    <div class="context-menu" id="context-menu" style="display: none;">
+        <a href="#!">
+            <div class="menu-item">
+                Editar Gear
+            </div>
+        </a>
+        <a href="#!">
+            <div class="menu-item">
+                Editar Grupo
+            </div>
+        </a>
+        <div class="menu-separator"></div>
+        <a href="#!">
+            <div class="menu-item">
+                Editar Conexión
+            </div>
+        </a>
+        <div class="menu-separator"></div>
+        <a href="#!">
+            <div class="menu-item">
+                Editar Origen
+            </div>
+        </a>
+        <div class="menu-separator"></div>
+        <a href="#!">
+            <div class="menu-item">
+                Editar Destino
+            </div>
+        </a>
+    </div>
     <div class="content-body col-md-10 col-md-offset-1">
         <div class="row projects">
             <div class="title">
@@ -40,7 +70,7 @@
                         <div class="add col-md-1">
                             <div class="button">
                                 <div data-toggle="modal" data-target="#group-modal">
-                                    <img src="{% static 'img/console/g3261.png' %}" width="38">
+                                    <img src="{% static 'img/console/new_group.png' %}" width="98" height="80">
                                 </div>
                             </div>
                         </div>
@@ -137,6 +167,25 @@
                 return false;
             });
 
+            $('.edit').click(function (e) {
+                e.stopPropagation();
+                var left = e.pageX - $('#dashtest').offset().left;
+                var top = e.pageY - $('#dashtest').offset().top;
+
+                $('#context-menu').hide();
+                $('#context-menu').css({
+                    'top': top,
+                    'left': left,
+                    'position': 'absolute'
+                });
+                $('#context-menu').show();
+            });
+
+            $(document).click(function (e) {
+                if ($('#context-menu').is(':visible')) {
+                    $('#context-menu').hide();
+                }
+            })
 
         });
     </script>
