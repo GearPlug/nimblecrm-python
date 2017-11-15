@@ -597,6 +597,7 @@ class GearMap(models.Model):
     last_source_update = models.DateTimeField(null=True, default=None)
     last_source_order_by_field_value = models.CharField(max_length=64, null=True, blank=True, default=None)
     created = models.DateTimeField('created', auto_now_add=True)
+    version = models.SmallIntegerField('version', default=1)
 
     class Meta:
         unique_together = ['id', 'gear']

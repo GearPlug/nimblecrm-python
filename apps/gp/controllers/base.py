@@ -23,25 +23,15 @@ class FilterBaseController(object):
         filter_method = FilterEnum.get_filter(FilterEnum(int(filter.option)))
         return filter_method(values, filter)
 
-    def apply_filters(self, data_list, target_fields):
-        filters = self.replace_fields_in_filters(target_fields)
-        new_data_list = data_list.copy()
-        excluded_data_list = []
+    def apply_filters(self, source_data):
+        filters = self._get_gear_filters()
+        new_source_data = source_data.copy()
+        excluded_source_data = []
         if bool(filters):
             for f in filters:
-                new_data_list, excluded_data = self._apply_filter(f, new_data_list)
-                excluded_data_list.append(excluded_data)
-        return new_data_list, excluded_data_list
-
-    def replace_fields_in_filters(self, target_fields):
-        filters = self._get_gear_filters()
-        for t in target_fields:
-            if "%%" in target_fields[t]:
-                _value = target_fields[t].replace("%%", "")
-                for f in filters:
-                    if f.field_name == _value:
-                        f.field_name = t
-        return filters
+                new_source_data, excluded_data = self._apply_filter(f, new_source_data)
+                excluded_source_data.extend(excluded_data)
+        return new_source_data, excluded_source_data
 
 
 class BaseController(FilterBaseController):
@@ -134,8 +124,9 @@ class BaseController(FilterBaseController):
         }
         """
         if self._connection_object is not None and self._plug is not None:
-            raw_data_list = get_dict_with_source_data(source_data, target_fields)
-            data_list, excluded_data = self.apply_filters(raw_data_list, target_fields)
+            source_data, excluded_source_data = self.apply_filters(source_data)
+            data_list = get_dict_with_source_data(source_data, target_fields)
+            excluded_data_list = get_dict_with_source_data(excluded_source_data, target_fields)
             if is_first and len(data_list) > 0:
                 try:
                     data_list = [data_list[0]]
@@ -158,14 +149,17 @@ class BaseController(FilterBaseController):
                     data_list_result = result
                 except TypeError:
                     data_list_result = self.send_stored_data(source_data, target_fields, **kwargs)
-            if excluded_data:
+            if excluded_data_list:
                 serialized_connection = serialize('json', [self._connection_object, ])
-                for item in excluded_data:
+                for item in excluded_data_list:
                     SendHistory.objects.create(connector_id=self._connector.id, connection=serialized_connection,
                                                gear_id=str(self._plug.gear_target.first().id),
-                                               plug_id=str(self._plug.id),
-                                               response='ITEM FILTERED', sent=2, identifier='-1',
+                                               plug_id=str(self._plug.id), sent=2, identifier='-1',
+                                               response='Item filtered by: {0}'.format(item.pop('__filter__',
+                                                                                                'Filter not found')),
                                                data=json.dumps(item), )
+                if not data_list:
+                    return [-1, ]
             return data_list_result
             # raise ControllerError(code=0, controller=self._connector.name,
             #                       message="Please check you're using a valid connection and a valid plug.")
