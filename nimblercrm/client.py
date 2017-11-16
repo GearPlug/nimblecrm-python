@@ -144,10 +144,14 @@ class Client(object):
         except Exception as e:
             print(e)
 
-    def get_persons(self):
+    def get_persons(self, start_date=None):
         endpoint = "contacts?query="
-        values = {"record type": {"is": "person"}}
-        values = json.dumps(values)
+        if start_date is not None:
+            values_with_date = {"and": [{"record type": {"is": "person"}}, {"created": {"range": {"start_date": start_date,"end_date": "2100-12-31"}}}]}
+            values = json.dumps(values_with_date)
+        else:
+            values = {"record type": {"is": "person"}}
+            values = json.dumps(values)
         values = urllib.parse.quote_plus(values)
         endpoint = endpoint+values
         try:
@@ -155,10 +159,14 @@ class Client(object):
         except Exception as e:
             print(e)
 
-    def get_organizations(self):
+    def get_organizations(self, start_date=None):
         endpoint = "contacts?query="
-        values = {"record type": {"is": "company"}}
-        values = json.dumps(values)
+        if start_date is not None:
+            values_with_date = {"and": [{"record type": {"is": "company"}}, {"created": {"range": {"start_date": start_date,"end_date": "2100-12-31"}}}]}
+            values = json.dumps(values_with_date)
+        else:
+            values = {"record type": {"is": "company"}}
+            values = json.dumps(values)
         values = urllib.parse.quote_plus(values)
         endpoint = endpoint+values
         try:
