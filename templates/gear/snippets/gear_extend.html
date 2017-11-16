@@ -14,6 +14,8 @@
                 {% with icon73=gear.target.connection.connector.icon73 %}
                     {% if icon73 %}
                         <img src="{{ icon73.url }}" width="36" height="36">
+                    {% else %}
+                        <img src="{% static 'img/console/unknown_plug.png' %}" width="36" height="36">
                     {% endif %}
                 {% endwith %}
             </div>
@@ -28,9 +30,9 @@
                 </a>
             </div>
             <div class="edit">
-{#                <a href="{% url 'gear:update' pk=gear.id %}">#}
+                <a href="{% url 'gear:update' pk=gear.id %}">
                     <img src="{% static 'img/console/g3125.png' %}" width="34">
-{#                </a>#}
+                </a>
             </div>
             <a class="toggle-gear-btn" href="{% url 'gear:toggle' gear_id=gear.id %}">
                 <div class="button">

@@ -7,6 +7,29 @@
 
 {% block body_base %}
     <div class="info-tool"></div>
+    <div id="logout-modal" class="modal fade" role="dialog">
+        <div class="gp-modal modal-dialog">
+            <div class="modal-content3">
+                <div class="image-wrapper">
+                    <div class="image">
+                        <img src="{% static 'img/console/g6630.png' %}" width="128" height="128">
+                    </div>
+                </div>
+                <div class="text1">
+                    ¡{% trans 'Adios' %} Bill Gates!
+                </div>
+                <div class="text2">
+                    ¿Estás seguro que quieres salir de sesión?
+                </div>
+                <button type="button" class="button-create gray" data-dismiss="modal">
+                    Cancelar
+                </button>
+                <a href="{% url 'account_logout' %}" class="button-create">
+                    Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </div>
     {#    dashboard-header#}
     <div class="content">
         <div class="row">
@@ -69,11 +92,17 @@
                     </div>
                     <div class="col-md-4 right-side">
                         <div class="user">
+                            <div class="icon">
+                                <img src="{% static 'img/console/g6630.png' %}" width="48">
+                            </div>
                             <div class="name">
-                                {{ request.user.get_full_name|yesno:request.user.email }}
+                                {% trans 'Perfil' %}
                             </div>
                             <div class="icon">
-                                <img src="{% static 'img/console/g6630.png' %}" width="56">
+                                <img src="{% static 'img/console/notifications.png' %}" width="48">
+                            </div>
+                            <div class="name">
+                                {% trans 'Notificaciones' %}
                             </div>
                         </div>
                         {#                <div class="divider"></div>#}
@@ -129,14 +158,14 @@
                         </a>
                     </div>
                     <div class="item logout">
-                        <a href="{% url 'account_logout' %}">
+                        <div data-toggle="modal" data-target="#logout-modal">
                             <div class="image">
                                 <img src="{% static 'img/console/logout.png' %}">
                             </div>
                             <div class="text">
                                 {% trans 'Cerrar Sesión' %}
                             </div>
-                        </a>
+                        </div>
                     </div>
                 </div>
             </div>
