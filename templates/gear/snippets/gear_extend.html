@@ -7,6 +7,8 @@
                 {% with icon73=gear.source.connection.connector.icon73 %}
                     {% if icon73 %}
                         <img src="{{ icon73.url }}" width="36" height="36">
+                    {% else %}
+                        <img src="{% static 'img/console/unknown_plug.png' %}" width="36" height="36">
                     {% endif %}
                 {% endwith %}
             </div>
