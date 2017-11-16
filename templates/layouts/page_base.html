@@ -40,11 +40,12 @@
                         </div>
                         <div class="col-md-2">
                             <div class="border_login">
-{#                                {% if request.user.is_authenticated is False %}#}
-{#                                    <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>#}
-{#                                {% else %}#}
-                                    <img src="{% static 'img/landing/avatar.png' %}" class="img-avatar"> Daniel L.
-{#                                {% endif %}#}
+                                {% if request.user.is_authenticated == False %}
+                                    <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>
+                                {% else %}
+                                    <img src="{% static 'img/landing/avatar.png' %}" class="img-avatar">
+                                    {{ request.user.get_full_name }}
+                                {% endif %}
                             </div>
 
                         </div>
@@ -73,7 +74,6 @@
                             <a href="{% url 'landing:apps_directory' %}" class="border-menu">{% trans 'Apps' %}</a>
                             <a href="{% url 'landing:contact' %}" class="border-menu">{% trans 'Contacto' %}</a>
                             <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>
-
 
 
                         </div>
