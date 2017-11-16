@@ -21,47 +21,105 @@
         </div>
     </div>
     <div class="row contactus-footer">
-        <div class="col-md-5">
-            <div class="logo1">
-                <img src="{% static 'img/landing/logo.png' %}">
+        <div class="col-md-6">
+            <div class="col-md-12 sp text-contact">
+                Contact <span style="font-family: 'Sansation Bold'">us</span>
             </div>
-            <div class="address1">
-                <span>GearPlug SAS Colombia</span>
-                <span>Cra 49B #93-68</span>
-                <span>Telf: 5639596</span>
+            <div class="col-md-12 sp text-contact1">
+                Que no te de pena preguntar, estamos aquí para asesorarte!
+            </div>
+            <div class="col-md-12 sp text-contact2">
+                La satisfacción de nuestros clientes es nuestra prioridad y entendemos que puedes necesitar ayuda de
+                vez en cuando. Nosotros te asesoramos de una manera amistosa y colaboradora para todos tus servicios.
+            </div>
+            <div class="col-md-5 sp img-direction">
+                <img src="{% static 'img/landing/direction.png' %}">
+                <div class="text-direction">Cra 49B #93-68 <br /> Bogotá, Colombia.</div>
+            </div>
+            <div class="col-md-3 sp img-phone">
+                <img src="{% static 'img/landing/phone.png' %}">
+                <div class="text-phone">031 - 4758333</div>
+            </div>
+            <div class="col-md-4 sp img-email">
+                <img src="{% static 'img/landing/email.png' %}">
+                <div class="text-email">info@gearplug.com</div>
+            </div>
+            <div class="col-md-12 sp nets">
+                <a href="#"><img src="{% static 'img/landing/twitter1.png' %}"></a>
+                <a href="#"><img src="{% static 'img/landing/facebook2.png' %}" class="icon-facebook"></a>
             </div>
         </div>
-        <div class="col-md-7">
-            <div class="divider"></div>
-            <div class="form-wrapper">
-                <div class="text3">
-                    {% trans '¿Tienes Preguntas?' %}
+        <div class="col-md-6 form-contact">
+            <form action="" method="post">
+                {% csrf_token %}
+                <div class="col-md-12{% if signup_form.first_name.errors %} has-error{% endif %}">
+                    {{ signup_form.first_name }}
+                    {{ signup_form.first_name.errors }}
                 </div>
-                <form action="" method="post">
-                    {% csrf_token %}
-                    <div class="col-md-12{% if signup_form.first_name.errors %} has-error{% endif %}">
-                        {{ signup_form.first_name }}
-                        {{ signup_form.first_name.errors }}
+                <div class="form-group">
+                    {{ form.name.label_tag }}
+                    <br />
+                    {{ form.name }}
+                </div>
+                <div class="form-group">
+                    {{ form.email.label_tag }}
+                    <br />
+                    {{ form.email }}
+                </div>
+                <div class="form-group">
+                    {{ form.text.label_tag }}
+                    <br />
+                    {{ form.text }}
+                </div>
+                <div class="form-group">
+                    <div class="inline">
+                        <button type="submit">{% trans 'Enviar' %}</button>
                     </div>
-                    <div class="form-group">
-                        {{ form.name.label_tag }}
-                        {{ form.name }}
-                    </div>
-                    <div class="form-group">
-                        {{ form.email.label_tag }}
-                        {{ form.email }}
-                    </div>
-                    <div class="form-group">
-                        {{ form.text.label_tag }}
-                        {{ form.text }}
-                    </div>
-                    <div class="form-group">
-                        <div class="inline">
-                            <button type="submit">{% trans 'Enviar' %}</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
+
+{#        <div class="col-md-5">#}
+{#            <div class="logo1">#}
+{#                <img src="{% static 'img/landing/logo.png' %}">#}
+{#            </div>#}
+{#            <div class="address1">#}
+{#                <span>GearPlug SAS Colombia</span>#}
+{#                <span>Cra 49B #93-68</span>#}
+{#                <span>Telf: 5639596</span>#}
+{#            </div>#}
+{#        </div>#}
+{#        <div class="col-md-7">#}
+{#            <div class="divider"></div>#}
+{#            <div class="form-wrapper">#}
+{#                <div class="text3">#}
+{#                    {% trans '¿Tienes Preguntas?' %}#}
+{#                </div>#}
+{#                <form action="" method="post">#}
+{#                    {% csrf_token %}#}
+{#                    <div class="col-md-12{% if signup_form.first_name.errors %} has-error{% endif %}">#}
+{#                        {{ signup_form.first_name }}#}
+{#                        {{ signup_form.first_name.errors }}#}
+{#                    </div>#}
+{#                    <div class="form-group">#}
+{#                        {{ form.name.label_tag }}#}
+{#                        {{ form.name }}#}
+{#                    </div>#}
+{#                    <div class="form-group">#}
+{#                        {{ form.email.label_tag }}#}
+{#                        {{ form.email }}#}
+{#                    </div>#}
+{#                    <div class="form-group">#}
+{#                        {{ form.text.label_tag }}#}
+{#                        {{ form.text }}#}
+{#                    </div>#}
+{#                    <div class="form-group">#}
+{#                        <div class="inline">#}
+{#                            <button type="submit">{% trans 'Enviar' %}</button>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                </form>#}
+{#            </div>#}
+{#        </div>#}
     </div>
 {% endblock %}
