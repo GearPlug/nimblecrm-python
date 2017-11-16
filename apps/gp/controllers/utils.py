@@ -15,7 +15,7 @@ def get_dict_with_source_data(source_data, target_fields, include_id=False):
         user_dict = OrderedDict()
         for field in valid_map:
             w = html_decode(valid_map[field])
-            res = pattern.match(w)
+            res = pattern.search(w)
             if res is not None:
                 data_key = re.sub("\%\%", "", res.group(0))
                 if data_key in obj['data']:
@@ -25,6 +25,8 @@ def get_dict_with_source_data(source_data, target_fields, include_id=False):
             else:
                 final_value = w
             user_dict[field] = final_value
+        if "__filter__" in obj.keys():
+            user_dict['__filter__'] = obj['__filter__']
         result.append(user_dict)
     return result
 

@@ -1018,6 +1018,10 @@ input[type='radio']:checked:before {
     background-color: #d40032;
 }
 
+.content-body .history .history-list .item .indicator.orange {
+    background-color: #ca9b13;
+}
+
 .content-body .history .history-list .item .text {
     color: #adacb1;
     font-size: 1.30em;

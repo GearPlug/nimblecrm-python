@@ -421,6 +421,7 @@ class FacebookLeadsController(BaseController):
             response.status_code = 200
         return response
 
+    @property
     def has_webhook(self):
         return True
 
@@ -594,6 +595,7 @@ class SurveyMonkeyController(BaseController):
                 webhook.plug.save()
         return HttpResponse(status=200)
 
+    @property
     def has_webhook(self):
         return True
 
@@ -750,5 +752,6 @@ class TypeFormController(BaseController):
             return tuple({'id': f['id'], 'name': f['title']} for f in forms)
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
+    @property
     def has_webhook(self):
         return True

@@ -107,3 +107,10 @@ button.btn {
 .search1 .btn-group.open .dropdown-toggle, button.btn:active {
     box-shadow: none;
 }
+
+@media only screen and (max-width:1600px) {
+    .apps-list .search1 {
+        width: 38.8%;
+        margin-left: 28.6%;
+    }
+}

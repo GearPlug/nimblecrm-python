@@ -4,7 +4,7 @@
 {% block content %}
     <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
         <div class="carousel-inner">
-{#            {% if request.user.is_authenticated is False %}#}
+            {% if request.user.is_authenticated == False %}
                 <div class="item active container-fluid slide-item">
                     <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
                     <div class="carousel-caption slide-caption">
@@ -18,11 +18,11 @@
                 <div class="item">
                     <img src="{% static 'img/landing/slide1.png' %}" alt="Second slide" class="slide">
                 </div>
-{#            {% else %}#}
-{#                <div class="item active bg_login1">#}
-{#                    &nbsp;#}
-{#                </div>#}
-{#            {% endif %}#}
+            {% else %}
+                <div class="item active bg_login1">
+                    &nbsp;
+                </div>
+            {% endif %}
 
         </div>
         <a class="left carousel-control" href="#carousel-example-generic" data-slide="prev">
@@ -36,15 +36,15 @@
             </span>
         </a>
     </div>
-{#    {% if request.user.is_authenticated is False %}#}
+    {% if request.user.is_authenticated == False %}
         <div class="bg-form">
             {% include 'landing/snippets/signup_form.html' %}
         </div>
-{#    {% else %}#}
-{#        <div class="bg_login text-center">#}
-{#            <button type="button" class="btn-login">¡Ingresa Ya!</button>#}
-{#        </div>#}
-{#    {% endif %}#}
+    {% else %}
+        <div class="bg_login text-center">
+            <button type="button" class="btn-login">¡Ingresa Ya!</button>
+        </div>
+    {% endif %}
     <div class="col-md-12 text-center index-space1">
         <img src="{% static 'img/landing/logo_what.png' %}" style="height: 13%;">
     </div>
@@ -53,9 +53,17 @@
         <br/>
         <p class="text-p">
             {% blocktrans %}
-            GearPlug es un software de automatización y optimización de todas las herramientas digitales para que su
-            empresa logre todos los KPI (Indicadores de Rendimiento) dispuestos, los cuales pueden mejorar y hacer
-            efectivos por medio de diferentes soluciones integrales de marketing digital que ofrece nuestro software.
+                GearPlug es un software de automatización y optimización de todas las herramientas digitales para que su
+                empresa logre todos los KPI (Indicadores de Rendimiento) dispuestos, los cuales pueden mejorar y hacer
+                efectivos por medio de diferentes soluciones integrales de marketing digital que ofrece nuestroPaso 1
+Debes crear un grupo, asignarle un nombre y proceder a seleccionar uno de los conectores (aplicaciones) disponible en GearPlug, por ejemplo Facebook.
+Ahora proporciona la autorización necesaria para conectar esta aplicación con GearPlug. Esta autorización varía de acuerdo a la aplicación que se seleccione, en este caso, permitirnos el acceso a Facebook para enviar o recibir información relevante.
+Paso 2
+Paso 3
+En el tercer paso, indícanos qué acción realizar desde la aplicación de origen, como registrar la información que llega de un nuevo lead, o cada vez que un usuario especiﬁco haga una comentario mencionando tu marca.
+Paso 4
+Paso 5
+                software.
             {% endblocktrans %}
         </p>
     </div>

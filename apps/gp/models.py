@@ -1,8 +1,8 @@
-from django.db import models
 from django.contrib import admin
-from apps.gp.model_fields import JSONField
 from django.contrib.auth.models import User
-from apps.gp.enum import ConnectorEnum
+from apps.gp.enum import ConnectorEnum, FilterEnum
+from django.db import models
+from apps.gp.model_fields import JSONField
 
 connections = ['connection_{0}'.format(connector.name.lower()) for connector in ConnectorEnum.get_connector_list()]
 
@@ -288,19 +288,6 @@ class YouTubeConnection(models.Model):
         return self.name
 
 
-class GooglePushWebhook(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='google_push_webhook')
-    channel_id = models.CharField('channel_id', max_length=200)
-    resource_id = models.CharField('resource_id', max_length=200)
-    expiration = models.CharField('expiration', max_length=200)
-    raw_expiration = models.CharField('raw_expiration', max_length=200)
-    created = models.DateTimeField('created', auto_now_add=True)
-    last_update = models.DateTimeField('last update', auto_now=True)
-
-    def __str__(self):
-        return self.channel_id
-
-
 class SlackConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_slack')
     name = models.CharField('name', max_length=200)
@@ -395,6 +382,11 @@ class SMTPConnection(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class WebhookConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_webhook')
+    name = models.CharField('name', max_length=200)
 
 
 class AsanaConnection(models.Model):
@@ -597,6 +589,15 @@ class Gear(models.Model):
         return self.is_active and self.gear_map.is_active
 
 
+class GearFilter(models.Model):
+    OPTIONS = tuple((field.value, field.name) for field in FilterEnum)
+    gear = models.ForeignKey(Gear, related_name='gear_filter')
+    field_name = models.CharField('field name', max_length=256)
+    option = models.IntegerField('option', choices=OPTIONS)
+    comparison_data = models.CharField('comparison data', max_length=100)
+    is_active = models.BooleanField('is active', default=False)
+
+
 class GearMap(models.Model):
     gear = models.OneToOneField(Gear, related_name='gear_map')
     created = models.DateTimeField('created', auto_now_add=True)
@@ -607,6 +608,7 @@ class GearMap(models.Model):
     last_source_update = models.DateTimeField(null=True, default=None)
     last_source_order_by_field_value = models.CharField(max_length=64, null=True, blank=True, default=None)
     created = models.DateTimeField('created', auto_now_add=True)
+    version = models.SmallIntegerField('version', default=1)
 
     class Meta:
         unique_together = ['id', 'gear']
@@ -614,6 +616,7 @@ class GearMap(models.Model):
 
 class GearMapData(models.Model):
     gear_map = models.ForeignKey(GearMap, related_name='gear_map_data')
+    version = models.SmallIntegerField('version', default=1)
     target_name = models.CharField('target name', max_length=300)
     source_value = models.CharField('source value', max_length=300)
 

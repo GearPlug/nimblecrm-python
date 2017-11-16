@@ -59,6 +59,8 @@ class ConnectorEnum(Enum):
     OdooCRM = 48, 'crm', 'form'
     Batchbook = 49, 'crm', 'form'
     ActEssentials = 50, 'crm', 'form'
+    NimbleCRM = 51, 'crm', 'authorization'
+    Webhook = 52, 'various', None
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
@@ -122,3 +124,29 @@ class GoogleAPIEnum(Enum):
         for field in GoogleAPIEnum:
             if name.lower() == field.name.lower():
                 return field
+
+
+class FilterEnum(Enum):
+    CONTAINS = 1
+    DOES_NOT_CONTAIN = 2
+    EQUALS = 3
+    DOES_NOT_EQUAL = 4
+    IS_EMPTY = 5
+    IS_NOT_EMPTY = 6
+    STARTS_WITH = 7
+    DOES_NOT_START_WITH = 8
+    ENDS_WITH = 9
+    DOES_NOT_END_WITH = 10
+    LESS_THAN = 11
+    GREATER_THAN = 12
+    LENGTH_EQUALS = 13
+    LENGTH_IS_LESS_THAN = 14
+    LENGTH_IS_GREATER_THAN = 15
+
+    def __new__(cls, *args, **kwargs):
+        obj = object.__new__(cls)
+        obj._value_ = args[0]
+        return obj
+
+    def get_filter(filter):
+        return dynamic_import(filter.name.lower(), path="apps.gp.controllers.filters")
