@@ -1,15 +1,28 @@
 {% extends 'layouts/console_base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
-    <div>
-        <form action="" method="post" autocomplete="off">
-            {% csrf_token %}
-            {{ form }}
-            <button >{% block gear_action %}Create{% endblock %} {{ object_name }}</button>
-            {% if form.error %}
-                <div class="error">{{ form.error }}</div>
-            {% endif %}
-        </form>
+    <div class="content-body col-md-10 col-md-offset-1">
+        <div class="row gear-update">
+            <form class="form" action="" method="post" autocomplete="off">
+                {% csrf_token %}
+                <div class="title">
+                    <span>{% trans 'Actualizar Gear' %}</span>
+                </div>
+                {% for field in form %}
+                    <div class="col-md-6 group">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        <div>{{ field.errors }}</div>
+                    </div>
+                {% endfor %}
+                <div class="col-md-12">
+                    <button class="button-create">{% block gear_action %}Create{% endblock %} {{ object_name }}</button>
+                </div>
+                {% if form.error %}
+                    <div class="error">{{ form.error }}</div>
+                {% endif %}
+            </form>
+        </div>
     </div>
 {% endblock %}
