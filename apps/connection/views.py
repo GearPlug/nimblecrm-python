@@ -43,6 +43,8 @@ class ListConnectorView(LoginRequiredMixin, ListView):
         else:
             raise (Exception(
                 "Not an available type. must be either Source or Target."))
+        print(self.model.objects.filter(**kw).annotate(connections=Count('connection'))[1].connections)
+        print(self.model.objects.filter(**kw).annotate(connections=Count('connection'))[1])
         return self.model.objects.filter(**kw)
 
     def get_context_data(self, **kwargs):

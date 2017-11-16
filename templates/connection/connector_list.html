@@ -3,6 +3,7 @@
 {% load i18n %}
 
 {% block content %}
+    {% include 'connection/snippets/modal_connector_selected.html' %}
     <div class="content-body col-md-10 col-md-offset-1">
         <div class="row apps-list">
             <div class="text2">
@@ -26,39 +27,42 @@
                     </div>
                 </div>
             </div>
-            <div class="nav">
-                <div class="item">
-                    {% trans 'Más Usadas' %}
-                </div>
-                <div class="divider"></div>
-                <div class="item">
-                    {% trans 'Las Mejores Combinaciones' %}
-                </div>
-                <div class="divider"></div>
-                <div class="item">
-                    Lorem Ipsum
-                </div>
-            </div>
             <div class="list-wrapper">
                 <div class="row">
                     {% for connector in object_list %}
                         <div class="col-md-2">
-                            <a href="{% url 'connection:list' connector_id=connector.id type=type %}">
-                                <div class="list-item">
-                                    <div class="image1">
-                                        <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}"
-                                             width="73" height="73">
-                                    </div>
-                                    <div class="divider"></div>
-                                    <div class="name1">
-                                        {{ connector.name }}
-                                    </div>
+                            <div class="list-item" data-toggle="modal" data-target="#selected-connector-modal"
+                                 data-connector-name="{{ connector.name }}" data-connector-id="{{ connector.id }}"
+                                 data-connector-has-connections="{{ connector.has_connections }}"
+                                 data-connector-next-url="{% url 'connection:list' connector_id=connector.id type=type %}">
+                                <div class="image1">
+                                    <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}"
+                                         width="73" height="73">
                                 </div>
-                            </a>
+                                <div class="divider"></div>
+                                <div class="name1">
+                                    {{ connector.name }}
+                                </div>
+                            </div>
                         </div>
                     {% endfor %}
                 </div>
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        $(document).ready(function () {
+            $('div.list-item').on('click', function () {
+                $('span#selected-connector-name').text($(this).attr('data-connector-name'));
+                $('a#selected-connector-next-url').attr('href', $(this).attr('data-connector-next-url'));
+                {#                if($(this).attr('data-connector-has-connections'))#}
+                {#                $('div#selected-connector-text').text();#}
+                {#                $('span#selected-connector-action').text($(this).attr('data-connector-name'));#}
+                console.log()
+            })
+        });
+    </script>
 {% endblock %}
