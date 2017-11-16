@@ -62,6 +62,7 @@ class IncomingWebhook(View):
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class()
         try:
+            print(request.body.decode('utf-8'))
             body = json.loads(request.body.decode('utf-8'))
         except Exception as e:
             print(e)
