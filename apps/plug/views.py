@@ -32,6 +32,7 @@ class CreatePlugView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form, *args, **kwargs):
+        print(1)
         form.instance.user = self.request.user
         n = int(Plug.objects.filter(connection__user=self.request.user).count()) + 1
         form.instance.name = "Plug # %s for user %s" % (n, self.request.user.email)

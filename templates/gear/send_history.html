@@ -79,27 +79,25 @@
                     <div class="row">
                         <div class="item history-item" data-history="{{ obj.id }}">
                             <div class="col-md-1">
-                                {% if forloop.last %}
+                                {% if obj.sent == 0 %}
+                                    <div class="indicator red">FAILED</div>
+                                {% elif obj.sent == 1 %}
+                                    <div class="indicator green">SUCCESS</div>
+                                {% elif obj.sent == 2 %}
                                     <div class="indicator orange">FILTERED</div>
-                                {% else %}
-                                    {% if obj.sent %}
-                                        <div class="indicator green">SUCCESS</div>
-                                    {% else %}
-                                        <div class="indicator red">FAILED</div>
-                                    {% endif %}
                                 {% endif %}
                             </div>
                             <div class="col-md-5">
                                 <div class="text">
                                     {{ obj.date }}
-                                    {% if not obj.sent %}
+                                    {% if obj.sent != 1 %}
                                         <b class="resend">resend</b>
                                     {% endif %}
                                 </div>
                             </div>
                             <div class="col-md-12">
                                 <ul style="display:none;" data-show="false" data-history="{{ obj.id }}">
-                                    {% if obj.sent == False %}
+                                    {% if obj.sent != 1 %}
                                         <li><b>Response</b>: {{ obj.response }}</li>
                                     {% endif %}
                                     <li><b>Identifier</b>: {{ obj.identifier }}</li>
@@ -112,25 +110,6 @@
                     </div>
                 {% endfor %}
             </div>
-            {#    <ul>#}
-            {#        {% for obj in object_list %}#}
-            {#            <li>#}
-            {#                <div class="history-item" data-history="{{ obj.id }}">#}
-            {#                    <div class="icon_{{ obj.connector_name|lower }}">#}
-            {#                        <img src="{% get_media_prefix %}connector/icon/{{ obj.connector_name|lower }}.png"#}
-            {#                             width="15" height="15">#}
-            {#                        {{ obj.date }}#}
-            {#                        <b class="{{ obj.sent|yesno:"text_green,text_red" }}">#}
-            {#                            {{ obj.sent|yesno:"succesfully sent,error" }}#}
-            {#                        </b>#}
-            {#                    </div>#}
-            {#                    {% if not obj.sent %}#}
-            {#                        <b class="resend">resend</b>#}
-            {#                    {% endif %}#}
-            {#                </div>#}
-            {#            </li>#}
-            {#        {% endfor %}#}
-            {#    </ul>#}
         </div>
     </div>
 {% endblock %}

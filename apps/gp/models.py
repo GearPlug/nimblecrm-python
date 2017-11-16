@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 from apps.gp.enum import ConnectorEnum, FilterEnum
 from django.db import models
 from apps.gp.model_fields import JSONField
-from apps.gp.enum import ConnectorEnum
 
 connections = ['connection_{0}'.format(connector.name.lower()) for connector in ConnectorEnum.get_connector_list()]
 
@@ -598,6 +597,7 @@ class GearMap(models.Model):
     last_source_update = models.DateTimeField(null=True, default=None)
     last_source_order_by_field_value = models.CharField(max_length=64, null=True, blank=True, default=None)
     created = models.DateTimeField('created', auto_now_add=True)
+    version = models.SmallIntegerField('version', default=1)
 
     class Meta:
         unique_together = ['id', 'gear']
