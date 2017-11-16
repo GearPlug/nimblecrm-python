@@ -114,7 +114,7 @@ class Client(object):
         if datetime.now() > self.token_expiration_time:
             self.to_refresh_token()
         else:
-            print('token still valid.')
+            pass
 
     def to_refresh_token(self):
         oauth_vars = {'client_id': self.client_id,
