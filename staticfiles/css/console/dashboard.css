@@ -485,6 +485,7 @@ html {
 }
 
 .content-body .connections .list .test-button .button,
+.content-body .connections .list .test-button .text-wrapper,
 .content-body .connections .list .test-button .text-line,
 .content-body .connections .list .test-button .text {
     display: inline-block;
