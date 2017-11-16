@@ -15,7 +15,7 @@
     <link href="{% static 'css/landing/terms.css' %}" rel="stylesheet">
     <link href="{% static 'css/landing/privacy.css' %}" rel="stylesheet">
 {% endblock %}
-{% block body_class %}ayuda{% endblock %}
+{% block body_class %}{% endblock %}
 {% block body_base %}
     <div class="content">
         {% block header_content %}
@@ -40,11 +40,12 @@
                         </div>
                         <div class="col-md-2">
                             <div class="border_login">
-{#                                {% if request.user.is_authenticated is False %}#}
-{#                                    <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>#}
-{#                                {% else %}#}
-                                    <img src="{% static 'img/landing/avatar.png' %}" class="img-avatar"> Daniel L.
-{#                                {% endif %}#}
+                                {% if request.user.is_authenticated is False %}
+                                    <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>
+                                {% else %}
+                                    <img src="{% static 'img/landing/avatar.png' %}" class="img-avatar"><span
+                                    class="text-avatar">Daniel L.</span>
+                                {% endif %}
                             </div>
 
                         </div>

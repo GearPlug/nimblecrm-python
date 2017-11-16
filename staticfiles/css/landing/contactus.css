@@ -28,107 +28,146 @@
 
 .contactus-footer {
     background-color: #005ca7;
-    box-sizing: border-box;
-    padding: 5% 0 5% 0;
 }
 
-.contactus-footer .logo1 {
-    padding-top: 15%;
-    text-align: center;
+.contactus-footer .text-contact {
+    color: white;
+    font-family: "Sansation Light";
+    font-size: 6em;
+    margin-top: 18%;
+    padding-left: 20.3%;
 }
 
-.contactus-footer .address1 {
-    font-family: 'Sansation';
-    font-size: 1.40em;
-    color: #FFFFFF;
-
-    width: 50%;
-    margin: 0 auto;
-    padding-top: 10%;
+.contactus-footer .text-contact1 {
+    color: #09DE8D;
+    font-family: "Sansation";
+    font-size: 1.5em;
+    margin-top: -1%;
+    padding-left: 20.4%;
 }
 
-.contactus-footer .address1 span {
-    display: block;
+.contactus-footer .text-contact2 {
+    color: white;
+    font-family: "Sansation Light";
+    font-size: 1.5em;
+    line-height: 134%;
+    margin-top: 4.3%;
+    padding-left: 20.4%;
+    padding-right: 14%;
 }
 
-.contactus-footer .divider {
-    background-color: #008fc6;
-    width: 1px;
-    height: 560px;
-    display: inline-block;
-    vertical-align: top;
+.contactus-footer .img-direction {
+    margin-top: 7.1%;
+    padding-left: 20.2%;
 }
 
-.contactus-footer .form-wrapper {
-    display: inline-block;
-    vertical-align: top;
-
-    margin-left: 5%;
+.contactus-footer .img-phone {
+    margin-top: 7%;
+    padding-left: 2.2%;
 }
 
-.contactus-footer .form-wrapper form {
-    margin: 2% 0 0 2%;
+.contactus-footer .img-email {
+    margin-left: -2%;
+    margin-top: 7.5%;
 }
 
-.contactus-footer .form-wrapper .text3 {
-    font-family: 'Sansation Light';
-    font-size: 4.25em;
-    color: #47e093;
+.text-direction {
+    color: white;
+    font-family: "Sansation";
+    font-size: 1.1em;
+    line-height: 124%;
+    margin-left: 28%;
+    margin-top: -19%;
 }
 
-.contactus-footer .form-wrapper .form-group {
-    margin-bottom: 10px;
+.text-phone {
+    color: white;
+    font-family: "Sansation";
+    font-size: 1.1em;
+    margin-left: 27%;
+    margin-top: -15%;
 }
 
-.contactus-footer .form-wrapper .form-group label, .contactus-footer .form-wrapper .form-group input {
-    display: block;
+.text-email {
+    color: white;
+    font-family: "Sansation";
+    font-size: 1.1em;
+    margin-left: 20%;
+    margin-top: -8%;
 }
 
-.contactus-footer .form-wrapper .form-group label {
-    font-family: 'Sansation';
-    font-size: 1.40em;
-    color: #FFFFFF;
+.contactus-footer .nets {
+    margin-top: 8%;
+    padding-left: 20.7%;
 }
 
-.contactus-footer .form-wrapper .form-group input, textarea, button {
-    width: 410px;
-    height: 50px;
-    border: 0;
-
-    -webkit-border-radius: 15px;
-    -moz-border-radius: 15px;
-    border-radius: 15px;
-
-    font-family: 'Sansation';
-    font-size: 1.40em;
-    padding: 3%;
-
-    outline: none;
+.contactus-footer .nets .icon-facebook {
+    padding-left: 0.6%;
 }
 
-.contactus-footer .form-wrapper .form-group textarea {
-    width: 700px;
-    height: 120px;
-
-    resize: none;
+.form-contact {
+    margin-bottom: 8%;
+    margin-top: 10.5%;
 }
 
-.contactus-footer .form-wrapper .form-group .inline button {
-    width: 245px;
-    height: 50px;
-    border: 0;
-    background-color: #47e093;
-    color: #FFFFFF;
-    font-family: 'Sansation Bold';
-
-    font-size: 2.20em;
-    padding: 0;
-
-    float: right;
+.form-contact .form-group label {
+    color: white;
+    font-family: "Sansation";
+    font-size: 1.7em;
 }
 
-.contactus-footer .form-wrapper .form-group .inline input, button {
-    display: inline;
-    vertical-align: top;
+.form-contact .form-group input {
+    border: none;
+    border-radius: 17px 18px 15px 17px;
+    color: #9D9BA1;
+    font-family: "Sansation";
+    font-size: 1.5em;
+    height: 5.5%;
+    margin-bottom: -0.7%;
+    margin-top: 0.9%;
+    padding: 0 1%;
+    width: 49.2%;
 }
 
+.form-contact .form-group textarea {
+    border: none;
+    border-radius: 17px 18px 15px 17px;
+    color: #9D9BA1;
+    font-family: "Sansation";
+    font-size: 1.5em;
+    margin-bottom: -0.7%;
+    margin-top: 0.9%;
+    max-height: 13%;
+    max-width: 83.6%;
+    min-height: 13%;
+    min-width: 83.6%;
+    padding: 0 1%;
+}
+
+.form-contact .form-group .inline button {
+    background-color: #09DE8D;
+    border-radius: 17px 19px 18px 17px;
+    border-style: inherit;
+    color: #005CA5;
+    font-family: "Sansation Bold";
+    font-size: 2.7em;
+    margin-top: 4.7%;
+    width: 29.2%;
+}
+
+@media only screen and (max-width:1600px) {
+    .text-direction {
+        font-size: 1em;
+        margin-top: -23%;
+    }
+
+    .text-phone {
+        font-size: 1em;
+        margin-top: -19%;
+    }
+
+    .text-email {
+        font-size: 1em;
+        margin-top: -10%;
+    }
+}
