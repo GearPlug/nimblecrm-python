@@ -147,7 +147,7 @@ class Client(object):
     def get_persons(self, start_date=None):
         endpoint = "contacts?query="
         if start_date is not None:
-            values_with_date = {"and": [{"record type": {"is": "person"}}, {"created": {"range": {"start_date": start_date,"end_date": "2017-11-17T15:02:48-0500"}}}]}
+            values_with_date = {"and": [{"record type": {"is": "person"}}, {"created": {"range": {"start_date": start_date,"end_date": "2018-11-17T15:02:48-0500"}}}]}
             values = json.dumps(values_with_date)
         else:
             values = {"record type": {"is": "person"}}
@@ -162,7 +162,7 @@ class Client(object):
     def get_organizations(self, start_date=None):
         endpoint = "contacts?query="
         if start_date is not None:
-            values_with_date = {"and": [{"record type": {"is": "company"}}, {"created": {"range": {"start_date": start_date,"end_date": "2017-11-17T15:02:48-0500"}}}]}
+            values_with_date = {"and": [{"record type": {"is": "company"}}, {"created": {"range": {"start_date": start_date,"end_date": "2018-11-17T15:02:48-0500"}}}]}
             values = json.dumps(values_with_date)
         else:
             values = {"record type": {"is": "company"}}
