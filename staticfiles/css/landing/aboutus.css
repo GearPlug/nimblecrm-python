@@ -1,25 +1,33 @@
 .aboutus-banner {
     background: url("../../img/landing/icons1.png") no-repeat left bottom;
-}
-
-.aboutus-text {
-    margin: 14.9% 0 28% 27.5%;
+    padding-bottom: 300px;
 }
 
 .aboutus-text .text1 {
     font-family: 'Sansation';
     font-weight: 700;
-    font-size: 5.4em;
-    color: #005ca7;
+    font-size: 5.5em;
+    color: #005CA7;
     letter-spacing: 2px;
+    margin: 5.9% 0 0 35.2%;
 }
 
 .aboutus-text .text2 {
     font-family: 'Sansation Light';
     font-size: 5.7em;
     color: #9d9ba1;
-    margin-top: -2.2%;
     line-height: 103%;
+    margin: -1.2% 0 0 18.1%;
+    letter-spacing: 1.2px;
+}
+
+.aboutus-text .text3 {
+    font-family: 'Sansation Light';
+    font-size: 5.7em;
+    color: #9d9ba1;
+    line-height: 103%;
+    margin: 0.2% 0 0 24.2%;
+    letter-spacing: 1.1px;
 }
 
 .aboutus-description {
@@ -82,12 +90,40 @@
     margin: 13.3% 0 3.2% 0;
 }
 
+.img-guy {
+    margin: -4.6% 0 0 -612px;
+    position: absolute;
+    z-index: -1;
+}
+
 @media only screen and (max-width:1600px) {
     .aboutus-text {
         margin: 14.9% 0 28% 29.5%;
     }
+
     .hr_service {
         margin: -0.9% 0 0 40.4%;
         width: 19.6%;
+    }
+
+    .aboutus-banner {
+        padding-bottom: 0;
+    }
+
+    .aboutus-text .text1 {
+        margin: -6.1% 0 0 5.2%;
+    }
+
+    .aboutus-text .text2 {
+        margin: -1.2% 0 0 -17.1%;
+    }
+
+    .aboutus-text .text3 {
+        margin: 0.2% 0 0 -2.8%;
+    }
+
+    .img-guy {
+        margin: -4.6% 0 0 -662px;
+        width: 197%;
     }
 }
