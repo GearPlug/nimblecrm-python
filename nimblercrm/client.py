@@ -58,6 +58,7 @@ class Client(object):
         }
         response = requests.request(method, url, headers=headers, data=data)
         print(response.status_code)
+        print(response.json())
         return (response)
 
     def _parse(self, response):
