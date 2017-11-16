@@ -944,6 +944,7 @@ html {
 .content-body .apps-list .list-wrapper .list-item {
     text-align: center;
     margin: 5% 0 10% 0;
+    cursor: pointer;
 }
 
 .content-body .apps-list .list-wrapper .list-item .image1 {

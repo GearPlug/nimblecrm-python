@@ -15,7 +15,7 @@
     <link href="{% static 'css/landing/terms.css' %}" rel="stylesheet">
     <link href="{% static 'css/landing/privacy.css' %}" rel="stylesheet">
 {% endblock %}
-{% block body_class %}ayuda{% endblock %}
+{% block body_class %}{% endblock %}
 {% block body_base %}
     <div class="content">
         {% block header_content %}
@@ -44,7 +44,7 @@
                                     <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>
                                 {% else %}
                                     <img src="{% static 'img/landing/avatar.png' %}" class="img-avatar">
-                                    {{ request.user.get_full_name }}
+                                    <span class="text-avatar">{{ request.user.get_full_name }}</span>
                                 {% endif %}
                             </div>
 

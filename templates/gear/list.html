@@ -3,7 +3,7 @@
 
 {% block content %}
     <div class="context-menu" id="context-menu" style="display: none;">
-        <a href="#!">
+        <a id="menu-editar-gear" href="#!">
             <div class="menu-item">
                 Editar Gear
             </div>
@@ -178,6 +178,7 @@
                     'left': left,
                     'position': 'absolute'
                 });
+                $('div#context-menu a#menu-editar-gear').attr('href', '{% url "gear:update" pk=1234 %}'.replace('1234', $(this).parent().parent().parent().attr('data-gear-id')));
                 $('#context-menu').show();
             });
 

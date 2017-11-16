@@ -164,28 +164,27 @@ class BaseController(FilterBaseController):
             # raise ControllerError(code=0, controller=self._connector.name,
             #                       message="Please check you're using a valid connection and a valid plug.")
 
-        def get_target_fields(self, **kwargs):
-            raise ControllerError('Not implemented yet.')
+    def get_target_fields(self, **kwargs):
+        raise ControllerError('Not implemented yet.')
 
-        def get_mapping_fields(self, **kwargs):
-            raise ControllerError('Not implemented yet.')
+    def get_mapping_fields(self, **kwargs):
+        raise ControllerError('Not implemented yet.')
 
-        def get_action_specification_options(self, action_specification_id):
-            raise ControllerError('Not implemented yet.')
+    def get_action_specification_options(self, action_specification_id):
+        raise ControllerError('Not implemented yet.')
 
-        def create_webhook(self, **kwargs):
-            raise ControllerError('Webhooks are not supported.')
+    def create_webhook(self, **kwargs):
+        raise ControllerError('Webhooks are not supported.')
 
-        def do_webhook_process(self, **kwargs):
-            raise ControllerError('Not implemented yet.')
+    def do_webhook_process(self, **kwargs):
+        raise ControllerError('Not implemented yet.')
 
-        @property
-        def has_webhook(self):
-            return False
-
-        @property
-        def connector(self):
-            return self._connector
+    @property
+    def connector(self):
+        return self._connector
+    @property
+    def has_webhook(self):
+        return False
 
 
 class GoogleBaseController(BaseController):

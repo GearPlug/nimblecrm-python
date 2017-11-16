@@ -1,6 +1,6 @@
 .ayuda {
-    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 0 47px;*/
-    /*background-size: cover;*/
+    background: url(../../img/landing/plantilla.png) no-repeat scroll -467px 0;
+    background-size: cover;
 }
 
 .bg_page {
@@ -43,7 +43,6 @@
     border-left: #09DF8E solid 5px;
     color: #9B999F;
     font-family: 'Sansation';
-    font-size: 2.1em;
     margin-top: 8%;
     padding: 1% 0 2% 7.5%;
 }
@@ -115,4 +114,8 @@ footer {
 
 .img-avatar {
     margin-right: 6%;
+}
+
+.text-avatar {
+    font-size: 2.1em;
 }
