@@ -1019,23 +1019,27 @@ html {
     padding-top: 7px;
 }
 
-.content-body .plug-test .text {
+.content-body .plug-test .text,
+.content-body .connections .text{
     font-size: 16px;
     color: #9d9ba1;
 }
 
-.content-body .plug-test .text.inline {
+.content-body .plug-test .text.inline,
+.content-body .connections .text.inline{
     display: inline-block;
     vertical-align: top;
 }
 
-.content-body .plug-test .image {
+.content-body .plug-test .image,
+.content-body .connections .image{
     padding-right: 10px;
     display: inline-block;
     vertical-align: top;
 }
 
-.content-body .plug-test .test-wrapper {
+.content-body .plug-test .test-wrapper,
+.content-body .connections .test-wrapper{
     padding-bottom: 40px;
 }
 

@@ -3,13 +3,13 @@
 
 {% block content %}
     <div class="content-body col-md-10 col-md-offset-1">
-        {% if object_list %}
-            <div class="row connections">
-                <form class="form" method="post" action="">
+        <div class="row connections">
+            <form class="form" method="post" action="">
                 {% csrf_token %}
-                    <div class="title">
-                        <span>{% trans 'Selección de Conexión' %}</span>
-                    </div>
+                <div class="title">
+                    <span>{% trans 'Selección de Conexión' %}</span>
+                </div>
+                {% if object_list %}
                     <div class="list">
                         {% for connection in object_list %}
                             <div class="row">
@@ -24,8 +24,8 @@
                                     </div>
                                 </div>
                                 <div class="col-md-3 test-button">
-                                    <div class="button testConnectionButton {% if forloop.first %}passed{% else %}failed{% endif %}" connection_id="{{ connection.id }}">
-
+                                    <div class="button testConnectionButton {% if forloop.first %}passed{% else %}failed{% endif %}"
+                                         connection_id="{{ connection.id }}">
                                     </div>
                                     <div class="text-line"></div>
                                     <div class="text {% if forloop.first %}passed{% else %}failed{% endif %}">
@@ -38,15 +38,27 @@
                     <div class="row">
                         <div class="col-md-5">
                             <button class="button-create" type="submit">{% trans 'Usar Conexión' %}</button>
-                            <a href="{% url 'connection:create' connector_id=connector_id %}" class="button-create green">
+                            <a href="{% url 'connection:create' connector_id=connector_id %}"
+                               class="button-create green">
                                 {% trans 'Crear Conexión' %}
                             </a>
                         </div>
                     </div>
-                </form>
-            </div>
-        {% endif %}
-
+                {% else %}
+                    <div class="test-wrapper">
+                        <div class="image">
+                            <img src="{% static 'img/console/warning.png' %}" width="48" height="48">
+                        </div>
+                        <div class="text inline">
+                            {% trans 'No hay conexiones' %}
+                        </div>
+                    </div>
+                    <a href="{% url 'connection:create' connector_id=connector_id %}" class="button-create green">
+                        {% trans 'Crear Conexión' %}
+                    </a>
+                {% endif %}
+            </form>
+        </div>
     </div>
 {% endblock %}
 

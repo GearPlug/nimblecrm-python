@@ -234,6 +234,9 @@ class PostgreSQLController(BaseController):
         except Exception as e:
             return False
 
+    def has_webhook(self):
+        return None
+
     def describe_table(self):
         try:
             self._cursor.execute(
