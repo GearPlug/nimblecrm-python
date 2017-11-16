@@ -33,7 +33,7 @@ html {
 
 .dashboard-header .right-side {
     float: right;
-    font-size: 1.60em;
+    font-size: 1.40em;
     color: #9d9ba1;
     display: inline-block;
     vertical-align: top;
@@ -51,6 +51,7 @@ html {
 .dashboard-header .right-side .user .icon {
     display: inline-block;
     vertical-align: top;
+    cursor: pointer;
 }
 
 .dashboard-header .right-side .user .name {
@@ -58,8 +59,7 @@ html {
 }
 
 .dashboard-header .right-side .user .icon {
-    padding-top: 5px;
-    cursor: pointer;
+    padding: 5px 5px 0 15px;
 }
 
 .dashboard-header .right-side .divider {
@@ -566,7 +566,8 @@ html {
 }
 
 .gp-modal,
-.gp-modal .modal-content2 {
+.gp-modal .modal-content2,
+.gp-modal .modal-content3 {
     border-radius: 25px 25px 25px 25px;
     -moz-border-radius: 25px 25px 25px 25px;
     -webkit-border-radius: 25px 25px 25px 25px;
@@ -603,6 +604,38 @@ html {
     height: calc(100% - 10px);
     background-color: #005ca7;
     padding: 20px 36px;
+}
+
+.gp-modal .modal-content3 {
+    width: 580px;
+    background-color: #f8f8f8;
+    padding: 30px 36px;
+    text-align: center;
+}
+
+.gp-modal .modal-content3 .image-wrapper {
+    width: 136px;
+    height: 136px;
+    border-radius: 200px 200px 200px 200px;
+    -moz-border-radius: 200px 200px 200px 200px;
+    -webkit-border-radius: 200px 200px 200px 200px;
+    border: 4px solid #00f493;
+    background-color: #FFFFFF;
+    overflow: hidden;
+    margin: 0 auto;
+}
+
+.gp-modal .modal-content3 .text1 {
+    font-family: "Sansation Bold";
+    font-size: 2.00em;
+    color: #0054a3;
+    padding-top: 20px;
+}
+
+.gp-modal .modal-content3 .text2 {
+    font-size: 1.60em;
+    color: #9d9ba1;
+    padding: 10px 0;
 }
 
 .gp-modal.alternative2 .modal-content2 {
@@ -955,7 +988,8 @@ html {
 .content-body .mapping .form .button-create,
 .content-body .connections .form .button-create,
 .content-body .specifications .form .button-create,
-.content-body .plug-test .form .button-create {
+.content-body .plug-test .form .button-create,
+.gp-modal .modal-content3 .button-create {
     font-family: "Sansation Bold";
     font-size: 1.60em;
     min-width: 200px;
@@ -980,18 +1014,37 @@ html {
 }
 
 .content-body .connections .form a.button-create,
-.content-body .plug-test .form a.button-create {
+.content-body .plug-test .form a.button-create,
+.gp-modal .modal-content3 a.button-create {
     padding-top: 7px;
 }
 
 .content-body .plug-test .text {
     font-size: 16px;
     color: #9d9ba1;
+}
 
+.content-body .plug-test .text.inline {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.content-body .plug-test .image {
+    padding-right: 10px;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.content-body .plug-test .test-wrapper {
+    padding-bottom: 40px;
 }
 
 .content-body .button-create.green {
     background-color: #00e08f !important;
+}
+
+.content-body .button-create.gray, .gp-modal .modal-content3 .button-create.gray {
+    background-color: #9d9ba1 !important;
 }
 
 .btn {
