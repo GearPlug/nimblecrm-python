@@ -192,6 +192,35 @@
     padding-right: 23%;
 }
 
+@media only screen and (max-width:1910px) {
+    .steps .step1-title {
+        margin-top: 10.5%;
+    }
+
+    .steps .step1-text .border-step1text {
+        margin-left: 5%;
+        padding-right: 40%;
+    }
+
+    .steps .step2-title {
+        margin-top: 13.2%;
+        padding-left: 11%;
+    }
+
+    .steps .step2-title .hr-steps {
+        width: 66.5%;
+    }
+
+    .steps .step2-text {
+        margin-top: 12%;
+    }
+
+    .steps .step2-text .border-step2text {
+        margin-right: 6%;
+        padding-left: 40%;
+    }
+}
+
 @media only screen and (max-width:1600px) {
     .steps {
         background: url(../../img/landing/steps1600.png) no-repeat 305px 105px;

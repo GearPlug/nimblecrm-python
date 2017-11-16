@@ -311,6 +311,12 @@
     width: 372px;
 }
 
+@media only screen and (max-width:1910px) {
+    .carousel-control {
+        height: 96.3%;
+    }
+}
+
 @media only screen and (max-width:1600px) {
     .text_menu {
         padding-left: 0.4%;
