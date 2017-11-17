@@ -19,7 +19,7 @@ from odoocrm.client import Client as OdooCRMClient
 from batchbook.client import Client as ClientBatchbook
 from actcrm.client import Client as ActCRMClient
 from agilecrm.client import Client as AgileCRMClient
-from datetime import datetime, timedelta
+import datetime
 import time
 import requests
 import re
@@ -2342,19 +2342,19 @@ class AgileCRMController(BaseController):
                                       message='Invalid login. {}'.format(str(e)))
 
     def test_connection(self):
-        return self._client is not None
+        return self._client.get_contacts({'page_size': 1}) is not None
 
-    def get_search_partner(self, query, params):
-        try:
-            return self._client.search_partner(query, params)
-        except BaseError as e:
-            raise ControllerError(code=3, controller=ConnectorEnum.OdooCRM, message='Error. {}'.format(str(e)))
+    def has_webhook(self):
+        return None
 
-    def get_read_partner(self, query):
+    def search_contact(self, query):
         try:
-            return self._client.read_partner(query)
+            if query:
+                return self._client.search_contact(query)
+            else:
+                return self._client.get_contacts()
         except BaseError as e:
-            raise ControllerError(code=3, controller=ConnectorEnum.OdooCRM, message='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.AgileCRM, message='Error. {}'.format(str(e)))
 
     def get_list_fields(self):
         try:
@@ -2365,7 +2365,7 @@ class AgileCRMController(BaseController):
                 _list.append(v)
             return _list
         except BaseError as e:
-            raise ControllerError(code=3, controller=ConnectorEnum.OdooCRM, message='Error. {}'.format(str(e)))
+            raise ControllerError(code=3, controller=ConnectorEnum.AgileCRM, message='Error. {}'.format(str(e)))
 
     def download_to_stored_data(self, connection_object, plug, limit=50, last_source_record=None, **kwargs):
 
@@ -2378,28 +2378,24 @@ class AgileCRMController(BaseController):
         :param kwargs:
         :return:
         """
-        query = [[]]
+        query = None
         if last_source_record is not None:
-            query = [[['create_date', '>', last_source_record]]]
-        entries_id = self.get_search_partner(query, {'limit': limit, 'order': 'id desc'})
-        if not entries_id:
-            return False
-        entries = self.get_read_partner([entries_id])
+            today = datetime.datetime.today().timestamp()
+            query = {"rules": [{"LHS": "created_time", "CONDITION": "BETWEEN", "RHS": int(last_source_record) * 1000,
+                                "RHS_NEW": int(today) * 1000}], "contact_type": "PERSON"}
+        params = None
+        if query:
+            params = {
+                'page_size': 25,
+                'global_sort_key': '-created_time',
+                'filterJson': json.dumps(query)
+            }
+        entries = self.search_contact(params)
+
         raw_data = []
         new_data = []
-        for item in entries:
-            try:
-                del item['image']
-            except KeyError:
-                pass
-            try:
-                del item['image_small']
-            except KeyError:
-                pass
-            try:
-                del item['image_medium']
-            except KeyError:
-                pass
+        for _item in entries:
+            item = self.get_fields_from_properties(_item)
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
             if not q.exists():
                 item_data = []
@@ -2432,8 +2428,14 @@ class AgileCRMController(BaseController):
                 result_list.append(
                     {'identifier': {'name': 'id', 'value': stored_data.object_id}, 'is_stored': is_stored,
                      'raw': obj_raw, })
-            return {'downloaded_data': result_list, 'last_source_record': result_list[0]['raw']['create_date']}
+            return {'downloaded_data': result_list, 'last_source_record': result_list[0]['raw']['created_time']}
         return False
+
+    def get_fields_from_properties(self, _dict):
+        properties = _dict.pop('properties')
+        for i in properties:
+            _dict[i['name']] = i['value']
+        return _dict
 
     def send_stored_data(self, data_list, **kwargs):
         obj_list = []
@@ -2453,16 +2455,16 @@ class AgileCRMController(BaseController):
 
     def set_entry(self, item):
         try:
-            return self._client.create_partner(item)
+            return self._client.create_contact(item)
         except WrongParameter as e:
-            raise ControllerError(code=4, controller=ConnectorEnum.OdooCRM,
+            raise ControllerError(code=4, controller=ConnectorEnum.AgileCRM,
                                   message='Wrong Parameter. {}'.format(str(e)))
         except BaseError as e:
             raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_list_fields()
-        return [MapField(f, controller=ConnectorEnum.OdooCRM) for f in fields]
+        return [MapField(f, controller=ConnectorEnum.AgileCRM) for f in fields]
 
     def get_action_specification_options(self, action_specification_id):
         pass
