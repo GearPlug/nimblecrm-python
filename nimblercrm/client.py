@@ -112,7 +112,6 @@ class Client(object):
 
     def token_expiration_checker(self):
         print(self.token_expiration_time)
-        print(dt)
         print(datetime.now())
         if datetime.now() > self.token_expiration_time:
             self.to_refresh_token()
