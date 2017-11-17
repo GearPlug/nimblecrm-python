@@ -44,7 +44,7 @@
     color: #005CA5;
     font-family: "Sansation";
     font-size: 3.6em;
-    margin-top: 2.2%;
+    margin-top: 1.8%;
     text-align: right;
     padding-right: 14.4%;
 }
@@ -110,7 +110,7 @@
     color: #727277;
     font-family: "Sansation Light";
     font-size: 2em;
-    margin-top: 8.5%;
+    margin-top: 9.5%;
 }
 
 .steps .step4-text {
@@ -131,9 +131,10 @@
 .steps .step1-text .border-step1text {
     border-left: 4px solid #09DE8D;
     line-height: 124%;
-    margin-left: 3%;
+    margin-left: 4%;
     padding-left: 1.5%;
     padding-right: 42%;
+    text-align: justify;
 }
 
 .steps .step2-text .border-step2text {
@@ -141,8 +142,8 @@
     line-height: 117%;
     margin-right: 11%;
     padding-right: 1%;
-    text-align: right;
     padding-left: 37%;
+    text-align: justify;
 }
 
 .steps .step3-text .border-step3text {
@@ -151,6 +152,7 @@
     margin-left: -1.5%;
     padding-left: 1.5%;
     padding-right: 67%;
+    text-align: justify;
 }
 
 .steps .step4-text .border-step4text {
@@ -159,6 +161,7 @@
     margin-left: 9.7%;
     padding-top: 1%;
     margin-right: 28%;
+    text-align: justify;
 }
 
 .steps .step5-text .border-step5text {
@@ -166,7 +169,7 @@
     line-height: 121%;
     margin-left: 36%;
     padding-top: 1.2%;
-    margin-right: -6%;
+    text-align: justify;
 }
 
 .stepfinal {
@@ -197,6 +200,10 @@
         margin-top: 10.5%;
     }
 
+    .steps .step1-text {
+        margin-top: 8.7%;
+    }
+
     .steps .step1-text .border-step1text {
         margin-left: 5%;
         padding-right: 40%;
@@ -212,12 +219,42 @@
     }
 
     .steps .step2-text {
-        margin-top: 12%;
+        margin-top: 11.4%;
     }
 
     .steps .step2-text .border-step2text {
         margin-right: 6%;
         padding-left: 40%;
+    }
+
+    .steps .step3-title {
+        margin-top: 13.2%;
+    }
+
+    .steps .step3-text .border-step3text {
+        margin-left: 1.5%;
+        padding-right: 62.6%;
+    }
+
+    .steps .step4-title {
+        padding-right: 10.4%;
+    }
+
+    .steps .step4-text {
+        margin-top: 7.8%;
+    }
+
+    .steps .step4-text .border-step4text {
+        margin-left: 15.7%;
+        margin-right: 20%;
+    }
+
+    .steps .step5-title {
+        margin-top: 12.3%;
+    }
+
+    .stepfinal {
+        padding-left: 5%;
     }
 }
 
