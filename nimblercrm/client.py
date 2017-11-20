@@ -105,6 +105,7 @@ class Client(object):
     def token_expiration_checker(self):
         dt = datetime.now()
         print('TIPO AAA:', type(self.token_expiration_time))
+        print('TIPO BBB:', self.token_expiration_time)
         if dt > self.token_expiration_time:
             self.to_refresh_token()
         else:
