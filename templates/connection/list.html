@@ -38,6 +38,11 @@
                         {% endfor %}
                     </div>
                     <div class="row">
+                        <div class="col-md-5" id="noconnection" style="display: none;">
+                            Debes seleccionar una conexión.
+                        </div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-5">
                             <button class="button-create" type="submit">{% trans 'Usar Conexión' %}</button>
                             <a href="{% url 'connection:create' connector_id=connector_id %}"
@@ -76,6 +81,13 @@
             }, 100);
         }
 
+        $(document).on('submit', function (e) {
+            if (!$('input[type="radio"]').is(':checked')) {
+                e.preventDefault();
+                $('#noconnection').show()
+            }
+        });
+
         $('.testConnectionButton').click(function (e) {
             var button = $(this);
             $.ajax({
@@ -104,5 +116,7 @@
         $('.item').click(function (e) {
             $(this).find('input').prop('checked', true)
         })
+
+
     </script>
 {% endblock %}
