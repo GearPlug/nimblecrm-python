@@ -723,7 +723,7 @@ html {
 
 .gp-modal .modal-content2 .button {
     font-family: "Sansation Bold";
-    font-size: 1.70em;
+    font-size: 1.60em;
     color: #FFFFFF;
     background-color: #00e08f;
     padding-top: 5px;
@@ -778,8 +778,8 @@ html {
     width: 75%;
     margin: 0 auto;
     position: relative;
-    top: 45px;
-    background-color: #ffffff;
+    top: 40px;
+    background-color: transparent;
     padding: 0;
     overflow: hidden;
 
@@ -790,7 +790,7 @@ html {
 
 .gp-modal.modal-alternative .modal-content2 .button .wrapper {
     background-color: #005ca7;
-    padding-top: 5px;
+    padding-top: 7px;
     height: 100%;
     border-radius: 25px 25px 25px 25px;
     -moz-border-radius: 25px 25px 25px 25px;
