@@ -141,7 +141,7 @@ class Client(object):
             print(e)
 
     def get_persons(self, start_date=None):
-        endpoint = "contacts?sort=created:desc?query="
+        endpoint = "contacts?sort=created:desc&query="
         if start_date is not None:
             qs1 = {"record type": {"is": "person"}}
             qs2 = {"created": {"range": {"start_date": start_date, "end_date": "2018-11-17T15:02:48-0500"}}}
@@ -159,7 +159,7 @@ class Client(object):
             print(e)
 
     def get_organizations(self, start_date=None):
-        endpoint = "contacts?sort=created:desc?query="
+        endpoint = "contacts?sort=created:desc&query="
         if start_date is not None:
             qs1 = {"record type": {"is": "company"}}
             qs2 = {"created": {"range": {"start_date": start_date, "end_date": "2018-11-17T15:02:48-0500"}}}
