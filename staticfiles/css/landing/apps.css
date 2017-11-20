@@ -1,0 +1,116 @@
+.apps-banner {
+    background: url("../../img/landing/bg_banner.png") no-repeat;
+}
+
+.apps-banner .text1 {
+    font-family: "Sansation";
+    font-size: 4.8em;
+    color: #FFFFFF;
+    text-align: center;
+    margin-top: 1.7%;
+    margin-bottom: 2.6%;
+}
+
+.apps-list {
+    margin-bottom: 4.1%;
+}
+
+.apps-list .text2 {
+    font-family: "Sansation Light";
+    font-size: 3.5em;
+    color: #727277;
+    text-align: center;
+    margin-top: 2.6%;
+}
+
+.apps-list .search1 {
+    margin-top: 1.7%;
+    background-color: #005CA6;
+    width: 34.8%;
+    margin-left: 32.6%;
+    -webkit-border-radius: 22px;
+    -moz-border-radius: 22px;
+    border-radius: 28px;
+}
+
+.apps-list .search1 input {
+    width: 94.3%;
+    height: 4.4%;
+    border: 0;
+    -webkit-border-radius: 22px;
+    -moz-border-radius: 22px;
+    border-radius: 22px;
+    font-family: 'Sansation';
+    font-size: 1.40em;
+    outline: none;
+    background-color: #f7f8f8;
+    margin: 1.8% 0 1.8% 2.5%;
+    background-image: url("../../img/landing/lupa.png");
+    background-repeat: no-repeat;
+    background-position: 3% 41%;
+    padding-left: 9%;
+}
+
+.apps-list .list-wrapper {
+    margin: 4.38% 7.5% 0 8.6%;
+}
+
+.apps-list .list-wrapper .list-item {
+    text-align: center;
+    margin: 5% 0 10% 0;
+}
+
+.apps-list .list-wrapper .list-item .image1 {
+
+}
+
+.apps-list .list-wrapper .list-item .divider {
+    height: 1px;
+    display: inline-block;
+    background-color: #e5e6e9;
+    margin: 13% 0 2.2% 0;
+}
+
+.apps-list .list-wrapper .list-item .name1 {
+    font-family: "Sansation Light";
+    font-size: 1.8em;
+    color: #727277;
+}
+
+.search1 .bootstrap-select {
+    width: 25.3% !important;
+    outline: 0;
+}
+
+button.btn-default, button.btn-default:hover, .open .dropdown-toggle.btn-default:focus,
+.open .dropdown-toggle.btn-default:active, button.btn-default:active:focus, button.btn-default:active:hover,
+.open .dropdown-toggle.btn-default, button.btn-default:active, button.btn-default:focus,
+.open .dropdown-toggle.btn-default:hover {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+.bootstrap-select button.dropdown-toggle.bs-placeholder, .bootstrap-select button.dropdown-toggle.bs-placeholder:hover,
+.bootstrap-select button.dropdown-toggle.bs-placeholder:focus,
+.bootstrap-select button.dropdown-toggle.bs-placeholder:active, button.btn-default:focus {
+    color: white;
+}
+
+button.btn {
+    font-size: 2em !important;
+}
+
+.search1 .bootstrap-select .dropdown-toggle:focus, .bootstrap-select.btn-group .dropdown-toggle .filter-option:focus {
+    outline: 0 !important;
+}
+
+.search1 .btn-group.open .dropdown-toggle, button.btn:active {
+    box-shadow: none;
+}
+
+@media only screen and (max-width:1600px) {
+    .apps-list .search1 {
+        width: 38.8%;
+        margin-left: 28.6%;
+    }
+}

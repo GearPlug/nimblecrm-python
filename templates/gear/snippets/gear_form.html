@@ -1,0 +1,33 @@
+{% load static %}
+
+<div id="gear-modal" class="modal fade" role="dialog">
+    <div class="gp-modal modal-dialog">
+        <button type="button" class="close close-button" data-dismiss="modal">
+            <img src="{% static 'img/console/g1688.png' %}" width="50">
+        </button>
+        <div class="modal-content2">
+            <div class="title">
+                Nuevo Gear
+            </div>
+            <div class="form">
+                <form action="{% url 'gear:create' %}" method="post" autocomplete="off" id="gear-form">
+                    <div class="group">
+                        {{ gear_form.name.label_tag }}
+                        {{ gear_form.name }}
+                    </div>
+                    <div class="group">
+                        {{ gear_form.gear_group.label_tag }}
+                        {{ gear_form.gear_group }}
+                    </div>
+                    {% if form.error %}
+                        <div class="error">{{ form.error }}</div>
+                    {% endif %}
+                    {% csrf_token %}
+                    <button class="button">
+                        Continuar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

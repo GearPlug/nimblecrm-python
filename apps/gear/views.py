@@ -1,15 +1,20 @@
-from apps.gp.models import GearGroup
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.forms import modelform_factory, modelformset_factory
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
-from django.http.response import JsonResponse
+from django.views.generic.edit import FormMixin
+from django.http.response import JsonResponse, HttpResponseForbidden, HttpResponseRedirect
 from apps.gear.apps import APP_NAME as app_name
-from apps.gear.forms import MapForm
-from django.contrib.auth.mixins import LoginRequiredMixin
+from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm, FiltersForm
 from apps.gp.enum import ConnectorEnum
-from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, DownloadHistory, SendHistory
+from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, GearGroup, GearFilter
+from apps.history.models import DownloadHistory, SendHistory
+from django.shortcuts import render
+from django.urls import reverse
 from oauth2client import client
 import httplib2
 import json
+from django.apps import apps
 
 
 class ListGearView(LoginRequiredMixin, ListView):
@@ -24,6 +29,10 @@ class ListGearView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super(ListGearView, self).get_context_data(**kwargs)
+        gear_form = modelform_factory(Gear, fields=('name', 'gear_group'))
+        gear_form.base_fields["gear_group"].queryset = GearGroup.objects.filter(user=self.request.user)
+        context['gear_form'] = gear_form
+        context['geargroup_form'] = modelform_factory(GearGroup, fields=('name',))
         return context
 
     def get_queryset(self):
@@ -56,6 +65,9 @@ class CreateGearView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.user = self.request.user
         response = super(CreateGearView, self).form_valid(form)
+        if self.request.is_ajax():
+            self.object = form.save()
+            response = JsonResponse({'result': 'created', 'next_url': self.get_success_url()})
         GearMap.objects.create(gear=self.object)
         return response
 
@@ -110,14 +122,20 @@ class UpdateGearView(LoginRequiredMixin, UpdateView):
 
 class CreateGearGroupView(CreateView):
     model = GearGroup
-    template_name = 'gear/create.html'
+    template_name = 'gear/snippets/gear_form.html'
     fields = ['name', ]
     login_url = '/accounts/login/'
     success_url = reverse_lazy('gear:list')
 
     def form_valid(self, form):
         form.instance.user = self.request.user
+        if self.request.is_ajax():
+            self.object = form.save()
+            return JsonResponse({'result': 'created', 'next_url': self.get_success_url()})
         return super(CreateGearGroupView, self).form_valid(form)
+
+    def form_invalid(self, form):
+        return super(CreateGearGroupView, self).form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super(CreateGearGroupView, self).get_context_data(**kwargs)
@@ -219,7 +237,6 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
     def form_invalid(self, form, *args, **kwargs):
-        print("fue invalido")
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):
@@ -276,33 +293,128 @@ class ActivityView(LoginRequiredMixin, ListView):
         return obj_list
 
 
-class GearDownloadHistoryView(LoginRequiredMixin, ListView):
-    model = DownloadHistory
-    template_name = 'gear/download_history.html'
-    login_url = '/accounts/login/'
-
-    def get_queryset(self):
-        return [{'connection': json.loads(item.connection)[0]['fields']['name'],
-                 'raw': [{'name': k, 'value': v} for k, v in json.loads(item.raw).items()],
-                 'date': item.date,
-                 'connector_id': item.connector_id
-                 } for item in self.model.objects.filter(gear_id=self.kwargs['pk'])]
-
-
-class GearSendHistoryView(LoginRequiredMixin, ListView):
+class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
     model = SendHistory
+    form_class = SendHistoryForm
     template_name = 'gear/send_history.html'
     login_url = '/accounts/login/'
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
+        order = 'date'
+        if self.request.method == "POST":
+            if 'date_from' in self.request.POST and self.request.POST['date_from']:
+                if 'date_to' in self.request.POST and self.request.POST['date_to']:
+                    kwargs['date__range'] = (self.request.POST['date_from'], self.request.POST['date_to'])
+                else:
+                    kwargs['date__gte'] = self.request.POST['date_from']
+            elif 'date_to' in self.request.POST and self.request.POST['date_to']:
+                kwargs['date__lte'] = self.request.POST['date_to']
+            if 'order' in self.request.POST and self.request.POST['order'] == 'desc':
+                order = '-date'
+            if 'sent' in kwargs and kwargs['sent'] == '0':
+                del kwargs['sent']
+            del kwargs['date_from']
+            del kwargs['date_to']
+            del kwargs['order']
         return [{'connection': json.loads(item.connection)[0]['fields']['name'],
                  'data': [{'name': k, 'value': v} for k, v in json.loads(item.data).items()],
                  'date': item.date,
                  'connector_id': item.connector_id,
+                 'connector_name': ConnectorEnum.get_connector(item.connector_id).name,
                  'sent': item.sent,
                  'response': item.response,
                  'identifier': item.identifier,
-                 } for item in self.model.objects.filter(gear_id=self.kwargs['pk'])]
+                 'id': item.id,
+                 } for item in self.model.objects.filter(gear_id=self.kwargs['pk'], **kwargs).order_by(order)]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if not request.user.is_authenticated or Gear.objects.get(pk=self.kwargs['pk']).user != self.request.user:
+                return HttpResponseForbidden()
+        except:
+            return HttpResponseForbidden()
+        return super(GearSendHistoryView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(GearSendHistoryView, self).get_context_data(**kwargs)
+        context['form'] = self.get_form()
+        return context
+
+    def post(self, request, **kwargs):
+        if not request.user.is_authenticated and Gear.objects.get(self.kwargs['pk']).user != self.request.user:
+            return HttpResponseForbidden()
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def form_valid(self, form):
+        self.object_list = self.get_queryset(**form.cleaned_data)
+        context = self.get_context_data()
+        return self.render_to_response(context)
+        # return super(GearSendHistoryView, self).form_valid(form)
+
+
+class GearDownloadHistoryView(GearSendHistoryView):
+    model = DownloadHistory
+    form_class = DownloadHistoryForm
+    template_name = 'gear/download_history.html'
+    login_url = '/accounts/login/'
+
+    def get_queryset(self, **kwargs):
+        order = 'date'
+        if self.request.method == "POST":
+            if 'date_from' in self.request.POST and self.request.POST['date_from']:
+                if 'date_to' in self.request.POST and self.request.POST['date_to']:
+                    kwargs['date__range'] = (self.request.POST['date_from'], self.request.POST['date_to'])
+                else:
+                    kwargs['date__gte'] = self.request.POST['date_from']
+            elif 'date_to' in self.request.POST and self.request.POST['date_to']:
+                kwargs['date__lte'] = self.request.POST['date_to']
+            if 'order' in self.request.POST and self.request.POST['order'] == 'desc':
+                order = '-date'
+            del kwargs['date_from']
+            del kwargs['date_to']
+            del kwargs['order']
+        return [{'connection': json.loads(item.connection)[0]['fields']['name'],
+                 'raw': [{'name': k, 'value': v} for k, v in json.loads(item.raw).items()],
+                 'date': item.date,
+                 'connector_id': item.connector_id,
+                 'connector_name': ConnectorEnum.get_connector(item.connector_id).name,
+                 'id': item.id,
+                 } for item in self.model.objects.filter(gear_id=self.kwargs['pk'], **kwargs).order_by(order)]
+
+
+class GearFiltersView(FormView, LoginRequiredMixin):
+    login_url = '/accounts/login/'
+    template_name = 'gear/filters.html'
+    form_class = FiltersForm
+    success_url = reverse_lazy('connection:connector_list', kwargs={'type': 'target'})
+    exists = False
+
+    def post(self, request, *args, **kwargs):
+        modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
+        formset = modelformset(self.request.POST, queryset=GearFilter.objects.filter(gear_id=kwargs['pk']))
+        if formset.is_valid():
+            filters = formset.save(commit=False)
+            for filter in filters:
+                _gear = Gear.objects.get(id=kwargs['pk'])
+                filter.gear = _gear
+                filter.save()
+            for filter in formset.deleted_forms:
+                if 'DELETE' in filter.cleaned_data and filter.cleaned_data['DELETE'] is True:
+                    filter.cleaned_data['id'].delete()
+        else:
+            print("no es valido")
+        return HttpResponseRedirect(self.success_url)
+
+    def get_context_data(self, **kwargs):
+        context = super(GearFiltersView, self).get_context_data(**kwargs)
+        modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
+        formset = modelformset(queryset=GearFilter.objects.filter(gear_id=self.kwargs['pk']))
+        context['formset'] = formset
+        return context
 
 
 def gear_toggle(request, gear_id):
@@ -318,7 +430,7 @@ def gear_toggle(request, gear_id):
                         {'data': 'There\'s no active gear map.'})
             else:
                 return JsonResponse(
-                    {'data': "You don't have permission to toogle this gear."})
+                    {'data': "You don't have permission to toggle this gear."})
         except Gear.DoesNotExist:
             return JsonResponse({'data': 'Error invalid gear id.'})
         except GearMap.DoesNotExist:
@@ -331,3 +443,22 @@ def get_authorization(request):
     credentials = client.OAuth2Credentials.from_json(
         request.session['google_credentials'])
     return credentials.authorize(httplib2.Http())
+
+
+def retry_send_history(request):
+    if request.is_ajax() is True and request.method == 'POST':
+        history_id = request.POST.get('history_id')
+        history = SendHistory.objects.get(pk=history_id)
+        d = json.loads(history.connection)
+        model = apps.get_model(*d[0]['model'].split("."))
+        connection = model.objects.get(pk=d[0]['pk'])
+        controller = ConnectorEnum.get_controller(ConnectorEnum.get_connector(connection.connection.connector_id))
+        controller_instance = controller(connection.connection.related_connection, connection.connection.plug)
+        data = json.loads(history.data)
+        response = controller_instance.send_stored_data([data])
+        history.identifier = response[0]['identifier']
+        history.sent = response[0]['sent']
+        history.tries = history.tries + 1
+        history.save()
+        return JsonResponse({'data': True})
+    return JsonResponse({'data': False})

@@ -1,0 +1,357 @@
+.slide-item {
+    padding: 0;
+}
+
+.slide {
+    width: 100%;
+}
+
+.slide-caption {
+    color: white;
+    font-family: 'Sansation';
+    font-size: 5.6em;
+    height: 30%;
+    left: 6.6%;
+    letter-spacing: -1px;
+    line-height: 67px;
+    text-align: justify;
+    text-shadow: inherit;
+    top: 6.4%;
+}
+
+.slide-text-light {
+    font-family: 'Sansation Light';
+}
+
+.slide-color-aqua {
+    color: #00E08F;
+}
+
+.slide-control {
+    background-image: none !important;
+}
+
+.slide-arrow {
+    position: absolute;
+    top: 45%;
+}
+
+.slide-img {
+    height: 13.5%;
+}
+
+.bg-form {
+    background-color: #F1F2F4;
+    border-radius: 40px 40px 51px 51px;
+    -moz-border-radius: 40px 40px 51px 51px;
+    -webkit-border-radius: 40px 40px 51px 51px;
+    left: 63.4%;
+    padding: 2.9% 0 0 0.4%;
+    position: absolute;
+    right: 9.7%;
+    top: 3.7%;
+}
+
+.input-form {
+    background-color: white;
+    border-radius: 15px;
+    -moz-border-radius: 15px;
+    -webkit-border-radius: 15px;
+    border: 1px solid #F1F2F4;
+    color: #9E9BA2;
+    font-family: 'Sansation';
+    font-size: 1.6em;
+    height: 63px;
+    margin: 0 0 30px 23px;
+    padding-left: 22px;
+    width: 89%;
+}
+
+.checkbox-form {
+    color: black;
+    font-family: 'Sansation';
+    font-size: 1.67em;
+    padding-left: 10px;
+}
+
+.padding-checkbox {
+    padding-left: 43px;
+}
+
+.button_form {
+    background-color: #005CA7;
+    color: white;
+    font-size: 1.9em;
+    height: 12%;
+    margin: 38px 0 56px 24px;
+    width: 88%;
+}
+
+.index-space1 {
+    margin-top: 6.7%;
+}
+
+.index-space2 {
+    margin-top: 1.8%;
+}
+
+.index-space3 {
+    margin-top: 4.4%;
+}
+
+.index-space4 {
+    margin-top: 3.6%;
+}
+
+.index-space5 {
+    margin-top: 4.6%;
+}
+
+.index-space7 {
+    margin-top: 6.3%;
+}
+
+.index-space8 {
+    margin-top: 3.6%;
+}
+
+.text-what {
+    color: #9E9BA2;
+    font-family: 'Sansation';
+    font-size: 4.8em;
+}
+
+.text-p {
+    color: #727277;
+    font-family: 'Sansation Light';
+    font-size: 1.9em;
+    letter-spacing: 0.5px;
+    line-height: 44px;
+    padding: 2.8% 20% 0;
+}
+
+.hr-separator {
+    color: #E9EAED;
+    width: 85%;
+}
+
+.text-two {
+    color: #005CA7;
+    font-family: 'Sansation';
+    font-size: 2.3em;
+    margin-top: -0.4%;
+}
+
+.text-bullet {
+    color: #727277;
+    font-family: 'Sansation Light';
+    font-size: 2em;
+    margin-left: -6%;
+    padding-top: 4.0%;
+}
+
+.text-bullet1 {
+    font-family: 'Sansation Light';
+    font-size: 2em;
+    color: #727277;
+    line-height: 28px;
+    margin-bottom: 10.5%;
+    padding: 1.4% 0 0 4%;
+}
+
+.banner {
+    position: relative;
+    width: 100%;
+    z-index: 1;
+}
+
+.text-connect {
+    background: url("../../img/landing/bg_banner1.png") no-repeat #09DF8E;
+    background-size: cover;
+    color: #005CA6;
+    font-family: 'Sansation Bold';
+    font-size: 5.1em;
+    padding: 1.9% 0 2.4% 0;
+}
+
+.text-us {
+    color: #727277;
+    font-family: 'Sansation Light';
+    font-size: 2.8em;
+}
+
+.list-item {
+    text-align: center;
+    margin: 5% 0 10% 0;
+}
+
+.list-item .divider {
+    width: 210px;
+    height: 1px;
+    display: inline-block;
+    background-color: #E5E6E9;
+    margin: 5% 0 1% 0;
+
+}
+
+.list-item .name1 {
+    font-family: "Sansation Light";
+    font-size: 1.6em;
+    color: #727277;
+}
+
+.bg_comments {
+    background: url("../../img/landing/icons3.png") no-repeat scroll top right #005CA6;
+    margin-top: 3.6%;
+    padding-bottom: 42px;
+}
+
+.title-comments {
+    color: white;
+    font-family: "Sansation Bold";
+    font-size: 4.9em;
+    margin-bottom: 6%;
+    margin-top: 87px;
+}
+
+.hr-comments {
+    border-bottom: #00E08F solid 4px;
+    border-top: transparent;
+    margin: -0.7% 0 0 37.5%;
+    width: 19.3%;
+}
+
+.list-wrapper1 {
+    margin-bottom: 4.5%;
+    margin-top: 4.5%;
+}
+
+.name11 {
+    color: white;
+    font-family: "Sansation";
+    font-size: 1.3em;
+    margin-top: 0.6%;
+}
+
+.selected_page {
+    color: #005CA7 !important;
+    font-family: 'Sansation Bold' !important;;
+}
+
+.main-text {
+    position: absolute;
+    top: 50px;
+    width: 96.66666666666666%;
+    color: #FFF;
+}
+
+.carousel-control {
+    width: 6%;
+}
+
+.btn span.glyphicon {
+	opacity: 0;
+}
+
+.btn.active span.glyphicon {
+	opacity: 1;
+}
+
+.btn {
+    padding: 3px 3px;
+}
+
+.facebook {
+    height: 13.6%;
+    margin: 20% 0 11.7% 0;
+}
+
+.generator {
+    height: 14%;
+    margin: 13.5% 0 18.4% 0;
+}
+
+.gmail {
+    height: 14.4%;
+    margin: 19.5% 0 11.6% 0;
+}
+
+.border_process {
+    border-left: #E9EAED solid 1px;
+    border-right: #E9EAED solid 1px;
+}
+
+.height_bullet {
+    height: 8.1%;
+}
+
+.bg_login{
+    background: url("../../img/landing/icons4.png") no-repeat scroll 0 0;
+    left: 52.5%;
+    padding: 4.6% 7.4% 6.5% 4.9%;
+    position: absolute;
+    top: 2.9%;
+}
+
+.bg_login1{
+    background: url("../../img/landing/slide2.png") no-repeat scroll 0 0;
+    height: 821px;
+    background-size: contain;
+    /*width: 100%;*/
+}
+
+.btn-login{
+    background-color: #005CA5;
+    border-radius: 38px 35px 34px 37px;
+    color: white;
+    font-family: 'Sansation';
+    font-size: 4.2em;
+    height: 89px;
+    padding: 0;
+    width: 372px;
+}
+
+@media only screen and (max-width:1910px) {
+    .carousel-control {
+        height: 96.3%;
+    }
+}
+
+@media only screen and (max-width:1600px) {
+    .text_menu {
+        padding-left: 0.4%;
+    }
+
+    .slide-arrow {
+        top: 43%;
+    }
+
+    .bg-form {
+        top: 0.8%;
+    }
+
+    .text-bullet {
+        margin-left: -1%;
+    }
+
+    .list-item .divider {
+        width: 206px;
+    }
+
+    .hr-comments {
+        margin: -0.7% 0 0 35%;
+        width: 23%;
+    }
+
+    .name11 {
+        padding-left: 6%;
+    }
+
+    .carousel-control {
+        height: 84%;
+    }
+
+    .height_bullet {
+        height: 7.5%;
+    }
+}

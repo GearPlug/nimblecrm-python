@@ -1,41 +1,69 @@
-{% extends 'layouts/site_base.html' %}
-{% load static %}
+{% extends 'layouts/console_base.html' %}
+{% load static i18n %}
 
 {% block content %}
-    <h1>Plug test.</h1>
-
-    {% if plug_type == 'source' %}
-        {% for o in object_list %}
-            <div>
-                {{ o.name }}: {{ o.value }}
-            </div>
-        {% empty %}
-            There's no items. the Test Failed.
-            <br>
-            Please verify your source has at the very least 1 entry.
-            <form method="post" action="">
+    <div class="content-body col-md-10 col-md-offset-1">
+        <div class="row plug-test">
+            <form class="form" method="post" action="">
                 {% csrf_token %}
-                <button>Test again</button>
+                <div class="title">
+                    <span>{% trans 'Plug Test' %} </span> <a href="{% url 'gear:filters' pk=request.session.gear_id %}">Agregar Filtros</a>
+                </div>
+                <div class="list">
+                    {% if plug_type == 'source' %}
+                        <div class="test-wrapper">
+                            {% for o in object_list %}
+                                <div class="text">
+                                    {{ o.name }}: {{ o.value }}
+                                </div>
+                            {% empty %}
+                                <div class="image">
+                                    <img src="{% static 'img/console/warning.png' %}" width="48" height="48">
+                                </div>
+                                <div class="text inline">
+                                    {% trans 'No se encontraron datos y la prueba falló.' %}
+                                    <br>
+                                    {% trans 'Por favor verifica que hay al menos un dato en el origen.' %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if not object_list %}
+                            <form method="post" action="">
+                                {% csrf_token %}
+                                <button class="button-create green">{% trans 'Reintentar' %}</button>
+                            </form>
+                        {% endif %}
+                        <a href="{% url 'connection:connector_list' type='target' %}" class="button-create">Continuar</a>
+                    {% elif plug_type == 'target' %}
+                        <div class="test-wrapper">
+                            <p class="text">{% trans 'Lista de campos:' %}</p>
+                            {% for o in object_list %}
+                                <p class="text">
+                                    {{ o }}
+                                </p>
+                            {% empty %}
+                                <div class="image">
+                                    <img src="{% static 'img/console/warning.png' %}" width="48" height="48">
+                                </div>
+                                <div class="text inline">
+                                    {% trans 'No se encontraron campos y la prueba falló.' %}
+                                    <br>
+                                    {% trans 'Por favor verifica que hay una conexión funcionando en el destino.' %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if not object_list %}
+                            <form method="post" action="">
+                                {% csrf_token %}
+                                <button class="button-create green">{% trans 'Reintentar' %}</button>
+                            </form>
+                        {% endif %}
+                        {% if request.session.gear_id != None %}
+                            <a href="{% url 'gear:map' gear_id=request.session.gear_id %}" class="button-create">Continuar</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
             </form>
-        {% endfor %}
-        <br/>
-        <a href="{% url 'connection:connector_list' type='target' %}" style="color:blue;font-size: 16px;">Continue (after test)</a>
-    {% elif plug_type == 'target' %}
-        <p>Field List:</p>
-        {% for o in object_list %}
-            <p>{{ o }}</p>
-        {% empty %}
-            There's no fields to work with. the Test Failed.
-            <br>
-            Please verify your target has a working connection.
-            <form method="post" action="">
-                {% csrf_token %}
-                <button>Test again</button>
-            </form>
-        {% endfor %}
-        {% if request.session.gear_id != None %}
-            <a href="{% url 'gear:map' gear_id=request.session.gear_id %}">Continue (after
-                test)</a>
-        {% endif %}
-    {% endif %}
+        </div>
+    </div>
 {% endblock %}

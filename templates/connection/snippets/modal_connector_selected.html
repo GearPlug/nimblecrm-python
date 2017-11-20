@@ -1,0 +1,26 @@
+{% load static %}
+
+<div class="modal fade" role="dialog" id="selected-connector-modal">
+    <div class="gp-modal modal-alternative modal-dialog">
+        <button type="button" class="close close-button" data-dismiss="modal">
+            <img src="{% static 'img/console/g1688.png' %}" width="50">
+        </button>
+
+        <div class="modal-content2">
+            <div class="title">
+                Has escogido <span id="selected-connector-name" style="font-family: 'Sansation Bold'">Facebook</span>
+            </div>
+            <div class="text" id="selected-connector-text">
+                No existe ninguna conexión.
+            </div>
+            <a id="selected-connector-next-url" href="" >
+                <div class="button">
+                    <div class="wrapper">
+                        <span id="selected-connector-action">Crear</span> Conexión
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+</div>

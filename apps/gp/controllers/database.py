@@ -128,7 +128,7 @@ class MySQLController(BaseController):
                 data.remove(i)  # Removemos 'i' de la lista 'data'
                 is_stored, object_id = self._save_row(item)
                 if object_id != obj_id:  # Validar que el 'obj_id' del stored data que se guardo es igual al id del item
-                    print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id)) # TODO: CHECK RAISE
+                    print("ERROR NO ES EL MISMO ID:  {0} != 1}".format(object_id, obj_id))  # TODO: CHECK RAISE
                 result_list.append({'identifier': {'name': unique.value, 'value': object_id},
                                     'raw': obj_raw, 'is_stored': is_stored, })
             for item in result_list:
@@ -163,11 +163,8 @@ class MySQLController(BaseController):
                 obj_result['response'] = "Succesfully inserted item with id {0}.".format(self._cursor.lastrowid)
                 obj_result['sent'] = True
                 obj_result['identifier'] = self._cursor.lastrowid
-            except MySQLdb.OperationalError as e:
-                obj_result['response'] = "Failed to insert item. {}".format(e)
-                obj_result['sent'] = False
-                obj_result['identifier'] = '-1'
-            except MySQLdb.ProgrammingError as e:
+            except (UnicodeError, UnicodeDecodeError, UnicodeEncodeError, MySQLdb.ProgrammingError,
+                    MySQLdb.OperationalError) as e:
                 obj_result['response'] = "Failed to insert item. {}".format(e)
                 obj_result['sent'] = False
                 obj_result['identifier'] = '-1'
@@ -236,6 +233,9 @@ class PostgreSQLController(BaseController):
             return True
         except Exception as e:
             return False
+
+    def has_webhook(self):
+        return None
 
     def describe_table(self):
         try:

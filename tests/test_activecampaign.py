@@ -7,8 +7,8 @@ from apps.gp.enum import ConnectorEnum
 from django.contrib.auth.models import User
 from apps.gp.controllers.crm import ActiveCampaignController
 from apps.gp.models import Connection, ActiveCampaignConnection, Action, Plug, ActionSpecification, \
-    PlugActionSpecification, Webhook, StoredData, Gear, GearMap, GearMapData, DownloadHistory
-
+    PlugActionSpecification, Webhook, StoredData, Gear, GearMap, GearMapData
+from apps.history.models import DownloadHistory
 
 class ActiveCampaignControllerTestCases(TestCase):
     """
@@ -29,23 +29,23 @@ class ActiveCampaignControllerTestCases(TestCase):
         }
         cls.connection_source = Connection.objects.create(**connection)
 
-        sugar_connection1 = {
+        _connection_source = {
             "connection": cls.connection_source,
             "name": "ConnectionTest Source",
             "host": os.environ.get("TEST_ACTIVECAMPAIGN_HOST"),
             "connection_access_key": os.environ.get("TEST_ACTIVECAMPAIGN_KEY"),
         }
-        cls.activecampaign_connection_source = ActiveCampaignConnection.objects.create(**sugar_connection1)
+        cls.activecampaign_connection_source = ActiveCampaignConnection.objects.create(**_connection_source)
 
         cls.connection_target = Connection.objects.create(**connection)
 
-        sugar_connection2 = {
+        _connection_target = {
             "connection": cls.connection_target,
             "name": "ConnectionTest Target",
             "host": os.environ.get("TEST_ACTIVECAMPAIGN_HOST"),
             "connection_access_key": os.environ.get("TEST_ACTIVECAMPAIGN_KEY"),
         }
-        cls.activecampaign_connection_target = ActiveCampaignConnection.objects.create(**sugar_connection2)
+        cls.activecampaign_connection_target = ActiveCampaignConnection.objects.create(**_connection_target)
 
         action_source = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value, action_type="source",
                                            name="new contact", is_active=True)
