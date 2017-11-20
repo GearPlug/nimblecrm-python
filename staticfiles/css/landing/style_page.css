@@ -1,6 +1,6 @@
 .ayuda {
-    background: url(../../img/landing/plantilla.png) no-repeat scroll -467px 0;
-    background-size: cover;
+    background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 103px;
+    /*background-size: cover;*/
 }
 
 .bg_page {
