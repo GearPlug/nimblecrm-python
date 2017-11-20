@@ -11,16 +11,8 @@ from datetime import datetime, timedelta
 class Client(object):
     _VALID_VERSIONS = ['v1']
 
-    def __init__(self,
-                 client_id=None,
-                 client_secret=None,
-                 redirect_url=None,
-                 oauth_url=None,
-                 base_url=None,
-                 code_url=None,
-                 token=None,
-                 token_expiration_time=None,
-                 refresh_token=None):
+    def __init__(self, client_id=None, client_secret=None, redirect_url=None, oauth_url=None, base_url=None,
+                 code_url=None, token=None, token_expiration_time=None, refresh_token=None):
 
         self.client_id = client_id
         self.client_secret = client_secret
@@ -112,6 +104,7 @@ class Client(object):
 
     def token_expiration_checker(self):
         dt = datetime.now()
+        print('TIPO:', type(self.token_expiration_time))
         if dt > self.token_expiration_time:
             self.to_refresh_token()
         else:
@@ -148,13 +141,14 @@ class Client(object):
     def get_persons(self, start_date=None):
         endpoint = "contacts?query="
         if start_date is not None:
-            values_with_date = {"and": [{"record type": {"is": "person"}}, {"created": {"range": {"start_date": start_date,"end_date": "2018-11-17T15:02:48-0500"}}}]}
+            values_with_date = {"and": [{"record type": {"is": "person"}}, {
+                "created": {"range": {"start_date": start_date, "end_date": "2018-11-17T15:02:48-0500"}}}]}
             values = json.dumps(values_with_date)
         else:
             values = {"record type": {"is": "person"}}
             values = json.dumps(values)
         values = urllib.parse.quote_plus(values)
-        endpoint = endpoint+values
+        endpoint = endpoint + values
         try:
             return self._get(endpoint=endpoint)
         except Exception as e:
@@ -163,13 +157,14 @@ class Client(object):
     def get_organizations(self, start_date=None):
         endpoint = "contacts?query="
         if start_date is not None:
-            values_with_date = {"and": [{"record type": {"is": "company"}}, {"created": {"range": {"start_date": start_date,"end_date": "2018-11-17T15:02:48-0500"}}}]}
+            values_with_date = {"and": [{"record type": {"is": "company"}}, {
+                "created": {"range": {"start_date": start_date, "end_date": "2018-11-17T15:02:48-0500"}}}]}
             values = json.dumps(values_with_date)
         else:
             values = {"record type": {"is": "company"}}
             values = json.dumps(values)
         values = urllib.parse.quote_plus(values)
-        endpoint = endpoint+values
+        endpoint = endpoint + values
         try:
             return self._get(endpoint=endpoint)
         except Exception as e:
@@ -306,12 +301,12 @@ class Client(object):
         """
         endpoint = 'contacts'
         values = {
-            'query': {"created": {"range": {"start_date": "2012-10-16","end_date": "2012-10-18"}}},
+            'query': {"created": {"range": {"start_date": "2012-10-16", "end_date": "2012-10-18"}}},
             'per_page': limit,
             'fields': 'created'
         }
         data = urllib.parse.urlencode(values).encode('utf-8')
-        endpoint = endpoint+data
+        endpoint = endpoint + data
         try:
             return self._get(endpoint=endpoint)
         except Exception as e:
