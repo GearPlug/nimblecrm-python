@@ -124,6 +124,7 @@ class Client(object):
         try:
             token = requests.post(url='https://api.nimble.com/oauth/token', headers=headers, params=oauth_vars)
             token = token.json()
+            print('TOKEN:', token)
             self.token = token['access_token']
             self.token_expiration_time = datetime.strptime(token['expires_in'], '%Y-%m-%d %H:%M:%S.%f')
             self.refresh_token = token['refresh_token']
