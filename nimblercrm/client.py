@@ -126,6 +126,7 @@ class Client(object):
             token = token.json()
             self.token = token['access_token']
             expiration_time = datetime.now() + timedelta(seconds=token['expires_in'])
+            expiration_time = str(expiration_time)
             self.token_expiration_time = datetime.strptime(expiration_time, '%Y-%m-%d %H:%M:%S.%f')
             self.refresh_token = token['refresh_token']
         except Exception as e:
