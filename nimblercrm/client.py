@@ -49,6 +49,7 @@ class Client(object):
             'Content-Type': 'application/json; charset=utf-8',
         }
         response = requests.request(method, url, headers=headers, data=data)
+        print(response.text)
         return (response)
 
     def _parse(self, response):
