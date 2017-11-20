@@ -141,17 +141,15 @@ class Client(object):
             print(e)
 
     def get_persons(self, start_date=None):
-        endpoint = "contacts?query="
+        endpoint = "contacts?sort=created:desc?query="
         if start_date is not None:
-            qs0 = {"sort": "desc"}
             qs1 = {"record type": {"is": "person"}}
             qs2 = {"created": {"range": {"start_date": start_date, "end_date": "2018-11-17T15:02:48-0500"}}}
-            values_with_date = {"and": [qs0, qs1, qs2]}
+            values_with_date = {"and": [qs1, qs2]}
             values = json.dumps(values_with_date)
         else:
-            qs0 = {"sort": "desc"}
             qs1 = {"record type": {"is": "person"}}
-            values = {"and": [qs0, qs1]}
+            values = {"and": [qs1]}
             values = json.dumps(values)
         values = urllib.parse.quote_plus(values)
         endpoint = endpoint + values
@@ -161,17 +159,15 @@ class Client(object):
             print(e)
 
     def get_organizations(self, start_date=None):
-        endpoint = "contacts?query="
+        endpoint = "contacts?sort=created:desc?query="
         if start_date is not None:
-            qs0 = {"sort": "desc"}
             qs1 = {"record type": {"is": "company"}}
             qs2 = {"created": {"range": {"start_date": start_date, "end_date": "2018-11-17T15:02:48-0500"}}}
-            values_with_date = {"and": [qs0, qs1, qs2]}
+            values_with_date = {"and": [qs1, qs2]}
             values = json.dumps(values_with_date)
         else:
-            qs0 = {"sort": "desc"}
             qs1 = {"record type": {"is": "company"}}
-            values = {"and": [qs0, qs1]}
+            values = {"and": [qs1]}
             values = json.dumps(values)
         values = urllib.parse.quote_plus(values)
         endpoint = endpoint + values
