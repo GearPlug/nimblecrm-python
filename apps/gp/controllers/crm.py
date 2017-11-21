@@ -2357,15 +2357,82 @@ class AgileCRMController(BaseController):
             raise ControllerError(code=3, controller=ConnectorEnum.AgileCRM, message='Error. {}'.format(str(e)))
 
     def get_list_fields(self):
-        try:
-            fields = self._client.list_fields_partner()
-            _list = []
-            for k, v in fields.items():
-                v['name'] = k
-                _list.append(v)
-            return _list
-        except BaseError as e:
-            raise ControllerError(code=3, controller=ConnectorEnum.AgileCRM, message='Error. {}'.format(str(e)))
+        return [
+            {
+                'name': 'type',
+                'required': False,
+                'type': 'list',
+                'choices': ['PERSON', 'COMPANY']
+            }, {
+                'name': 'tags',
+                'required': False,
+                'type': 'string',
+            }, {
+                'name': 'lead_score',
+                'required': False,
+                'type': 'integer'
+            }, {
+                'name': 'contact_company_id',
+                'required': False,
+                'type': 'long'
+            }, {
+                'name': 'star_value',
+                'required': False,
+                'type': 'short'
+            }, {
+                'name': 'campaignStatus',
+                'required': False,
+                'type': 'list'
+            }, {
+                'name': 'first_name',
+                'required': True,
+                'type': 'string'
+            }, {
+                'name': 'last_name',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'company',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'title',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'email',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'address',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'phone',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'website',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'image',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'unsubscribeStatus',
+                'required': False,
+                'type': 'list'
+            }, {
+                'name': 'emailBounceStatus',
+                'required': False,
+                'type': 'list'
+            }, {
+                'name': 'tags',
+                'required': False,
+                'type': 'list'
+            }
+        ]
 
     def download_to_stored_data(self, connection_object, plug, limit=50, last_source_record=None, **kwargs):
 
@@ -2442,10 +2509,10 @@ class AgileCRMController(BaseController):
         for item in data_list:
             obj_result = {'data': dict(item)}
             try:
-                res = self.set_entry([dict(item)])
+                res = self.set_entry(dict(item))
                 obj_result['response'] = res
                 obj_result['sent'] = True
-                obj_result['identifier'] = res
+                obj_result['identifier'] = res['id']
             except Exception as e:
                 obj_result['response'] = str(e)
                 obj_result['sent'] = False
@@ -2455,6 +2522,15 @@ class AgileCRMController(BaseController):
 
     def set_entry(self, item):
         try:
+            item['properties'] = []
+            _fields = ['first_name', 'last_name', 'image', 'company', 'title', 'email', 'phone', 'website', 'address']
+            _remove = []
+            for k, v in item.items():
+                if k in _fields:
+                    item['properties'].append({'name': k, 'type': 'SYSTEM', 'value': v})
+                    _remove.append(k)
+            for k in _remove:
+                del item[k]
             return self._client.create_contact(item)
         except WrongParameter as e:
             raise ControllerError(code=4, controller=ConnectorEnum.AgileCRM,

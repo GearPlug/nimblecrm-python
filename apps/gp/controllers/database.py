@@ -227,6 +227,9 @@ class PostgreSQLController(BaseController):
             raise ControllerError(code=2, controller=ConnectorEnum.PostgreSQL.name,
                                   message='Error instantiating the PostgreSQL client. {}'.format(str(e)))
 
+    def has_webhook(self):
+        return None
+
     def test_connection(self):
         try:
             self.describe_table()
