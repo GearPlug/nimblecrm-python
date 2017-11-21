@@ -1,5 +1,5 @@
 .ayuda {
-    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 95px;*/
+    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 18px;*/
     /*background-size: cover;*/
 }
 
@@ -7,7 +7,7 @@
     background-color: white;
 }
 
-.row {
+.not-margin {
     margin: 0;
     padding: 0;
 }
@@ -15,6 +15,11 @@
 .sp {
     padding: 0;
 }
+
+/*header .container{*/
+    /*width: 100%;*/
+/*}*/
+
 
 /* Header */
 .nav_spaces {
