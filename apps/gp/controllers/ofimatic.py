@@ -460,6 +460,7 @@ class GoogleCalendarController(GoogleBaseController):
                 webhook.plug.save()
         return HttpResponse(status=200)
 
+    @property
     def has_webhook(self):
         return True
 
@@ -580,10 +581,9 @@ class WunderListController(BaseController):
         super(WunderListController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             self._token = self._connection_object.token
+            self._client = self._api.get_client(self._token, settings.WUNDERLIST_CLIENT_ID)
 
     def test_connection(self):
-        self._client = self._api.get_client(
-            self._token, settings.WUNDERLIST_CLIENT_ID)
         try:
             a = self.get_lists()
             return self._token is not None
@@ -607,29 +607,26 @@ class WunderListController(BaseController):
         return response.json()
 
     def create_task(self, **kwargs):
-        _list_id = int(kwargs['parents'])
-        _title = str(kwargs['title'])
-
-        data = {'list_id': _list_id, 'title': _title}
+        _id = kwargs['assignee_id']
+        json_acceptable_string = _id.replace("'", '"')
+        _id = int(json.loads(json_acceptable_string)['id'])
+        kwargs['assignee_id'] = _id
+        kwargs['list_id'] = int(self._plug.plug_action_specification.get(action_specification__name='list').value)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain',
                    'X-Access-Token': self._token,
                    'X-Client-ID': settings.WUNDERLIST_CLIENT_ID}
-
         response = requests.post('http://a.wunderlist.com/api/v1/tasks',
-                                 data=json.dumps(data), headers=headers)
+                                 data=json.dumps(kwargs), headers=headers)
         return response
 
-    def update_task(self):
-
-        data = {'list_id': self._list_id, 'title': self._title}
+    def delete_task(self, task_id):
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain',
                    'X-Access-Token': self._token,
                    'X-Client-ID': settings.WUNDERLIST_CLIENT_ID}
-
-        response = requests.post('http://a.wunderlist.com/api/v1/tasks',
-                                 data=json.dumps(data), headers=headers)
-        return response
-        pass
+        data = {'revision': 1}
+        response = requests.delete('http://a.wunderlist.com/api/v1/tasks/{0}'.format(task_id),
+                                   params=data, headers=headers)
+        return response.status_code
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(
@@ -672,39 +669,32 @@ class WunderListController(BaseController):
                     update_fields=['url', 'generated_id', 'is_active'])
         return True
 
-    def list_webhooks(self):
-        action = self._plug.action.name
-        if action == 'completed task':
-            list_id = self._plug.plug_action_specification.get(
-                action_specification__name='task list')
-            headers = {
+    def view_webhooks(self, list_id):
+        headers = {
+            'X-Access-Token': self._token,
+            'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
+        }
+        body_data = {
+            'list_id': str(list_id),
+        }
+        response = requests.get(
+            'http://a.wunderlist.com/api/v1/webhooks', headers=headers,
+            data=body_data)
+        return response.json()
+
+    # Metodo de borrado de webhooks, utilizacion manual.
+    def delete_webhook(self, id_webhook):
+        headers = {
                 'X-Access-Token': self._token,
                 'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
             }
-            body_data = {
-                'list_id': int(list_id.value),
-            }
-            response = requests.get(
-                'http://a.wunderlist.com/api/v1/webhooks', headers=headers,
-                data=body_data)
-            return (response.json())
-
-    # Metodo de borrado de webhooks, utilizacion manual.
-    def delete_webhooks(self):
-        webhook_list = self.list_webhooks()
-        if len(webhook_list) > 0:
-            for wh in webhook_list:
-                headers = {
-                    'X-Access-Token': self._token,
-                    'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
-                }
-                body_data = {
-                    'revision': 0,
-                }
-                response = requests.delete(
-                    'http://a.wunderlist.com/api/v1/webhooks/{0}'.format(
-                        str(wh['id'])),
-                    headers=headers, data=body_data)
+        body_data = {
+            'revision': 0,
+        }
+        response = requests.delete(
+            'http://a.wunderlist.com/api/v1/webhooks/{0}'.format(str(id_webhook)),
+            headers=headers, data=body_data)
+        return response
 
     def download_to_stored_data(self, connection_object=None, plug=None,
                                 task=None, **kwargs):
@@ -722,32 +712,23 @@ class WunderListController(BaseController):
                             StoredData(connection=connection_object.connection,
                                        plug=plug, object_id=task_id,
                                        name=k, value=v or ''))
-            extra = {}
-            for task in task_stored_data:
+            result_list = []
+            for taskk in task_stored_data:
                 try:
-                    extra['status'] = 's'
-                    extra = {'controller': 'wunderlist'}
-                    task.save()
-                    self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            task.object_id, task.plug.id, task.connection.id),
-                        extra=extra)
+                    taskk.save()
+                    is_stored = True
+                    last_object_id = task_id
                 except Exception as e:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s failed.' % (
-                            task.object_id, task.plug.id, task.connection.id),
-                        extra=extra)
-            return True
-        return False
+                    is_stored = False
+                    last_object_id = ""
+                result_list = [{'raw': task, 'is_stored': is_stored, 'identifier': {'name': 'id', 'value': last_object_id}}]
+            return {'downloaded_data' : result_list, 'last_source_record': last_object_id}
 
     def get_target_fields(self, **kwargs):
-        return [{'name': 'title', 'type': 'text', 'required': True},
-                {'name': 'completed', 'type': 'text', 'required': True},
-                {'name': 'completed_by_id', 'type': 'int', 'required': False},
-                {'name': 'completed_at', 'type': 'text', 'required': False},
-                {'name': 'created_at', 'type': 'text', 'required': True},
-                {'name': 'parents', 'type': 'int', 'required': True}
+        users = self.get_users()
+        return [{'name': 'title', 'type': 'text', 'required': True, 'label': 'Title'},
+                {"name": "assignee_id", "required": False, "type": 'varchar',
+                 "choices": users, 'label':'Assignee'},
                 ]
 
     def get_mapping_fields(self, **kwargs):
@@ -755,23 +736,18 @@ class WunderListController(BaseController):
         return [MapField(f, controller=ConnectorEnum.WunderList) for f in
                 fields]
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if self._plug is not None:
-            obj_list = []
-            extra = {'controller': 'WunderList'}
-            for item in data_list:
-                task = self.create_task(**item)
-                if task.status_code in [200, 201]:
-                    extra['status'] = 's'
-                    self._log.info('Item: %s successfully sent.' % (
-                        task.json()['data']['name']), extra=extra)
-                    obj_list.append(task)
-                else:
-                    extra['status'] = 'f'
-                    self._log.info('Item: failed to send.', extra=extra)
-            return obj_list
-        raise ControllerError("There's no plug")
+    def send_stored_data(self, data_list):
+        result_list = []
+        for item in data_list:
+            task = self.create_task(**item)
+            if task.status_code in [200, 201]:
+                sent = True
+                identifier = task.json()['id']
+            else:
+                sent = False
+                identifier = ""
+            result_list.append({'data': dict(item), 'response': "", 'sent': sent, 'identifier':identifier})
+        return result_list
 
     def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
         webhook = Webhook.objects.get(pk=webhook_id)
@@ -790,5 +766,17 @@ class WunderListController(BaseController):
                         webhook.plug.save()
         return HttpResponse(status=200)
 
+    @property
     def has_webhook(self):
         return True
+
+    def get_users(self):
+        headers = {
+            'Content-type': 'application/json', 'Accept': 'text/plain',
+            'X-Access-Token': self._token,
+            'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
+        }
+        response = requests.get(
+            'http://a.wunderlist.com/api/v1/users', headers=headers)
+        return [{'name': r['name'],'id': r['id']} for r in response.json()]
+

@@ -1,26 +1,27 @@
-import tweepy
-import httplib2
-from instagram.client import InstagramAPI
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
-from django.views.generic import CreateView, ListView, View, TemplateView, \
-    UpdateView
 from django.core.urlresolvers import reverse
+from django.db.models import IntegerField, Case, When, Sum
+from django.db.models.aggregates import Count
 from django.http import JsonResponse
+from django.urls import reverse_lazy
 from django.shortcuts import redirect
+from django.views.generic import CreateView, ListView, View, TemplateView, UpdateView
 from apps.gp.enum import ConnectorEnum, GoogleAPIEnum
-from apps.gp.models import Gear, Plug, PlugActionSpecification, Connection, \
-    Connector, MercadoLibreConnection
+from apps.gp.models import Connection, Connector, MercadoLibreConnection
+from urllib.parse import urlencode
 from oauth2client import client
 from requests_oauthlib import OAuth2Session
 from slacker import Slacker
-import json
-import urllib
-from urllib.parse import urlencode
-import requests
 from evernote.api.client import EvernoteClient
 from mercadolibre.client import Client as MercadolibreClient
+from instagram.client import InstagramAPI
+import tweepy
+import httplib2
+import json
+import urllib
+import requests
+from random import randint
 
 
 class ListConnectorView(LoginRequiredMixin, ListView):
@@ -43,7 +44,9 @@ class ListConnectorView(LoginRequiredMixin, ListView):
         else:
             raise (Exception(
                 "Not an available type. must be either Source or Target."))
-        return self.model.objects.filter(**kw)
+        return self.model.objects.filter(**kw).annotate(
+            connection_count=Sum(Case(When(connection__user=self.request.user, then=1), default=0,
+                                      output_field=IntegerField())))
 
     def get_context_data(self, **kwargs):
         context = super(ListConnectorView, self).get_context_data(**kwargs)
@@ -64,6 +67,18 @@ class ListConnectionView(LoginRequiredMixin, ListView):
     template_name = 'connection/list.html'
     login_url = '/accounts/login/'
 
+    def get(self, request, *args, **kwargs):
+        connector = ConnectorEnum.get_connector(kwargs['connector_id'])
+        if connector.connection_type is None:
+            # TODO: Agregar connection default para el connector. SMS, SMTP y Webhook
+            count = Connection.objects.filter(connector_id=connector.value).aggregate(ids=Count('id'))['ids']
+            random_index = randint(0, count - 1)
+            request.session['%s_connection_id' % kwargs['type']] = Connection.objects.filter(
+                connector_id=connector.value)[random_index].id
+            return redirect(reverse('plug:create', kwargs={'plug_type': kwargs['type']}))
+        request.session['plug_type'] = kwargs['type']
+        return super(ListConnectionView, self).get(request, *args, **kwargs)
+
     def get_queryset(self):
         return self.model.objects.filter(user=self.request.user,
                                          connector_id=self.kwargs['connector_id']).prefetch_related()
@@ -78,6 +93,7 @@ class ListConnectionView(LoginRequiredMixin, ListView):
         connection_id = request.POST.get('connection', None)
         connector_type = kwargs['type']
         request.session['%s_connection_id' % connector_type] = connection_id
+        del request.session['plug_type']
         return redirect(reverse('plug:create', kwargs={'plug_type': connector_type}))
 
 
@@ -93,7 +109,14 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
     login_url = '/accounts/login/'
     fields = []
     template_name = 'connection/create.html'
-    success_url = reverse_lazy('connection:create_success')
+    success_url = ''
+
+    def get_success_url(self):
+        if 'plug_type' in self.request.session:
+            plug_type = self.request.session['plug_type']
+        else:
+            plug_type = 'source'
+        return reverse('connection:list', kwargs={'connector_id': self.kwargs['connector_id'], 'type': plug_type})
 
     def form_valid(self, form, *args, **kwargs):
         connector = ConnectorEnum.get_connector(self.kwargs['connector_id'])
@@ -217,6 +240,14 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
                 "scope": "full|gn389.infusionsoft.com"
             }
             authorization_url = '%s%s' % (settings.INFUSIONSOFT_AUTHORIZATION_URL, urlencode(data))
+            context['authorization_url'] = authorization_url
+        elif connector == ConnectorEnum.TypeForm:
+            data = {
+                "client_id": settings.TYPEFORM_CLIENT_ID,
+                "redirect_uri": settings.TYPEFORM_REDIRECT_URL,
+                "scope": settings.TYPEFROM_SCOPES
+            }
+            authorization_url = '%s%s' % (settings.TYPEFORM_AUTHORIZATION_URL, urlencode(data))
             context['authorization_url'] = authorization_url
         return context
 
@@ -425,6 +456,20 @@ class SurveyMonkeyAuthView(View):
         return redirect(reverse('connection:create_token_authorized_connection'))
 
 
+class TypeFormAuthView(View):
+    def get(self, request, *args, **kwargs):
+        auth_code = request.GET.get('code', None)
+        data = {'client_id': settings.TYPEFORM_CLIENT_ID,
+                'client_secret': settings.TYPEFORM_CLIENT_SECRET,
+                'code': auth_code,
+                'redirect_uri': settings.TYPEFORM_REDIRECT_URL}
+        url = "https://api.typeform.com/oauth/token"
+        response = requests.post(url, data=data).json()
+        self.request.session['connection_data'] = {'token': response["access_token"], }
+        self.request.session['connector_name'] = ConnectorEnum.TypeForm.name
+        return redirect(reverse('connection:create_token_authorized_connection'))
+
+
 class HubspotAuthView(View):
     def get(self, request, *args, **kwargs):
         code = request.GET.get('code', '')
@@ -575,25 +620,6 @@ class ManageConnectionView(LoginRequiredMixin, ListView):
             result.append(
                 all_connections.filter(connector__name__iexact=connector))
         return result
-
-
-def connection_toggle(request):
-    try:
-        gear_id = request.session['gear_id']
-    except Exception as e:
-        print(e)
-    try:
-        c = Connection.objects.get(pk=gear_id)
-        if c.is_active == True:
-            c.is_active = False
-            c.save()
-            return JsonResponse({'Connection State': 'NOT Active'})
-        else:
-            c.is_active = True
-            c.save()
-            return JsonResponse({'Connection State': 'ACTIVE'})
-    except Exception as e:
-        return JsonResponse(e)
 
 
 class UpdateConnectionView(UpdateView):

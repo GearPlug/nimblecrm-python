@@ -47,10 +47,10 @@ def update_plug(plug_id, gear_id, **query_params):
                 return
             if plug.plug_type.lower() == 'source':
                 try:
-                    if plug.webhook.is_active:
+                    if plug.webhook.is_active is True:
                         has_new_data = False
                     else:
-                        has_new_data = True
+                        raise AttributeError("El webhook esta desactivado")
                 except AttributeError as e:
                     # print("LAST IS: {}".format(gear.gear_map.last_source_order_by_field_value))
                     has_new_data = controller.download_source_data(
@@ -76,8 +76,6 @@ def update_plug(plug_id, gear_id, **query_params):
                         {'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}} for
                         item in stored_data.values_list('object_id').distinct()]
                     is_first = gear.gear_map.last_sent_stored_data_id is None
-                    if is_first:
-                        source_data = [source_data[0], ]
                     entries = controller.send_target_data(source_data, target_fields, is_first=is_first)
                     last_sent_data = StoredData.objects.filter(object_id=source_data[-1]['id'], plug=gear.source,
                                                                connection=gear.source.connection).order_by('id').last()

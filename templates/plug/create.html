@@ -1,19 +1,31 @@
-{% extends "layouts/site_base.html" %}
-{% load static %}
+{% extends "layouts/console_base.html" %}
+{% load static i18n %}
 
 {% block content %}
-    <form class="" action="" method="post" autocomplete="off" id="create-plug">
-        {% csrf_token %}
-        <div style="display:none;">{{ form }}</div>
-        {% if form.error %}
-            <div class="error">{{ form.error }}</div>
-        {% endif %}
-        <div id="action_list">Action:</div>
-        <br>
-        <div id="specification_list"></div>
-
-        <button id="singlebutton" name="singlebutton">Create Plug</button>
-    </form>
+    <div class="content-body col-md-10 col-md-offset-1">
+        <div class="row specifications">
+            <form class="form" action="" method="post" autocomplete="off" id="create-plug" name="plug-form" novalidate>
+                {% csrf_token %}
+                <div class="title">
+                    <span>{% trans 'Action Specifications' %}</span>
+                </div>
+                <div class="list">
+                    <div style="display:none;">{{ form }}</div>
+                    {% if form.error %}
+                        <div class="error">{{ form.error }}</div>
+                    {% endif %}
+                    <div id="action_list">Action:</div>
+                    <br>
+                    <div id="specification_list"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-5">
+                        <button class="button-create" type="submit">{% trans 'Crear Plug' %}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 {% endblock %}
 
 {% block scripts %}
@@ -24,14 +36,16 @@
                 var selectList = document.createElement("select");
                 selectList.id = id;
                 selectList.name = name;
-                $(selectList).html(options)
+                $(selectList).html(options);
                 return selectList;
             }
+
             {% if request.session.source_connection_id != None %}
-                $('select#id_connection').val({{ request.session.source_connection_id }});
+                $('select#id_connection').val("{{ request.session.source_connection_id }}");
             {% elif request.session.target_connection_id %}
-                $('select#id_connection').val({{ request.session.target_connection_id }});
+                $('select#id_connection').val("{{ request.session.target_connection_id }}");
             {% endif %}
+
             $.ajax({method: "POST", url: "{% url 'plug:actions' %}", data: {type: '{{ plug_type }}',}})
                 .done(function (response) {
                     console.log(response)
@@ -48,7 +62,7 @@
                             $('#specification_list').html(response);
                         })
                 }
-            })
+            });
         })
     </script>
 {% endblock %}

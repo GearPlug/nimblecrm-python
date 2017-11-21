@@ -1,0 +1,172 @@
+{% extends 'layouts/page_base.html' %}
+{% load static i18n %}
+
+{% block content %}
+    <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
+        <div class="carousel-inner">
+            {% if request.user.is_authenticated == False %}
+                <div class="item active container-fluid slide-item">
+                    <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
+                    <div class="carousel-caption slide-caption">
+                        {% blocktrans %}
+                            Conectándote <br/>
+                            <span class="slide-text-light"> en todos </span> <br/>
+                            <span class="slide-color-aqua"> lados </span>
+                        {% endblocktrans %}
+                    </div>
+                </div>
+                <div class="item">
+                    <img src="{% static 'img/landing/slide1.png' %}" alt="Second slide" class="slide">
+                </div>
+            {% else %}
+                <div class="item active bg_login1">
+                    &nbsp;
+                </div>
+            {% endif %}
+
+        </div>
+        <a class="left carousel-control" href="#carousel-example-generic" data-slide="prev">
+            <span class="slide-arrow">
+                <img src="{% static 'img/landing/arrow_left.png' %}" class="slide-img">
+            </span>
+        </a>
+        <a class="right carousel-control" href="#carousel-example-generic" data-slide="next">
+            <span class="slide-arrow">
+                <img src="{% static 'img/landing/arrow_right.png' %}" class="slide-img">
+            </span>
+        </a>
+    </div>
+    {% if request.user.is_authenticated == False %}
+        <div class="bg-form">
+            {% include 'landing/snippets/signup_form.html' %}
+        </div>
+    {% else %}
+        <div class="bg_login text-center">
+            <button type="button" class="btn-login">¡Ingresa Ya!</button>
+        </div>
+    {% endif %}
+    <div class="col-md-12 text-center index-space1">
+        <img src="{% static 'img/landing/logo_what.png' %}" style="height: 13%;">
+    </div>
+    <div class="col-md-12 text-center index-space2">
+        <span class="text-what">{% trans '¿Qué es GearPlug?' %}</span>
+        <br/>
+        <p class="text-p">
+            {% blocktrans %}
+                GearPlug es un software de automatización y optimización de todas las herramientas digitales para que su
+                empresa logre todos los KPI (Indicadores de Rendimiento) dispuestos, los cuales pueden mejorar y hacer
+                efectivos por medio de diferentes soluciones integrales de marketing digital que ofrece nuestro
+                software.
+            {% endblocktrans %}
+        </p>
+    </div>
+    <div class="col-md-12 index-space3">
+        <hr class="hr-separator">
+    </div>
+    <div class="col-md-12 text-center index-space4">
+        <span class="text-what">{% trans '¡Crea los Gear que quieras!' %}</span> <br/>
+        <p class="text-two">{% trans '(2 aplicaciones por gear)' %}</p>
+    </div>
+    <div class="col-md-12 index-space5">
+        <div class="col-md-10 col-md-offset-1">
+            <div class="col-md-4 text-center">
+                <div class="col-md-12">
+                    <img src="{% static 'img/landing/facebook.png' %}" class="facebook">
+                </div>
+                <div class="col-md-2">
+                    <img src="{% static 'img/landing/bullet1.png' %}" class="height_bullet">
+                </div>
+                <div class="col-md-10 text-bullet">{% trans 'Selecciona el Origen' %}</div>
+            </div>
+            <div class="col-md-4 text-center border_process">
+                <div class="col-md-12">
+                    <img src="{% static 'img/landing/generator.png' %}" class="generator">
+                </div>
+                <div class="col-md-2">
+                    <img src="{% static 'img/landing/bullet2.png' %}" class="height_bullet">
+                </div>
+                <div class="col-md-10 text-bullet1">
+                    {% trans 'Selecciona la acción que deseas que realice el Gear.' %}
+                </div>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="col-md-12">
+                    <img src="{% static 'img/landing/gmail.png' %}" class="gmail">
+                </div>
+                <div class="col-md-2">
+                    <img src="{% static 'img/landing/bullet3.png' %}" class="height_bullet">
+                </div>
+                <div class="col-md-10 text-bullet"> {% trans 'Selecciona el destino' %} </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12 text-center index-space7 text-connect">
+        {% trans 'Las Aplicaciones más utilizadas' %}
+    </div>
+
+    <div class="col-md-12 "> &nbsp;</div>
+
+    <div class="col-md-10 col-md-offset-1 index-space8">
+        {% for app in top_apps %}
+            <div class="col-md-2">
+                <div class="list-item">
+                    <div class="image1">
+                        <img src="{% if app.icon73 %}{{ app.icon73.url }}{% endif %}" width="73" height="73">
+                    </div>
+                    <div class="divider"></div>
+                    <div class="name1">
+                        {{ app.name }}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="col-md-12 bg_comments">
+        <div class="col-md-12 text-center title-comments">
+            La Experiencia Habla
+            <hr class="hr-comments">
+        </div>
+        <div class="col-md-10 col-md-offset-1">
+            {% with name='Daniel Ricco' text='Lorem ipsum dolor sit amet, consectetur adipiscing elit.' image='img/landing/guy3.png' %}
+                {% for i in 'xxxxxx' %}
+                    <div class="col-md-4">
+                        <div class="list-item1">
+                            <div class="col-md-4 image11">
+                                <img src="{% static image %}" style="height: 14.6%; margin-bottom: 50%;">
+                            </div>
+                            <div class="col-md-8 name11">
+                                {{ name }}<br/>
+                                {{ text }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endwith %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super.block }}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            $('form#signup_form').on('submit', function (e) {
+                e.preventDefault();
+                var form = $(this);
+                console.log(form.serialize())
+                $.ajax({
+                    method: "POST",
+                    url: $(form).attr('action'),
+                    data: $(form).serialize(),
+
+                }).done(function (response) {
+                    var url = 'http://{{ request.META.HTTP_HOST }}' + response.location;
+                    window.location.href = url;
+                }).fail(function (response) {
+                    $(form).parent().html(response.responseJSON.html);
+                });
+                return false;
+            })
+        })
+    </script>
+{% endblock %}
