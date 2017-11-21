@@ -1,6 +1,6 @@
 .table2 {
     display: table;
-    height: calc(100% - 108px);
+    height: calc(100% - 80px);
 }
 
 .table-cell2 {
@@ -258,7 +258,7 @@ html {
 }
 
 .content-body {
-    padding-top: 75px;
+    padding: 75px 0 35px 0;
 }
 
 .content-body .projects .title,
@@ -485,6 +485,7 @@ html {
 }
 
 .content-body .connections .list .test-button .button,
+.content-body .connections .list .test-button .text-wrapper,
 .content-body .connections .list .test-button .text-line,
 .content-body .connections .list .test-button .text {
     display: inline-block;
