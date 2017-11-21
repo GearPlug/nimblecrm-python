@@ -1,86 +1,96 @@
-.table2 {
-    display: table;
-    height: calc(100% - 80px);
-}
-
-.table-cell2 {
-    float: none;
-    display: table-cell;
-    vertical-align: top;
-}
-
 html {
     overflow-x: hidden;
 }
 
-.content {
-    /*Mover*/
+body {
+    font-size: 0;
     font-family: "Sansation", sans-serif;
-    /**/
 
 }
 
-.dashboard-header {
+/*.testing {*/
+    /*display: flex;*/
+/*}*/
+
+/*#dashboard-panel, #dashboard-content {*/
+    /*flex: 1 0;*/
+/*}*/
+
+#dashboard-header {
     height: 80px;
     padding-top: 10px;
     box-sizing: border-box;
     background-color: #f8f8f8;
 }
 
-.dashboard-header .logo {
+#dashboard-header .left {
+    width: 300px;
+}
+
+#dashboard-header .right {
+    width: calc(100% - 300px);
+}
+
+#dashboard-header .left, #dashboard-header .right {
+    font-size: 14px;
+    display: inline-block;
+    vertical-align: top;
+}
+
+#dashboard-header .logo {
     text-align: center;
 }
 
-.dashboard-header .right-side {
-    float: right;
+#dashboard-header .right-side {
+    padding-right: 3%;
     font-size: 1.40em;
     color: #9d9ba1;
     display: inline-block;
     vertical-align: top;
 }
 
-.dashboard-header .right-side .user,
-.dashboard-header .right-side .divider,
-.dashboard-header .right-side .search {
+#dashboard-header .right-side .user,
+#dashboard-header .right-side .divider,
+#dashboard-header .right-side .search {
     display: inline-block;
     vertical-align: top;
     float: right;
 }
 
-.dashboard-header .right-side .user .name,
-.dashboard-header .right-side .user .icon {
+#dashboard-header .right-side .user .name,
+#dashboard-header .right-side .user .icon {
     display: inline-block;
     vertical-align: top;
     cursor: pointer;
 }
 
-.dashboard-header .right-side .user .name {
+#dashboard-header .right-side .user .name {
     padding-top: 18px;
 }
 
-.dashboard-header .right-side .user .icon {
+#dashboard-header .right-side .user .icon {
     padding: 5px 5px 0 15px;
 }
 
-.dashboard-header .right-side .divider {
+#dashboard-header .right-side .divider {
     width: 1px;
     height: 60px;
     background-color: #e4e4e8;
     margin: 0 25px 0 18px;
 }
 
-.dashboard-header .right-side .search {
+#dashboard-header .right-side .search {
     position: relative;
     padding-top: 15px;
 }
 
-.dashboard-header .right-side .search img {
+#dashboard-header .right-side .search img {
     position: absolute;
     top: 45%;
     left: 5%;
 }
 
-.dashboard-header .right-side .search input {
+#dashboard-header .right-side .search input {
     width: 376px;
     height: 40px;
     border: solid 2px #dddde1;
@@ -95,34 +105,38 @@ html {
     outline: none;
 }
 
-.dashboard-panel {
-    height: calc(100% + 80px);
+#dashboard-panel {
+    font-size: 14px;
+    width: 300px;
+    min-height: 100%;
     background: url('../../img/console/g5842.png') bottom center/100% no-repeat, #005ea7;
     padding: 35px 0 0 0;
     box-sizing: border-box;
+    display: inline-block;
+    vertical-align: top;
 }
 
-.dashboard-panel .menu {
+#dashboard-panel .menu {
     background-color: #005ea7;
 }
 
-.dashboard-panel .menu .item {
+#dashboard-panel .menu .item {
     padding: 3% 15%;
     margin: 3% 0;
     cursor: pointer;
 }
 
-.dashboard-panel .menu .item.logout {
+#dashboard-panel .menu .item.logout {
     background-color: #005599;
 }
 
-.dashboard-panel .menu .item .image {
+#dashboard-panel .menu .item .image {
     width: 41px;
     display: inline-block;
     vertical-align: top;
 }
 
-.dashboard-panel .menu .item .text {
+#dashboard-panel .menu .item .text {
     width: calc(100% - 46px);
     display: inline-block;
     vertical-align: top;
@@ -133,7 +147,7 @@ html {
     line-height: 1em;
 }
 
-.dashboard-panel .menu .divider {
+#dashboard-panel .menu .divider {
     width: 80%;
     height: 1px;
     background-color: #0069c9;
@@ -141,9 +155,11 @@ html {
     display: block;
 }
 
-.dashboard-content {
-    height: auto;
-    background-color: #ffffff;
+#dashboard-content {
+    font-size: 14px;
+    width: calc(100% - 300px);
+    display: inline-block;
+    vertical-align: top;
 }
 
 .content-header {

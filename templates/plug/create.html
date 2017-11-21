@@ -2,29 +2,27 @@
 {% load static i18n %}
 
 {% block content %}
-    <div class="content-body col-md-10 col-md-offset-1">
-        <div class="row specifications">
-            <form class="form" action="" method="post" autocomplete="off" id="create-plug" name="plug-form" novalidate>
-                {% csrf_token %}
-                <div class="title">
-                    <span>{% trans 'Action Specifications' %}</span>
+    <div class="row specifications">
+        <form class="form" action="" method="post" autocomplete="off" id="create-plug" name="plug-form" novalidate>
+            {% csrf_token %}
+            <div class="title">
+                <span>{% trans 'Action Specifications' %}</span>
+            </div>
+            <div class="list">
+                <div style="display:none;">{{ form }}</div>
+                {% if form.error %}
+                    <div class="error">{{ form.error }}</div>
+                {% endif %}
+                <div id="action_list">Action:</div>
+                <br>
+                <div id="specification_list"></div>
+            </div>
+            <div class="row">
+                <div class="col-md-5">
+                    <button class="button-create" type="submit">{% trans 'Crear Plug' %}</button>
                 </div>
-                <div class="list">
-                    <div style="display:none;">{{ form }}</div>
-                    {% if form.error %}
-                        <div class="error">{{ form.error }}</div>
-                    {% endif %}
-                    <div id="action_list">Action:</div>
-                    <br>
-                    <div id="specification_list"></div>
-                </div>
-                <div class="row">
-                    <div class="col-md-5">
-                        <button class="button-create" type="submit">{% trans 'Crear Plug' %}</button>
-                    </div>
-                </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 {% endblock %}
 
