@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse
+from django.db.models import IntegerField, Case, When, Sum
 from django.db.models.aggregates import Count
 from django.http import JsonResponse
 from django.urls import reverse_lazy
@@ -43,9 +44,9 @@ class ListConnectorView(LoginRequiredMixin, ListView):
         else:
             raise (Exception(
                 "Not an available type. must be either Source or Target."))
-        print(self.model.objects.filter(**kw).annotate(connections=Count('connection'))[1].connections)
-        print(self.model.objects.filter(**kw).annotate(connections=Count('connection'))[1])
-        return self.model.objects.filter(**kw)
+        return self.model.objects.filter(**kw).annotate(
+            connection_count=Sum(Case(When(connection__user=self.request.user, then=1), default=0,
+                                      output_field=IntegerField())))
 
     def get_context_data(self, **kwargs):
         context = super(ListConnectorView, self).get_context_data(**kwargs)
