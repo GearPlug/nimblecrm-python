@@ -8,13 +8,17 @@ body {
 
 }
 
-/*.testing {*/
-    /*display: flex;*/
-/*}*/
+.testing {
 
-/*#dashboard-panel, #dashboard-content {*/
-    /*flex: 1 0;*/
-/*}*/
+}
+
+#dashboard-panel {
+
+}
+
+#dashboard-content {
+
+}
 
 #dashboard-header {
     height: 80px;
@@ -285,7 +289,8 @@ body {
 .content-body .connections .title,
 .content-body .specifications .title,
 .content-body .plug-test .title,
-.content-body .gear-update .title {
+.content-body .gear-update .title,
+.content-body .management .title {
     font-family: "Sansation Bold";
     font-size: 1.60em;
     color: #005ca7;
@@ -300,7 +305,8 @@ body {
 .content-body .connections .title span,
 .content-body .specifications .title span,
 .content-body .plug-test .title span,
-.content-body .gear-update .title span {
+.content-body .gear-update .title span,
+.content-body .management .title span{
     border-bottom: 3px solid #00e08f;
     display: inline-block;
     line-height: 1em;
@@ -395,7 +401,8 @@ body {
 }
 
 .content-body .gears .list .item.extended,
-.content-body .connections .list .item.extended {
+.content-body .connections .list .item.extended,
+.content-body .management .list .item.extended{
     display: block;
     text-align: left;
     padding-bottom: 35px;
@@ -405,12 +412,14 @@ body {
     padding-bottom: 15px;
 }
 
-.content-body .gears .list .item.extended .image-wrapper {
+.content-body .gears .list .item.extended .image-wrapper,
+.content-body .management .list .item.extended .image-wrapper {
     height: 60px;
 }
 
 .content-body .gears .list .item .image-wrapper,
-.content-body .connections .list .item .image-wrapper {
+.content-body .connections .list .item .image-wrapper,
+.content-body .management .list .item .image-wrapper {
     height: 60px;
     background-color: #f6f7f8;
     border-radius: 25px 25px 25px 25px;
@@ -435,13 +444,17 @@ body {
 .content-body .gears .list .item.extended .image-wrapper .name,
 .content-body .gears .list .item.extended .image-wrapper .control,
 .content-body .connections .list .item.extended .image-wrapper .button,
-.content-body .connections .list .item.extended .image-wrapper .name {
+.content-body .connections .list .item.extended .image-wrapper .name,
+.content-body .management .list .item.extended .image-wrapper .image,
+.content-body .management .list .item.extended .image-wrapper .name,
+.content-body .management .list .item.extended .image-wrapper .control {
     display: inline-block;
     vertical-align: top;
 }
 
 .content-body .gears .list .item.extended .image-wrapper .name,
-.content-body .connections .list .item.extended .image-wrapper .name {
+.content-body .connections .list .item.extended .image-wrapper .name,
+.content-body .management .list .item.extended .image-wrapper .name{
     width: 40%;
     font-size: 1.30em;
     color: #9d9ba1;
@@ -459,11 +472,17 @@ body {
 }
 
 .content-body .connections .list .test-button {
+    padding-top: 5px;
+    font-size: 0;
+}
+
+.content-body .management .list .test-button {
     padding-top: 10px;
     font-size: 0;
 }
 
-.content-body .connections .list .test-button .button {
+.content-body .connections .list .test-button .button,
+.content-body .management .list .test-button .button{
     -webkit-appearance: none;
     width: 36px;
     height: 36px;
@@ -474,7 +493,8 @@ body {
     cursor: pointer;
 }
 
-.content-body .connections .list .test-button .button:before {
+.content-body .connections .list .test-button .button:before,
+.content-body .management .list .test-button .button:before {
     content: '';
     display: block;
     width: 65%;
@@ -484,38 +504,48 @@ body {
     background: #e7e8ec;
 }
 
-.content-body .connections .list .test-button .button.passed {
+.content-body .connections .list .test-button .button.passed,
+.content-body .management .list .test-button .button.passed{
     border: 4px solid #005ca7;
 }
 
-.content-body .connections .list .test-button .button.passed:before {
+.content-body .connections .list .test-button .button.passed:before,
+.content-body .management .list .test-button .button.passed:before {
     background: #00e08f;
 }
 
-.content-body .connections .list .test-button .button.failed {
+.content-body .connections .list .test-button .button.failed,
+.content-body .management .list .test-button .button.failed{
     border: 4px solid #ce050e;
 }
 
-.content-body .connections .list .test-button .button.failed:before {
+.content-body .connections .list .test-button .button.failed:before,
+.content-body .management .list .test-button .button.failed:before {
     background: #ce050e;
 }
 
 .content-body .connections .list .test-button .button,
 .content-body .connections .list .test-button .text-wrapper,
 .content-body .connections .list .test-button .text-line,
-.content-body .connections .list .test-button .text {
+.content-body .connections .list .test-button .text,
+.content-body .management .list .test-button .button,
+.content-body .management .list .test-button .text-wrapper,
+.content-body .management .list .test-button .text-line,
+.content-body .management .list .test-button .text {
     display: inline-block;
     vertical-align: middle;
 }
 
-.content-body .connections .list .test-button .text-line {
+.content-body .connections .list .test-button .text-line,
+.content-body .management .list .test-button .text-line {
     width: 10px;
     height: 1px;
     background-color: #00e08f;
     margin-left: 5px;
 }
 
-.content-body .connections .list .test-button .text {
+.content-body .connections .list .test-button .text,
+.content-body .management .list .test-button .text {
     padding: 5px 10px;
     border-radius: 25px 25px 25px 25px;
     -moz-border-radius: 25px 25px 25px 25px;
@@ -525,17 +555,20 @@ body {
     color: #9d9ba1;
 }
 
-.content-body .connections .list .test-button .text.passed {
+.content-body .connections .list .test-button .text.passed,
+.content-body .management .list .test-button .text.passed {
     border: solid 1px #00e08f;
     color: #005ca7;
 }
 
-.content-body .connections .list .test-button .text.failed {
+.content-body .connections .list .test-button .text.failed,
+.content-body .management .list .test-button .text.failed{
     border: solid 1px #ce050e;
     color: #9d9ba1;
 }
 
-.content-body .gears .list .item.extended .image-wrapper .control {
+.content-body .gears .list .item.extended .image-wrapper .control,
+.content-body .management .list .item.extended .image-wrapper .control{
     float: right;
     font-family: "Sansation Bold";
     font-size: 1.40em;
@@ -543,10 +576,16 @@ body {
     padding: 12px 25px 0 0;
 }
 
+.content-body .management .list .item.extended .image-wrapper .control a {
+    text-decoration: none;
+}
+
 .content-body .gears .list .item.extended .image-wrapper .control .edit,
 .content-body .gears .list .item.extended .image-wrapper .control .button,
 .content-body .gears .list .item.extended .image-wrapper .control .status,
-.content-body .gears .list .item.extended .image-wrapper .control .history {
+.content-body .gears .list .item.extended .image-wrapper .control .history,
+.content-body .management .list .item.extended .image-wrapper .control .edit,
+.content-body .management .list .item.extended .image-wrapper .control .status {
     display: inline-block;
     vertical-align: middle;
     padding: 0 4px;
@@ -557,7 +596,12 @@ body {
     width: 46px;
 }
 
-.content-body .gears .list .item .image-wrapper .image .connector {
+.content-body .management .list .item.extended .image-wrapper .control .status {
+    cursor: default;
+}
+
+.content-body .gears .list .item .image-wrapper .image .connector,
+.content-body .management .list .item .image-wrapper .image .connector {
     display: inline-block;
     padding: 12px 15px 0 15px;
 
