@@ -626,6 +626,7 @@ class Webhook(models.Model):
     def __str__(self):
         return '%s webhook of %s' % (self.name, self.plug)
 
+
 class DBLogEntry(models.Model):
     time = models.DateTimeField(auto_now_add=True)
     level = models.CharField(max_length=10)
@@ -642,6 +643,7 @@ class ControllerLog(DBLogEntry):
     status = models.CharField(max_length=2, blank=False, choices=STATUS, default='f')
     controller = models.CharField(max_length=20, blank=True, default='')
 
+
 class SubscriptionsList(models.Model):
     title = models.CharField(max_length=500, default='subscription')
     description = models.CharField(max_length=500, default='description of subscription')
@@ -650,10 +652,10 @@ class SubscriptionsList(models.Model):
     def __str__(self):
         return self.title
 
+
 class Subscriptions(models.Model):
     user = models.ForeignKey(User)
     list = models.ForeignKey(SubscriptionsList)
-
 
 
 admin.site.register(Connector)
