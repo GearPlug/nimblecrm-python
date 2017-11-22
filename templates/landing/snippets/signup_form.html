@@ -24,15 +24,18 @@
             <div class="text-danger">{{ error }}</div>
         {% endfor %}
     </div>
-    <div class="col-md-12 padding-checkbox">
-        <div class="btn-group" data-toggle="buttons">
-            <label class="btn btn-primary">
-                <input type="checkbox" autocomplete="off" name="notification">
-                <span class="glyphicon glyphicon-ok"></span>
-            </label>
+    {% for id,name in signup_form.subscription_list.field.choices %}
+        <div class="col-md-12 padding-checkbox{% if signup_form.subscription_list.errors %} has-error{% endif %}">
+            <div class="btn-group" data-toggle="buttons">
+                <label for="id_subscription_list{{ forloop.counter0 }}" class="btn btn-primary">
+                    <input type="checkbox" name="subscription_list" value="1"
+                           id="id_subscription_list{{ forloop.counter0 }}">
+                    <span class="glyphicon glyphicon-ok"></span>
+                </label>
+            </div>
+            <span class="checkbox-form">{{ name }}</span>
         </div>
-        <span class="checkbox-form">Enviarme notificaciones a mi correo</span>
-    </div>
+    {% endfor %}
     <div class="col-md-12">
         <button type="submit" class="button_form">Regístrate</button>
     </div>
