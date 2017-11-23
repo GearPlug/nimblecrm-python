@@ -277,22 +277,16 @@
 
 .bg_login{
     background: url("../../img/landing/icons4.png") no-repeat scroll 0 0;
-    left: 52.5%;
-    padding: 4.6% 7.4% 6.5% 4.9%;
+    left: 52.6%;
+    padding: 4.8% 7% 6% 5.1%;
     position: absolute;
-    top: 2.9%;
-}
-
-.bg_login1{
-    background: url("../../img/landing/slide2.png") no-repeat scroll 0 0;
-    height: 821px;
-    background-size: contain;
-    /*width: 100%;*/
+    top: 23.2%;
 }
 
 .btn-login{
     background-color: #005CA5;
     border-radius: 38px 35px 34px 37px;
+    border-width: inherit;
     color: white;
     font-family: 'Sansation';
     font-size: 4.2em;
@@ -314,6 +308,11 @@
     .list-item .name1 {
         font-size: 1.5em;
     }
+
+    .bg_login {
+        padding: 5.8% 7% 6% 6.1%;
+        top: 18.2%;
+    }
 }
 
 @media only screen and (max-width:1440px) {
@@ -332,6 +331,11 @@
 
     .name11 {
         padding-left: 8%;
+    }
+
+    .bg_login {
+        padding: 7% 7% 6% 7.4%;
+        top: 15.2%;
     }
 }
 
@@ -374,5 +378,19 @@
 
     .name11 {
         padding-left: 26%;
+    }
+
+    .btn-login {
+        font-size: 3.2em;
+        height: inherit;
+        width: 116%;
+    }
+
+    .bg_login {
+        background: url(../../img/landing/icons4x1024.png) no-repeat scroll 0 0;
+        left: 50.6%;
+        padding: 8.8% 15% 9% 9.1%;
+        position: absolute;
+        top: 12.2%;
     }
 }

@@ -20,8 +20,8 @@
                         <img src="{% static 'img/landing/slide1.png' %}" alt="Second slide" class="slide">
                     </div>
                 {% else %}
-                    <div class="item active bg_login1">
-                        &nbsp;
+                    <div class="item active">
+                        <img src="{% static 'img/landing/slide2.png' %}" alt="First slide" class="slide">
                     </div>
                 {% endif %}
             </div>
@@ -161,28 +161,27 @@
         </div>
     </div>
 {% endblock %}
-{#{% endblock %}#}
-{##}
-{#{% block scripts %}#}
-{#    {{ super.block }}#}
-{#    <script type="application/javascript">#}
-{#        $(document).ready(function () {#}
-{#            $('form#signup_form').on('submit', function (e) {#}
-{#                e.preventDefault();#}
-{#                var form = $(this);#}
-{#                console.log(form.serialize())#}
-{#                $.ajax({#}
-{#                    method: "POST",#}
-{#                    url: $(form).attr('action'),#}
-{#                    data: $(form).serialize(),#}
-{##}
-{#                }).done(function (response) {#}
-{#                    var url = 'http://{{ request.META.HTTP_HOST }}' + response.location;#}
-{#                    window.location.href = url;#}
-{#                }).fail(function (response) {#}
-{#                    $(form).parent().html(response.responseJSON.html);#}
-{#                });#}
-{#                return false;#}
-{#            })#}
-{#        })#}
-{#    </script>#}
+{% block scripts %}
+    {{ super.block }}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            $('form#signup_form').on('submit', function (e) {
+                e.preventDefault();
+                var form = $(this);
+                console.log(form.serialize())
+                $.ajax({
+                    method: "POST",
+                    url: $(form).attr('action'),
+                    data: $(form).serialize(),
+
+                }).done(function (response) {
+                    var url = 'http://{{ request.META.HTTP_HOST }}' + response.location;
+                    window.location.href = url;
+                }).fail(function (response) {
+                    $(form).parent().html(response.responseJSON.html);
+                });
+                return false;
+            })
+        })
+    </script>
+{% endblock %}
