@@ -65,93 +65,102 @@
             </div>
         </div>
     </div>
-
-
-
-{#    <div class="col-md-12 index-space3">#}
-{#        <hr class="hr-separator">#}
-{#    </div>#}
-{#    <div class="col-md-12 text-center index-space4">#}
-{#        <span class="text-what">{% trans '¡Crea los Gear que quieras!' %}</span> <br/>#}
-{#        <p class="text-two">{% trans '(2 aplicaciones por gear)' %}</p>#}
-{#    </div>#}
-{#    <div class="col-md-12 index-space5">#}
-{#        <div class="col-md-10 col-md-offset-1">#}
-{#            <div class="col-md-4 text-center">#}
-{#                <div class="col-md-12">#}
-{#                    <img src="{% static 'img/landing/facebook.png' %}" class="facebook">#}
-{#                </div>#}
-{#                <div class="col-md-2">#}
-{#                    <img src="{% static 'img/landing/bullet1.png' %}" class="height_bullet">#}
-{#                </div>#}
-{#                <div class="col-md-10 text-bullet">{% trans 'Selecciona el Origen' %}</div>#}
-{#            </div>#}
-{#            <div class="col-md-4 text-center border_process">#}
-{#                <div class="col-md-12">#}
-{#                    <img src="{% static 'img/landing/generator.png' %}" class="generator">#}
-{#                </div>#}
-{#                <div class="col-md-2">#}
-{#                    <img src="{% static 'img/landing/bullet2.png' %}" class="height_bullet">#}
-{#                </div>#}
-{#                <div class="col-md-10 text-bullet1">#}
-{#                    {% trans 'Selecciona la acción que deseas que realice el Gear.' %}#}
-{#                </div>#}
-{#            </div>#}
-{#            <div class="col-md-4 text-center">#}
-{#                <div class="col-md-12">#}
-{#                    <img src="{% static 'img/landing/gmail.png' %}" class="gmail">#}
-{#                </div>#}
-{#                <div class="col-md-2">#}
-{#                    <img src="{% static 'img/landing/bullet3.png' %}" class="height_bullet">#}
-{#                </div>#}
-{#                <div class="col-md-10 text-bullet"> {% trans 'Selecciona el destino' %} </div>#}
-{#            </div>#}
-{#        </div>#}
-{#    </div>#}
-{#    <div class="col-md-12 text-center index-space7 text-connect">#}
-{#        {% trans 'Las Aplicaciones más utilizadas' %}#}
-{#    </div>#}
-{##}
-{#    <div class="col-md-12 "> &nbsp;</div>#}
-{##}
-{#    <div class="col-md-10 col-md-offset-1 index-space8">#}
-{#        {% for app in top_apps %}#}
-{#            <div class="col-md-2">#}
-{#                <div class="list-item">#}
-{#                    <div class="image1">#}
-{#                        <img src="{% if app.icon73 %}{{ app.icon73.url }}{% endif %}" width="73" height="73">#}
-{#                    </div>#}
-{#                    <div class="divider"></div>#}
-{#                    <div class="name1">#}
-{#                        {{ app.name }}#}
-{#                    </div>#}
-{#                </div>#}
-{#            </div>#}
-{#        {% endfor %}#}
-{#    </div>#}
-{#    <div class="col-md-12 bg_comments">#}
-{#        <div class="col-md-12 text-center title-comments">#}
-{#            La Experiencia Habla#}
-{#            <hr class="hr-comments">#}
-{#        </div>#}
-{#        <div class="col-md-10 col-md-offset-1">#}
-{#            {% with name='Daniel Ricco' text='Lorem ipsum dolor sit amet, consectetur adipiscing elit.' image='img/landing/guy3.png' %}#}
-{#                {% for i in 'xxxxxx' %}#}
-{#                    <div class="col-md-4">#}
-{#                        <div class="list-item1">#}
-{#                            <div class="col-md-4 image11">#}
-{#                                <img src="{% static image %}" style="height: 14.6%; margin-bottom: 50%;">#}
-{#                            </div>#}
-{#                            <div class="col-md-8 name11">#}
-{#                                {{ name }}<br/>#}
-{#                                {{ text }}#}
-{#                            </div>#}
-{#                        </div>#}
-{#                    </div>#}
-{#                {% endfor %}#}
-{#            {% endwith %}#}
-{#        </div>#}
-{#    </div>#}
+    <div class="container-fluid">
+        <div class="row not-margin">
+            <div class="col-md-12 index-space3">
+                <hr class="hr-separator">
+            </div>
+        </div>
+    </div>
+    <div class="container create">
+        <div class="row not-margin">
+            <div class="col-md-12 text-center index-space4">
+                <span class="text-what">{% trans '¡Crea los Gear que quieras!' %}</span> <br/>
+                <p class="text-two">{% trans '(2 aplicaciones por gear)' %}</p>
+            </div>
+            <div class="col-md-12 index-space5">
+                <div class="col-md-4 text-center">
+                    <div class="col-md-12">
+                        <img src="{% static 'img/landing/facebook.png' %}" class="facebook">
+                    </div>
+                    <div class="col-md-2 sp">
+                        <img src="{% static 'img/landing/bullet1.png' %}" class="height_bullet">
+                    </div>
+                    <div class="col-md-10 text-bullet">{% trans 'Selecciona el Origen' %}</div>
+                </div>
+                <div class="col-md-4 text-center border_process">
+                    <div class="col-md-12">
+                        <img src="{% static 'img/landing/generator.png' %}" class="generator">
+                    </div>
+                    <div class="col-md-2 sp">
+                        <img src="{% static 'img/landing/bullet2.png' %}" class="height_bullet">
+                    </div>
+                    <div class="col-md-10 text-bullet1 sp">
+                        {% trans 'Selecciona la acción que deseas que realice el Gear.' %}
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="col-md-12">
+                        <img src="{% static 'img/landing/gmail.png' %}" class="gmail">
+                    </div>
+                    <div class="col-md-2 sp">
+                        <img src="{% static 'img/landing/bullet3.png' %}" class="height_bullet">
+                    </div>
+                    <div class="col-md-10 text-bullet"> {% trans 'Selecciona el destino' %} </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid sp">
+        <div class="row not-margin">
+            <div class="col-md-12 text-center index-space7 text-connect">
+                {% trans 'Top 6 de Aplicaciones más usadas' %}
+            </div>
+            <div class="col-md-10 col-md-offset-1 index-space8">
+                {% for app in top_apps %}
+                    <div class="col-md-2">
+                        <div class="list-item">
+                            <div class="image1">
+                                <img src="{% if app.icon73 %}{{ app.icon73.url }}{% endif %}" width="73" height="73">
+                            </div>
+                            <div class="divider"></div>
+                            <div class="name1">
+                                {{ app.name }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid sp">
+        <div class="row not-margin">
+            <div class="col-md-12 bg_comments">
+                <div class="col-md-12 text-center title-comments">
+                    La Experiencia Habla
+                    <hr class="hr-comments">
+                </div>
+                <div class="col-md-10 col-md-offset-1">
+                    {% with name='Daniel Ricco' text='Lorem ipsum dolor sit amet, consectetur adipiscing elit.' image='img/landing/guy3.png' %}
+                        {% for i in 'xxxxxx' %}
+                            <div class="col-md-4">
+                                <div class="list-item1">
+                                    <div class="col-md-4 image11">
+                                        <img src="{% static image %}" style="margin-bottom: 50%;">
+                                    </div>
+                                    <div class="col-md-8 name11">
+                                        {{ name }}<br/>
+                                        {{ text }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
 {#{% endblock %}#}
 {##}
 {#{% block scripts %}#}
@@ -177,4 +186,3 @@
 {#            })#}
 {#        })#}
 {#    </script>#}
-{% endblock %}

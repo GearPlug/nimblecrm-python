@@ -61,7 +61,7 @@ ul.menu li.menu-login a {
 }
 
 .text-menu {
-    padding-top: 0.9%;
+    padding-top: 1%;
 }
 
 .text-menu a{
@@ -78,7 +78,7 @@ ul.menu li.menu-login a {
 
 .bg_footer {
     background-color: #005CA5;
-    padding: 1.3% 0 1.7% 0;
+    padding: 1.5% 0 1.7% 0;
 }
 
 .text-footer {
@@ -117,8 +117,6 @@ footer {
 
 @media only screen and (max-width:1024px) {
     ul.menu {
-        margin: 4.1% 0% 0 0;
+        margin: 4.1% 0% 0 -5%;
     }
-
-
 }
