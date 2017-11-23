@@ -175,8 +175,8 @@ USE_TZ = True
 # Static files
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'staticfiles'),
@@ -193,6 +193,3 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
 LOGIN_REDIRECT_URL = '/dashboard/'
-
-ACCOUNT_SIGNUP_FORM_CLASS = 'apps.gp.forms.SignupForm'
-# ACCOUNT_SIGNUP_FORM_CLASS = 'apps.gp.forms.OptionsForm'

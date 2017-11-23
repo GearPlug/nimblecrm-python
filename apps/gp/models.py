@@ -654,8 +654,8 @@ class SubscriptionsList(models.Model):
 
 
 class Subscriptions(models.Model):
-    user = models.ForeignKey(User)
-    list = models.ForeignKey(SubscriptionsList)
+    user = models.ForeignKey(User, related_name="subscription_user")
+    list = models.ForeignKey(SubscriptionsList, related_name="subscription_list")
 
 
 admin.site.register(Connector)

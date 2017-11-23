@@ -1,17 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Subscriptions Manager</title>
-</head>
-<body>
-<h1>Subscriptions Manager</h1>
-<h3>Seleccione la/s subscripcion que desea abandonar</h3>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Submit</button>
-</form>
+{% extends 'layouts/console_base.html' %}
+{% load static i18n %}
 
-</body>
-</html>
+{% block content %}
+    <h1>Subscriptions Manager</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Submit</button>
+    </form>
+{% endblock %}
