@@ -1242,13 +1242,20 @@ class ActiveCampaignController(BaseController):
             except Exception as e:
                 print(e)
 
+    def test_connection(self):
+        try:
+            self._client.account.get_account_info()
+            return True
+        except:
+            return False
+
     def get_custom_fields(self):
             try:
                 result = self._client.lists.get_list_field()
                 return {str(int(v['id']) - 1): {'name': v['perstag'], 'id': v['id'], 'label': v['title']} for (k, v) in
                     result.items() if k not in ['result_code', 'result_output', 'result_message']}
             except:
-                return []
+                return {}
 
     def get_lists(self):
         _lists = self._client.lists.get_lists()
@@ -1267,13 +1274,6 @@ class ActiveCampaignController(BaseController):
                 return tuple({'id':i['id'], 'name':i['title']} for i in deals)
         except Exception as e:
             print(e)
-
-    def test_connection(self):
-        try:
-            self._client.account.get_account_info()
-            return True
-        except:
-            return False
 
     def create_webhook(self):
         action_name = self._plug.action.name
@@ -1346,74 +1346,43 @@ class ActiveCampaignController(BaseController):
             {'name': 'orgname', 'label': 'Organization Name', 'type': 'varchar', 'required': False},
         ]
 
-    def subscribe_contact(self, data):
-
-        params = [
-            ('api_action', "contact_add"),
-            ('api_key', self._key),
-            ('api_output', 'json'),
-        ]
-
-        final_url = "{0}/admin/api.php".format(self._host)
-        r = requests.post(url=final_url, data=data, params=params).json()
-        return r
-
-    def unsubscribe_contact(self, email):
-
-        data = self.contact_view_email(email['email'])
-        params = [
-            ('api_action', "contact_edit"),
-            ('api_key', self._key),
-            ('api_output', 'json'),
-        ]
-        data['p[{0}]'.format(_list_id)] = _list_id
-        data['status[{0}]'.format(_list_id)] = 2
-        final_url = "{0}/admin/api.php".format(self._host)
-        r = requests.post(url=final_url, data=data, params=params).json()
-        r['subscriber_id'] = data['id']
-        return r
-
-    def contact_view_email(self, email):
-        params = [
-            ('api_action', "contact_view_email"),
-            ('api_key', self._key),
-            ('api_output', 'json'),
-            ('email', email),
-        ]
-        final_url = "{0}/admin/api.php".format(self._host)
-        r = requests.post(url=final_url, params=params).json()
-        return r
-
     def send_stored_data(self, data_list):
         extra = {'controller': 'activecampaign'}
         action = self._plug.action.name
+        print("action", action)
         result_list = []
         for item in data_list:
-            sent = False
-            identifier = ""
             if action == 'create contact':
-                response = self._client.contacts.create_contact(item)
-            elif action == 'subscribe a contact':
+                try:
+                    _result = self._client.contacts.create_contact(item)
+                    _sent = True
+                except Exception as e:
+                    _sent = False
+            elif action == 'subscribe contact':
                 _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
                 item['p[{0}]'.format(_list_id)] = _list_id
-                response = self._client.contacts.create_contact(item)
-            elif action == 'unsubscribe a contact':
-                response = self.unsubscribe_contact(item)
-            if response['result_code'] == 1:
-                sent = True
-                identifier = response['subscriber_id']
-                self._log.info(
-                    'Item: %s successfully sent.' % (response['subscriber_id']),
-                    extra=extra)
+                try:
+                    _result = self._client.contacts.create_contact(item)
+                    _sent = True
+                except Exception as e:
+                    _sent = False
+            elif action == 'unsubscribe contact':
+                _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
+                data = self._client.contacts.view_contact_email(item['email'])
+                data['p[{0}]'.format(_list_id)] = _list_id
+                data['status[{0}]'.format(_list_id)] = 2
+                try:
+                    _result = self._client.contacts.edit_contact(data)
+                    _sent = True
+                except Exception as e:
+                    _sent = False
+            if _sent is True:
+                identifier = _result['subscriber_id']
+                _response = _result
             else:
-                print(response['result_message'])
-                extra['status'] = 'f'
-                self._log.info(
-                    'Item: %s failed to send.' % (
-                        list(item.items())[0][1]),
-                    extra=extra)
-            result_list.append(
-                {'data': dict(item), 'response': response['result_message'], 'sent': sent, 'identifier': identifier})
+                identifier = ""
+                _response = e
+            result_list.append({'data': dict(item), 'response': _response, 'sent': _sent, 'identifier': identifier})
         return result_list
 
     def download_to_stored_data(self, connection_object=None, plug=None, data=None, **kwargs):
@@ -1437,50 +1406,6 @@ class ActiveCampaignController(BaseController):
             result_list = [{'raw': data, 'is_stored': is_stored, 'identifier': {'name': 'id', 'value': object_id}}]
             return {'downloaded_data': result_list, 'last_source_record': object_id}
         return False
-
-    def contact_view(self, id):
-        params = [
-            ('api_action', "contact_view"),
-            ('api_key', self._key),
-            ('api_output', 'json'),
-            ('id', id),
-        ]
-        url = "{0}/admin/api.php".format(self._host)
-        r = requests.post(url=url, params=params)
-        return r.json()
-
-    def delete_webhooks(self, id):
-        params = [
-            ('api_action', "webhook_delete"),
-            ('api_key', self._key),
-            ('api_output', 'json'),
-            ('id', id),
-        ]
-        final_url = "{0}/admin/api.php".format(self._host)
-        r = requests.post(url=final_url, params=params)
-        return r.json()
-
-    def delete_contact(self, id):
-        params = [
-            ('api_action', "contact_delete"),
-            ('api_key', self._key),
-            ('api_output', 'json'),
-            ('id', id),
-        ]
-        final_url = "{0}/admin/api.php".format(self._host)
-        r = requests.post(url=final_url, params=params)
-        return r.json()
-
-    def list_webhooks(self, id):
-        params = [
-            ('api_action', "webhook_view"),
-            ('api_key', self._key),
-            ('api_output', 'json'),
-            ('id', id),
-        ]
-        final_url = "{0}/admin/api.php".format(self._host)
-        r = requests.post(url=final_url, params=params)
-        return r.json()
 
     def do_webhook_process(self, body=None, POST=None, webhook_id=None, **kwargs):
         webhook = Webhook.objects.get(pk=webhook_id)
