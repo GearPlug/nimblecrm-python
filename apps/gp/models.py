@@ -644,6 +644,20 @@ class ControllerLog(DBLogEntry):
     controller = models.CharField(max_length=20, blank=True, default='')
 
 
+class SubscriptionsList(models.Model):
+    title = models.CharField(max_length=500, default='subscription')
+    description = models.CharField(max_length=500, default='description of subscription')
+    user = models.ManyToManyField(User, through='Subscriptions')
+
+    def __str__(self):
+        return self.title
+
+
+class Subscriptions(models.Model):
+    user = models.ForeignKey(User, related_name="subscription_user")
+    list = models.ForeignKey(SubscriptionsList, related_name="subscription_list")
+
+
 admin.site.register(Connector)
 admin.site.register(Action)
 admin.site.register(ActionSpecification)

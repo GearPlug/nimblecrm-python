@@ -2,21 +2,15 @@
     padding: 0;
 }
 
-.slide {
-    width: 100%;
-}
-
 .slide-caption {
     color: white;
     font-family: 'Sansation';
-    font-size: 5.6em;
-    height: 30%;
-    left: 6.6%;
-    letter-spacing: -1px;
-    line-height: 67px;
+    font-size: 4.4em;
+    left: 13.9%;
+    line-height: 89%;
     text-align: justify;
     text-shadow: inherit;
-    top: 6.4%;
+    top: 8.2%;
 }
 
 .slide-text-light {
@@ -33,11 +27,11 @@
 
 .slide-arrow {
     position: absolute;
-    top: 45%;
+    top: 44.5%;
 }
 
-.slide-img {
-    height: 13.5%;
+.not-bg {
+    background-image: inherit !important;
 }
 
 .bg-form {
@@ -45,11 +39,11 @@
     border-radius: 40px 40px 51px 51px;
     -moz-border-radius: 40px 40px 51px 51px;
     -webkit-border-radius: 40px 40px 51px 51px;
-    left: 63.4%;
-    padding: 2.9% 0 0 0.4%;
+    left: 65%;
+    padding: 1.9% 0 0 0.4%;
     position: absolute;
-    right: 9.7%;
-    top: 3.7%;
+    right: 16%;
+    top: 27.6%;
 }
 
 .input-form {
@@ -60,103 +54,103 @@
     border: 1px solid #F1F2F4;
     color: #9E9BA2;
     font-family: 'Sansation';
-    font-size: 1.6em;
-    height: 63px;
-    margin: 0 0 30px 23px;
+    font-size: 1.5em;
+    height: 45px;
+    margin: 0 0 19px 11px;
     padding-left: 22px;
-    width: 89%;
+    width: 91%;
 }
 
 .checkbox-form {
     color: black;
     font-family: 'Sansation';
-    font-size: 1.67em;
-    padding-left: 10px;
+    font-size: 1.1em;
 }
 
 .padding-checkbox {
-    padding-left: 43px;
+    padding-left: 7.9%;
 }
 
 .button_form {
     background-color: #005CA7;
+    border-radius: 14px;
+    border-width: inherit;
     color: white;
+    font-family: 'Sansation';
     font-size: 1.9em;
-    height: 12%;
-    margin: 38px 0 56px 24px;
-    width: 88%;
+    margin: 8.3% 0 14.3% 3.8%;
+    width: 90.5%;
 }
 
 .index-space1 {
-    margin-top: 6.7%;
+    margin-top: 9%;
 }
 
 .index-space2 {
-    margin-top: 1.8%;
+    margin-top: 1%;
 }
 
 .index-space3 {
-    margin-top: 4.4%;
+    margin-top: 1.1%;
 }
 
 .index-space4 {
-    margin-top: 3.6%;
+    margin-top: 2.5%;
 }
 
 .index-space5 {
-    margin-top: 4.6%;
+    margin-top: 3.2%;
 }
 
 .index-space7 {
-    margin-top: 6.3%;
+    margin-top: 2.5%;
 }
 
 .index-space8 {
-    margin-top: 3.6%;
+    margin-top: 5.2%;
 }
 
 .text-what {
     color: #9E9BA2;
     font-family: 'Sansation';
-    font-size: 4.8em;
+    font-size: 3.8em;
 }
 
 .text-p {
     color: #727277;
     font-family: 'Sansation Light';
-    font-size: 1.9em;
-    letter-spacing: 0.5px;
-    line-height: 44px;
-    padding: 2.8% 20% 0;
+    font-size: 1.8em;
+    line-height: 154%;
+    padding: 1.7% 2% 0;
 }
 
 .hr-separator {
-    color: #E9EAED;
-    width: 85%;
+    border-bottom: 2px solid #E9EAED;
+    border-top: transparent;
+    width: 75%;
 }
 
 .text-two {
     color: #005CA7;
     font-family: 'Sansation';
     font-size: 2.3em;
-    margin-top: -0.4%;
+    margin-top: -0.9%;
 }
 
 .text-bullet {
     color: #727277;
     font-family: 'Sansation Light';
-    font-size: 2em;
-    margin-left: -6%;
+    font-size: 1.8em;
     padding-top: 4.0%;
 }
 
 .text-bullet1 {
     font-family: 'Sansation Light';
-    font-size: 2em;
+    font-size: 1.8em;
     color: #727277;
-    line-height: 28px;
-    margin-bottom: 10.5%;
-    padding: 1.4% 0 0 4%;
+    line-height: 105%;
+    margin-bottom: 9.5%;
+    padding-top: 1.8%;
 }
 
 .banner {
@@ -166,12 +160,11 @@
 }
 
 .text-connect {
-    background: url("../../img/landing/bg_banner1.png") no-repeat #09DF8E;
-    background-size: cover;
-    color: #005CA6;
+    background: url("../../img/landing/bg_banner1.png") repeat-x #09DF8E;
+    color: white;
     font-family: 'Sansation Bold';
-    font-size: 5.1em;
-    padding: 1.9% 0 2.4% 0;
+    font-size: 3.6em;
+    padding: 1.6% 0 1.8% 0;
 }
 
 .text-us {
@@ -186,11 +179,11 @@
 }
 
 .list-item .divider {
-    width: 210px;
+    width: 97%;
     height: 1px;
     display: inline-block;
     background-color: #E5E6E9;
-    margin: 5% 0 1% 0;
+    margin: 11.4% 0 2.1% 0;
 
 }
 
@@ -202,23 +195,23 @@
 
 .bg_comments {
     background: url("../../img/landing/icons3.png") no-repeat scroll top right #005CA6;
-    margin-top: 3.6%;
-    padding-bottom: 42px;
+    margin-top: 1.8%;
+    padding-bottom: 2.5%;
 }
 
 .title-comments {
     color: white;
     font-family: "Sansation Bold";
-    font-size: 4.9em;
-    margin-bottom: 6%;
-    margin-top: 87px;
+    font-size: 3.6em;
+    margin-bottom: 5.1%;
+    margin-top: 2.4%;
 }
 
 .hr-comments {
-    border-bottom: #00E08F solid 4px;
+    border-bottom: #00E08F solid 6px;
     border-top: transparent;
-    margin: -0.7% 0 0 37.5%;
-    width: 19.3%;
+    margin: -0.4% 0 0 40.4%;
+    width: 14.7%;
 }
 
 .list-wrapper1 {
@@ -229,7 +222,7 @@
 .name11 {
     color: white;
     font-family: "Sansation";
-    font-size: 1.3em;
+    font-size: 1.2em;
     margin-top: 0.6%;
 }
 
@@ -261,48 +254,39 @@
     padding: 3px 3px;
 }
 
+.container.create {
+    width: 1250px;
+}
+
 .facebook {
-    height: 13.6%;
-    margin: 20% 0 11.7% 0;
+    margin: 24% 0 11.7% 0;
 }
 
 .generator {
-    height: 14%;
-    margin: 13.5% 0 18.4% 0;
+    margin: 15% 0 21% 0;
 }
 
 .gmail {
-    height: 14.4%;
-    margin: 19.5% 0 11.6% 0;
+    margin: 21.8% 0 15.2% 0;
 }
 
 .border_process {
-    border-left: #E9EAED solid 1px;
-    border-right: #E9EAED solid 1px;
-}
-
-.height_bullet {
-    height: 8.1%;
+    border-left: #E9EAED solid 2px;
+    border-right: #E9EAED solid 2px;
 }
 
 .bg_login{
     background: url("../../img/landing/icons4.png") no-repeat scroll 0 0;
-    left: 52.5%;
-    padding: 4.6% 7.4% 6.5% 4.9%;
+    left: 52.6%;
+    padding: 4.8% 7% 6% 5.1%;
     position: absolute;
-    top: 2.9%;
-}
-
-.bg_login1{
-    background: url("../../img/landing/slide2.png") no-repeat scroll 0 0;
-    height: 821px;
-    background-size: contain;
-    /*width: 100%;*/
+    top: 23.2%;
 }
 
 .btn-login{
     background-color: #005CA5;
     border-radius: 38px 35px 34px 37px;
+    border-width: inherit;
     color: white;
     font-family: 'Sansation';
     font-size: 4.2em;
@@ -311,47 +295,118 @@
     width: 372px;
 }
 
-@media only screen and (max-width:1910px) {
-    .carousel-control {
-        height: 96.3%;
-    }
+.slide-other {
+    height: 71% !important;
 }
 
 @media only screen and (max-width:1600px) {
-    .text_menu {
-        padding-left: 0.4%;
-    }
-
-    .slide-arrow {
-        top: 43%;
+    .slide-caption {
+        left: 8.9%;
     }
 
     .bg-form {
-        top: 0.8%;
+        right: 14%;
+        top: 20.6%;
     }
 
-    .text-bullet {
-        margin-left: -1%;
+    .list-item .name1 {
+        font-size: 1.5em;
     }
 
-    .list-item .divider {
-        width: 206px;
+    .bg_login {
+        padding: 5.8% 7% 6% 6.1%;
+        top: 18.2%;
     }
 
-    .hr-comments {
-        margin: -0.7% 0 0 35%;
-        width: 23%;
+    .slide-other {
+        height: 69% !important;
+    }
+}
+
+@media only screen and (max-width:1440px) {
+    .slide-caption {
+        left: 6.9%;
+    }
+
+    .bg-form {
+        right: 12%;
+        top: 17.6%;
+    }
+
+    .list-item .name1 {
+        font-size: 1.4em;
     }
 
     .name11 {
-        padding-left: 6%;
+        padding-left: 8%;
     }
 
-    .carousel-control {
-        height: 84%;
+    .bg_login {
+        padding: 7% 7% 6% 7.4%;
+        top: 15.2%;
     }
 
-    .height_bullet {
-        height: 7.5%;
+    .slide-other {
+        height: 62% !important;
+    }
+}
+
+@media only screen and (max-width:1024px) {
+    .slide-arrow {
+        top: 35.5%;
+    }
+
+    .slide-caption {
+        font-size: 3.2em;
+    }
+
+    .bg-form {
+        left: 63%;
+        right: 5%;
+        top: 15.4%;
+    }
+
+    .input-form {
+        font-size: 1.3em;
+        height: 35px;
+        margin: 0 0 9px 11px;
+    }
+
+    .button_form {
+        margin: 8.3% 0 9.3% 3.8%;
+    }
+
+    .container.create {
+        width: 1024px;
+    }
+
+    .text-bullet1 {
+        padding-left: 5% !important;
+    }
+
+    .list-item .name1 {
+        font-size: 1.3em;
+    }
+
+    .name11 {
+        padding-left: 26%;
+    }
+
+    .btn-login {
+        font-size: 3.2em;
+        height: inherit;
+        width: 116%;
+    }
+
+    .bg_login {
+        background: url(../../img/landing/icons4x1024.png) no-repeat scroll 0 0;
+        left: 50.6%;
+        padding: 8.8% 15% 9% 9.1%;
+        position: absolute;
+        top: 12.2%;
+    }
+
+    .slide-other {
+        height: 44% !important;
     }
 }
