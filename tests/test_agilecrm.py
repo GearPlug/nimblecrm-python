@@ -1,24 +1,23 @@
 import os
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
-from apps.gp.models import Connection, OdooCRMConnection, Plug, Action, ActionSpecification, PlugActionSpecification, \
+from apps.gp.models import Connection, AgileCRMConnection, Plug, Action, ActionSpecification, PlugActionSpecification, \
     Gear, GearMap, StoredData, GearMapData
 from apps.history.models import DownloadHistory, SendHistory
-from apps.gp.controllers.crm import OdooCRMController
-from odoocrm.client import Client as OdooCRMClient
+from apps.gp.controllers.crm import AgileCRMController
+from agilecrm.client import Client as AgileCRMClient
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from collections import OrderedDict
 
 
-class OdooCRMControllerTestCases(TestCase):
-    """Casos de prueba del controlador OdooCRM.
+class AgileCRMControllerTestCases(TestCase):
+    """Casos de prueba del controlador AgileCRM.
 
         Variables de entorno:
-            TEST_ODOO_URL: String: URL del servidor.
-            TEST_ODOO_DATABASE: String: URL del servidor.
-            TEST_ODOO_CONNECTION_USER: String: Usuario.
-            TEST_ODOO_CONNECTION_PASSWORD: String: Contraseña.
+            TEST_AGILE_API_KEY: String: URL del servidor.
+            TEST_AGILE_EMAIL: String: URL del servidor.
+            TEST_AGILE_DOMAIN: String: Usuario.
 
     """
     fixtures = ['gp_base.json']
@@ -32,36 +31,34 @@ class OdooCRMControllerTestCases(TestCase):
                                        password='nopass100realnofake')
         connection = {
             'user': cls.user,
-            'connector_id': ConnectorEnum.OdooCRM.value
+            'connector_id': ConnectorEnum.AgileCRM.value
         }
         cls.connection_source = Connection.objects.create(**connection)
 
-        odoocrm_connection1 = {
+        agilecrm_connection1 = {
             'connection': cls.connection_source,
             'name': 'ConnectionTest Source',
-            'url': os.environ.get('TEST_ODOO_URL'),
-            'database': os.environ.get('TEST_ODOO_DATABASE'),
-            'connection_user': os.environ.get('TEST_ODOO_CONNECTION_USER'),
-            'connection_password': os.environ.get('TEST_ODOO_CONNECTION_PASSWORD')
+            'api_key': os.environ.get('TEST_AGILE_API_KEY'),
+            'email': os.environ.get('TEST_AGILE_EMAIL'),
+            'domain': os.environ.get('TEST_AGILE_DOMAIN'),
         }
-        cls.odoocrm_connection1 = OdooCRMConnection.objects.create(**odoocrm_connection1)
+        cls.agilecrm_connection1 = AgileCRMConnection.objects.create(**agilecrm_connection1)
 
         cls.connection_target = Connection.objects.create(**connection)
 
-        odoocrm_connection2 = {
+        agilecrm_connection2 = {
             'connection': cls.connection_target,
             'name': 'ConnectionTest Target',
-            'url': os.environ.get('TEST_ODOO_URL'),
-            'database': os.environ.get('TEST_ODOO_DATABASE'),
-            'connection_user': os.environ.get('TEST_ODOO_CONNECTION_USER'),
-            'connection_password': os.environ.get('TEST_ODOO_CONNECTION_PASSWORD')
+            'api_key': os.environ.get('TEST_AGILE_API_KEY'),
+            'email': os.environ.get('TEST_AGILE_EMAIL'),
+            'domain': os.environ.get('TEST_AGILE_DOMAIN'),
         }
-        cls.odoocrm_connection2 = OdooCRMConnection.objects.create(**odoocrm_connection2)
+        cls.agilecrm_connection2 = AgileCRMConnection.objects.create(**agilecrm_connection2)
 
-        action_source = Action.objects.get(connector_id=ConnectorEnum.OdooCRM.value, action_type='source',
-                                           name='new_contact', is_active=True)
+        action_source = Action.objects.get(connector_id=ConnectorEnum.AgileCRM.value, action_type='source',
+                                           name='new contact', is_active=True)
 
-        odoocrm_plug_source = {
+        agilecrm_plug_source = {
             'name': 'PlugTest Source',
             'connection': cls.connection_source,
             'action': action_source,
@@ -69,12 +66,12 @@ class OdooCRMControllerTestCases(TestCase):
             'user': cls.user,
             'is_active': True
         }
-        cls.plug_source = Plug.objects.create(**odoocrm_plug_source)
+        cls.plug_source = Plug.objects.create(**agilecrm_plug_source)
 
-        action_target = Action.objects.get(connector_id=ConnectorEnum.OdooCRM.value, action_type='target',
-                                           name='create_contact', is_active=True)
+        action_target = Action.objects.get(connector_id=ConnectorEnum.AgileCRM.value, action_type='target',
+                                           name='create contact', is_active=True)
 
-        odoocrm_plug_target = {
+        agilecrm_plug_target = {
             'name': 'PlugTest Target',
             'connection': cls.connection_target,
             'action': action_target,
@@ -82,7 +79,7 @@ class OdooCRMControllerTestCases(TestCase):
             'user': cls.user,
             'is_active': True
         }
-        cls.plug_target = Plug.objects.create(**odoocrm_plug_target)
+        cls.plug_target = Plug.objects.create(**agilecrm_plug_target)
 
         gear = {
             'name': 'Gear 1',
@@ -94,8 +91,8 @@ class OdooCRMControllerTestCases(TestCase):
         cls.gear = Gear.objects.create(**gear)
         cls.gear_map = GearMap.objects.create(gear=cls.gear)
 
-        map_data_1 = {'target_name': 'name', 'source_value': '%%name%%', 'gear_map': cls.gear_map}
-        map_data_2 = {'target_name': 'phone', 'source_value': '%%phone%%', 'gear_map': cls.gear_map}
+        map_data_1 = {'target_name': 'type', 'source_value': 'PERSON', 'gear_map': cls.gear_map}
+        map_data_2 = {'target_name': 'first_name', 'source_value': '%%first_name%%', 'gear_map': cls.gear_map}
         GearMapData.objects.create(**map_data_1)
         GearMapData.objects.create(**map_data_2)
 
@@ -104,18 +101,18 @@ class OdooCRMControllerTestCases(TestCase):
 
         """
         # self.client = Client()
-        self.source_controller = OdooCRMController(self.plug_source.connection.related_connection, self.plug_source)
-        self.target_controller = OdooCRMController(self.plug_target.connection.related_connection, self.plug_target)
+        self.source_controller = AgileCRMController(self.plug_source.connection.related_connection, self.plug_source)
+        self.target_controller = AgileCRMController(self.plug_target.connection.related_connection, self.plug_target)
 
     def test_controller(self):
         """Comprueba los atributos del controlador estén instanciados.
 
         """
-        self.assertIsInstance(self.source_controller._connection_object, OdooCRMConnection)
+        self.assertIsInstance(self.source_controller._connection_object, AgileCRMConnection)
         self.assertIsInstance(self.source_controller._plug, Plug)
         # Error 1
         # self.assertIsInstance(self.controller._connector, ConnectorEnum.OdooCRM)
-        self.assertIsInstance(self.source_controller._client, OdooCRMClient)
+        self.assertIsInstance(self.source_controller._client, AgileCRMClient)
 
     def test_get_mapping_fields(self):
         """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
@@ -132,6 +129,7 @@ class OdooCRMControllerTestCases(TestCase):
         """
         result = self.source_controller.download_to_stored_data(self.plug_source.connection.related_connection,
                                                                 self.plug_source)
+
         self.assertIsInstance(result, dict)
         self.assertIn('downloaded_data', result)
         self.assertIsInstance(result['downloaded_data'], list)
