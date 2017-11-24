@@ -462,3 +462,10 @@ def retry_send_history(request):
         history.save()
         return JsonResponse({'data': True})
     return JsonResponse({'data': False})
+
+
+def set_gear_id_to_session(request):
+    if request.is_ajax() is True and request.method == 'POST':
+        request.session['gear_id'] = request.POST.get('gear_id', None)
+        return JsonResponse({'data': True})
+    return JsonResponse({'data': False})
