@@ -22,6 +22,22 @@
                 <div class="search1">
                     <input type="text">
                 </div>
+                <div class="list-wrapper">
+                    {% for connector in object_list %}
+                        <div class="col-md-2">
+                            <div class="list-item">
+                                <div class="image1">
+                                    <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}" width="73"
+                                         height="73">
+                                </div>
+                                <div class="divider"></div>
+                                <div class="name1">
+                                    {{ connector.name }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
