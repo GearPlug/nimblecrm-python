@@ -1349,7 +1349,6 @@ class ActiveCampaignController(BaseController):
     def send_stored_data(self, data_list):
         extra = {'controller': 'activecampaign'}
         action = self._plug.action.name
-        print("action", action)
         result_list = []
         for item in data_list:
             if action == 'create contact':
@@ -1386,9 +1385,15 @@ class ActiveCampaignController(BaseController):
         return result_list
 
     def download_to_stored_data(self, connection_object=None, plug=None, data=None, **kwargs):
+        action = self._plug.action.name
         new_data = []
         if data is not None:
-            object_id = int(data['id'])
+            if action in ['new contact', 'new subscriber', 'unsubscribed contact']:
+                object_id = int(data['contact_id'])
+            elif action == 'new task':
+                object_id = int(data['task_id'])
+            elif action == 'new deal':
+                object_id = int(data['deal_id'])
             q = StoredData.objects.filter(object_id=object_id, connection=connection_object.id, plug=plug.id)
             if not q.exists():
                 for k, v in data.items():
@@ -1409,29 +1414,25 @@ class ActiveCampaignController(BaseController):
 
     def do_webhook_process(self, body=None, POST=None, webhook_id=None, **kwargs):
         webhook = Webhook.objects.get(pk=webhook_id)
-        action_name = webhook.plug.action.name
-        if 'list' in POST and POST['list'] == '0' and action_name not in ['new contact', 'new task', 'new deal']:
-            # ActiveCampaign envia dos webhooks, el primero es cuando se crea el contacto, el segundo cuando el contacto
-            # creado es agregado a una lista. Cuando el contacto es agregado a una lista el webhook incluye los custom
-            # fields por eso descartamos los webhooks de contactos que no hayan sido agregados a una lista (list = 0).
-            return HttpResponse(status=200)
+        # if 'list' in POST and POST['list'] == '0' and action_name not in ['new contact', 'new task', 'new deal']:
+        #     # ActiveCampaign envia dos webhooks, el primero es cuando se crea el contacto, el segundo cuando el contacto
+        #     # creado es agregado a una lista. Cuando el contacto es agregado a una lista el webhook incluye los custom
+        #     # fields por eso descartamos los webhooks de contactos que no hayan sido agregados a una lista (list = 0).
+        #     return HttpResponse(status=200)
         if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
             self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
-            expr = '\[(\w+)\](?:\[(\d+)\])?'
+            #expr = '\[(\w+)\](?:\[(\d+)\])?'
             clean_data = {}
-            custom_fields = self.get_custom_fields()
-            for k, v in POST.items():
-                m = re.search(expr, k)
-                if m:
-                    n = m.group(2)
-                    if n is None:
-                        key = m.group(1)
-                    else:
-                        key = custom_fields[str(int(n) - 1)]['label']
-                else:
-                    key = None
-                if key is not None and key not in clean_data:
+            for k,v in POST.items():
+                if "[" in k:
+                    m = k.split("[")
+                    key = m[0]+"_"+m[1].replace("]", "")
+                    if key == 'contact_fields':
+                        custom_fields = self.get_custom_fields()
+                        key = custom_fields[str(int(m[2].replace("]",""))-1)]['label']
                     clean_data[key] = v
+                else:
+                    clean_data[k] = v
             if not webhook.plug.is_tested:
                 webhook.plug.is_tested = True
             if self.test_connection():
