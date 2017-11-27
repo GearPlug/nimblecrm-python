@@ -51,7 +51,7 @@
                                             <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>
                                         {% else %}
                                             <img src="{% static 'img/landing/avatar.png' %}" class="img-avatar">
-                                            <span class="text-avatar">lulu{{ request.user.first_name }}</span>
+                                            <span class="text-avatar">{{ request.user.first_name }}</span>
                                         {% endif %}
                                     </li>
                                 </ul>
@@ -91,33 +91,5 @@
             {% endblock %}
         {% endblock %}
     </div>
-
-{#    <footer>#}
-{#        {% block footer_base %}#}
-{#            {% block footer_content %}#}
-{#                <div class="row">#}
-{#                    <div class="col-md-12 bg_nets text-center">#}
-{#                        <div class="col-md-12">#}
-{#                            <a href="#"> <img src="{% static 'img/landing/facebook1.png' %}" class="padding-nets"> </a>#}
-{#                            <a href="#"> <img src="{% static 'img/landing/twitter.png' %}" class="padding-nets"> </a>#}
-{#                        </div>#}
-{#                        <div class="col-md-12 text-menu">#}
-{#                            <a href="{% url 'landing:about' %}" class="border-menu">{% trans 'Nosotros' %}</a>#}
-{#                            <a href="{% url 'landing:steps' %}" class="border-menu">{% trans 'Cómo Funciona' %}</a>#}
-{#                            <a href="{% url 'landing:apps_directory' %}" class="border-menu">{% trans 'Apps' %}</a>#}
-{#                            <a href="{% url 'landing:contact' %}" class="border-menu">{% trans 'Contacto' %}</a>#}
-{#                            <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>#}
-{#                        </div>#}
-{#                    </div>#}
-{#                    <div class="col-md-12 bg_footer text-center text-footer">#}
-{#                        <a href="{% url 'landing:index' %}">www.gearplug.com</a> - All rights reserved &reg; -#}
-{#                        <a href="{% url 'landing:terms' %}">Términos y Condiciones</a> -#}
-{#                        <a href="{% url 'landing:privacy' %}">Políticas de Privacidad</a>#}
-{#                    </div>#}
-{#                </div>#}
-{#            {% endblock %}#}
-{#        {% endblock %}#}
-{#    </footer>#}
-{#    <span class="ir-arriba icon-arrow-up2"></span>#}
     {% block scripts_gear %}{% endblock %}
 {% endblock %}

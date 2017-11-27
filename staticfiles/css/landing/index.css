@@ -296,7 +296,7 @@
 }
 
 .slide-other {
-    height: 71% !important;
+    height: auto !important;
 }
 
 @media only screen and (max-width:1600px) {
@@ -316,10 +316,6 @@
     .bg_login {
         padding: 5.8% 7% 6% 6.1%;
         top: 18.2%;
-    }
-
-    .slide-other {
-        height: 69% !important;
     }
 }
 
@@ -345,10 +341,6 @@
         padding: 7% 7% 6% 7.4%;
         top: 15.2%;
     }
-
-    .slide-other {
-        height: 62% !important;
-    }
 }
 
 @media only screen and (max-width:1024px) {
@@ -363,7 +355,7 @@
     .bg-form {
         left: 63%;
         right: 5%;
-        top: 15.4%;
+        top: 13.4%;
     }
 
     .input-form {
@@ -404,9 +396,5 @@
         padding: 8.8% 15% 9% 9.1%;
         position: absolute;
         top: 12.2%;
-    }
-
-    .slide-other {
-        height: 44% !important;
     }
 }
