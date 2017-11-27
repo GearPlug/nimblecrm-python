@@ -22,7 +22,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3 test-button">
+                            <div class="col-md-4 test-button">
                                 <div class="button testConnectionButton"
                                      connection_id="{{ connection.id }}">
                                 </div>
@@ -42,7 +42,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-5">
+                    <div class="col-md-12">
                         <button class="button-create" type="submit">{% trans 'Usar Conexión' %}</button>
                         <a href="{% url 'connection:create' connector_id=connector_id %}"
                            class="button-create green">

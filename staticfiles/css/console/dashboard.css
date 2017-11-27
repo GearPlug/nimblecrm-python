@@ -1426,4 +1426,17 @@ input[type='radio']:checked:before {
     .content-body .gears .list .item.extended {
         width: 75%;
     }
+    .content-body .apps-list .list-wrapper {
+        width: 90%;
+    }
+}
+
+@media only screen and (max-width: 1400px) {
+    #dashboard-header .right-side {
+        font-size: 1.30em;
+    }
+
+    .content-body .apps-list .list-wrapper {
+        width: 100%;
+    }
 }
