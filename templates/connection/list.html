@@ -2,23 +2,46 @@
 {% load static i18n %}
 
 {% block content %}
-    <div class="row connections">
-        <form class="form" method="post" action="">
-            {% csrf_token %}
-            <div class="title">
-                <span>{% trans 'Selección de Conexión' %}</span>
-            </div>
-            {% if object_list %}
-                <div class="list">
-                    {% for connection in object_list %}
-                        <div class="row">
-                            <div class="col-md-5 item extended">
-                                <div class="image-wrapper">
-                                    <div class="button">
-                                        <input type="radio" name="connection" value="{{ connection.id }}">
+    <div class="content-body col-md-10 col-md-offset-1">
+        <div class="row connections">
+            <form class="form" method="post" action="">
+                {% csrf_token %}
+                <div class="title">
+                    <span>{% trans 'Selección de Conexión' %}</span>
+                </div>
+                <div class="separator"></div>
+                <a href="{% url 'connection:create' connector_id=connector_id %}">
+                    <div class="new-connection">
+                        <div class="image2">
+                            <img src="{% static 'img/console/g3261.png' %}" width="28" height="28">
+                        </div>
+                        <div class="text">
+                            {% trans 'Crear Conexión' %}
+                        </div>
+                    </div>
+                </a>
+                {% if object_list %}
+                    <div class="list">
+                        {% for connection in object_list %}
+                            <div class="row">
+                                <div class="col-md-5 item extended">
+                                    <div class="image-wrapper">
+                                        <div class="button">
+                                            <input type="radio" name="connection" value="{{ connection.id }}">
+                                        </div>
+                                        <div class="name">
+                                            {{ connection.name }}
+                                        </div>
                                     </div>
-                                    <div class="name">
-                                        {{ connection.name }}
+                                </div>
+                                <div class="col-md-3 test-button">
+                                    <div class="button-wrapper">
+                                        <div class="button testConnectionButton"
+                                             connection_id="{{ connection.id }}">
+                                        </div>
+                                        <div class="text2">
+                                            Test
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -33,37 +56,30 @@
                                     </div>
                                 </div>
                             </div>
+                        {% endfor %}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-5" id="noconnection" style="display: none;">
+                            Debes seleccionar una conexión.
                         </div>
-                    {% endfor %}
-                </div>
-                <div class="row">
-                    <div class="col-md-5" id="noconnection" style="display: none;">
-                        Debes seleccionar una conexión.
+                        <div class="row">
+                            <div class="col-md-5">
+                                <button class="button-create" type="submit">{% trans 'Usar Conexión' %}</button>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <button class="button-create" type="submit">{% trans 'Usar Conexión' %}</button>
-                        <a href="{% url 'connection:create' connector_id=connector_id %}"
-                           class="button-create green">
-                            {% trans 'Crear Conexión' %}
-                        </a>
+                {% else %}
+                    <div class="test-wrapper">
+                        <div class="image">
+                            <img src="{% static 'img/console/warning.png' %}" width="48" height="48">
+                        </div>
+                        <div class="text inline">
+                            {% trans 'No hay conexiones' %}
+                        </div>
                     </div>
-                </div>
-            {% else %}
-                <div class="test-wrapper">
-                    <div class="image">
-                        <img src="{% static 'img/console/warning.png' %}" width="48" height="48">
-                    </div>
-                    <div class="text inline">
-                        {% trans 'No hay conexiones' %}
-                    </div>
-                </div>
-                <a href="{% url 'connection:create' connector_id=connector_id %}" class="button-create green">
-                    {% trans 'Crear Conexión' %}
-                </a>
-            {% endif %}
-        </form>
+                {% endif %}
+            </form>
+        </div>
     </div>
 {% endblock %}
 
@@ -93,28 +109,35 @@
                 url: "{% url 'connection:test' connector_id=connector_id %}",
                 data: {connection_id: $(button).attr('connection_id')},
             }).done(function (response) {
+                var wrapper = $(button).closest('.test-button').find('.text-wrapper');
                 if (response.test == true) {
                     $(button).addClass('passed');
-                    $(button).parent().find('.text-wrapper')
-                        .show()
+                    wrapper.show()
                         .find('.text').addClass('passed')
                         .html('Ésta conexión <b>funciona</b>')
                 } else {
                     $(button).addClass('failed');
-                    $(button).parent().find('.text-wrapper')
-                        .show()
+                    wrapper.show()
                         .find('.text').addClass('failed')
                         .html('Ésta conexión <b>no funciona</b>')
-                        .show();
                 }
+                setTimeout(function () {
+                    $(wrapper).fadeOut()
+                }, 2000);
             });
             return false;
-        })
+        });
 
-        $('.item').click(function (e) {
-            $(this).find('input').prop('checked', true)
-        })
+        $('.item').on('click', function (e) {
+            $(this).find('input').prop('checked', true);
+            $('.image-wrapper').removeClass('selected');
+            $(this).find('.image-wrapper').addClass('selected');
+        });
 
+        $('input[type="radio"]').on('click', function (e) {
+            $('.image-wrapper').removeClass('selected');
+            $(this).closest('.image-wrapper').addClass('selected');
+        });
 
     </script>
 {% endblock %}
