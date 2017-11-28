@@ -35,8 +35,13 @@
                                     </div>
                                 </div>
                                 <div class="col-md-3 test-button">
-                                    <div class="button testConnectionButton"
-                                         connection_id="{{ connection.id }}">
+                                    <div class="button-wrapper">
+                                        <div class="button testConnectionButton"
+                                             connection_id="{{ connection.id }}">
+                                        </div>
+                                        <div class="text2">
+                                            Test
+                                        </div>
                                     </div>
                                     <div class="text-wrapper" style="display: none;">
                                         <div class="text-line"></div>
@@ -99,7 +104,7 @@
                 url: "{% url 'connection:test' connector_id=connector_id %}",
                 data: {connection_id: $(button).attr('connection_id')},
             }).done(function (response) {
-                var wrapper = $(button).parent().find('.text-wrapper');
+                var wrapper = $(button).closest('.test-button').find('.text-wrapper');
                 if (response.test == true) {
                     $(button).addClass('passed');
                     wrapper.show()

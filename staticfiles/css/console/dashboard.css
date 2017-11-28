@@ -482,6 +482,15 @@ html {
     font-size: 0;
 }
 
+.content-body .connections .list .test-button .button-wrapper {
+    width: 90px;
+    height: 40px;
+    background-color: #f6f7f8;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+}
+
 .content-body .connections .list .test-button .button {
     -webkit-appearance: none;
     width: 36px;
@@ -491,6 +500,7 @@ html {
     outline: none;
     box-shadow: 0 0 5px 0px #FFFFFF inset;
     cursor: pointer;
+    margin: 2px 0 0 4px;
 }
 
 .content-body .connections .list .test-button .button:before {
@@ -520,12 +530,22 @@ html {
 }
 
 .content-body .connections .list .test-button .button,
+.content-body .connections .list .test-button .text2,
+.content-body .connections .list .test-button .button-wrapper,
 .content-body .connections .list .test-button .text-wrapper,
 .content-body .connections .list .test-button .text-line,
 .content-body .connections .list .test-button .text {
     display: inline-block;
     vertical-align: middle;
 }
+
+.content-body .connections .list .test-button .text2 {
+    padding: 4px 0 0 4px;
+    color: #9d9ba1;
+    font-size: 14px;
+}
+
+
 
 .content-body .connections .list .test-button .text-line {
     width: 10px;
