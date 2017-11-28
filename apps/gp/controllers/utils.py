@@ -5,7 +5,7 @@ from importlib import import_module
 
 
 def get_dict_with_source_data(source_data, target_fields, include_id=False):
-    pattern = re.compile("(\%\%[\S+ ]+\%\%)")
+    pattern = re.compile("(\%\%(.*?)+\%\%)")
     valid_map = OrderedDict()
     result = []
     for field in target_fields:
@@ -15,13 +15,13 @@ def get_dict_with_source_data(source_data, target_fields, include_id=False):
         user_dict = OrderedDict()
         for field in valid_map:
             w = html_decode(valid_map[field])
-            res = pattern.search(w)
-            if res is not None:
-                data_key = re.sub("\%\%", "", res.group(0))
-                if data_key in obj['data']:
-                    final_value = re.sub(res.group(), obj['data'][data_key], w)
-                else:
-                    final_value = w
+            res = pattern.findall(w)
+            if res is not None and res:
+                final_value = w
+                for group in res:
+                    data_key = re.sub("\%\%", "", group[0])
+                    if data_key in obj['data']:
+                        final_value = re.sub(re.escape(group[0]), obj['data'][data_key], final_value, 1)
             else:
                 final_value = w
             user_dict[field] = final_value

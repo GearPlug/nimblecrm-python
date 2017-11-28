@@ -1,6 +1,12 @@
 from allauth.account.forms import SignupForm
 from django import forms
 from django.utils.translation import gettext as _
+from apps.gp.models import SubscriptionsList
+
+
+class DescriptionModelMultipleChoiceField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, obj):
+        return obj.description
 
 
 class NameSignupForm(SignupForm):
@@ -16,6 +22,8 @@ class NameSignupForm(SignupForm):
                                 widget=forms.TextInput(
                                     attrs={'type': 'text', 'placeholder': _('Last name'),
                                            'class': 'input-form form-control'}))
+    subscription_list = DescriptionModelMultipleChoiceField(queryset=SubscriptionsList.objects.all(), required=False,
+                                                            widget=forms.CheckboxSelectMultiple, )
 
     def __init__(self, *args, **kwargs):
         super(NameSignupForm, self).__init__(*args, **kwargs)

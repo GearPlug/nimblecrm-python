@@ -15,10 +15,15 @@
             background-color: darkgreen;
         }
     </style>
+    <div class="content-body col-md-10 col-md-offset-1">
     <input type="hidden" id="retry_url" value="{% url 'gear:retry_send_history' %}">
     <div class="row history">
         <div class="title">
-            <span>Historial Entrante</span>
+            {% if recent %}
+                <span>Actividad Reciente</span>
+            {% else %}
+                <span>Historial Entrante</span>
+            {% endif %}
         </div>
         <div class="col-md-12 navbar">
             <form action="" method="POST">

@@ -18,7 +18,8 @@ from django.http import HttpResponse
 from odoocrm.client import Client as OdooCRMClient
 from batchbook.client import Client as ClientBatchbook
 from actcrm.client import Client as ActCRMClient
-from datetime import datetime, timedelta
+from agilecrm.client import Client as AgileCRMClient
+import datetime
 import time
 import requests
 import re
@@ -2308,3 +2309,238 @@ class ActEssentialsController(BaseController):
 
     def get_mapping_fields(self, **kwargs):
         return [MapField(f, controller=ConnectorEnum.ActEssentials) for f in self.get_target_fields()]
+
+
+class AgileCRMController(BaseController):
+    _api_key = None
+    _email = None
+    _domain = None
+    _client = None
+
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(AgileCRMController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(AgileCRMController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._api_key = self._connection_object.api_key
+                self._email = self._connection_object.email
+                self._domain = self._connection_object.domain
+            except AttributeError as e:
+                raise ControllerError(code=1, controller=ConnectorEnum.AgileCRM,
+                                      message='Error getting the AgileCRM attributes args. {}'.format(str(e)))
+        else:
+            raise ControllerError('No connection.')
+        if self._api_key is not None and self._email is not None and self._domain is not None:
+            try:
+                self._client = AgileCRMClient(self._api_key, self._email, self._domain)
+            except requests.exceptions.MissingSchema:
+                raise
+            except InvalidLogin as e:
+                raise ControllerError(code=2, controller=ConnectorEnum.AgileCRM,
+                                      message='Invalid login. {}'.format(str(e)))
+
+    def test_connection(self):
+        return self._client.get_contacts({'page_size': 1}) is not None
+
+    def has_webhook(self):
+        return None
+
+    def search_contact(self, query):
+        try:
+            if query:
+                return self._client.search_contact(query)
+            else:
+                return self._client.get_contacts()
+        except BaseError as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.AgileCRM, message='Error. {}'.format(str(e)))
+
+    def get_list_fields(self):
+        return [
+            {
+                'name': 'type',
+                'required': False,
+                'type': 'list',
+                'choices': ['PERSON', 'COMPANY']
+            }, {
+                'name': 'tags',
+                'required': False,
+                'type': 'string',
+            }, {
+                'name': 'lead_score',
+                'required': False,
+                'type': 'integer'
+            }, {
+                'name': 'contact_company_id',
+                'required': False,
+                'type': 'long'
+            }, {
+                'name': 'star_value',
+                'required': False,
+                'type': 'short'
+            }, {
+                'name': 'campaignStatus',
+                'required': False,
+                'type': 'list'
+            }, {
+                'name': 'first_name',
+                'required': True,
+                'type': 'string'
+            }, {
+                'name': 'last_name',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'company',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'title',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'email',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'address',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'phone',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'website',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'image',
+                'required': False,
+                'type': 'string'
+            }, {
+                'name': 'unsubscribeStatus',
+                'required': False,
+                'type': 'list'
+            }, {
+                'name': 'emailBounceStatus',
+                'required': False,
+                'type': 'list'
+            }, {
+                'name': 'tags',
+                'required': False,
+                'type': 'list'
+            }
+        ]
+
+    def download_to_stored_data(self, connection_object, plug, limit=50, last_source_record=None, **kwargs):
+
+        """
+            NOTE: Se ordena por el campo: 'date_entered'.
+        :param connection_object:
+        :param plug:
+        :param limit:
+        :param last_source_record:
+        :param kwargs:
+        :return:
+        """
+        query = None
+        if last_source_record is not None:
+            today = datetime.datetime.today().timestamp()
+            query = {"rules": [{"LHS": "created_time", "CONDITION": "BETWEEN", "RHS": int(last_source_record) * 1000,
+                                "RHS_NEW": int(today) * 1000}], "contact_type": "PERSON"}
+        params = None
+        if query:
+            params = {
+                'page_size': 25,
+                'global_sort_key': '-created_time',
+                'filterJson': json.dumps(query)
+            }
+        entries = self.search_contact(params)
+
+        raw_data = []
+        new_data = []
+        for _item in entries:
+            item = self.get_fields_from_properties(_item)
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
+            if not q.exists():
+                item_data = []
+                obj_raw = item
+                for k, v in obj_raw.items():
+                    if isinstance(v, str) and v.isspace():
+                        obj_raw[k] = ''
+                for k, v in obj_raw.items():
+                    item_data.append(
+                        StoredData(name=k, value=v or '', object_id=item['id'], connection=connection_object.connection,
+                                   plug=plug))
+                raw_data.append(obj_raw)
+                new_data.append(item_data)
+        if new_data:
+            result_list = []
+            for item in new_data:
+                for stored_data in item:
+                    try:
+                        stored_data.save()
+                    except Exception as e:
+                        is_stored = False
+                        break
+                    is_stored = True
+                obj_raw = "RAW DATA NOT FOUND."
+                for obj in raw_data:
+                    if stored_data.object_id == obj['id']:
+                        obj_raw = obj
+                        break
+                raw_data.remove(obj_raw)
+                result_list.append(
+                    {'identifier': {'name': 'id', 'value': stored_data.object_id}, 'is_stored': is_stored,
+                     'raw': obj_raw, })
+            return {'downloaded_data': result_list, 'last_source_record': result_list[0]['raw']['created_time']}
+        return False
+
+    def get_fields_from_properties(self, _dict):
+        properties = _dict.pop('properties')
+        for i in properties:
+            _dict[i['name']] = i['value']
+        return _dict
+
+    def send_stored_data(self, data_list, **kwargs):
+        obj_list = []
+        for item in data_list:
+            obj_result = {'data': dict(item)}
+            try:
+                res = self.set_entry(dict(item))
+                obj_result['response'] = res
+                obj_result['sent'] = True
+                obj_result['identifier'] = res['id']
+            except Exception as e:
+                obj_result['response'] = str(e)
+                obj_result['sent'] = False
+                obj_result['identifier'] = '-1'
+            obj_list.append(obj_result)
+        return obj_list
+
+    def set_entry(self, item):
+        try:
+            item['properties'] = []
+            _fields = ['first_name', 'last_name', 'image', 'company', 'title', 'email', 'phone', 'website', 'address']
+            _remove = []
+            for k, v in item.items():
+                if k in _fields:
+                    item['properties'].append({'name': k, 'type': 'SYSTEM', 'value': v})
+                    _remove.append(k)
+            for k in _remove:
+                del item[k]
+            return self._client.create_contact(item)
+        except WrongParameter as e:
+            raise ControllerError(code=4, controller=ConnectorEnum.AgileCRM,
+                                  message='Wrong Parameter. {}'.format(str(e)))
+        except BaseError as e:
+            raise ControllerError(code=3, controller=ConnectorEnum.SugarCRM, message='Error. {}'.format(str(e)))
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_list_fields()
+        return [MapField(f, controller=ConnectorEnum.AgileCRM) for f in fields]
+
+    def get_action_specification_options(self, action_specification_id):
+        pass

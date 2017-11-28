@@ -51,6 +51,7 @@
 {% endblock %}
 
 {% block scripts %}
+    {{ block.super }}
     <script>
         $(document).ready(function () {
             $('div.list-item').on('click', function () {

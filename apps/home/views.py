@@ -1,9 +1,15 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
+from django.views.generic.edit import FormView
+from django.urls import reverse_lazy
+from .forms import SubscriptionsForm
+from apps.gp.models import Subscriptions, SubscriptionsList
+from django.contrib.auth.models import User
 from django.views.generic import TemplateView, View
 from django.views.decorators.csrf import csrf_exempt
 from apps.gp.models import GearGroup, Gear
+
 from apps.gp.enum import ConnectorEnum
 import json
 
@@ -16,8 +22,7 @@ class DashBoardView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(DashBoardView, self).get_context_data(**kwargs)
-        context['gear_groups'] = GearGroup.objects.filter(
-            user=self.request.user)[:3]
+        context['gear_groups'] = GearGroup.objects.filter(user=self.request.user)[:3]
         context['used_gears'] = Gear.objects.filter(user=self.request.user)[:3]
         return context
 
@@ -76,5 +81,22 @@ class HelpView(LoginRequiredMixin, TemplateView):
     template_name = 'home/help.html'
 
 
-class TermsView(LoginRequiredMixin, TemplateView):
-    template_name = 'home/terms.html'
+class SubscriptionsManagerView(LoginRequiredMixin, FormView):
+    template_name = 'account/subscriptionsmanager.html'
+    form_class = SubscriptionsForm
+    success_url = reverse_lazy('home:dashboard')
+
+    def get_form_kwargs(self, **kwargs):
+        kwargs = super(SubscriptionsManagerView, self).get_form_kwargs(**kwargs)
+        kwargs['initial'] = {
+            'subscription_list': SubscriptionsList.objects.filter(subscription_list__user=self.request.user), }
+        return kwargs
+
+    def form_valid(self, form):
+        all_subscriptions_lists = SubscriptionsList.objects.all()
+        for list in all_subscriptions_lists:
+            if list in form.cleaned_data['subscription_list']:
+                subcription, created = Subscriptions.objects.get_or_create(user=self.request.user, list=list)
+            else:
+                Subscriptions.objects.filter(user=self.request.user, list=list).delete()
+        return super(SubscriptionsManagerView, self).form_valid(form)

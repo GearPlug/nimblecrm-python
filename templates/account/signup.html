@@ -1,6 +1,10 @@
 {% extends 'layouts/base.html' %}
 {% load static %}
 
+{% block styles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/console/login.css' %}">
+{% endblock %}
+
 {% block body_base %}
     <div class="main-text hidden-xs">
         <div class="col-md-7"> &nbsp;</div>
