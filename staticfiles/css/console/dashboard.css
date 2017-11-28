@@ -1,86 +1,103 @@
-.table2 {
-    display: table;
-    height: calc(100% - 80px);
-}
-
-.table-cell2 {
-    float: none;
-    display: table-cell;
-    vertical-align: top;
-}
-
 html {
     overflow-x: hidden;
 }
 
-.content {
-    /*Mover*/
+body {
+    font-size: 0;
     font-family: "Sansation", sans-serif;
-    /**/
 
 }
 
-.dashboard-header {
+.testing {
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: 100%;
+}
+
+#dashboard-panel {
+
+}
+
+#dashboard-content {
+
+}
+
+#dashboard-header {
     height: 80px;
     padding-top: 10px;
     box-sizing: border-box;
     background-color: #f8f8f8;
 }
 
-.dashboard-header .logo {
+#dashboard-header .left {
+    width: 300px;
+}
+
+#dashboard-header .right {
+    width: calc(100% - 300px);
+}
+
+#dashboard-header .left, #dashboard-header .right {
+    font-size: 14px;
+    display: inline-block;
+    vertical-align: top;
+}
+
+#dashboard-header .logo {
     text-align: center;
 }
 
-.dashboard-header .right-side {
-    float: right;
+#dashboard-header .right-side {
+    padding-right: 3%;
     font-size: 1.40em;
     color: #9d9ba1;
     display: inline-block;
     vertical-align: top;
 }
 
-.dashboard-header .right-side .user,
-.dashboard-header .right-side .divider,
-.dashboard-header .right-side .search {
+#dashboard-header .right-side .user,
+#dashboard-header .right-side .divider,
+#dashboard-header .right-side .search {
     display: inline-block;
     vertical-align: top;
     float: right;
 }
 
-.dashboard-header .right-side .user .name,
-.dashboard-header .right-side .user .icon {
+#dashboard-header .right-side .user .name,
+#dashboard-header .right-side .user .icon {
     display: inline-block;
     vertical-align: top;
     cursor: pointer;
 }
 
-.dashboard-header .right-side .user .name {
+#dashboard-header .right-side .user .name {
     padding-top: 18px;
 }
 
-.dashboard-header .right-side .user .icon {
+#dashboard-header .right-side .user .icon {
     padding: 5px 5px 0 15px;
 }
 
-.dashboard-header .right-side .divider {
+#dashboard-header .right-side .divider {
     width: 1px;
     height: 60px;
     background-color: #e4e4e8;
     margin: 0 25px 0 18px;
 }
 
-.dashboard-header .right-side .search {
+#dashboard-header .right-side .search {
     position: relative;
     padding-top: 15px;
 }
 
-.dashboard-header .right-side .search img {
+#dashboard-header .right-side .search img {
     position: absolute;
     top: 45%;
     left: 5%;
 }
 
-.dashboard-header .right-side .search input {
+#dashboard-header .right-side .search input {
     width: 376px;
     height: 40px;
     border: solid 2px #dddde1;
@@ -95,34 +112,42 @@ html {
     outline: none;
 }
 
-.dashboard-panel {
-    height: calc(100% + 80px);
+#dashboard-panel {
+    font-size: 14px;
+    width: 300px;
+    min-height: 100%;
     background: url('../../img/console/g5842.png') bottom center/100% no-repeat, #005ea7;
     padding: 35px 0 0 0;
     box-sizing: border-box;
+    display: inline-block;
+    vertical-align: top;
+    height: 100%;
+    position: absolute;
+    left: 0px;
+    top: 0;
 }
 
-.dashboard-panel .menu {
+#dashboard-panel .menu {
     background-color: #005ea7;
 }
 
-.dashboard-panel .menu .item {
+#dashboard-panel .menu .item {
     padding: 3% 15%;
     margin: 3% 0;
     cursor: pointer;
 }
 
-.dashboard-panel .menu .item.logout {
+#dashboard-panel .menu .item.logout {
     background-color: #005599;
 }
 
-.dashboard-panel .menu .item .image {
+#dashboard-panel .menu .item .image {
     width: 41px;
     display: inline-block;
     vertical-align: top;
 }
 
-.dashboard-panel .menu .item .text {
+#dashboard-panel .menu .item .text {
     width: calc(100% - 46px);
     display: inline-block;
     vertical-align: top;
@@ -133,7 +158,7 @@ html {
     line-height: 1em;
 }
 
-.dashboard-panel .menu .divider {
+#dashboard-panel .menu .divider {
     width: 80%;
     height: 1px;
     background-color: #0069c9;
@@ -141,9 +166,12 @@ html {
     display: block;
 }
 
-.dashboard-content {
-    height: auto;
-    background-color: #ffffff;
+#dashboard-content {
+    font-size: 14px;
+    width: calc(100% - 300px);
+    display: inline-block;
+    vertical-align: top;
+    margin-left: 300px;
 }
 
 .content-header {
@@ -271,7 +299,8 @@ html {
 .content-body .connections .title,
 .content-body .specifications .title,
 .content-body .plug-test .title,
-.content-body .gear-update .title {
+.content-body .gear-update .title,
+.content-body .management .title {
     font-family: "Sansation Bold";
     font-size: 1.60em;
     color: #005ca7;
@@ -286,7 +315,8 @@ html {
 .content-body .connections .title span,
 .content-body .specifications .title span,
 .content-body .plug-test .title span,
-.content-body .gear-update .title span {
+.content-body .gear-update .title span,
+.content-body .management .title span {
     border-bottom: 3px solid #00e08f;
     display: inline-block;
     line-height: 1em;
@@ -402,7 +432,8 @@ html {
 }
 
 .content-body .gears .list .item.extended,
-.content-body .connections .list .item.extended {
+.content-body .connections .list .item.extended,
+.content-body .management .list .item.extended {
     display: block;
     text-align: left;
     padding-bottom: 35px;
@@ -412,12 +443,14 @@ html {
     padding-bottom: 15px;
 }
 
-.content-body .gears .list .item.extended .image-wrapper {
+.content-body .gears .list .item.extended .image-wrapper,
+.content-body .management .list .item.extended .image-wrapper {
     height: 60px;
 }
 
 .content-body .gears .list .item .image-wrapper,
-.content-body .connections .list .item .image-wrapper {
+.content-body .connections .list .item .image-wrapper,
+.content-body .management .list .item .image-wrapper {
     height: 60px;
     background-color: #f6f7f8;
     border-radius: 25px 25px 25px 25px;
@@ -446,13 +479,17 @@ html {
 .content-body .gears .list .item.extended .image-wrapper .name,
 .content-body .gears .list .item.extended .image-wrapper .control,
 .content-body .connections .list .item.extended .image-wrapper .button,
-.content-body .connections .list .item.extended .image-wrapper .name {
+.content-body .connections .list .item.extended .image-wrapper .name,
+.content-body .management .list .item.extended .image-wrapper .image,
+.content-body .management .list .item.extended .image-wrapper .name,
+.content-body .management .list .item.extended .image-wrapper .control {
     display: inline-block;
     vertical-align: top;
 }
 
 .content-body .gears .list .item.extended .image-wrapper .name,
-.content-body .connections .list .item.extended .image-wrapper .name {
+.content-body .connections .list .item.extended .image-wrapper .name,
+.content-body .management .list .item.extended .image-wrapper .name {
     width: 40%;
     font-size: 1.30em;
     color: #9d9ba1;
@@ -478,10 +515,14 @@ html {
 }
 
 .content-body .connections .list .test-button {
-    padding-top: 10px;
+    padding-top: 5px;
     font-size: 0;
 }
 
+.content-body .management .list .test-button {
+    padding-top: 10px;
+    font-size: 0;
+}
 .content-body .connections .list .test-button .button-wrapper {
     width: 90px;
     height: 40px;
@@ -503,7 +544,8 @@ html {
     margin: 2px 0 0 4px;
 }
 
-.content-body .connections .list .test-button .button:before {
+.content-body .connections .list .test-button .button:before,
+.content-body .management .list .test-button .button:before {
     content: '';
     display: block;
     width: 65%;
@@ -513,19 +555,23 @@ html {
     background: #e7e8ec;
 }
 
-.content-body .connections .list .test-button .button.passed {
+.content-body .connections .list .test-button .button.passed,
+.content-body .management .list .test-button .button.passed {
     border: 4px solid #005ca7;
 }
 
-.content-body .connections .list .test-button .button.passed:before {
+.content-body .connections .list .test-button .button.passed:before,
+.content-body .management .list .test-button .button.passed:before {
     background: #00e08f;
 }
 
-.content-body .connections .list .test-button .button.failed {
+.content-body .connections .list .test-button .button.failed,
+.content-body .management .list .test-button .button.failed {
     border: 4px solid #ce050e;
 }
 
-.content-body .connections .list .test-button .button.failed:before {
+.content-body .connections .list .test-button .button.failed:before,
+.content-body .management .list .test-button .button.failed:before {
     background: #ce050e;
 }
 
@@ -534,7 +580,11 @@ html {
 .content-body .connections .list .test-button .button-wrapper,
 .content-body .connections .list .test-button .text-wrapper,
 .content-body .connections .list .test-button .text-line,
-.content-body .connections .list .test-button .text {
+.content-body .connections .list .test-button .text,
+.content-body .management .list .test-button .button,
+.content-body .management .list .test-button .text-wrapper,
+.content-body .management .list .test-button .text-line,
+.content-body .management .list .test-button .text {
     display: inline-block;
     vertical-align: middle;
 }
@@ -544,9 +594,6 @@ html {
     color: #9d9ba1;
     font-size: 14px;
 }
-
-
-
 .content-body .connections .list .test-button .text-line {
     width: 10px;
     height: 1px;
@@ -554,7 +601,8 @@ html {
     margin-left: 5px;
 }
 
-.content-body .connections .list .test-button .text {
+.content-body .connections .list .test-button .text,
+.content-body .management .list .test-button .text {
     padding: 5px 10px;
     border-radius: 25px 25px 25px 25px;
     -moz-border-radius: 25px 25px 25px 25px;
@@ -564,17 +612,20 @@ html {
     color: #9d9ba1;
 }
 
-.content-body .connections .list .test-button .text.passed {
+.content-body .connections .list .test-button .text.passed,
+.content-body .management .list .test-button .text.passed {
     border: solid 1px #00e08f;
     color: #005ca7;
 }
 
-.content-body .connections .list .test-button .text.failed {
+.content-body .connections .list .test-button .text.failed,
+.content-body .management .list .test-button .text.failed {
     border: solid 1px #ce050e;
     color: #9d9ba1;
 }
 
-.content-body .gears .list .item.extended .image-wrapper .control {
+.content-body .gears .list .item.extended .image-wrapper .control,
+.content-body .management .list .item.extended .image-wrapper .control {
     float: right;
     font-family: "Sansation Bold";
     font-size: 1.40em;
@@ -582,10 +633,16 @@ html {
     padding: 12px 25px 0 0;
 }
 
+.content-body .management .list .item.extended .image-wrapper .control a {
+    text-decoration: none;
+}
+
 .content-body .gears .list .item.extended .image-wrapper .control .edit,
 .content-body .gears .list .item.extended .image-wrapper .control .button,
 .content-body .gears .list .item.extended .image-wrapper .control .status,
-.content-body .gears .list .item.extended .image-wrapper .control .history {
+.content-body .gears .list .item.extended .image-wrapper .control .history,
+.content-body .management .list .item.extended .image-wrapper .control .edit,
+.content-body .management .list .item.extended .image-wrapper .control .status {
     display: inline-block;
     vertical-align: middle;
     padding: 0 4px;
@@ -596,7 +653,12 @@ html {
     width: 46px;
 }
 
-.content-body .gears .list .item .image-wrapper .image .connector {
+.content-body .management .list .item.extended .image-wrapper .control .status {
+    cursor: default;
+}
+
+.content-body .gears .list .item .image-wrapper .image .connector,
+.content-body .management .list .item .image-wrapper .image .connector {
     display: inline-block;
     padding: 12px 15px 0 15px;
 
@@ -665,6 +727,7 @@ html {
 }
 
 .gp-modal .modal-content3 {
+    font-size: 14px;
     width: 580px;
     background-color: #f8f8f8;
     padding: 30px 36px;
@@ -778,7 +841,7 @@ html {
 
 .gp-modal .modal-content2 .button {
     font-family: "Sansation Bold";
-    font-size: 1.70em;
+    font-size: 1.60em;
     color: #FFFFFF;
     background-color: #00e08f;
     padding-top: 5px;
@@ -833,8 +896,8 @@ html {
     width: 75%;
     margin: 0 auto;
     position: relative;
-    top: 45px;
-    background-color: #ffffff;
+    top: 40px;
+    background-color: transparent;
     padding: 0;
     overflow: hidden;
 
@@ -845,7 +908,7 @@ html {
 
 .gp-modal.modal-alternative .modal-content2 .button .wrapper {
     background-color: #005ca7;
-    padding-top: 5px;
+    padding-top: 7px;
     height: 100%;
     border-radius: 25px 25px 25px 25px;
     -moz-border-radius: 25px 25px 25px 25px;
@@ -1338,7 +1401,7 @@ input[type='radio']:checked:before {
 }
 
 .gear-progress-bar .bar-line {
-    width: 19%;
+    width: 18%;
     height: 2px;
     background-color: #005ca7;
 }
@@ -1405,4 +1468,25 @@ input[type='radio']:checked:before {
     height: 1px;
     background-color: #008fc5;
     margin: 0 auto;
+}
+
+@media only screen and (max-width: 1700px) {
+    .content-body .management .list .item.extended,
+    .content-body .gears .list .item.extended {
+        width: 75%;
+    }
+
+    .content-body .apps-list .list-wrapper {
+        width: 90%;
+    }
+}
+
+@media only screen and (max-width: 1400px) {
+    #dashboard-header .right-side {
+        font-size: 1.30em;
+    }
+
+    .content-body .apps-list .list-wrapper {
+        width: 100%;
+    }
 }

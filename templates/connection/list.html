@@ -43,11 +43,16 @@
                                             Test
                                         </div>
                                     </div>
-                                    <div class="text-wrapper" style="display: none;">
-                                        <div class="text-line"></div>
-                                        <div class="text">
-                                            Ésta conexión <b>funciona</b>
-                                        </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 test-button">
+                                <div class="button testConnectionButton"
+                                     connection_id="{{ connection.id }}">
+                                </div>
+                                <div class="text-wrapper" style="display: none;">
+                                    <div class="text-line"></div>
+                                    <div class="text">
+                                        Ésta conexión <b>funciona</b>
                                     </div>
                                 </div>
                             </div>
@@ -57,10 +62,10 @@
                         <div class="col-md-5" id="noconnection" style="display: none;">
                             Debes seleccionar una conexión.
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-5">
-                            <button class="button-create" type="submit">{% trans 'Usar Conexión' %}</button>
+                        <div class="row">
+                            <div class="col-md-5">
+                                <button class="button-create" type="submit">{% trans 'Usar Conexión' %}</button>
+                            </div>
                         </div>
                     </div>
                 {% else %}
