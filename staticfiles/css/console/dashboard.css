@@ -1283,7 +1283,7 @@ input[type='radio']:checked:before {
 }
 
 .gear-progress-bar .bar-line {
-    width: 19%;
+    width: 12%;
     height: 2px;
     background-color: #005ca7;
 }
