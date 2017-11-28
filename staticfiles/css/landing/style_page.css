@@ -1,5 +1,5 @@
 .ayuda {
-    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 95px;*/
+    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 18px;*/
     /*background-size: cover;*/
 }
 
@@ -7,7 +7,7 @@
     background-color: white;
 }
 
-.row {
+.not-margin {
     margin: 0;
     padding: 0;
 }
@@ -18,41 +18,36 @@
 
 /* Header */
 .nav_spaces {
-    margin: 2.62% 0 2.1% 0;
+    margin: 1% 0 1.9% 0;
 }
 
-.logo_header {
-    display: inherit;
+ul.menu{
+    list-style-type: none;
+    margin: 2.1% 20% 0 0;
 }
 
-.text_menu {
-    padding-left: 6.4%;
-    padding-top: 25px;
+ul.menu li{
+    display: inline;
+    padding-right: 4.1%;
 }
 
-.text_menu a {
+ul.menu li a{
     color: #9C9BA0;
     font-family: 'Sansation Light';
-    font-size: 2.1em;
-    letter-spacing: 0.3px;
-    padding-left: 3.6%;
+    font-size: 1.6em;
     text-decoration: none;
 }
 
-.border_login {
-    border-left: #09DF8E solid 5px;
+ul.menu li.menu-login {
+    border-left: #09DF8E solid 3px;
     color: #9B999F;
     font-family: 'Sansation';
-    margin-top: 8%;
-    padding: 1% 0 2% 7.5%;
+    padding: 1.7% 0 1% 3%;
 }
 
-.border_login a {
+ul.menu li.menu-login a {
     color: #005CA6;
     font-family: 'Sansation';
-    font-size: 2.1em;
-    letter-spacing: 0.3px;
-    text-decoration: none;
 }
 
 /* Footer */
@@ -66,7 +61,7 @@
 }
 
 .text-menu {
-    padding-top: 0.9%;
+    padding-top: 1%;
 }
 
 .text-menu a{
@@ -83,7 +78,7 @@
 
 .bg_footer {
     background-color: #005CA5;
-    padding: 1.3% 0 1.7% 0;
+    padding: 1.5% 0 1.7% 0;
 }
 
 .text-footer {
@@ -113,15 +108,15 @@ footer {
 }
 
 .img-avatar {
-    margin-right: 6%;
+    margin-right: 1%;
 }
 
 .text-avatar {
-    font-size: 2.1em;
+    font-size: 1.6em;
 }
 
-@media only screen and (max-width:1910px) {
-    .text_menu a {
-        padding-left: 3.5%;
+@media only screen and (max-width:1024px) {
+    ul.menu {
+        margin: 4.1% 0% 0 -5%;
     }
 }
