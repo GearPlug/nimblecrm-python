@@ -11,8 +11,8 @@ from apps.gp.map import MapField
 from collections import OrderedDict
 
 
-class SugarCRMControllerTestCases(TestCase):
-    """Casos de prueba del controlador SugarCRM.
+class OdooCRMControllerTestCases(TestCase):
+    """Casos de prueba del controlador OdooCRM.
 
         Variables de entorno:
             TEST_ODOO_URL: String: URL del servidor.

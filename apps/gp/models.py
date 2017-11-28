@@ -509,6 +509,17 @@ class ActEssentialsConnection(models.Model):
         return self.name
 
 
+class AgileCRMConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_agilecrm')
+    name = models.CharField('name', max_length=200)
+    api_key = models.CharField('api_key', max_length=200)
+    email = models.CharField('email', max_length=200)
+    domain = models.CharField('domain', max_length=200)
+
+    def __str__(self):
+        return self.name
+
+
 class Plug(models.Model):
     ACTION_TYPE = (('source', 'Source'), ('target', 'Target'))
     name = models.CharField('name', max_length=120)
@@ -642,6 +653,20 @@ class ControllerLog(DBLogEntry):
     process = models.CharField(max_length=20, blank=True, default='')
     status = models.CharField(max_length=2, blank=False, choices=STATUS, default='f')
     controller = models.CharField(max_length=20, blank=True, default='')
+
+
+class SubscriptionsList(models.Model):
+    title = models.CharField(max_length=500, default='subscription')
+    description = models.CharField(max_length=500, default='description of subscription')
+    user = models.ManyToManyField(User, through='Subscriptions')
+
+    def __str__(self):
+        return self.title
+
+
+class Subscriptions(models.Model):
+    user = models.ForeignKey(User, related_name="subscription_user")
+    list = models.ForeignKey(SubscriptionsList, related_name="subscription_list")
 
 
 admin.site.register(Connector)
