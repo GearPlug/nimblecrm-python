@@ -59,13 +59,13 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'apps.gp.context_processors.progress'
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = 'apiconnector.wsgi.application'
-
 
 DATABASES = {
     'default': {
@@ -98,10 +98,10 @@ DATABASES = {
 }
 
 if 'test' in sys.argv:
-    DATABASES= {
+    DATABASES = {
         'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'default.db',
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'default.db',
         },
         'history': {
             'ENGINE': 'django.db.backends.sqlite3',

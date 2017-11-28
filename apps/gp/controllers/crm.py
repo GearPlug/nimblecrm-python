@@ -1238,7 +1238,8 @@ class ActiveCampaignController(BaseController):
         super(ActiveCampaignController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
-                self._client = ActiveCampaignClient(self._connection_object.host, self._connection_object.connection_access_key)
+                self._client = ActiveCampaignClient(self._connection_object.host,
+                                                    self._connection_object.connection_access_key)
             except Exception as e:
                 print(e)
 
@@ -1250,12 +1251,12 @@ class ActiveCampaignController(BaseController):
             return False
 
     def get_custom_fields(self):
-            try:
-                result = self._client.lists.get_list_field()
-                return {str(int(v['id']) - 1): {'name': v['perstag'], 'id': v['id'], 'label': v['title']} for (k, v) in
+        try:
+            result = self._client.lists.get_list_field()
+            return {str(int(v['id']) - 1): {'name': v['perstag'], 'id': v['id'], 'label': v['title']} for (k, v) in
                     result.items() if k not in ['result_code', 'result_output', 'result_message']}
-            except:
-                return {}
+        except:
+            return {}
 
     def get_lists(self):
         _lists = self._client.lists.get_lists()
@@ -1267,11 +1268,11 @@ class ActiveCampaignController(BaseController):
         try:
             if action_specification.name.lower() == 'list':
                 return tuple({'id': i['id'], 'name': i['name']} for i in
-                                 self.get_lists())
+                             self.get_lists())
             elif action_specification.name.lower() == 'task':
                 deals = self._client.deals.get_deals()['deals']
-                deals.append({'id':'all', 'title':'All Deals'})
-                return tuple({'id':i['id'], 'name':i['title']} for i in deals)
+                deals.append({'id': 'all', 'title': 'All Deals'})
+                return tuple({'id': i['id'], 'name': i['title']} for i in deals)
         except Exception as e:
             print(e)
 
@@ -1279,13 +1280,13 @@ class ActiveCampaignController(BaseController):
         action_name = self._plug.action.name
         if action_name == 'new subscriber' or action_name == 'unsubscribed contact':
             _select = self._plug.plug_action_specification.get(action_specification__name='list')
-            _value = {'lists[{0}]'.format(_select):_select.value}
+            _value = {'lists[{0}]'.format(_select): _select.value}
             if action_name == 'unsubscribed contact':
                 action = 'unsubscribe'
             if action_name == 'new subscriber':
                 action = 'subscribe'
         elif action_name == 'new contact':
-            _value = {'lists[{0}]'.format(0):0}
+            _value = {'lists[{0}]'.format(0): 0}
             action = 'subscribe'
         elif action_name == 'new task':
             _value = None
@@ -1313,8 +1314,8 @@ class ActiveCampaignController(BaseController):
             "init": "admin"
         }
         if _value is not None:
-            for k,v in _value.items():
-                post_array[k]=v
+            for k, v in _value.items():
+                post_array[k] = v
         try:
             response = self._client.webhooks.create_webhook(post_array)
             _created = True
@@ -1427,15 +1428,15 @@ class ActiveCampaignController(BaseController):
         #     return HttpResponse(status=200)
         if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
             self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
-            #expr = '\[(\w+)\](?:\[(\d+)\])?'
+            # expr = '\[(\w+)\](?:\[(\d+)\])?'
             clean_data = {}
-            for k,v in POST.items():
+            for k, v in POST.items():
                 if "[" in k:
                     m = k.split("[")
-                    key = m[0]+"_"+m[1].replace("]", "")
+                    key = m[0] + "_" + m[1].replace("]", "")
                     if key == 'contact_fields':
                         custom_fields = self.get_custom_fields()
-                        key = custom_fields[str(int(m[2].replace("]",""))-1)]['label']
+                        key = custom_fields[str(int(m[2].replace("]", "")) - 1)]['label']
                     clean_data[key] = v
                 else:
                     clean_data[k] = v
