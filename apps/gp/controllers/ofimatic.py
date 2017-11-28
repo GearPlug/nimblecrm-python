@@ -149,10 +149,8 @@ class GoogleSpreadSheetsController(GoogleBaseController):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
         drive_service = discovery.build('drive', 'v3', http=http_auth)
-        files = drive_service.files().list().execute()
-        sheet_list = tuple(
-            f for f in files['files'] if 'mimeType' in f and f[
-                'mimeType'] == 'application/vnd.google-apps.spreadsheet')
+        files = drive_service.files().list(q="mimeType='application/vnd.google-apps.spreadsheet'", spaces='drive').execute()
+        sheet_list = tuple(f for f in files['files'])
         return sheet_list
 
     def get_worksheet_list(self, sheet_id):
