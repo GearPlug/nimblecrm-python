@@ -20,6 +20,7 @@
 
 .login-wrapper {
     width: 25%;
+    height: 636px;
 
     background-color: #f1f2f4;
 
@@ -33,7 +34,7 @@
     -webkit-border-radius: 25px 25px 25px 25px;
     border: 0px solid #000000;
 
-    padding: 3% 2% 1% 2%;
+    padding: 3% 2% 0 2%;
     box-sizing: border-box;
 }
 
