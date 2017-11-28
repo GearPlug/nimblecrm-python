@@ -1,5 +1,5 @@
 .ayuda {
-    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 18px;*/
+    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 95px;*/
     /*background-size: cover;*/
 }
 
@@ -7,7 +7,7 @@
     background-color: white;
 }
 
-.not-margin {
+.row {
     margin: 0;
     padding: 0;
 }
@@ -18,36 +18,41 @@
 
 /* Header */
 .nav_spaces {
-    margin: 1% 0 1.9% 0;
+    margin: 2.62% 0 2.1% 0;
 }
 
-ul.menu{
-    list-style-type: none;
-    margin: 2.1% 20% 0 0;
+.logo_header {
+    display: inherit;
 }
 
-ul.menu li{
-    display: inline;
-    padding-right: 4.1%;
+.text_menu {
+    padding-left: 6.4%;
+    padding-top: 25px;
 }
 
-ul.menu li a{
+.text_menu a {
     color: #9C9BA0;
     font-family: 'Sansation Light';
-    font-size: 1.6em;
+    font-size: 2.1em;
+    letter-spacing: 0.3px;
+    padding-left: 3.6%;
     text-decoration: none;
 }
 
-ul.menu li.menu-login {
-    border-left: #09DF8E solid 3px;
+.border_login {
+    border-left: #09DF8E solid 5px;
     color: #9B999F;
     font-family: 'Sansation';
-    padding: 1.7% 0 1% 3%;
+    margin-top: 8%;
+    padding: 1% 0 2% 7.5%;
 }
 
-ul.menu li.menu-login a {
+.border_login a {
     color: #005CA6;
     font-family: 'Sansation';
+    font-size: 2.1em;
+    letter-spacing: 0.3px;
+    text-decoration: none;
 }
 
 /* Footer */
@@ -61,7 +66,7 @@ ul.menu li.menu-login a {
 }
 
 .text-menu {
-    padding-top: 1%;
+    padding-top: 0.9%;
 }
 
 .text-menu a{
@@ -78,7 +83,7 @@ ul.menu li.menu-login a {
 
 .bg_footer {
     background-color: #005CA5;
-    padding: 1.5% 0 1.7% 0;
+    padding: 1.3% 0 1.7% 0;
 }
 
 .text-footer {
@@ -108,15 +113,15 @@ footer {
 }
 
 .img-avatar {
-    margin-right: 1%;
+    margin-right: 6%;
 }
 
 .text-avatar {
-    font-size: 1.6em;
+    font-size: 2.1em;
 }
 
-@media only screen and (max-width:1024px) {
-    ul.menu {
-        margin: 4.1% 0% 0 -5%;
+@media only screen and (max-width:1910px) {
+    .text_menu a {
+        padding-left: 3.5%;
     }
 }

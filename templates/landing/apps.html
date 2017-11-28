@@ -2,73 +2,40 @@
 {% load static i18n %}
 
 {% block content %}
-    <div class="container-fluid sp">
-        <div class="row not-margin">
-            <div class="col-md-12 apps-banner">
-                <div class="text1">
-                    {% blocktrans %}
-                        Conéctalo con tus <span style="font-family: 'Sansation Bold'">Aplicaciones Favoritas</span>
-                    {% endblocktrans %}
-                </div>
-            </div>
+    <div class="col-md-12 apps-banner">
+        <div class="text1">
+            {% blocktrans %}
+                Conéctalo con tus <span style="font-family: 'Sansation Bold'">Aplicaciones Favoritas</span>
+            {% endblocktrans %}
         </div>
     </div>
-    <div class="container app">
-        <div class="row not-margin">
-            <div class="col-md-12 apps-list">
-                <div class="text2">
-                    {% trans 'Conécta cualquiera de estas Apps' %}
-                </div>
-                <div class="search1">
-                    <input type="text">
-                </div>
-                <div class="list-wrapper">
-                    {% for connector in object_list %}
-                        <div class="col-md-2">
-                            <div class="list-item">
-                                <div class="image1">
-                                    <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}" width="73"
-                                         height="73">
-                                </div>
-                                <div class="divider"></div>
-                                <div class="name1">
-                                    {{ connector.name }}
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
+    <div class="col-md-12 apps-list">
+        <div class="text2">
+            {% trans 'Conécta cualquiera de estas Apps' %}
         </div>
-    </div>
-
-{#    <div class="col-md-12 apps-list">#}
-{#        <div class="text2">#}
-{#            {% trans 'Conécta cualquiera de estas Apps' %}#}
-{#        </div>#}
-{#        <div class="search1">#}
-{#            <input type="text">#}
+        <div class="search1">
+            <input type="text">
 {#            <select class="selectpicker" title="Categoría">#}
 {#                <option>Opción 1</option>#}
 {#                <option>Opción 1</option>#}
 {#                <option>Opción 1</option>#}
 {#            </select>#}
-{#        </div>#}
-{#        <div class="list-wrapper">#}
-{#            {% for connector in object_list %}#}
-{#                <div class="col-md-2">#}
-{#                    <div class="list-item">#}
-{#                        <div class="image1">#}
-{#                            <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}" width="73"#}
-{#                                 height="73">#}
-{#                        </div>#}
-{#                        <div class="divider"></div>#}
-{#                        <div class="name1">#}
-{#                            {{ connector.name }}#}
-{#                        </div>#}
-{#                    </div>#}
-{#                </div>#}
-{#            {% endfor %}#}
-{#        </div>#}
-{#    </div>#}
+        </div>
+        <div class="list-wrapper">
+            {% for connector in object_list %}
+                <div class="col-md-2">
+                    <div class="list-item">
+                        <div class="image1">
+                            <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}" width="73"
+                                 height="73">
+                        </div>
+                        <div class="divider"></div>
+                        <div class="name1">
+                            {{ connector.name }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
 {% endblock %}

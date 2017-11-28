@@ -1,31 +1,32 @@
 .aboutus-banner {
     background: url("../../img/landing/icons1.png") no-repeat left bottom;
+    padding-bottom: 300px;
 }
 
 .aboutus-text .text1 {
     font-family: 'Sansation';
     font-weight: 700;
-    font-size: 4.6em;
+    font-size: 5.5em;
     color: #005CA7;
     letter-spacing: 2px;
-    margin: 3% 0 0 24.4%;
+    margin: 5.9% 0 0 35.2%;
 }
 
 .aboutus-text .text2 {
     font-family: 'Sansation Light';
-    font-size: 4.8em;
+    font-size: 5.7em;
     color: #9d9ba1;
     line-height: 103%;
-    margin: -0.6% 0 0 15.9%;
+    margin: -1.2% 0 0 18.1%;
     letter-spacing: 1.2px;
 }
 
 .aboutus-text .text3 {
     font-family: 'Sansation Light';
-    font-size: 4.8em;
+    font-size: 5.7em;
     color: #9d9ba1;
     line-height: 103%;
-    margin: 0 0 0 18.9%;
+    margin: 0.2% 0 0 24.2%;
     letter-spacing: 1.1px;
 }
 
@@ -34,12 +35,12 @@
 }
 
 .aboutus-description .text3 {
-    padding: 4.7% 15.3% 2.2% 15.3%;
+    padding: 5.5% 13% 3.7% 13%;
     font-family: 'Sansation Light';
-    font-size: 1.8em;
+    font-size: 2.1em;
     color: #727277;
     text-align: justify;
-    line-height: 138%;
+    line-height: 42px;
     letter-spacing: 0.2px;
 }
 
@@ -49,10 +50,10 @@
 
 .aboutus-services .title {
     font-family: 'Sansation';
-    font-size: 3.9em;
+    font-size: 5.33em;
     color: #9e9ba2;
     text-align: center;
-    margin-top: 5.6%;
+    margin-top: 4.7%;
 }
 
 .aboutus-services .boxes .box {
@@ -60,74 +61,69 @@
 }
 
 .aboutus-services .boxes .box .title2 {
-    padding-top: 2%;
+    padding-top: 5px;
     font-family: 'Sansation Light';
-    font-size: 2.6em;
+    font-size: 3.5em;
     color: #9d9ba1;
-    padding-bottom: 19.8%;
+    padding-bottom: 90px;
 }
 
 .hr_service {
-    border-bottom: #09DF8E solid 3px;
+    border-bottom: #09DF8E solid 6px;
     border-top: transparent;
-    margin: -1.2% 0 0 40.1%;
-    width: 19.5%;
+    margin: -0.9% 0 0 41.6%;
+    width: 16.6%;
 }
 
 .img_integrate{
-    margin: 22.5% 0 2.5% 0;
+    height: 14%;
+    margin: 21.5% 0 2.5% 0;
 }
 
 .img_automate{
-    margin: 22.8% 0 3.4% 0;
+    height: 13%;
+    margin: 22.3% 0 3.4% 0;
 }
 
 .img_evolve{
-    margin: 9.6% 0 3.8% 0;
+    height: 18.6%;
+    margin: 13.3% 0 3.2% 0;
 }
 
 .img-guy {
-    float: right;
-    margin: -14.6% 9.9% 0 0;
-    position: relative;
+    margin: -4.6% 0 0 -612px;
+    position: absolute;
     z-index: -1;
 }
 
 @media only screen and (max-width:1600px) {
-    .aboutus-text .text1 {
-        margin: 3% 0 0 19.4%;
+    .aboutus-text {
+        margin: 14.9% 0 28% 29.5%;
     }
 
-    .aboutus-text .text2 {
-        margin: -0.6% 0 0 10.9%;
+    .hr_service {
+        margin: -0.9% 0 0 40.4%;
+        width: 19.6%;
     }
 
-    .aboutus-text .text3 {
-        margin: 0 0 0 13.9%;
-    }
-
-    .img-guy {
-        margin: -14.6% -0.1% 0 0;
-    }
-}
-
-@media only screen and (max-width:1024px) {
-    .img-guy {
-        width: 70%;
+    .aboutus-banner {
+        padding-bottom: 0;
     }
 
     .aboutus-text .text1 {
-        font-size: 4.1em;
-        margin: 3% 0 0 19.4%;
+        margin: -6.1% 0 0 5.2%;
     }
 
     .aboutus-text .text2 {
-        font-size: 4.3em;
-        margin: -0.6% 0 0 5.9%;
+        margin: -1.2% 0 0 -17.1%;
     }
 
     .aboutus-text .text3 {
-        font-size: 4.3em;
-        margin: 0 0 0 8.9%;
+        margin: 0.2% 0 0 -2.8%;
+    }
+
+    .img-guy {
+        margin: -4.6% 0 0 -662px;
+        width: 197%;
     }
 }

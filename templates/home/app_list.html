@@ -88,25 +88,24 @@
 
     <div class="gp-modal modal-alternative" style="display: none">
         <div class="close-button">
+            <img src="{% static 'img/console/g1688.png' %}" width="50">    <div class="gp-modal modal-alternative" style="display: none">
+        <div class="close-button">
             <img src="{% static 'img/console/g1688.png' %}" width="50">
-            <div class="gp-modal modal-alternative" style="display: none">
-                <div class="close-button">
-                    <img src="{% static 'img/console/g1688.png' %}" width="50">
-                </div>
-                <div class="modal-content2" style="width: 520px">
-                    <div class="title">
-                        Has escogido <span style="font-family: 'Sansation Bold'">Facebook</span> como destino
-                    </div>
-                    <div class="text">
-                        Ya tu gear y tu plug están listos. Solo falta que empieces a usarlos.
-                    </div>
-                    <div class="button">
-                        <div class="wrapper">
-                            Aceptar
-                        </div>
-                    </div>
+        </div>
+        <div class="modal-content2" style="width: 520px">
+            <div class="title">
+                Has escogido <span style="font-family: 'Sansation Bold'">Facebook</span> como destino
+            </div>
+            <div class="text">
+                Ya tu gear y tu plug están listos. Solo falta que empieces a usarlos.
+            </div>
+            <div class="button">
+                <div class="wrapper">
+                    Aceptar
                 </div>
             </div>
+        </div>
+    </div>
         </div>
         <div class="modal-content2" style="width: 520px">
             <div class="title">
@@ -123,45 +122,47 @@
         </div>
     </div>
 
-    <div class="row apps-list">
-        <div class="text2">
-            {% trans 'Escoge Aplicación de Destino' %}
-        </div>
-        <div class="search1">
-            <div class="box">
-                <img src="{% static 'img/landing/lupa.png' %}" width="21px" height="20px">
-                <input type="text">
+    <div class="content-body col-md-10 col-md-offset-1">
+        <div class="row apps-list">
+            <div class="text2">
+                {% trans 'Escoge Aplicación de Destino' %}
             </div>
-        </div>
-        <div class="nav">
-            <div class="item">
-                {% trans 'Más Usadas' %}
+            <div class="search1">
+                <div class="box">
+                    <img src="{% static 'img/landing/lupa.png' %}" width="21px" height="20px">
+                    <input type="text">
+                </div>
             </div>
-            <div class="divider"></div>
-            <div class="item">
-                {% trans 'Las Mejores Combinaciones' %}
+            <div class="nav">
+                <div class="item">
+                    {% trans 'Más Usadas' %}
+                </div>
+                <div class="divider"></div>
+                <div class="item">
+                    {% trans 'Las Mejores Combinaciones' %}
+                </div>
+                <div class="divider"></div>
+                <div class="item">
+                    Lorem Ipsum
+                </div>
             </div>
-            <div class="divider"></div>
-            <div class="item">
-                Lorem Ipsum
-            </div>
-        </div>
-        <div class="list-wrapper">
-            <div class="row">
-                {% for connector in object_list %}
-                    <div class="col-md-2">
-                        <div class="list-item">
-                            <div class="image1">
-                                <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}"
-                                     width="73" height="73">
-                            </div>
-                            {#                                <div class="divider"></div>#}
-                            <div class="name1">
-                                {{ connector.name }}
+            <div class="list-wrapper">
+                <div class="row">
+                    {% for connector in object_list %}
+                        <div class="col-md-2">
+                            <div class="list-item">
+                                <div class="image1">
+                                    <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}"
+                                         width="73" height="73">
+                                </div>
+                                {#                                <div class="divider"></div>#}
+                                <div class="name1">
+                                    {{ connector.name }}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>

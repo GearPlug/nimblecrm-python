@@ -2,30 +2,55 @@
 {% load static i18n %}
 
 {% block content %}
-    <div class="row mapping">
-        <form method="POST" action="" class="">
 
-            <div class="title">
-                <span>{% trans 'Mapeo' %}</span>
-            </div>
-            <div class="form">
-                <div class="col-md-6">
-                    {% for field in form %}
-                        <div class="col-md-12 group">
-                            {{ field.label_tag }}
-                            {{ field }}
-                        </div>
-                    {% endfor %}
-                    {% csrf_token %}
+    <div class="content-body col-md-10 col-md-offset-1">
+        <div class="row mapping">
+            <form method="POST" action="" class="">
+
+                <div class="title">
+                    <span>{% trans 'Mapeo' %}</span>
                 </div>
-                <div class="col-md-9">
-                    <div class="col-md-12 group">
-                        <button class="button-create" type="submit">{% trans 'Finalizar' %}</button>
+                <div class="form">
+                    <div class="col-md-6">
+                        {% for field in form %}
+                            <div class="col-md-12 group">
+                                {{ field.label_tag }}
+                                {{ field }}
+                            </div>
+                        {% endfor %}
+                        {% csrf_token %}
+                    </div>
+                    <div class="col-md-9">
+                        <div class="col-md-6 group">
+                            <button class="button-create" type="submit">{% trans 'Finalizar' %}</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
+
+
+{#            <div class="col-md-12 group">#}
+{#                <div class="rail-select">#}
+{#                    <div class="select-side">#}
+{#                        <i class="glyphicon glyphicon-menu-down blue"></i>#}
+{#                    </div>#}
+{#                    <select class="form-control">#}
+{#                        <option>Test 1</option>#}
+{#                        <option>Test 2</option>#}
+{#                    </select>#}
+{#                </div>#}
+{#            </div>#}
+{#            <div class="col-md-12 group">#}
+{#                <div class="rail-checkbox btn-group" data-toggle="buttons">#}
+{#                    <label class="btn btn-success active">#}
+{#                        <input type="checkbox" autocomplete="off" checked>#}
+{#                        <span class="glyphicon glyphicon-ok"></span>#}
+{#                    </label>#}
+{#                </div>#}
+{#            </div>#}
+
 {% endblock %}
 
 {% block styles %}

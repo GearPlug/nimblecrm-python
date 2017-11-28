@@ -4,54 +4,55 @@
 
 {% block content %}
     {% include 'connection/snippets/modal_connector_selected.html' %}
-    <div class="row apps-list">
-        <div class="text2">
-            {% trans 'Escoge Aplicación de Destino' %}
-        </div>
-        <div class="search1">
-            <div class="box-wrapper">
-                <div class="box">
-                    <img src="{% static 'img/landing/lupa.png' %}" width="14" height="17">
-                    <input type="text">
-                </div>
-                <div class="divider"></div>
-                <div class="rail-select">
-                    <div class="select-side">
-                        <i class="glyphicon glyphicon-menu-down blue"></i>
+    <div class="content-body col-md-10 col-md-offset-1">
+        <div class="row apps-list">
+            <div class="text2">
+                {% trans 'Escoge Aplicación de Destino' %}
+            </div>
+            <div class="search1">
+                <div class="box-wrapper">
+                    <div class="box">
+                        <img src="{% static 'img/landing/lupa.png' %}" width="14" height="17">
+                        <input type="text">
                     </div>
-                    <select class="form-control">
-                        <option>Test 1</option>
-                        <option>Test 2</option>
-                    </select>
+                    <div class="divider"></div>
+                    <div class="rail-select">
+                        <div class="select-side">
+                            <i class="glyphicon glyphicon-menu-down blue"></i>
+                        </div>
+                        <select class="form-control">
+                            <option>Test 1</option>
+                            <option>Test 2</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="list-wrapper">
-            <div class="row">
-                {% for connector in object_list %}
-                    <div class="col-md-2">
-                        <div class="list-item" data-toggle="modal" data-target="#selected-connector-modal"
-                             data-connector-name="{{ connector.name }}" data-connector-id="{{ connector.id }}"
-                             data-connector-connections-count="{{ connector.connection_count }}"
-                             data-connector-next-url="{% url 'connection:list' connector_id=connector.id type=type %}">
-                            <div class="image1">
-                                <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}"
-                                     width="73" height="73">
-                            </div>
-                            <div class="divider"></div>
-                            <div class="name1">
-                                {{ connector.name }}
+            <div class="list-wrapper">
+                <div class="row">
+                    {% for connector in object_list %}
+                        <div class="col-md-2">
+                            <div class="list-item" data-toggle="modal" data-target="#selected-connector-modal"
+                                 data-connector-name="{{ connector.name }}" data-connector-id="{{ connector.id }}"
+                                 data-connector-connections-count="{{ connector.connection_count }}"
+                                 data-connector-next-url="{% url 'connection:list' connector_id=connector.id type=type %}">
+                                <div class="image1">
+                                    <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}"
+                                         width="73" height="73">
+                                </div>
+                                <div class="divider"></div>
+                                <div class="name1">
+                                    {{ connector.name }}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
 {% endblock %}
 
 {% block scripts %}
-    {{ block.super }}
     <script>
         $(document).ready(function () {
             $('div.list-item').on('click', function () {

@@ -1,14 +1,14 @@
 .apps-banner {
-    background: url("../../img/landing/bg_banner.png") repeat-x;
+    background: url("../../img/landing/bg_banner.png") no-repeat;
 }
 
 .apps-banner .text1 {
     font-family: "Sansation";
-    font-size: 4.1em;
+    font-size: 4.8em;
     color: #FFFFFF;
     text-align: center;
-    margin-top: 1.8%;
-    margin-bottom: 2.2%;
+    margin-top: 1.7%;
+    margin-bottom: 2.6%;
 }
 
 .apps-list {
@@ -17,23 +17,25 @@
 
 .apps-list .text2 {
     font-family: "Sansation Light";
-    font-size: 2.9em;
+    font-size: 3.5em;
     color: #727277;
     text-align: center;
-    margin-top: 3.2%;
+    margin-top: 2.6%;
 }
 
 .apps-list .search1 {
-    margin-top: 1.9%;
+    margin-top: 1.7%;
     background-color: #005CA6;
-    width: 43.3%;
-    margin-left: 28.4%;
+    width: 34.8%;
+    margin-left: 32.6%;
+    -webkit-border-radius: 22px;
+    -moz-border-radius: 22px;
     border-radius: 28px;
 }
 
 .apps-list .search1 input {
     width: 94.3%;
-    height: 3.6%;
+    height: 4.4%;
     border: 0;
     -webkit-border-radius: 22px;
     -moz-border-radius: 22px;
@@ -42,7 +44,7 @@
     font-size: 1.40em;
     outline: none;
     background-color: #f7f8f8;
-    margin: 2.4% 0 2.4% 2.7%;
+    margin: 1.8% 0 1.8% 2.5%;
     background-image: url("../../img/landing/lupa.png");
     background-repeat: no-repeat;
     background-position: 3% 41%;
@@ -50,7 +52,7 @@
 }
 
 .apps-list .list-wrapper {
-    margin: 6.6% 3.5% 0 5.6%;
+    margin: 4.38% 7.5% 0 8.6%;
 }
 
 .apps-list .list-wrapper .list-item {
@@ -66,12 +68,12 @@
     height: 1px;
     display: inline-block;
     background-color: #e5e6e9;
-    margin: 12% 0 2.2% 0;
+    margin: 13% 0 2.2% 0;
 }
 
 .apps-list .list-wrapper .list-item .name1 {
     font-family: "Sansation Light";
-    font-size: 1.5em;
+    font-size: 1.8em;
     color: #727277;
 }
 
@@ -106,20 +108,9 @@ button.btn {
     box-shadow: none;
 }
 
-.container.app {
-    width: 1400px;
-}
-
-@media only screen and (max-width:1024px) {
-    .apps-banner .text1 {
-        font-size: 3.8em;
-    }
-
-    .container.app {
-        width: 100%;
-    }
-
-    .apps-list .list-wrapper .list-item .name1 {
-        font-size: 1.2em;
+@media only screen and (max-width:1600px) {
+    .apps-list .search1 {
+        width: 38.8%;
+        margin-left: 28.6%;
     }
 }
