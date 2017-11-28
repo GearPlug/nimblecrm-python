@@ -283,6 +283,8 @@ body {
     border: 0px solid #000000;
     cursor: pointer;
     z-index: 1;
+
+    display: none;
 }
 
 .content-body {
@@ -318,6 +320,27 @@ body {
     border-bottom: 3px solid #00e08f;
     display: inline-block;
     line-height: 1em;
+}
+
+.content-body .connections .title,
+.content-body .connections .separator,
+.content-body .connections .new-connection,
+.content-body .connections .new-connection .image2,
+.content-body .connections .new-connection .text {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.content-body .connections .separator {
+    width: 2px;
+    height: 30px;
+    background-color: #f1f2f4;
+    margin: 0 6px 0 20px;
+}
+
+.content-body .connections .new-connection .text {
+    color: #005ca7;
+    padding: 2px 0 0 2px;
 }
 
 .content-body .projects .folders {
@@ -441,6 +464,10 @@ body {
     cursor: pointer;
 }
 
+.content-body .connections .list .item .image-wrapper.selected {
+    background-color: #005ca7;
+}
+
 .content-body .gears .list .item .image-wrapper .image {
     width: 180px;
     height: 100%;
@@ -470,6 +497,14 @@ body {
     padding-top: 20px;
 }
 
+.content-body .connections .list .item.extended .image-wrapper.selected .name {
+    color: #ffffff;
+}
+
+.content-body .connections .list .item.extended .image-wrapper input[type='radio']:checked:before {
+    background: #00e08f;
+}
+
 .content-body .connections .list .item.extended .image-wrapper .name {
     padding-top: 12px;
     text-align: left;
@@ -490,7 +525,17 @@ body {
 }
 
 .content-body .connections .list .test-button .button,
-.content-body .management .list .test-button .button {
+.content-body .management .list .test-button .button,
+.content-body .connections .list .test-button .button-wrapper {
+    width: 90px;
+    height: 40px;
+    background-color: #f6f7f8;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+}
+
+.content-body .connections .list .test-button .button {
     -webkit-appearance: none;
     width: 36px;
     height: 36px;
@@ -499,6 +544,7 @@ body {
     outline: none;
     box-shadow: 0 0 5px 0px #FFFFFF inset;
     cursor: pointer;
+    margin: 2px 0 0 4px;
 }
 
 .content-body .connections .list .test-button .button:before,
@@ -533,6 +579,8 @@ body {
 }
 
 .content-body .connections .list .test-button .button,
+.content-body .connections .list .test-button .text2,
+.content-body .connections .list .test-button .button-wrapper,
 .content-body .connections .list .test-button .text-wrapper,
 .content-body .connections .list .test-button .text-line,
 .content-body .connections .list .test-button .text,
@@ -545,7 +593,16 @@ body {
 }
 
 .content-body .connections .list .test-button .text-line,
-.content-body .management .list .test-button .text-line {
+.content-body .management .list .test-button .text-line,
+.content-body .connections .list .test-button .text2 {
+    padding: 4px 0 0 4px;
+    color: #9d9ba1;
+    font-size: 14px;
+}
+
+
+
+.content-body .connections .list .test-button .text-line {
     width: 10px;
     height: 1px;
     background-color: #00e08f;
@@ -1352,7 +1409,7 @@ input[type='radio']:checked:before {
 }
 
 .gear-progress-bar .bar-line {
-    width: 18%;
+    width: 12%;
     height: 2px;
     background-color: #005ca7;
 }

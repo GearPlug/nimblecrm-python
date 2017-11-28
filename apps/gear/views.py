@@ -356,6 +356,71 @@ class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
         # return super(GearSendHistoryView, self).form_valid(form)
 
 
+class GearActivitiesHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
+    model = SendHistory
+    form_class = SendHistoryForm
+    template_name = 'gear/send_history.html'
+    login_url = '/accounts/login/'
+
+    def get_queryset(self, **kwargs):
+        order = 'date'
+        if self.request.method == "POST":
+            if 'date_from' in self.request.POST and self.request.POST['date_from']:
+                if 'date_to' in self.request.POST and self.request.POST['date_to']:
+                    kwargs['date__range'] = (self.request.POST['date_from'], self.request.POST['date_to'])
+                else:
+                    kwargs['date__gte'] = self.request.POST['date_from']
+            elif 'date_to' in self.request.POST and self.request.POST['date_to']:
+                kwargs['date__lte'] = self.request.POST['date_to']
+            if 'order' in self.request.POST and self.request.POST['order'] == 'desc':
+                order = '-date'
+            if 'sent' in kwargs and kwargs['sent'] == '0':
+                del kwargs['sent']
+            del kwargs['date_from']
+            del kwargs['date_to']
+            del kwargs['order']
+        gears = list(Gear.objects.filter(user_id=self.request.user.id).values_list('id', flat=True))
+        return [{'connection': json.loads(item.connection)[0]['fields']['name'],
+                 'data': [{'name': k, 'value': v} for k, v in json.loads(item.data).items()],
+                 'date': item.date,
+                 'connector_id': item.connector_id,
+                 'connector_name': ConnectorEnum.get_connector(item.connector_id).name,
+                 'sent': item.sent,
+                 'response': item.response,
+                 'identifier': item.identifier,
+                 'id': item.id,
+                 } for item in self.model.objects.filter(gear_id__in=gears, **kwargs).order_by(order)]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            if not request.user.is_authenticated:
+                return HttpResponseForbidden()
+        except:
+            return HttpResponseForbidden()
+        return super(GearActivitiesHistoryView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(GearActivitiesHistoryView, self).get_context_data(**kwargs)
+        context['form'] = self.get_form()
+        context['recent'] = True
+        return context
+
+    def post(self, request, **kwargs):
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden()
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def form_valid(self, form):
+        self.object_list = self.get_queryset(**form.cleaned_data)
+        context = self.get_context_data()
+        return self.render_to_response(context)
+        # return super(GearSendHistoryView, self).form_valid(form)
+
+
 class GearDownloadHistoryView(GearSendHistoryView):
     model = DownloadHistory
     form_class = DownloadHistoryForm
@@ -422,6 +487,24 @@ def gear_toggle(request, gear_id):
         try:
             g = Gear.objects.get(pk=gear_id)
             if g.user == request.user:
+                source = g.source
+                target = g.target
+
+                if not source or not target:
+                    return JsonResponse({'data': 'Error'})
+
+                connector_source = ConnectorEnum.get_connector(source.connection.connector.id)
+                controller_class = ConnectorEnum.get_controller(connector_source)
+                controller = controller_class(connection=source.connection.related_connection, plug=source)
+                if not controller.test_connection():
+                    return JsonResponse({'data': 'Error'})
+
+                connector_target = ConnectorEnum.get_connector(target.connection.connector.id)
+                controller_class = ConnectorEnum.get_controller(connector_target)
+                controller = controller_class(connection=target.connection.related_connection, plug=target)
+                if not controller.test_connection():
+                    return JsonResponse({'data': 'Error'})
+
                 if g.gear_map.is_active is True:
                     g.is_active = not g.is_active
                     g.save()
@@ -443,70 +526,6 @@ def get_authorization(request):
     credentials = client.OAuth2Credentials.from_json(
         request.session['google_credentials'])
     return credentials.authorize(httplib2.Http())
-
-
-class GearActivitiesHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
-    model = SendHistory
-    form_class = SendHistoryForm
-    template_name = 'gear/send_history.html'
-    login_url = '/accounts/login/'
-
-    def get_queryset(self, **kwargs):
-        order = 'date'
-        if self.request.method == "POST":
-            if 'date_from' in self.request.POST and self.request.POST['date_from']:
-                if 'date_to' in self.request.POST and self.request.POST['date_to']:
-                    kwargs['date__range'] = (self.request.POST['date_from'], self.request.POST['date_to'])
-                else:
-                    kwargs['date__gte'] = self.request.POST['date_from']
-            elif 'date_to' in self.request.POST and self.request.POST['date_to']:
-                kwargs['date__lte'] = self.request.POST['date_to']
-            if 'order' in self.request.POST and self.request.POST['order'] == 'desc':
-                order = '-date'
-            if 'sent' in kwargs and kwargs['sent'] == '0':
-                del kwargs['sent']
-            del kwargs['date_from']
-            del kwargs['date_to']
-            del kwargs['order']
-        gears = list(Gear.objects.filter(user_id=self.request.user.id).values_list('id', flat=True))
-        return [{'connection': json.loads(item.connection)[0]['fields']['name'],
-                 'data': [{'name': k, 'value': v} for k, v in json.loads(item.data).items()],
-                 'date': item.date,
-                 'connector_id': item.connector_id,
-                 'connector_name': ConnectorEnum.get_connector(item.connector_id).name,
-                 'sent': item.sent,
-                 'response': item.response,
-                 'identifier': item.identifier,
-                 'id': item.id,
-                 } for item in self.model.objects.filter(gear_id__in=gears, **kwargs).order_by(order)]
-
-    def get(self, request, *args, **kwargs):
-        try:
-            if not request.user.is_authenticated:
-                return HttpResponseForbidden()
-        except:
-            return HttpResponseForbidden()
-        return super(GearActivitiesHistoryView, self).get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super(GearActivitiesHistoryView, self).get_context_data(**kwargs)
-        context['form'] = self.get_form()
-        context['recent'] = True
-        return context
-
-    def post(self, request, **kwargs):
-        if not request.user.is_authenticated:
-            return HttpResponseForbidden()
-        form = self.get_form()
-        if form.is_valid():
-            return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
-
-    def form_valid(self, form):
-        self.object_list = self.get_queryset(**form.cleaned_data)
-        context = self.get_context_data()
-        return self.render_to_response(context)
 
 
 def retry_send_history(request):

@@ -24,9 +24,9 @@
                 <button type="button" class="button-create gray" data-dismiss="modal">
                     Cancelar
                 </button>
-                <a href="{% url 'account_logout' %}" class="button-create">
+                <button type="button" id="logout" class="button-create">
                     Cerrar Sesión
-                </a>
+                </button>
             </div>
         </div>
     </div>
@@ -41,51 +41,16 @@
         <div class="right">
             <div class="row">
                 <div class="col-md-4 col-md-offset-4">
-                    <div class="gear-progress-bar">
-                        <div class="bar-step-wrapper">
-                            <div class="bar-circle active">
-
+                    <div class="gear-progress-bar" id="progress" style="display: none;">
+                        {% for i in 'xxxxxx' %}
+                            <div class="bar-step-wrapper">
+                                <div class="bar-circle" id="step{{ forloop.counter }}"></div>
+                                <div class="bar-step">{{ forloop.counter }}</div>
                             </div>
-                            <div class="bar-step">
-                                1
-                            </div>
-                        </div>
-                        <div class="bar-line"></div>
-                        <div class="bar-step-wrapper">
-                            <div class="bar-circle">
-
-                            </div>
-                            <div class="bar-step">
-                                2
-                            </div>
-                        </div>
-                        <div class="bar-line"></div>
-                        <div class="bar-step-wrapper">
-                            <div class="bar-circle">
-
-                            </div>
-                            <div class="bar-step">
-                                3
-                            </div>
-                        </div>
-                        <div class="bar-line"></div>
-                        <div class="bar-step-wrapper">
-                            <div class="bar-circle">
-
-                            </div>
-                            <div class="bar-step">
-                                4
-                            </div>
-                        </div>
-                        <div class="bar-line"></div>
-                        <div class="bar-step-wrapper">
-                            <div class="bar-circle">
-
-                            </div>
-                            <div class="bar-step">
-                                5
-                            </div>
-                        </div>
+                            {% if not forloop.last %}
+                                <div class="bar-line"></div>
+                            {% endif %}
+                        {% endfor %}
                     </div>
                 </div>
                 <div class="col-md-4 right-side">
@@ -103,11 +68,6 @@
                             {% trans 'Notificaciones' %}
                         </div>
                     </div>
-                    {#                <div class="divider"></div>#}
-                    {#                <div class="search">#}
-                    {#                    <img src="{% static 'img/landing/lupa.png' %}" width="21px" height="20px">#}
-                    {#                    <input type="text">#}
-                    {#                </div>#}
                 </div>
             </div>
         </div>
@@ -127,7 +87,7 @@
                 </div>
                 <div class="divider"></div>
                 <div class="item">
-                    <a href="">
+                    <a href="{% url 'gear:activities_history' %}">
                         <div class="image">
                             <img src="{% static 'img/console/g5752.png' %}">
                         </div>
@@ -175,4 +135,59 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        var progress = '{{ progress }}';
+        if (progress === '1') {
+            $('#progress').show();
+            $('#step1').addClass('active');
+        } else if (progress === '2') {
+            $('#progress').show();
+            $('#step1').addClass('active');
+            $('#step2').addClass('active');
+        } else if (progress === '3') {
+            $('#progress').show();
+            $('#step1').addClass('active');
+            $('#step2').addClass('active');
+            $('#step3').addClass('active');
+        } else if (progress === '4') {
+            $('#progress').show();
+            $('#step1').addClass('active');
+            $('#step2').addClass('active');
+            $('#step3').addClass('active');
+            $('#step4').addClass('active');
+        } else if (progress === '5') {
+            $('#progress').show();
+            $('#step1').addClass('active');
+            $('#step2').addClass('active');
+            $('#step3').addClass('active');
+            $('#step4').addClass('active');
+            $('#step5').addClass('active');
+        } else if (progress === '6') {
+            $('#progress').show();
+            $('#step1').addClass('active');
+            $('#step2').addClass('active');
+            $('#step3').addClass('active');
+            $('#step4').addClass('active');
+            $('#step5').addClass('active');
+            $('#step6').addClass('active');
+        }
+        $(document).ready(function () {
+            $('#logout').on("click", function (e) {
+                console.log("ññasña")
+                var button = $(this);
+                $.ajax({
+                    method: "POST",
+                    url: "{% url 'account_logout' %}",
+                    data: {}
+                }).done(function (response) {
+                    window.location.replace('{% url 'landing:index' %}')
+                });
+                return false;
+            })
+        })
+    </script>
 {% endblock %}

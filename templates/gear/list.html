@@ -102,6 +102,7 @@
 {% endblock %}
 
 {% block scripts %}
+    {{ block.super }}
     <script type="application/javascript">
         $(document).ready(function () {
             var is_blocked = false;
