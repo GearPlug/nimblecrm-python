@@ -8,7 +8,8 @@ from django.contrib.auth.models import User
 from apps.gp.controllers.crm import ActiveCampaignController
 from apps.gp.models import Connection, ActiveCampaignConnection, Action, Plug, ActionSpecification, \
     PlugActionSpecification, Webhook, StoredData, Gear, GearMap, GearMapData
-from apps.history.models import DownloadHistory
+from apps.history.models import DownloadHistory, SendHistory
+
 
 class ActiveCampaignControllerTestCases(TestCase):
     """
@@ -47,199 +48,348 @@ class ActiveCampaignControllerTestCases(TestCase):
         }
         cls.activecampaign_connection_target = ActiveCampaignConnection.objects.create(**_connection_target)
 
-        action_source = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value, action_type="source",
-                                           name="new contact", is_active=True)
+        _list_source_actions = ['new contact', 'new subscriber', 'unsubscribed contact', 'new task', 'new deal', 'task completed', 'deal updated']
 
-        activecampaign_plug_source = {
-            "name": "PlugTest Source",
-            "connection": cls.connection_source,
-            "action": action_source,
-            "plug_type": "source",
-            "user": cls.user,
-            "is_active": True
-        }
-        cls.plug_source = Plug.objects.create(**activecampaign_plug_source)
+        cls._list_source_plugs = []
 
-        action_target = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value, action_type="target",
-                                           name="create contact", is_active=True)
+        for action in _list_source_actions:
+            action_source = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value, action_type="source",
+                                               name=action, is_active=True)
+            activecampaign_plug_source = {
+                "name": "PlugTest Source",
+                "connection": cls.connection_source,
+                "action": action_source,
+                "plug_type": "source",
+                "user": cls.user,
+                "is_active": True
+            }
+            _source_plug = Plug.objects.create(**activecampaign_plug_source)
+            if action in ['new subscriber', 'unsubscribed contact']:
+                _specification_source = ActionSpecification.objects.get(action=action_source, name="list")
+                action_specification_source = {
+                    "plug": _source_plug,
+                    "action_specification": _specification_source,
+                    "value": os.environ.get("TEST_ACTIVECAMPAIGN_LIST")
+                }
+                PlugActionSpecification.objects.create(**action_specification_source)
+            else:
+                _specification_source = ""
+            cls._list_source_plugs.append(
+                {'action': action, 'plug': _source_plug, 'specification': _specification_source})
 
-        active_campaign_plug_target = {
-            "name": "PlugTest Target",
-            "connection": cls.connection_target,
-            "action": action_target,
-            "plug_type": "target",
-            "user": cls.user,
-            "is_active": True
-        }
-        cls.plug_target = Plug.objects.create(**active_campaign_plug_target)
+        _list_target_actions = ['subscribe contact', 'unsubscribe contact', 'create contact']
+        cls._list_target_plugs = []
 
-        cls.specification_source = ActionSpecification.objects.get(action=action_source, name="list")
-        cls.specification_target = ActionSpecification.objects.get(action=action_target, name="list")
+        for action in _list_target_actions:
+            action_target = Action.objects.get(connector_id=ConnectorEnum.ActiveCampaign.value, action_type="target",
+                                               name=action, is_active=True)
+            active_campaign_plug_target = {
+                "name": "PlugTest Target",
+                "connection": cls.connection_target,
+                "action": action_target,
+                "plug_type": "target",
+                "user": cls.user,
+                "is_active": True
+            }
+            _plug_target = Plug.objects.create(**active_campaign_plug_target)
+            _specification_target = ActionSpecification.objects.get(action=action_target, name="list")
+            action_specification_target = {
+                "plug": _plug_target,
+                "action_specification": _specification_target,
+                "value": os.environ.get("TEST_ACTIVECAMPAIGN_LIST")
+            }
+            PlugActionSpecification.objects.create(**action_specification_target)
+            cls._list_target_plugs.append(
+                {'action': action, 'plug': _plug_target, 'specification': _specification_target})
 
-        action_specification1 = {
-            "plug": cls.plug_source,
-            "action_specification": cls.specification_source,
-            "value": os.environ.get("TEST_ACTIVECAMPAIGN_LIST")
-        }
+        for _plug in cls._list_source_plugs:
+            _dict_gear = {
+                "name": "Gear 1",
+                "user": cls.user,
+                "source": _plug['plug'],
+                "target": cls._list_target_plugs[0]['plug'],
+                "is_active": True
+            }
+            _gear = Gear.objects.create(**_dict_gear)
+            _gear_map = GearMap.objects.create(gear=_gear)
+            _plug['gear'] = _gear
+            _plug['gear_map'] = _gear_map
 
-        PlugActionSpecification.objects.create(**action_specification1)
-
-        action_specification2 = {
-            "plug": cls.plug_target,
-            "action_specification": cls.specification_target,
-            "value": os.environ.get("TEST_ACTIVECAMPAIGN_LIST")
-        }
-
-        PlugActionSpecification.objects.create(**action_specification2)
-
-        gear = {
-            "name": "Gear 1",
-            "user": cls.user,
-            "source": cls.plug_source,
-            "target": cls.plug_target,
-            "is_active": True
-        }
-        cls.gear = Gear.objects.create(**gear)
-        cls.gear_map = GearMap.objects.create(gear=cls.gear)
-
-        map_data_1 = {"target_name": "email", "source_value": "%%email%%", "gear_map": cls.gear_map}
-        map_data_2 = {"target_name": "first_name", "source_value": "%%first_name%%", "gear_map": cls.gear_map}
-        map_data_3 = {"target_name": "last_name", "source_value": "%%last_name%%", "gear_map": cls.gear_map}
-        map_data_4 = {"target_name": "phone", "source_value": "%%phone%%", "gear_map": cls.gear_map}
-        map_data_5 = {"target_name": "orgname", "source_value": "%%orgname%%", "gear_map": cls.gear_map}
-        GearMapData.objects.create(**map_data_1)
-        GearMapData.objects.create(**map_data_2)
-        GearMapData.objects.create(**map_data_3)
-        GearMapData.objects.create(**map_data_4)
-        GearMapData.objects.create(**map_data_5)
+        for _plug in cls._list_target_plugs:
+            _dict_gear = {
+                "name": "Gear 1",
+                "user": cls.user,
+                "source": cls._list_source_plugs[0]['plug'],
+                "target": _plug['plug'],
+                "is_active": True
+            }
+            _gear = Gear.objects.create(**_dict_gear)
+            _gear_map = GearMap.objects.create(gear=_gear)
+            _plug['gear'] = _gear
+            _plug['gear_map'] = _gear_map
 
     def setUp(self):
         """Crea la base de datos y genera datos falsos en las tablas respectivas.
         """
-        self.controller_source = ActiveCampaignController(self.plug_source.connection.related_connection,
-                                                          self.plug_source)
-        self.controller_target = ActiveCampaignController(self.plug_target.connection.related_connection,
-                                                          self.plug_target)
+        self._list_source_controllers = []
+        self._list_target_controllers = []
+        for _plug in self._list_source_plugs:
+            source_controller = ActiveCampaignController(_plug['plug'].connection.related_connection, _plug['plug'])
+            self._list_source_controllers.append({'action': _plug['action'], 'controller': source_controller,
+                                                  'plug': _plug['plug'], 'specification': _plug['specification'],
+                                                  'gear': _plug['gear'], 'gear_map': _plug['gear_map']})
+        for _plug in self._list_target_plugs:
+            target_controller = ActiveCampaignController(_plug['plug'].connection.related_connection, _plug['plug'])
+            self._list_target_controllers.append({'action': _plug['action'], 'controller': target_controller,
+                                                  'plug': _plug['plug'], 'specification': _plug['specification']})
 
-        self.hook = {"contact[tags]": [""], "contact[phone]": ["325 7048546"], "initiated_from": ["admin"],
-                     "contact[orgname]": ["Organization1"], "contact[first_name]": ["Miguel"],
-                     "contact[ip]": ["0.0.0.0"], "contact[email]": [os.environ.get("TEST_ACTIVECAMPAIGN_EMAIL")],
-                     "initiated_by": ["admin"], "orgname": ["Organization1"], "type": ["subscribe"], "list": ["0"],
-                     "date_time": ["2017-09-21T11:33:13-05:00"], "contact[last_name]": ["Ferrer"],
-                     "contact[id]": ["36"]}
+    def _get_hooks(self, action):
+        if action == 'new contact':
+            return {'initiated_by': ['admin'], 'contact[tags]': [''], 'date_time': ['2017-11-27T12:51:37-06:00'],
+                    'list': ['0'], 'contact[email]': ['daysy@grplug.com'], 'contact[phone]': [''],
+                    'type': ['subscribe'],
+                    'initiated_from': ['admin'], 'contact[last_name]': [''],
+                    'contact[id]': ['119'], 'orgname': [''], 'contact[ip]': ['0.0.0.0'],
+                    'contact[orgname]': [''], 'contact[first_name]': ['']}
 
-    def _get_fields(self):
-        return [
-            {"name": "email", "label": "Email", "type": "varchar", "required": True},
-            {"name": "first_name", "label": "First Name", "type": "varchar", "required": False},
-            {"name": "last_name", "label": "Last Name", "type": "varchar", "required": False},
-            {"name": "phone", "label": "Phone", "type": "varchar", "required": False},
-            {"name": "orgname", "label": "Organization Name", "type": "varchar", "required": False},
-        ]
+        elif action == 'new subscriber':
+            return {'initiated_by': ['admin'], 'contact[first_name]': ['Lelia2'], 'orgname': [''],
+                    'contact[phone]': [''], 'list': ['1'],
+                    'initiated_from': ['admin'], 'type': ['subscribe'], 'contact[last_name]': ['Rubiano'],
+                    'contact[id]': ['10'],
+                    'contact[ip]': ['0.0.0.0'], 'date_time': ['2017-11-24T08:50:26-06:00'], 'contact[orgname]': [''],
+                    'contact[email]': ['lrubianotest@grplug.com'], 'contact[tags]': ['']}
+        elif action == 'unsubscribed contact':
+            return {'type': ['unsubscribe'], 'list': ['1'], 'account_id': ['474042'], 'contact[id]': ['10'],
+                    'initiated_from': ['admin'], 'contact[tags]': [''], 'initiated_by': ['admin'],
+                    'contact[phone]': [''], 'date_time': ['2017-11-24T09:33:27-06:00'], 'contact[orgname]': [''],
+                    'orgname': [''], 'contact[first_name]': ['Lelia2'], 'contact[ip]': ['0.0.0.0'],
+                    'contact[email]': ['lrubianotest@grplug.com'], 'contact[last_name]': ['Rubiano']}
+        elif action == 'new task':
+            return {'deal[orgname]': [''],
+                    'deal[pipeline_title]': ['my_pipeline'],
+                    'deal[owner_firstname]': ['TestGearplug'],
+                    'deal[contact_lastname]': ['Rubiano'],
+                    'initiated_by': ['admin'],
+                    'task[edate]': ['2017-11-25 11:15:00'],
+                    'date_time': ['2017-11-24T10:09:32-06:00'],
+                    'contact[ip]': ['0.0.0.0'], 'deal[contactid]': ['9'],
+                    'contact[orgname]': [''], 'task[title]': [''],
+                    'deal[contact_firstname]': ['Lelia'],
+                    'task[type_id]': ['1'],
+                    'task[edate_iso]': ['2017-11-25T11:15:00-06:00'],
+                    'list': ['0'],
+                    'contact[id]': ['9'],
+                    'deal[create_date_iso]': ['2017-11-24T10:06:22-06:00'],
+                    'deal[pipelineid]': ['1'],
+                    'deal[owner_lastname]': [''],
+                    'deal[orgid]': ['0'],
+                    'deal[stageid]': ['1'],
+                    'deal[value]': ['100.00'],
+                    'type': ['deal_task_add'],
+                    'task[type_title]': ['Call'],
+                    'task[note]': ['task1'],
+                    'task[id]': ['1'],
+                    'contact[phone]': [''],
+                    'task[duedate]': ['2017-11-25 11:00:00'],
+                    'deal[status]': ['0'],
+                    'orgname': [''],
+                    'deal[contact_email]': ['lrubiano@grplug.com'],
+                    'deal[owner]': ['1'],
+                    'deal[currency]': ['usd'],
+                    'contact[email]': ['lrubiano@grplug.com'],
+                    'contact[last_name]': ['Rubiano'],
+                    'task[duedate_iso]': ['2017-11-25T11:00:00-06:00'],  # Fecha de inicio de la tarea
+                    'initiated_from': ['admin'],
+                    'deal[stage_title]': ['To Contact'],
+                    'deal[title]': ['deal1'],
+                    'contact[tags]': [''],
+                    'deal[currency_symbol]': ['$'],
+                    'contact[first_name]': ['Lelia'],
+                    'deal[value_raw]': ['100'],
+                    'deal[create_date]': ['2017-11-24 10:06:22'],
+                    'deal[id]': ['1']}
+        elif action == 'new deal':
+            return {'initiated_from': ['admin'],
+                    'deal[pipeline_title]': ['my_pipeline'],
+                    'deal[contact_email]': ['lrubiano@grplug.com'],
+                    'deal[orgname]': [''],
+                    'deal[contact_lastname]': ['Rubiano'],
+                    'initiated_by': ['admin'],
+                    'contact[phone]': [''],
+                    'date_time': ['2017-11-24T10:06:22-06:00'],
+                    'deal[owner]': ['1'],
+                    'deal[contactid]': ['9'],
+                    'contact[orgname]': [''],
+                    'orgname': [''],
+                    'deal[owner_firstname]': ['TestGearplug'],
+                    'deal[contact_firstname]': ['Lelia'],
+                    'contact[ip]': ['0.0.0.0'],
+                    'deal[id]': ['1'],
+                    'deal[currency]': ['usd'],
+                    'contact[email]': ['lrubiano@grplug.com'],
+                    'contact[last_name]': ['Rubiano'],
+                    'deal[stageid]': ['1'],
+                    'deal[stage_title]': ['To Contact'],
+                    'type': ['deal_add'], 'list': ['0'],
+                    'deal[title]': ['deal1'],
+                    'contact[id]': ['9'],
+                    'deal[create_date_iso]': ['2017-11-24T10:06:22-06:00'],
+                    'deal[pipelineid]': ['1'], 'contact[tags]': [''],
+                    'deal[currency_symbol]': ['$'],
+                    'deal[orgid]': ['0'],
+                    'deal[status]': ['0'],
+                    'contact[first_name]': ['Lelia'],
+                    'deal[value_raw]': ['100'],
+                    'deal[owner_lastname]': [''],
+                    'deal[value]': ['100.00'],
+                    'deal[create_date]': ['2017-11-24 10:06:22']}
+        elif action == 'task completed':
+            return {'deal[orgname]': [''], 'deal[title]': ['dealmm'], 'deal[currency_symbol]': ['$'],
+                    'task[edate_iso]': ['2017-11-29T11:15:00-06:00'], 'task[donedate]': ['2017-11-28 08:59:17'],
+                    'contact[tags]': [''], 'contact[fields][1]': ['field1'], 'task[duedate]': ['2017-11-29 11:00:00'],
+                    'date_time': ['2017-11-28T08:59:17-06:00'], 'deal[value_raw]': ['100'],
+                    'deal[pipeline_title]': ['my_pipeline'], 'deal[owner_firstname]': ['TestGearplug'],
+                    'contact[orgname]': [''], 'type': ['deal_task_complete'],
+                    'task[donedate_iso]': ['2017-11-28T08:59:17-06:00'], 'deal[currency]': ['usd'],
+                    'deal[owner]': ['1'], 'contact[email]': ['diego@gmail.com'], 'task[type_id]': ['2'],
+                    'task[type_title]': ['Email'], 'deal[status]': ['0'], 'deal[contact_lastname]': [''],
+                    'contact[ip]': ['0.0.0.0'], 'initiated_by': ['admin'], 'deal[id]': ['3'],
+                    'deal[contact_firstname]': ['diego@gmail.com'],
+                    'deal[create_date_iso]': ['2017-11-24T14:23:00-06:00'], 'deal[value]': ['100.00'],
+                    'deal[contact_email]': ['diego@gmail.com'], 'deal[stage_title]': ['To Contact'],
+                    'deal[create_date]': ['2017-11-24 14:23:00'], 'task[edate]': ['2017-11-29 11:15:00'],
+                    'deal[owner_lastname]': [''], 'deal[pipelineid]': ['1'], 'orgname': [''],
+                    'task[duedate_iso]': ['2017-11-29T11:00:00-06:00'], 'contact[last_name]': [''],
+                    'contact[phone]': [''], 'task[note]': ['MY TASK'], 'contact[id]': ['27'],
+                    'contact[first_name]': ['diego@gmail.com'], 'contact[fields][2]': ['field2'], 'deal[orgid]': ['0'],
+                    'task[id]': ['6'], 'task[title]': [''], 'deal[stageid]': ['1'], 'initiated_from': ['admin'],
+                    'list': ['0'], 'deal[contactid]': ['27']}
+        elif action == 'deal updated':
+            return {'deal[orgname]': [''], 'deal[title]': ['deal5'],
+                    'deal[create_date_iso]': ['2017-11-24T14:18:04-06:00'], 'deal[value]': ['100.00'],
+                    'deal[contact_email]': ['diego@gmail.com'], 'updated_fields[3]': ['stage'],
+                    'deal[stage_title]': ['To Contact'], 'deal[owner_lastname]': [''],
+                    'deal[create_date]': ['2017-11-24 14:18:04'], 'deal[currency_symbol]': ['$'], 'contact[tags]': [''],
+                    'deal[pipelineid]': ['1'], 'contact[fields][1]': ['field1'], 'deal[value_raw]': ['100'],
+                    'deal[contact_firstname]': ['diego@gmail.com'], 'date_time': ['2017-11-28T09:03:08-06:00'],
+                    'contact[id]': ['27'], 'orgname': [''], 'deal[pipeline_title]': ['my_pipeline'], 'list': ['0'],
+                    'deal[owner_firstname]': ['TestGearplug'], 'contact[orgname]': [''], 'type': ['deal_update'],
+                    'contact[last_name]': [''], 'contact[phone]': [''], 'deal[currency]': ['usd'],
+                    'contact[first_name]': ['diego@gmail.com'], 'deal[owner]': ['1'], 'updated_fields[4]': ['contact'],
+                    'contact[email]': ['diego@gmail.com'], 'updated_fields[0]': ['title'],
+                    'contact[fields][2]': ['field2'], 'deal[orgid]': ['0'], 'deal[status]': ['0'],
+                    'updated_fields[2]': ['nextdate'], 'updated_fields[1]': ['mdate'], 'deal[contact_lastname]': [''],
+                    'contact[ip]': ['0.0.0.0'], 'deal[stageid]': ['1'], 'initiated_from': ['admin'],
+                    'initiated_by': ['admin'], 'deal[contactid]': ['27'], 'deal[id]': ['2']}
 
-    def _clean_data(self, POST):
-        formatted = {k: v[0] for k, v in POST.items() if type(v) == list and len(v) < 2}
-        expr = "\[(.*?)\]"
+    def _get_fields(self, action):
+        if action == 'unsubscribe a contact':
+            return [{'name': 'email', 'label': 'Email', 'type': 'varchar', 'required': True}]
+        else:
+            return [
+                {'name': 'email', 'label': 'Email', 'type': 'varchar', 'required': True},
+                {'name': 'first_name', 'label': 'First Name', 'type': 'varchar', 'required': False},
+                {'name': 'last_name', 'label': 'Last Name', 'type': 'varchar', 'required': False},
+                {'name': 'phone', 'label': 'Phone', 'type': 'varchar', 'required': False},
+                {'name': 'orgname', 'label': 'Organization Name', 'type': 'varchar', 'required': False},
+            ]
+
+    def _clean_data(self, POST, controller):
         clean_data = {}
-        for k, v in formatted.items():
-            m = re.search(expr, k)
-            if m:
-                key = m.group(1)
+        for k, v in POST.items():
+            if "[" in k:
+                m = k.split("[")
+                key = m[0] + "_" + m[1].replace("]", "")
+                if key == 'contact_fields':
+                    custom_fields = controller.get_custom_fields()
+                    key = custom_fields[str(int(m[2].replace("]", "")) - 1)]['label']
+                clean_data[key] = v[0]
             else:
-                key = k
-            if key not in clean_data:
-                clean_data[key] = v
+                clean_data[k] = v[0]
         return clean_data
 
     def test_controller(self):
         """
         Comprueba que los atributos del controlador esten instanciados
         """
-        self.assertIsInstance(self.controller_source._connection_object, ActiveCampaignConnection)
-        self.assertIsInstance(self.controller_source._plug, Plug)
-        self.assertIsInstance(self.controller_target._plug, Plug)
-        self.assertTrue(self.controller_source._host)
-        self.assertTrue(self.controller_target._host)
-        self.assertTrue(self.controller_source._key)
-        self.assertTrue(self.controller_target._key)
+        _total_controllers = self._list_source_controllers + self._list_target_controllers
+        for _controller in _total_controllers:
+            self.assertIsInstance(_controller['controller']._connection_object, ActiveCampaignConnection)
+            self.assertIsInstance(_controller['controller']._plug, Plug)
+            self.assertTrue(_controller['controller']._client)
 
-    def test_get_account_info(self):
-        """
-        Método que testea el test_connection, se asume que los paŕametros de entrada son validos por lo tanto debe retornar True
-        """
-        result = self.controller_source.get_account_info()
-        self.assertTrue(result)
+    def test_test_connection(self):
+        _total_controllers = self._list_source_controllers + self._list_target_controllers
+        for _controller in _total_controllers:
+            result = _controller['controller'].test_connection()
+            self.assertTrue(result)
 
     def test_get_lists(self):
         """Método que testea que traiga las listas de contactos de Active Campaig, el parámetro TEST_ACTIVECAMPAIGN_LIST debe
         ser un ID de una lista existente en la cuenta perteneciente a las credenciales de entrada"""
-        _list = None
-        result = self.controller_source.get_lists()
-        for i in result:
-            if i["id"] == os.environ.get("TEST_ACTIVECAMPAIGN_LIST"):
-                _list = i["id"]
-        self.assertEqual(_list, os.environ.get("TEST_ACTIVECAMPAIGN_LIST"))
+        _total_controllers = self._list_source_controllers + self._list_target_controllers
+        for _controller in _total_controllers:
+            if _controller['action'] in ['new subscriber', 'unsubscribed contact', 'subscribe contact',
+                                         'unsubscribe contact']:
+                _list = None
+                result = _controller['controller'].get_lists()
+                for i in result:
+                    if i["id"] == os.environ.get("TEST_ACTIVECAMPAIGN_LIST"):
+                        _list = i["id"]
+                self.assertEqual(_list, os.environ.get("TEST_ACTIVECAMPAIGN_LIST"))
 
     def test_get_action_specification_options(self):
         """Testea que retorne los action specification de manera correcta, en este caso son las listas de contactos"""
-        action_specification_id = self.specification_target.id
-        result = self.controller_target.get_action_specification_options(action_specification_id)
-        _list = None
-        for i in result:
-            if i["id"] == os.environ.get("TEST_ACTIVECAMPAIGN_LIST"):
-                _list = i["id"]
-        self.assertIsInstance(result, tuple)
-        self.assertEqual(_list, os.environ.get("TEST_ACTIVECAMPAIGN_LIST"))
+        _total_controllers = self._list_source_controllers + self._list_target_controllers
+        for _controller in _total_controllers:
+            if _controller in ['new subscriber', 'unsubscribed contact', 'subscribe contact', 'unsubscribe contact']:
+                action_specification_id = _controller['specification'].id
+                result = _controller['controller'].get_action_specification_options(action_specification_id)
+                _list = None
+                for i in result:
+                    if i["id"] == os.environ.get("TEST_ACTIVECAMPAIGN_LIST"):
+                        _list = i["id"]
+                self.assertIsInstance(result, tuple)
+                self.assertEqual(_list, os.environ.get("TEST_ACTIVECAMPAIGN_LIST"))
 
     def test_get_mapping_fields(self):
         """Testea que retorne los Mapping Fields de manera correcta"""
-        result = self.controller_target.get_mapping_fields()
-        self.assertIsInstance(result, list)
-        self.assertIsInstance(result[0], MapField)
+        for _controller in self._list_target_controllers:
+            result = _controller['controller'].get_mapping_fields()
+            self.assertIsInstance(result, list)
+            self.assertIsInstance(result[0], MapField)
 
     def test_get_target_fiels(self):
         """Testea que retorne los campos de un contacto"""
-        result = self.controller_target.get_target_fields()
-        self.assertEqual(result, self._get_fields())
-
-    def test_create_contact(self):
-        """Testea que se cree un contacto de manera correcta, este contacto se crea con el campo TEST_ACTIVECAMPAIGN_EMAIL, por
-        esta razón se debe tener seguridad que este email no existe en la cuenta, al final del método se borra el contacto, lo
-        que no otras pruebas"""
-        data = {"email": os.environ.get("TEST_ACTIVECAMPAIGN_EMAIL")}
-        result_create = self.controller_target.create_contact(data)
-        self.assertEqual("Contact added", result_create["result_message"])
-        _id = result_create["subscriber_id"]
-        result_delete = self.controller_target.delete_contact(_id)
-        self.assertEqual("Contact deleted", result_delete["result_message"])
+        for _controller in self._list_target_controllers:
+            result = _controller['controller'].get_target_fields()
+            self.assertEqual(result, self._get_fields(_controller['action']))
 
     def test_create_webhook(self):
         """Testea que se cree un webhook en la aplicación y que se cree en la tabla Webhook, al final se borra el
         webhook de la aplicación"""
-        count_start = Webhook.objects.filter(plug=self.plug_source).count()
-        result = self.controller_source.create_webhook()
-        count_end = Webhook.objects.filter(plug=self.plug_source).count()
-        webhook = Webhook.objects.last()
-        deleted = self.controller_source.delete_webhooks(webhook.generated_id)
-        self.assertEqual(count_start + 1, count_end)
-        self.assertTrue(result)
-        self.assertEqual("Webhook deleted", deleted["result_message"])
+        for _controller in self._list_source_controllers:
+            count_start = Webhook.objects.filter(plug=_controller['plug']).count()
+            result = _controller['controller'].create_webhook()
+            count_end = Webhook.objects.filter(plug=_controller['plug']).count()
+            webhook = Webhook.objects.last()
+            self.assertEqual(count_start + 1, count_end)
+            self.assertTrue(result)
+            _controller['controller']._client.webhooks.delete_webhook(webhook.generated_id)
 
     def test_download_source_data(self):
         """Simula un dato de entrada (self.hook) y se verifica que este dato se cree en las tablas DownloadHistory y StoreData"""
-        count_start = StoredData.objects.filter(connection=self.connection_source, plug=self.plug_source).count()
-        data = self.hook
-        data["email"] = os.environ.get("TEST_ACTIVECAMPAIGN_EMAIL")
-        data = self._clean_data(data)
-        count_data = len(data)
-        result = self.controller_source.download_source_data(self.plug_source.connection.related_connection, self.plug_source, data=data)
-        count_end = StoredData.objects.filter(connection=self.connection_source, plug=self.plug_source).count()
-        history = DownloadHistory.objects.last()
-        self.assertEqual(count_end, count_start + count_data)
-        data2= str(data)
-        self.assertEqual(history.raw, data2.replace("'", '"'))
-        self.assertEqual(history.identifier, str({'name': 'id', 'value' : int(data["id"])}))
-        self.assertTrue(result)
+        for _controller in self._list_source_controllers:
+            count_start = StoredData.objects.filter(connection=self.connection_source, plug=_controller['plug']).count()
+            data = self._get_hooks(_controller['action'])
+            data = self._clean_data(data, _controller['controller'])
+            count_data = len(data)
+            result = _controller['controller'].download_source_data(_controller['plug'].connection.related_connection,
+                                                                    _controller['plug'], data=data)
+            count_end = StoredData.objects.filter(connection=self.connection_source, plug=_controller['plug']).count()
+            self.assertEqual(count_end, count_start + count_data)
+            self.assertTrue(result)
 
     def test_download_to_store_data(self):
         """Simula un dato de entrada por webhook (self.hook), y se verifica que retorne una lista de acuerdo a:
@@ -250,23 +400,25 @@ class ActiveCampaignControllerTestCases(TestCase):
             {...}, {...},
          "last_source_record":(%last_order_by_value)},}
         """
-        data = self._clean_data(self.hook)
-        result = self.controller_source.download_to_stored_data(self.plug_source.connection.related_connection, self.plug_source,
-                                                         data=data)
-        self.assertIn('downloaded_data', result)
-        self.assertIsInstance(result['downloaded_data'], list)
-        self.assertIsInstance(result['downloaded_data'][-1], dict)
-        self.assertIn('identifier', result['downloaded_data'][-1])
-        self.assertIsInstance(result['downloaded_data'][-1]['identifier'], dict)
-        self.assertIn('name', result['downloaded_data'][-1]['identifier'])
-        self.assertIn('value', result['downloaded_data'][-1]['identifier'])
-        self.assertIsInstance(result['downloaded_data'][-1], dict)
-        self.assertIn('raw', result['downloaded_data'][-1])
-        self.assertIsInstance(result['downloaded_data'][-1]['raw'], dict)
-        self.assertIn('is_stored', result['downloaded_data'][-1])
-        self.assertIsInstance(result['downloaded_data'][-1]['is_stored'], bool)
-        self.assertIn('last_source_record', result)
-        self.assertIsNotNone(result['last_source_record'])
+        for _controller in self._list_source_controllers:
+            data = self._clean_data(self._get_hooks(_controller['action']), _controller['controller'])
+            result = _controller['controller'].download_to_stored_data(
+                _controller['plug'].connection.related_connection, _controller['plug'],
+                data=data)
+            self.assertIn('downloaded_data', result)
+            self.assertIsInstance(result['downloaded_data'], list)
+            self.assertIsInstance(result['downloaded_data'][-1], dict)
+            self.assertIn('identifier', result['downloaded_data'][-1])
+            self.assertIsInstance(result['downloaded_data'][-1]['identifier'], dict)
+            self.assertIn('name', result['downloaded_data'][-1]['identifier'])
+            self.assertIn('value', result['downloaded_data'][-1]['identifier'])
+            self.assertIsInstance(result['downloaded_data'][-1], dict)
+            self.assertIn('raw', result['downloaded_data'][-1])
+            self.assertIsInstance(result['downloaded_data'][-1]['raw'], dict)
+            self.assertIn('is_stored', result['downloaded_data'][-1])
+            self.assertIsInstance(result['downloaded_data'][-1]['is_stored'], bool)
+            self.assertIn('last_source_record', result)
+            self.assertIsNotNone(result['last_source_record'])
 
     def test_send_stored_data(self):
         """Simula un dato de entrada (data), este dato trae un email que no existe en la aplicacion
@@ -279,103 +431,58 @@ class ActiveCampaignControllerTestCases(TestCase):
         }
         Al final se borra el contacto de la aplicación.
         """
-        data = {'email': os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
-        data_list = [OrderedDict(data)]
-        result = self.controller_target.send_stored_data(data_list)
-        self.assertIsInstance(result, list)
-        self.assertIsInstance(result[-1], dict)
-        self.assertIn('data', result[-1])
-        self.assertIn('response', result[-1])
-        self.assertIn('sent', result[-1])
-        self.assertIn('identifier', result[-1])
-        self.assertIsInstance(result[-1]['data'], dict)
-        self.assertIsInstance(result[-1]['response'], str)
-        self.assertIsInstance(result[-1]['sent'], bool)
-        self.assertEqual(result[-1]['data'], dict(data_list[0]))
-        result_view = self.controller_target.contact_view(result[-1]['identifier'])
-        self.assertEqual(result_view['result_code'],1)
-        self.assertEqual(result_view['email'], os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL'))
-        self.controller_target.delete_contact(result[-1]['identifier'])
-
+        for _controller in self._list_target_controllers:
+            if _controller['action'] == 'unsubscribe contact':
+                _controller['controller']._client.contacts.create_contact(
+                    {'email': os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')})
+            data = {'email': os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}
+            data_list = [OrderedDict(data)]
+            result = _controller['controller'].send_stored_data(data_list)
+            self.assertIsInstance(result, list)
+            self.assertIsInstance(result[-1], dict)
+            self.assertIn('data', result[-1])
+            self.assertIn('response', result[-1])
+            self.assertIn('sent', result[-1])
+            self.assertIn('identifier', result[-1])
+            self.assertIsInstance(result[-1]['data'], dict)
+            self.assertIsInstance(result[-1]['sent'], bool)
+            self.assertEqual(result[-1]['data'], dict(data_list[0]))
+            result_view = _controller['controller']._client.contacts.view_contact(result[-1]['identifier'])
+            self.assertEqual(result_view['result_code'], 1)
+            self.assertEqual(result_view['email'], os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL'))
+            _controller['controller']._client.contacts.delete_contact(result[-1]['identifier'])
 
     def test_get_custom_fields(self):
         """Testea que se retorne los custom fields de un contacto"""
-        result = self.controller_source.get_custom_fields()
-        self.assertIsInstance(result, dict)
-
-    def test_subscribe_contact(self):
-        """Testea que se subscriba un contacto en una lista el corro del contacto esta instanciado en la variable
-        TEST_ACTIVECAMPAIGN_EMAIL, y el ID de la lista debe estar en la variable TEST_ACTIVECAMPAIGN_LIST, el correo
-        que se suministre no debe existir en la lista. Al final se elimina el contacto de la aplicación."""
-        data = {"email":os.environ.get("TEST_ACTIVECAMPAIGN_EMAIL")}
-        result_subscribe = self.controller_target.subscribe_contact(data)
-        self.assertEqual(result_subscribe["result_code"], 1)
-        result_view = self.controller_target.contact_view(result_subscribe["subscriber_id"])
-        self.assertEqual(result_view["email"], os.environ.get("TEST_ACTIVECAMPAIGN_EMAIL"))
-        self.assertEqual(result_view["listid"], os.environ.get("TEST_ACTIVECAMPAIGN_LIST"))
-        self.controller_target.delete_contact(result_subscribe["subscriber_id"])
-
-    def test_unsubscribe_contact(self):
-        """Testea que se borre un contacto de una lista el correo del contacto esta instanciado mediante la variable
-        TEST_ACTIVECAMPAIGN_EMAIL, este correo no debe existir dentro de la aplicación ya que el método primero lo crea,
-        lo susbcribe a la lista TEST_ACTIVE_CAMPAIGN_LIST, y luego lo borra de la list. Al final del método se borra el
-        contacto"""
-        data = {"email":os.environ.get("TEST_ACTIVECAMPAIGN_EMAIL")}
-        self.controller_target.create_contact(data)
-        self.controller_target.subscribe_contact(data)
-        _email={"email":os.environ.get("TEST_ACTIVECAMPAIGN_EMAIL")}
-        result_unsubscribe = self.controller_target.unsubscribe_contact(_email)
-        self.assertEqual(result_unsubscribe["result_code"], 1)
-        result_view = self.controller_target.contact_view(os.environ.get("TEST_ACTIVECAMPAIGN_EMAIL"))
-        self.assertEqual(result_view["result_code"], 1)
-        self.controller_target.delete_contact(result_view["id"])
-
-    def test_contact_view(self):
-        """Testea que retorne los valores de un contacto, el método primero crea el contacto con el email instanciado con la
-        variable TEST_ACTIVECAMPAIGN_EMAIL (este correo no debe existir en la aplicación ), y luego consulta los valores de este
-        contacto, al final el contacto se elimina de la aplicación"""
-        data = {"email": os.environ.get("TEST_ACTIVECAMPAIGN_EMAIL")}
-        result_create = self.controller_target.create_contact(data)
-        result_view = self.controller_target.contact_view(result_create["subscriber_id"])
-        self.assertEqual(result_view["email"], os.environ.get("TEST_ACTIVECAMPAIGN_EMAIL"))
-        self.controller_target.delete_contact(result_create["subscriber_id"])
-
-    def test_delete_contact(self):
-        """Método que testea que se elimine un contacto de la aplicación, el método primero crea un contacto con el correo instanciado
-        en la varibale TEST_ACTIVECAMPAIGN_EMAIL, este correo no debe existir en la aplicación"""
-        data = {"email": os.environ.get("TEST_ACTIVECAMPAIGN_EMAIL")}
-        result_create = self.controller_target.create_contact(data)
-        self.controller_target.delete_contact(result_create["subscriber_id"])
-        result_view = self.controller_target.contact_view(result_create["subscriber_id"])
-        self.assertTrue(result_view, 0)
-
-    def test_delete_webhook(self):
-        """Testea que se borre un webhook, para pruebas primero se crea el webhook"""
-        self.controller_source.create_webhook()
-        webhook = Webhook.objects.last()
-        self.controller_source.delete_webhooks(webhook.generated_id)
-        result_view = self.controller_source.list_webhooks(webhook.generated_id)
-        self.assertTrue(result_view, 0)
-
-    def test_list_webhooks(self):
-        """Testea que se traiga los atributos de un webhook, primero se crea un webhook luego se traen los parámetros
-        y al final se borra el webhook"""
-        self.controller_source.create_webhook()
-        webhook = Webhook.objects.last()
-        result_view = self.controller_source.list_webhooks(webhook.generated_id)
-        self.assertEqual(result_view["result_code"], 1)
-        self.controller_source.delete_webhooks(webhook.generated_id)
-
-    def test_has_webhook(self):
-        """Testea que el método retorne True"""
-        result = self.controller_source.has_webhook()
-        self.assertTrue(result)
+        for _controller in self._list_source_controllers:
+            if _controller['action'] in ['subscribe contact', 'unsubscribe contact', 'create contact']:
+                result = _controller['controller'].get_custom_fields()
+                self.assertIsInstance(result, dict)
 
     def test_do_webhook_process(self):
         """Simula un dato de entrada (self.hook), se crea un webhook y se verifica que retorne
         un status code =200, al final se borra el webhook"""
-        self.controller_source.create_webhook()
-        webhook = Webhook.objects.last()
-        result = self.controller_source.do_webhook_process(POST=self.hook, webhook_id=webhook.id)
-        self.assertEqual(result.status_code, 200)
-        self.controller_source.delete_webhooks(webhook.generated_id)
+        for _controller in self._list_source_controllers:
+            _controller['controller'].create_webhook()
+            webhook = Webhook.objects.last()
+            data = self._get_hooks(_controller['action'])
+            for k, v in data.items():
+                data[k] = v[0]
+            result = _controller['controller'].do_webhook_process(POST=data, webhook_id=webhook.id)
+            self.assertEqual(result.status_code, 200)
+            _controller['controller']._client.webhooks.delete_webhook(webhook.generated_id)
+
+    def test_send_target_data(self):
+        """Verifica que se cree el registro ingresado en la tabla Sendstoredata, al final se borra
+        el contacto de la aplicación"""
+        _source_data = [{'id': 1, 'data': {'email': os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')}}]
+        _target_fields = {'email': '%%email%%'}
+        for _controller in self._list_target_controllers:
+            if _controller['action'] == 'unsubscribe contact':
+                _controller['controller']._client.contacts.create_contact(
+                    {'email': os.environ.get('TEST_ACTIVECAMPAIGN_EMAIL')})
+            _target = OrderedDict(_target_fields)
+            result = _controller['controller'].send_target_data(source_data=_source_data, target_fields=_target)
+            count_history = SendHistory.objects.all().count()
+            self.assertNotEqual(count_history, 0)
+            _controller['controller']._client.contacts.delete_contact(result[0])

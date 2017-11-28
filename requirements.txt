@@ -88,3 +88,4 @@ git+git://github.com/GearPlug/odoocrm-python.git
 git+git://github.com/GearPlug/batchbook-python.git
 git+git://github.com/GearPlug/actcrm-python.git
 git+git://github.com/GearPlug/agilecrm-python.git
+git+git://github.com/GearPlug/activecampaign-python.git
