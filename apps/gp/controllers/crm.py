@@ -1288,11 +1288,17 @@ class ActiveCampaignController(BaseController):
             _value = {'lists[{0}]'.format(0):0}
             action = 'subscribe'
         elif action_name == 'new task':
-            _value = {'deals':'all'}
+            _value = None
             action = 'deal_task_add'
         elif action_name == 'new deal':
             _value = None
             action = 'deal_add'
+        elif action_name == 'task completed':
+            _value = None
+            action = 'deal_task_complete'
+        elif action_name == 'deal updated':
+            _value = None
+            action = 'deal_update'
         webhook = Webhook.objects.create(name='activecampaign', url='',
                                          plug=self._plug, expiration='')
         url_base = settings.WEBHOOK_HOST
@@ -1390,9 +1396,9 @@ class ActiveCampaignController(BaseController):
         if data is not None:
             if action in ['new contact', 'new subscriber', 'unsubscribed contact']:
                 object_id = int(data['contact_id'])
-            elif action == 'new task':
+            elif action in ['new task', 'task completed']:
                 object_id = int(data['task_id'])
-            elif action == 'new deal':
+            elif action in ['new deal', 'deal updated']:
                 object_id = int(data['deal_id'])
             q = StoredData.objects.filter(object_id=object_id, connection=connection_object.id, plug=plug.id)
             if not q.exists():
