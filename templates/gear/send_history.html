@@ -16,104 +16,103 @@
         }
     </style>
     <div class="content-body col-md-10 col-md-offset-1">
-        <input type="hidden" id="retry_url" value="{% url 'gear:retry_send_history' %}">
-        <div class="row history">
-            <div class="title">
-                {% if recent %}
-                    <span>Actividad Reciente</span>
-                {% else %}
-                    <span>Historial Entrante</span>
-                {% endif %}
-            </div>
-            <div class="col-md-12 navbar">
-                <form action="" method="POST">
-                    {% csrf_token %}
-                    <div class="row">
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <div class='input-group date' id='datepicker-from'>
-                                    {{ form.date_from }}
-                                    <span class="input-group-addon">
+    <input type="hidden" id="retry_url" value="{% url 'gear:retry_send_history' %}">
+    <div class="row history">
+        <div class="title">
+            {% if recent %}
+                <span>Actividad Reciente</span>
+            {% else %}
+                <span>Historial Entrante</span>
+            {% endif %}
+        </div>
+        <div class="col-md-12 navbar">
+            <form action="" method="POST">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <div class='input-group date' id='datepicker-from'>
+                                {{ form.date_from }}
+                                <span class="input-group-addon">
                                     <span class="glyphicon glyphicon-calendar"></span>
                                 </span>
-                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <div class='input-group date' id='datepicker-to'>
-                                    {{ form.date_to }}
-                                    <span class="input-group-addon">
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <div class='input-group date' id='datepicker-to'>
+                                {{ form.date_to }}
+                                <span class="input-group-addon">
                                     <span class="glyphicon glyphicon-calendar"></span>
                                 </span>
-                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <div class='input-group' id='id_{{ form.order.label|lower }}'
-                                     data-order="{{ form.order.value|default_if_none:"asc" }}">
-                                    {{ form.order }}
-                                    <span class="input-group-addon">
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <div class='input-group' id='id_{{ form.order.label|lower }}'
+                                 data-order="{{ form.order.value|default_if_none:"asc" }}">
+                                {{ form.order }}
+                                <span class="input-group-addon">
                                     <span class="glyphicon glyphicon-arrow-{% if form.order.value == 'desc' %}down{% else %}up{% endif %}"></span>
                                 </span>
-                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <div class='input-group' id='id_{{ form.sent.label|lower }}'>
-                                    {{ form.sent }}
-                                    <span class="input-group-addon">
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <div class='input-group' id='id_{{ form.sent.label|lower }}'>
+                                {{ form.sent }}
+                                <span class="input-group-addon">
                                         <span class="glyphicon glyphicon-check"></span>
                                     </span>
-                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2 pull-right">
-                            <button type="submit">
-                                Filtrar
-                            </button>
-                        </div>
                     </div>
-                </form>
-            </div>
-            <div class="col-md-12 history-list">
-                {% for obj in object_list %}
-                    <div class="row">
-                        <div class="item history-item" data-history="{{ obj.id }}">
-                            <div class="col-md-1">
-                                {% if obj.sent == 0 %}
-                                    <div class="indicator red">FAILED</div>
-                                {% elif obj.sent == 1 %}
-                                    <div class="indicator green">SUCCESS</div>
-                                {% elif obj.sent == 2 %}
-                                    <div class="indicator orange">FILTERED</div>
+                    <div class="col-md-2 pull-right">
+                        <button type="submit">
+                            Filtrar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-12 history-list">
+            {% for obj in object_list %}
+                <div class="row">
+                    <div class="item history-item" data-history="{{ obj.id }}">
+                        <div class="col-md-1">
+                            {% if obj.sent == 0 %}
+                                <div class="indicator red">FAILED</div>
+                            {% elif obj.sent == 1 %}
+                                <div class="indicator green">SUCCESS</div>
+                            {% elif obj.sent == 2 %}
+                                <div class="indicator orange">FILTERED</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-5">
+                            <div class="text">
+                                {{ obj.date }}
+                                {% if obj.sent != 1 %}
+                                    <b class="resend">resend</b>
                                 {% endif %}
                             </div>
-                            <div class="col-md-5">
-                                <div class="text">
-                                    {{ obj.date }}
-                                    {% if obj.sent != 1 %}
-                                        <b class="resend">resend</b>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-12">
-                                <ul style="display:none;" data-show="false" data-history="{{ obj.id }}">
-                                    {% if obj.sent != 1 %}
-                                        <li><b>Response</b>: {{ obj.response }}</li>
-                                    {% endif %}
-                                    <li><b>Identifier</b>: {{ obj.identifier }}</li>
-                                    {% for item in obj.data %}
-                                        <li>{{ item.name }}: {{ item.value }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <ul style="display:none;" data-show="false" data-history="{{ obj.id }}">
+                                {% if obj.sent != 1 %}
+                                    <li><b>Response</b>: {{ obj.response }}</li>
+                                {% endif %}
+                                <li><b>Identifier</b>: {{ obj.identifier }}</li>
+                                {% for item in obj.data %}
+                                    <li>{{ item.name }}: {{ item.value }}</li>
+                                {% endfor %}
+                            </ul>
                         </div>
                     </div>
-                {% endfor %}
-            </div>
+                </div>
+            {% endfor %}
         </div>
     </div>
 {% endblock %}

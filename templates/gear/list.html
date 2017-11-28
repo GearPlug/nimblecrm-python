@@ -26,82 +26,79 @@
             </div>
         </a>
     </div>
-    <div class="content-body col-md-10 col-md-offset-1">
-        <div class="row projects">
-            <div class="title">
-                <span>{% trans 'Proyectos' %}</span>
-            </div>
-            {% if not object_list %}
-                <div data-toggle="modal" data-target="#group-modal">
-                    <div class="add-wrapper">
-                        <div class="add">
-                            <div class="image">
-                                <img src="{% static 'img/console/path6684.png' %}" width="176">
-                            </div>
-                            <div class="text">
-                                Crear Grupo
-                            </div>
-                        </div>
-                        <div class="steps-tooltip">
-                            <div class="bar"></div>
-                            <div class="box">
-                                <div class="text">
-                                    Crear un grupo donde dirigirás todos tus gears.
-                                </div>
-                            </div>
-                            <div class="image">
-                                <img src="{% static 'img/console/g6712.png' %}" width="45">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% else %}
-                <div class="folders">
-                    {% for group in object_list %}
-                        {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=2 %}
-                    {% endfor %}
-                    {% if object_list %}
-                        <div class="add col-md-1">
-                            <div class="button">
-                                <div data-toggle="modal" data-target="#group-modal">
-                                    <img src="{% static 'img/console/new_group.png' %}" width="98" height="80">
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
-            {% endif %}
+    <div class="row projects">
+        <div class="title">
+            <span>{% trans 'Proyectos' %}</span>
         </div>
-
-        {% if object_list %}
-            <div class="row gears">
-                <div class="title">
-                    <span>{% trans 'Gears' %}</span>
-                </div>
-                <div class="row list">
-                    {% for group in object_list %}
-                        <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;"
-                             id="group_gear_{{ group.id }}" data-show="True">
-                            {% for gear in group.gear.all %}
-                                {% include 'gear/snippets/gear_extend.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
-                            {% endfor %}
+        {% if not object_list %}
+            <div data-toggle="modal" data-target="#group-modal">
+                <div class="add-wrapper">
+                    <div class="add">
+                        <div class="image">
+                            <img src="{% static 'img/console/path6684.png' %}" width="176">
                         </div>
-                    {% endfor %}
-                </div>
-
-                <div class="row add">
-                    <div data-toggle="modal" data-target="#gear-modal">
-                        <div class="button"><img src="{% static 'img/console/g3261.png' %}" width="38"></div>
-                        <div class="text">{% trans 'Nuevo Gear' %}</div>
+                        <div class="text">
+                            Crear Grupo
+                        </div>
+                    </div>
+                    <div class="steps-tooltip">
+                        <div class="bar"></div>
+                        <div class="box">
+                            <div class="text">
+                                Crear un grupo donde dirigirás todos tus gears.
+                            </div>
+                        </div>
+                        <div class="image">
+                            <img src="{% static 'img/console/g6712.png' %}" width="45">
+                        </div>
                     </div>
                 </div>
+            </div>
+        {% else %}
+            <div class="folders">
+                {% for group in object_list %}
+                    {% include 'gear/snippets/group.html' with id=group.id name=group.name columns=2 %}
+                {% endfor %}
+                {% if object_list %}
+                    <div class="add col-md-1">
+                        <div class="button">
+                            <div data-toggle="modal" data-target="#group-modal">
+                                <img src="{% static 'img/console/new_group.png' %}" width="98" height="80">
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         {% endif %}
-
-        {% include 'gear/snippets/gear_form.html' %}
-        {% include 'gear/snippets/group_form.html' with form=geargroup_form %}
     </div>
 
+    {% if object_list %}
+        <div class="row gears">
+            <div class="title">
+                <span>{% trans 'Gears' %}</span>
+            </div>
+            <div class="row list">
+                {% for group in object_list %}
+                    <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;"
+                         id="group_gear_{{ group.id }}" data-show="True">
+                        {% for gear in group.gear.all %}
+                            {% include 'gear/snippets/gear_extend.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="row add">
+                <div data-toggle="modal" data-target="#gear-modal">
+                    <div class="button"><img src="{% static 'img/console/g3261.png' %}" width="38"></div>
+                    <div class="text">{% trans 'Nuevo Gear' %}</div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% include 'gear/snippets/gear_form.html' %}
+    {% include 'gear/snippets/group_form.html' with form=geargroup_form %}
 {% endblock %}
 
 {% block scripts %}
@@ -170,8 +167,8 @@
                 }).done();
 
                 e.stopPropagation();
-                var left = e.pageX - $('#dashtest').offset().left;
-                var top = e.pageY - $('#dashtest').offset().top;
+                var left = e.pageX - $('.content-body').offset().left;
+                var top = e.pageY - $('.content-body').offset().top;
 
                 $('#context-menu').hide();
                 $('#context-menu').css({
