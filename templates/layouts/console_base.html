@@ -24,9 +24,9 @@
                 <button type="button" class="button-create gray" data-dismiss="modal">
                     Cancelar
                 </button>
-                <a href="{% url 'account_logout' %}" class="button-create">
+                <button type="button" id="logout" class="button-create">
                     Cerrar Sesión
-                </a>
+                </button>
             </div>
         </div>
     </div>
@@ -190,6 +190,17 @@
 
 {% block scripts %}
     <script>
+        $('#logout').click(function (e) {
+            var button = $(this);
+            $.ajax({
+                method: "POST",
+                url: "{% url 'account_logout' %}",
+                data: {}
+            }).done(function (response) {
+                window.location.replace('{% url 'landing:index' %}')
+            });
+            return false;
+        });
         var progress = '{{ progress }}';
         if (progress === '1') {
             $('#progress').show();
