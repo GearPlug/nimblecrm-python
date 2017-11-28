@@ -327,6 +327,17 @@ class MapField(object):
                 self.required = d['required']
             if 'type' in d:
                 self.field_type = d['type']
+        elif controller == ConnectorEnum.AgileCRM:
+            if 'name' in d:
+                self.name = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'choices' in d:
+                self.choices = [(choice, choice) for choice in d['choices']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
         else:
             if 'name' in d:
                 self.name = d['name']
