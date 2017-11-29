@@ -1,0 +1,9 @@
+{% for gear in gears %}
+    <div class="menu-item">
+        {{ gear.name }}
+    </div>
+{% empty %}
+    <div class="menu-item">
+        Nada que mostrar
+    </div>
+{% endfor %}

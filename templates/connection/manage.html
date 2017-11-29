@@ -1,6 +1,8 @@
 {% extends 'layouts/console_base.html' %}
 {% load static i18n %}
 {% block content %}
+    <div class="context-menu" id="context-menu" style="display: none;">
+    </div>
     <div class="row management">
         <div class="title">
             <span>{% trans 'Administrar Conexiones' %}</span>
@@ -10,7 +12,7 @@
                 {% with connector=connections.0.connector %}
                     {% for connection in connections %}
                         <div class="row">
-                            <div class="col-md-7 item extended">
+                            <div class="col-md-7 item extended" data-connection-id="{{ connection.id }}">
                                 <div class="image-wrapper">
                                     <div class="image">
                                         <div class="connector">
@@ -32,10 +34,10 @@
                                             <div class="edit">
                                                 <img src="{% static 'img/console/g3125.png' %}" width="34">
                                             </div>
-                                            <div class="gearlist">
-                                                <img src="{% static 'img/console/gear-small.png' %}" width="34">
-                                            </div>
                                         </a>
+                                        <div class="gearlist">
+                                            <img src="{% static 'img/console/gear-small.png' %}" width="34">
+                                        </div>
                                         <div class="status">
                                             {{ c.is_active|yesno:'Activo,Desactivado' }}
                                         </div>
@@ -45,7 +47,7 @@
                             <div class="col-md-4 test-button">
                                 <div class="button-wrapper">
                                     <div class="button testConnectionButton"
-                                         connection_id="{{ connection.id }}">
+                                         connection_id="{{ connection.id }}" connector_id="{{ connection.connector.id }}">
                                     </div>
                                     <div class="text2">
                                         Test
@@ -80,29 +82,54 @@
 
         $('.testConnectionButton').click(function (e) {
             var button = $(this);
-            var connector_id = 1;
+            var url = '{% url 'connection:test' connector_id=1 %}';
             $.ajax({
                 method: "POST",
-                url: "{% url 'connection:test' connector_id=1 %}",
-                data: {connection_id: $(button).attr('connection_id')},
+                url: url.replace('1', $(button).attr('connector_id')),
+                data: {connection_id: $(button).attr('connection_id')}
             }).done(function (response) {
                 var wrapper = $(button).closest('.test-button').find('.text-wrapper');
                 if (response.test == true) {
                     $(button).addClass('passed');
                     wrapper.show()
                         .find('.text').addClass('passed')
-                        .html('Ésta conexión <b>funciona</b>')
+                        .html('Ésta conexión <b>funciona</b>');
+                    wrapper.find('.text-line').addClass('passed');
                 } else {
                     $(button).addClass('failed');
                     wrapper.show()
                         .find('.text').addClass('failed')
-                        .html('Ésta conexión <b>no funciona</b>')
+                        .html('Ésta conexión <b>no funciona</b>');
+                    wrapper.find('.text-line').addClass('failed');
                 }
                 setTimeout(function () {
                     $(wrapper).fadeOut()
                 }, 2000);
             });
             return false;
+        });
+
+        $('.gearlist').on('click', function (e) {
+            var connection_id = $(this).closest('.item').data('connection-id');
+            $.ajax({
+                method: "POST",
+                url: '{% url 'connection:get_gears' %}',
+                data: {'connection_id': connection_id}
+            }).done(function (response) {
+                $('#context-menu').html(response.html);
+
+                e.stopPropagation();
+                var left = e.pageX - $('.content-body').offset().left;
+                var top = e.pageY - $('.content-body').offset().top;
+
+                $('#context-menu').hide();
+                $('#context-menu').css({
+                    'top': top,
+                    'left': left,
+                    'position': 'absolute'
+                });
+                $('#context-menu').show();
+            })
         });
     </script>
 {% endblock %}

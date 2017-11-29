@@ -650,6 +650,16 @@ body {
     color: #9d9ba1;
 }
 
+.content-body .connections .list .test-button .text-line.passed,
+.content-body .management .list .test-button .text-line.passed {
+    background-color: #00e08f;
+}
+
+.content-body .connections .list .test-button .text-line.failed,
+.content-body .management .list .test-button .text-line.failed {
+    background-color: #ce050e;
+}
+
 .content-body .gears .list .item.extended .image-wrapper .control,
 .content-body .management .list .item.extended .image-wrapper .control {
     float: right;

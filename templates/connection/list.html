@@ -107,12 +107,14 @@
                     $(button).addClass('passed');
                     wrapper.show()
                         .find('.text').addClass('passed')
-                        .html('Ésta conexión <b>funciona</b>')
+                        .html('Ésta conexión <b>funciona</b>');
+                    wrapper.find('.text-line').addClass('passed');
                 } else {
                     $(button).addClass('failed');
                     wrapper.show()
                         .find('.text').addClass('failed')
-                        .html('Ésta conexión <b>no funciona</b>')
+                        .html('Ésta conexión <b>no funciona</b>');
+                    wrapper.find('.text-line').addClass('failed');
                 }
                 setTimeout(function () {
                     $(wrapper).fadeOut()
