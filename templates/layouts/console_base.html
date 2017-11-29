@@ -75,27 +75,27 @@
     <div class="testing">
         <div id="dashboard-panel">
             <div class="menu">
-                <div class="item">
-                    <a href="{% url 'gear:list' %}">
+                <a href="{% url 'gear:list' %}">
+                    <div class="item">
                         <div class="image">
                             <img src="{% static 'img/console/g6666.png' %}">
                         </div>
                         <div class="text">
                             {% trans 'Gears' %}
                         </div>
-                    </a>
-                </div>
+                    </div>
+                </a>
                 <div class="divider"></div>
-                <div class="item">
-                    <a href="{% url 'gear:activities_history' %}">
+                <a href="{% url 'gear:activities_history' %}">
+                    <div class="item">
                         <div class="image">
                             <img src="{% static 'img/console/g5752.png' %}">
                         </div>
                         <div class="text">
                             {% trans 'Actividad' %}
                         </div>
-                    </a>
-                </div>
+                    </div>
+                </a>
                 <div class="item">
                     <div class="image">
                         <img src="{% static 'img/console/g6678.png' %}">
@@ -104,18 +104,18 @@
                         {% trans 'Ayuda' %}
                     </div>
                 </div>
-                <div class="item">
-                    <a href="{% url 'connection:manage' %}">
+                <a href="{% url 'connection:manage' %}">
+                    <div class="item">
                         <div class="image">
                             <img src="{% static 'img/console/g5740.png' %}">
                         </div>
                         <div class="text">
                             {% trans 'Administrar Conexiones' %}
                         </div>
-                    </a>
-                </div>
-                <div class="item logout">
-                    <div data-toggle="modal" data-target="#logout-modal">
+                    </div>
+                </a>
+                <div data-toggle="modal" data-target="#logout-modal">
+                    <div class="item logout">
                         <div class="image">
                             <img src="{% static 'img/console/logout.png' %}">
                         </div>

@@ -437,6 +437,7 @@ body {
     display: block;
     text-align: left;
     padding-bottom: 35px;
+    font-size: 0;
 }
 
 .content-body .connections .list .item.extended {
@@ -475,6 +476,10 @@ body {
     text-align: center;
 }
 
+.content-body .gears .list .item.extended .image-wrapper .control {
+    width: 214px;
+}
+
 .content-body .gears .list .item.extended .image-wrapper .image,
 .content-body .gears .list .item.extended .image-wrapper .name,
 .content-body .gears .list .item.extended .image-wrapper .control,
@@ -490,11 +495,22 @@ body {
 .content-body .gears .list .item.extended .image-wrapper .name,
 .content-body .connections .list .item.extended .image-wrapper .name,
 .content-body .management .list .item.extended .image-wrapper .name {
-    width: 40%;
-    font-size: 1.30em;
+    font-size: 18px;
     color: #9d9ba1;
-    text-align: center;
     padding-top: 20px;
+    overflow: hidden;
+}
+
+.content-body .gears .list .item.extended .image-wrapper .name {
+    width: calc(100% - 214px - 180px);
+}
+
+.content-body .connections .list .item.extended .image-wrapper .name {
+    width: calc(100% - 48px);
+}
+
+.content-body .management .list .item.extended .image-wrapper .name {
+    width: calc(100% - 66px - 218px);
 }
 
 .content-body .connections .list .item.extended .image-wrapper.selected .name {
@@ -524,9 +540,8 @@ body {
     font-size: 0;
 }
 
-.content-body .connections .list .test-button .button,
-.content-body .management .list .test-button .button,
-.content-body .connections .list .test-button .button-wrapper {
+.content-body .connections .list .test-button .button-wrapper,
+.content-body .management .list .test-button .button-wrapper {
     width: 90px;
     height: 40px;
     background-color: #f6f7f8;
@@ -535,7 +550,8 @@ body {
     -webkit-border-radius: 25px 25px 25px 25px;
 }
 
-.content-body .connections .list .test-button .button {
+.content-body .connections .list .test-button .button,
+.content-body .management .list .test-button .button {
     -webkit-appearance: none;
     width: 36px;
     height: 36px;
@@ -585,6 +601,8 @@ body {
 .content-body .connections .list .test-button .text-line,
 .content-body .connections .list .test-button .text,
 .content-body .management .list .test-button .button,
+.content-body .management .list .test-button .text2,
+.content-body .management .list .test-button .button-wrapper,
 .content-body .management .list .test-button .text-wrapper,
 .content-body .management .list .test-button .text-line,
 .content-body .management .list .test-button .text {
@@ -594,15 +612,15 @@ body {
 
 .content-body .connections .list .test-button .text-line,
 .content-body .management .list .test-button .text-line,
-.content-body .connections .list .test-button .text2 {
+.content-body .connections .list .test-button .text2,
+.content-body .management .list .test-button .text2 {
     padding: 4px 0 0 4px;
     color: #9d9ba1;
     font-size: 14px;
 }
 
-
-
-.content-body .connections .list .test-button .text-line {
+.content-body .connections .list .test-button .text-line,
+.content-body .management .list .test-button .text-line {
     width: 10px;
     height: 1px;
     background-color: #00e08f;
@@ -641,6 +659,10 @@ body {
     padding: 12px 25px 0 0;
 }
 
+.content-body .management .list .item.extended .image-wrapper .control {
+    width: 218px;
+}
+
 .content-body .management .list .item.extended .image-wrapper .control a {
     text-decoration: none;
 }
@@ -650,6 +672,7 @@ body {
 .content-body .gears .list .item.extended .image-wrapper .control .status,
 .content-body .gears .list .item.extended .image-wrapper .control .history,
 .content-body .management .list .item.extended .image-wrapper .control .edit,
+.content-body .management .list .item.extended .image-wrapper .control .gearlist,
 .content-body .management .list .item.extended .image-wrapper .control .status {
     display: inline-block;
     vertical-align: middle;
@@ -659,9 +682,11 @@ body {
 
 .content-body .gears .list .item.extended .image-wrapper .control .status {
     width: 46px;
+    font-size: 18px;
 }
 
 .content-body .management .list .item.extended .image-wrapper .control .status {
+    font-size: 18px;
     cursor: default;
 }
 
@@ -1479,10 +1504,10 @@ input[type='radio']:checked:before {
 }
 
 @media only screen and (max-width: 1700px) {
-    .content-body .management .list .item.extended,
     .content-body .gears .list .item.extended {
         width: 75%;
     }
+
     .content-body .apps-list .list-wrapper {
         width: 90%;
     }
