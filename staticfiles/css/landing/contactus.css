@@ -65,13 +65,13 @@
 }
 
 .contactus-footer .img-phone {
-    margin-top: 6.4%;
-    padding-left: 1.7%;
+    margin-left: 51.7%;
+    margin-top: -4%;
 }
 
 .contactus-footer .img-email {
-    margin-left: -2%;
-    margin-top: 7.5%;
+    margin-left: 69.9%;
+    margin-top: -2.7%;
 }
 
 .text-direction {
@@ -79,29 +79,29 @@
     font-family: "Sansation";
     font-size: 0.9em;
     line-height: 124%;
-    margin-left: 26%;
-    margin-top: -17.1%;
+    margin-left: 7.2%;
+    margin-top: -4.7%;
 }
 
 .text-phone {
     color: white;
     font-family: "Sansation";
-    font-size: 1.1em;
-    margin-left: 27%;
-    margin-top: -15%;
+    font-size: 0.9em;
+    margin-left: 10.4%;
+    margin-top: -5.3%;
 }
 
 .text-email {
     color: white;
     font-family: "Sansation";
-    font-size: 1.1em;
-    margin-left: 20%;
-    margin-top: -8%;
+    font-size: 0.9em;
+    margin-left: 18%;
+    margin-top: -7%;
 }
 
 .contactus-footer .nets {
     margin-top: 8%;
-    padding-left: 20.7%;
+    padding-left: 31.2%;
 }
 
 .contactus-footer .nets .icon-facebook {
@@ -109,27 +109,28 @@
 }
 
 .form-contact {
-    margin-bottom: 8%;
-    margin-top: 10.5%;
+    margin-bottom: 7.1%;
+    margin-top: 9.2%;
 }
 
 .form-contact .form-group label {
     color: white;
-    font-family: "Sansation";
-    font-size: 1.7em;
+    font-family: "Sansation Light";
+    font-size: 1.4em;
 }
 
 .form-contact .form-group input {
     border: none;
     border-radius: 17px 18px 15px 17px;
     color: #9D9BA1;
-    font-family: "Sansation";
-    font-size: 1.5em;
-    height: 5.5%;
+    font-family: "Sansation Light";
+    font-size: 1.3em;
+    height: 4.7%;
     margin-bottom: -0.7%;
-    margin-top: 0.9%;
+    margin-top: 0.7%;
+    outline: none;
     padding: 0 1%;
-    width: 49.2%;
+    width: 42.8%;
 }
 
 .form-contact .form-group textarea {
@@ -137,13 +138,12 @@
     border-radius: 17px 18px 15px 17px;
     color: #9D9BA1;
     font-family: "Sansation";
-    font-size: 1.5em;
+    font-size: 1.3em;
     margin-bottom: -0.7%;
-    margin-top: 0.9%;
-    max-height: 13%;
-    max-width: 83.6%;
-    min-height: 13%;
-    min-width: 83.6%;
+    max-height: 11.6%;
+    max-width: 72.8%;
+    min-height: 11.6%;
+    min-width: 72.8%;
     padding: 0 1%;
 }
 
@@ -153,14 +153,121 @@
     border-style: inherit;
     color: #005CA5;
     font-family: "Sansation Bold";
-    font-size: 2.7em;
-    margin-top: 4.7%;
-    width: 29.2%;
+    font-size: 2.1em;
+    margin-top: 3.9%;
+    outline: none;
+    width: 25.4%;
+}
+
+.position-contact{
+    position: relative;
+    z-index: 0;
+}
+
+.pop-thanks {
+    left: 36.2%;
+    position: absolute;
+    top: 50.1%;
+    z-index: 1;
+}
+
+.bg_pop{
+    background-color: #09DE8D;
+    border: 3px solid white;
+    border-radius: 31px;
+    color: white;
+    font-family: "Sansation";
+    font-size: 1.8em;
+    line-height: 108%;
+    padding: 2.8%;
+    text-align: center;
+    width: 67%;
 }
 
 @media only screen and (max-width:1600px) {
-    .contactus-text {
-        margin-left: 8%;
+    .contactus-footer .text-contact2 {
+        padding-left: 20.2%;
+    }
+
+    .contactus-footer .text-contact {
+        padding-left: 20.1%;
+    }
+
+    .contactus-footer .text-contact1 {
+        padding-left: 20.2%;
+    }
+
+    .contactus-footer .img-direction {
+        padding-left: 20.2%;
+    }
+
+    .contactus-footer .img-phone {
+        margin-left: 44.1%;
+    }
+
+    .text-phone {
+        margin-left: 10.1%;
+    }
+
+    .contactus-footer .img-email {
+        margin-left: 65%;
+        margin-top: -3.1%;
+    }
+
+    .text-email {
+        margin-left: 18.5%;
+    }
+
+    .contactus-footer .nets {
+        margin-top: 9.2%;
+        padding-left: 20.5%;
+    }
+
+    .text-direction {
+        margin-left: 7.4%;
+        margin-top: -4.5%;
+    }
+}
+
+@media only screen and (max-width:1440px) {
+    .contactus-footer .text-contact {
+        padding-left: 10.7%;
+    }
+
+    .contactus-footer .text-contact1 {
+        padding-left: 11.2%;
+    }
+
+    .contactus-footer .text-contact2 {
+        padding-left: 10.9%;
+        padding-right: 6.6%;
+    }
+
+    .contactus-footer .img-direction {
+        padding-left: 11%;
+    }
+
+    .contactus-footer .img-phone {
+        margin-left: 37.7%;
+        margin-top: -5.3%;
+    }
+
+    .contactus-footer .img-email {
+        margin-left: 61%;
+        margin-top: -3.5%;
+    }
+
+    .contactus-footer .nets {
+        margin-top: 10.5%;
+        padding-left: 11.2%;
+    }
+
+    .text-direction {
+        margin-left: 7.2%;
+    }
+
+    .text-phone {
+        margin-left: 10.2%;
     }
 }
 
@@ -180,5 +287,54 @@
     .contactus-text {
         margin-left: 18%;
         margin-top: 5%;
+    }
+
+    .contactus-footer .text-contact {
+        margin-top: 13%;
+        padding-left: 0.5%;
+    }
+
+    .contactus-footer .text-contact1 {
+        padding-left: 0;
+    }
+
+    .contactus-footer .text-contact1 {
+        font-size: 1.2em;
+    }
+
+    .contactus-footer .text-contact2 {
+        padding-left: 0.9%;
+    }
+
+    .contactus-footer .img-direction {
+        margin-top: 9.6%;
+        padding-left: 0%;
+    }
+
+    .text-direction {
+        margin-top: -5.5%;
+    }
+
+    .contactus-footer .img-phone {
+        margin-left: 31.7%;
+        margin-top: -7.5%;
+    }
+
+    .text-phone {
+        margin-top: -7.3%;
+    }
+
+    .contactus-footer .img-email {
+        margin-left: 57%;
+        margin-top: -4.4%;
+    }
+
+    .text-email {
+        margin-top: -9%;
+    }
+
+    .contactus-footer .nets {
+        margin-top: 14.7%;
+        padding-left: 0.2%;
     }
 }
