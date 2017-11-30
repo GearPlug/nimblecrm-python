@@ -9,7 +9,7 @@ from django.shortcuts import redirect
 from django.template import loader
 from django.views.generic import CreateView, ListView, View, TemplateView, UpdateView
 from apps.gp.enum import ConnectorEnum, GoogleAPIEnum
-from apps.gp.models import Connection, Connector, MercadoLibreConnection, Gear
+from apps.gp.models import Connection, Connector, MercadoLibreConnection, Gear, Category
 from urllib.parse import urlencode
 from oauth2client import client
 from requests_oauthlib import OAuth2Session
@@ -52,6 +52,7 @@ class ListConnectorView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super(ListConnectorView, self).get_context_data(**kwargs)
         context['type'] = self.kwargs['type']
+        context['categories'] = Category.objects.all()
         return context
 
 
