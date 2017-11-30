@@ -18,24 +18,12 @@
                     <img src="{% static 'img/landing/lupa.png' %}" width="14" height="17">
                     <input type="text" id="connectorsearch">
                 </div>
-                <div class="divider"></div>
-                <div class="rail-select">
-                    <div class="select-side">
-                        <i class="glyphicon glyphicon-menu-down blue"></i>
-                    </div>
-                    <select id="connectorfilter" class="form-control" data-filter-group="category">
-                    <option value="*">Todo</option>
-                        {% for category in categories %}
-                            <option value=".{{ category.name|slugify }}">{{ category.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
             </div>
         </div>
         <div class="list-wrapper">
             <div class="row grid">
                 {% for connector in object_list %}
-                    <div class="col-md-2 grid-item {% for category in connector.category.all %}{{ category.name|slugify }}{% endfor %}">
+                    <div class="col-md-2 grid-item">
                         <div class="list-item" data-toggle="modal" data-target="#selected-connector-modal"
                              data-connector-name="{{ connector.name }}" data-connector-id="{{ connector.id }}"
                              data-connector-connections-count="{{ connector.connection_count }}"
@@ -47,6 +35,9 @@
                             <div class="divider"></div>
                             <div class="name1">
                                 {{ connector.name }}
+                            </div>
+                            <div class="category" style="display: none;">
+                                {% for category in connector.category.all %}{{ category.name }}{% endfor %}
                             </div>
                         </div>
                     </div>
@@ -87,13 +78,6 @@
                     }
                 });
 
-                $('#connectorfilter').on('change', function () {
-                    var filterGroup = $(this).attr('data-filter-group');
-                    filters[filterGroup] = $(this).val();
-                    var filterValue = concatValues(filters);
-                    $grid.isotope({filter: filterValue});
-                });
-
                 var $quicksearch = $('#connectorsearch').keyup(debounce(function () {
                     qsRegex = new RegExp($quicksearch.val(), 'gi');
                     $grid.isotope();
@@ -102,16 +86,6 @@
 
             isotope();
         });
-
-        var filters = {};
-
-        function concatValues(obj) {
-            var value = '';
-            for (var prop in obj) {
-                value += obj[prop];
-            }
-            return value;
-        }
 
         function debounce(fn, threshold) {
             var timeout;

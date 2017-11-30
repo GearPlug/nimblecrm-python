@@ -1005,7 +1005,7 @@ body {
 
 .content-body .apps-list .search1 .box-wrapper .box {
     margin: 9px 0 0 10px;
-    width: 310px;
+    width: calc(100% - 20px);
     height: 28px;
     position: relative;
 
