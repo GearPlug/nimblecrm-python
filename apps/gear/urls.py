@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from apps.gear.views import CreateGearView, CreateGearGroupView, UpdateGearView, UpdateGearGroupView, DeleteGearView, \
     ListGearView, CreateGearMapView, gear_toggle, ActivityView, GearDownloadHistoryView, GearSendHistoryView, \
-    GearFiltersView, GearActivitiesHistoryView, retry_send_history, set_gear_id_to_session
+    GearFiltersView, GearActivitiesHistoryView, retry_send_history, set_gear_id_to_session, manual_queue
 
 
 urlpatterns = [
@@ -25,4 +25,6 @@ urlpatterns = [
     url(r'^filters/(?P<pk>\d+)/$', GearFiltersView.as_view(), name='filters'),
     url(r'^retry-send-history/$', retry_send_history, name='retry_send_history'),
     url(r'^set-gear-session/$', set_gear_id_to_session, name='set_gear_session'),
+    url(r'^manual-queue/(?P<gear_id>\d+)/$', manual_queue, name='manual_queue'),
+
 ]
