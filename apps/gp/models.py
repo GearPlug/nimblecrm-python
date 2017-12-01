@@ -10,6 +10,9 @@ connections = ['connection_{0}'.format(connector.name.lower()) for connector in 
 class Category(models.Model):
     name = models.CharField('name', max_length=100)
 
+    def __str__(self):
+        return self.name
+
 
 class Connector(models.Model):
     name = models.CharField('name', max_length=120)
@@ -685,3 +688,5 @@ admin.site.register(GearGroup)
 admin.site.register(Plug)
 admin.site.register(PlugActionSpecification)
 admin.site.register(Profile)
+admin.site.register(Category)
+admin.site.register(ConnectorCategory)

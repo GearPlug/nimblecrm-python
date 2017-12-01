@@ -6,30 +6,24 @@
     {% include 'connection/snippets/modal_connector_selected.html' %}
     <div class="row apps-list">
         <div class="text2">
-            {% trans 'Escoge Aplicación de Destino' %}
+            {% if type == 'source' %}
+                {% trans 'Escoge Aplicación de Origen' %}
+            {% else %}
+                {% trans 'Escoge Aplicación de Destino' %}
+            {% endif %}
         </div>
         <div class="search1">
             <div class="box-wrapper">
                 <div class="box">
                     <img src="{% static 'img/landing/lupa.png' %}" width="14" height="17">
-                    <input type="text">
-                </div>
-                <div class="divider"></div>
-                <div class="rail-select">
-                    <div class="select-side">
-                        <i class="glyphicon glyphicon-menu-down blue"></i>
-                    </div>
-                    <select class="form-control">
-                        <option>Test 1</option>
-                        <option>Test 2</option>
-                    </select>
+                    <input type="text" id="connectorsearch">
                 </div>
             </div>
         </div>
         <div class="list-wrapper">
-            <div class="row">
+            <div class="row grid">
                 {% for connector in object_list %}
-                    <div class="col-md-2">
+                    <div class="col-md-2 grid-item">
                         <div class="list-item" data-toggle="modal" data-target="#selected-connector-modal"
                              data-connector-name="{{ connector.name }}" data-connector-id="{{ connector.id }}"
                              data-connector-connections-count="{{ connector.connection_count }}"
@@ -41,6 +35,9 @@
                             <div class="divider"></div>
                             <div class="name1">
                                 {{ connector.name }}
+                            </div>
+                            <div class="category" style="display: none;">
+                                {% for category in connector.category.all %}{{ category.name }}{% endfor %}
                             </div>
                         </div>
                     </div>
@@ -65,7 +62,44 @@
                     $('div#selected-connector-text').text("No existe ninguna conexión.");
                     $('span#selected-connector-action').text('Crear');
                 }
-            })
+            });
+
+            var $container = $('.grid');
+
+            var isotope = function () {
+
+                var qsRegex;
+
+                var $grid = $container.isotope({
+                    itemSelector: '.grid-item',
+
+                    filter: function () {
+                        return qsRegex ? $(this).text().match(qsRegex) : true;
+                    }
+                });
+
+                var $quicksearch = $('#connectorsearch').keyup(debounce(function () {
+                    qsRegex = new RegExp($quicksearch.val(), 'gi');
+                    $grid.isotope();
+                }, 200));
+            };
+
+            isotope();
         });
+
+        function debounce(fn, threshold) {
+            var timeout;
+            return function debounced() {
+                if (timeout) {
+                    clearTimeout(timeout);
+                }
+                function delayed() {
+                    fn();
+                    timeout = null;
+                }
+
+                timeout = setTimeout(delayed, threshold || 100);
+            }
+        }
     </script>
 {% endblock %}
