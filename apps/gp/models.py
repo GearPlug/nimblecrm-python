@@ -672,6 +672,13 @@ class Subscriptions(models.Model):
     list = models.ForeignKey(SubscriptionsList, related_name="subscription_list")
 
 
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    avatar = models.ImageField(upload_to='avatar/', default='avatar/default.jpeg')
+
+    def __str__(self):
+        return self.user.username
+
 admin.site.register(Connector)
 admin.site.register(Action)
 admin.site.register(ActionSpecification)
@@ -680,5 +687,6 @@ admin.site.register(Gear)
 admin.site.register(GearGroup)
 admin.site.register(Plug)
 admin.site.register(PlugActionSpecification)
+admin.site.register(Profile)
 admin.site.register(Category)
 admin.site.register(ConnectorCategory)
