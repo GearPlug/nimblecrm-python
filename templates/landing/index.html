@@ -2,50 +2,59 @@
 {% load static i18n %}
 
 {% block content %}
-    <div class="container-fluid sp">
-        <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
-            <div class="carousel-inner">
-                {% if request.user.is_authenticated == False %}
-                    <div class="item active container-fluid slide-item">
-                        <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
-                        <div class="carousel-caption slide-caption">
-                            {% blocktrans %}
-                                Conectándote <br/>
-                                <span class="slide-text-light"> en todos </span> <br/>
-                                <span class="slide-color-aqua"> lados </span>
-                            {% endblocktrans %}
-                        </div>
-                    </div>
-                    <div class="item">
-                        <img src="{% static 'img/landing/slide2.jpg' %}" alt="Second slide" class="slide-other">
-                    </div>
-                {% else %}
-                    <div class="item active">
-                        <img src="{% static 'img/landing/slide2.jpg' %}" alt="First slide" class="slide">
-                    </div>
-                {% endif %}
-            </div>
-            <a class="left carousel-control not-bg" href="#carousel-example-generic" data-slide="prev">
-                <span class="slide-arrow">
-                    <img src="{% static 'img/landing/arrow_left.png' %}">
-                </span>
-            </a>
-            <a class="right carousel-control not-bg" href="#carousel-example-generic" data-slide="next">
-                <span class="slide-arrow">
-                    <img src="{% static 'img/landing/arrow_right.png' %}">
-                </span>
-            </a>
-        </div>
-        {% if request.user.is_authenticated == False %}
-            <div class="bg-form">
-                {% include 'landing/snippets/signup_form.html' %}
-            </div>
-        {% else %}
-            <div class="bg_login text-center">
-                <button type="button" class="btn-login">¡Ingresa Ya!</button>
-            </div>
-        {% endif %}
-    </div>
+{#    <div class="container-fluid sp">#}
+{#        <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">#}
+{#            <div class="carousel-inner">#}
+{#                {% if request.user.is_authenticated == False %}#}
+{#                    <div class="item active container-fluid slide-item">#}
+{#                        <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">#}
+{#                        <div class="carousel-caption slide-caption">#}
+{#                            {% blocktrans %}#}
+{#                                Conectándote <br/>#}
+{#                                <span class="slide-text-light"> en todos </span> <br/>#}
+{#                                <span class="slide-color-aqua"> lados </span>#}
+{#                            {% endblocktrans %}#}
+{#                        </div>#}
+{#                    </div>#}
+{#                    <div class="item">#}
+{#                        <img src="{% static 'img/landing/slide2.jpg' %}" alt="Second slide" class="slide-other">#}
+{#                    </div>#}
+{#                {% else %}#}
+{#                    <div class="item active">#}
+{#                        <img src="{% static 'img/landing/slide2.jpg' %}" alt="First slide" class="slide">#}
+{#                    </div>#}
+{#                    <div class="item">#}
+{#                        <img src="{% static 'img/landing/slide3.png' %}" alt="Second slide" class="slide-other">#}
+{#                        <div class="carousel-caption slide-caption-blog">#}
+{#                            Lo importante del <br /> mantenimiento de tus <span style="font-family: 'Sansation Bold'">Gears</span>#}
+{#                            <hr>#}
+{#                            <span class="minus">Lee nuestro Blog</span> <br />#}
+{#                            <button type="button" class="button-blog">click aquí</button>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                {% endif %}#}
+{#            </div>#}
+{#            <a class="left carousel-control not-bg" href="#carousel-example-generic" data-slide="prev">#}
+{#                <span class="slide-arrow">#}
+{#                    <img src="{% static 'img/landing/arrow_left.png' %}">#}
+{#                </span>#}
+{#            </a>#}
+{#            <a class="right carousel-control not-bg" href="#carousel-example-generic" data-slide="next">#}
+{#                <span class="slide-arrow">#}
+{#                    <img src="{% static 'img/landing/arrow_right.png' %}">#}
+{#                </span>#}
+{#            </a>#}
+{#        </div>#}
+{#        {% if request.user.is_authenticated == False %}#}
+{#            <div class="bg-form">#}
+{#                {% include 'landing/snippets/signup_form.html' %}#}
+{#            </div>#}
+{#        {% else %}#}
+{#            <div class="bg_login text-center">#}
+{#                <button type="button" class="btn-login">¡Ingresa Ya!</button>#}
+{#            </div>#}
+{#        {% endif %}#}
+{#    </div>#}
     <div class="container">
         <div class="row not-margin">
             <div class="col-md-12 text-center index-space1">

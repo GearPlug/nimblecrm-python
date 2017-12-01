@@ -1,6 +1,6 @@
 .ayuda {
     /*background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 751px;*/
-    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 18px;*/
+    background: url(../../img/landing/plantilla.png) no-repeat scroll 61% 27px;
     /*background-size: cover;*/
 }
 
@@ -108,12 +108,38 @@ footer {
 	right:20px;
 }
 
-.img-avatar {
-    margin-right: 1%;
+.text-avatar {
+    color: #9B999F;
+    display: inline;
+    font-size: 1.2em;
 }
 
-.text-avatar {
-    font-size: 1.6em;
+li.menu-login.profile img.img-avatar {
+    margin-top: -0.5%;
+}
+
+li.menu-login.dropdown.profile.open ul.dropdown-menu {
+    border-radius: inherit;
+    box-shadow: none;
+    margin: 9.3% 0 0 24.1%;
+}
+
+li.menu-login.dropdown.profile.open ul li {
+    padding-right: 0;
+}
+
+li.menu-login.dropdown.profile.open ul li a {
+    color: #4B464B;
+    font-size: 1.4em;
+}
+
+li.menu-login.dropdown.profile ul.dropdown-menu li a:focus, li.menu-login.dropdown.profile ul.dropdown-menu li a:hover {
+    background-color: transparent;
+    outline: none;
+}
+
+.border-options {
+    border-bottom: 1px solid #09DE8D;
 }
 
 @media only screen and (max-width:1024px) {

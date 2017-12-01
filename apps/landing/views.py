@@ -1,6 +1,7 @@
 from django.views.generic import TemplateView, ListView, CreateView
 from django.urls import reverse_lazy
 from django.db.models import Q
+from django.http.response import JsonResponse
 from allauth.account.views import SignupView
 from apps.landing.forms import NameSignupForm
 from apps.gp.models import Connector, Subscriptions
@@ -28,6 +29,13 @@ class ContactUsView(CreateView):
     model = ContactModel
     fields = ['email', 'name', 'text']
     success_url = reverse_lazy('landing:contact')
+
+    def form_valid(self, form):
+        response = super(ContactUsView, self).form_valid(form)
+        if self.request.is_ajax():
+            self.object = form.save()
+            response = JsonResponse({'data': True})
+        return response
 
 
 class AppsView(ListView):
