@@ -1513,6 +1513,11 @@ input[type='radio']:checked:before {
     margin: 0 auto;
 }
 
+.ui-autocomplete.ui-widget {
+    font-family: 'Sansation';
+    font-size: 16px;
+}
+
 @media only screen and (max-width: 1700px) {
     .content-body .gears .list .item.extended {
         width: 75%;
