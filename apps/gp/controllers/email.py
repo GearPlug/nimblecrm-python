@@ -1,4 +1,4 @@
-from apps.gp.controllers.base import BaseController
+from apps.gp.controllers.base import BaseController, GoogleBaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.map import MapField
@@ -19,23 +19,22 @@ import base64
 from email import message_from_bytes
 
 
-class GmailController(BaseController):
+class GmailController(GoogleBaseController):
     _credential = None
     _service = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        GoogleBaseController.__init__(self, connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
+    def create_connection(self, connection=None, plug=None, **kwargs):
         credentials_json = None
-        if args:
-            super(GmailController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    credentials_json = self._connection_object.credentials_json
-                except Exception as e:
-                    print(e)
-                    credentials_json = None
+        super(GmailController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                credentials_json = self._connection_object.credentials_json
+            except Exception as e:
+                print(e)
+                credentials_json = None
         if credentials_json is not None:
             self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
             self._service = discovery.build('gmail', 'v1', http=self._credential.authorize(httplib2.Http()))
@@ -43,24 +42,10 @@ class GmailController(BaseController):
     def test_connection(self):
         try:
             self._refresh_token()
+            return self._service is not None
         except GoogleClient.HttpAccessTokenRefreshError:
             print("ERROR EL TOKEN NO TIENE REFRESH TOKEN")
-            return False
-        except Exception as e:
-            raise
-            print("Error Test connection Gmail")
-            self._service = None
-        return self._service is not None
-
-    def _refresh_token(self, token=''):
-        if self._credential.access_token_expired:
-            self._credential.refresh(httplib2.Http())
-            self._upate_connection_object_credentials()
-            self._service = discovery.build('gmail', 'v1', http=self._credential.authorize(httplib2.Http()))
-
-    def _upate_connection_object_credentials(self):
-        self._connection_object.credentials_json = self._credential.to_json()
-        self._connection_object.save()
+            return None
 
     def create_webhook(self):
         action = self._plug.action.name
