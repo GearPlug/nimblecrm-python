@@ -64,7 +64,7 @@ class GmailController(BaseController):
 
     def create_webhook(self):
         action = self._plug.action.name
-        if action.lower() == 'read message':
+        if action.lower() == 'new email':
             # Creacion de Webhook
             webhook = Webhook.objects.create(name='gmail', plug=self._plug, url='')
             request = {
