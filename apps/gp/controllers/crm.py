@@ -1267,12 +1267,7 @@ class ActiveCampaignController(BaseController):
             pk=action_specification_id)
         try:
             if action_specification.name.lower() == 'list':
-                return tuple({'id': i['id'], 'name': i['name']} for i in
-                             self.get_lists())
-            elif action_specification.name.lower() == 'task':
-                deals = self._client.deals.get_deals()['deals']
-                deals.append({'id': 'all', 'title': 'All Deals'})
-                return tuple({'id': i['id'], 'name': i['title']} for i in deals)
+                return tuple({'id': i['id'], 'name': i['name']} for i in self.get_lists())
         except Exception as e:
             print(e)
 
@@ -1398,8 +1393,15 @@ class ActiveCampaignController(BaseController):
             if action in ['new contact', 'new subscriber', 'unsubscribed contact']:
                 object_id = int(data['contact_id'])
             elif action in ['new task', 'task completed']:
+                _user = self._client.users.view_user(data['deal_owner'])
+                data['deal_owner_first_name'] = _user['first_name']
+                data['deal_owner_last_name'] = _user['last_name']
+                data['deal_owner_email'] = _user['email']
+                data['deal_owner_username'] = _user['username']
                 object_id = int(data['task_id'])
             elif action in ['new deal', 'deal updated']:
+                _user = self._client.users.view_user(data['deal_owner'])
+                data['deal_owner_email'] = _user['email']
                 object_id = int(data['deal_id'])
             q = StoredData.objects.filter(object_id=object_id, connection=connection_object.id, plug=plug.id)
             if not q.exists():
