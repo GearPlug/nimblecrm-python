@@ -103,7 +103,7 @@ class JIRAController(BaseController):
         key = self.get_key(self._plug.plug_action_specification.all()[0].value)
         data = {
             "name": "Gearplug Webhook",
-            "url": 'https://09a5de01.ngrok.io',
+            "url": url,
             "events": [
                 "jira:issue_created",
             ],
