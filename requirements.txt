@@ -3,7 +3,6 @@ anyjson==0.3.3
 appdirs==1.4.3
 asn1crypto==0.22.0
 billiard==3.5.0.3
-bitbucket-api==0.5.0
 celery==4.1.0
 certifi==2017.7.27.1
 cffi==1.11.0
@@ -89,3 +88,4 @@ git+git://github.com/GearPlug/batchbook-python.git
 git+git://github.com/GearPlug/actcrm-python.git
 git+git://github.com/GearPlug/agilecrm-python.git
 git+git://github.com/GearPlug/activecampaign-python.git
+git+git://github.com/GearPlug/bitbucket-python.git

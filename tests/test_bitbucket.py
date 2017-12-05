@@ -1,13 +1,14 @@
 import os
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
-from apps.gp.models import Connection, BitbucketConnection, Plug, Action, \
-    ActionSpecification, PlugActionSpecification, Gear, StoredData, Webhook
+from apps.gp.models import Connection, BitbucketConnection, Plug, Action, ActionSpecification, PlugActionSpecification, \
+    Gear, StoredData, Webhook
 from apps.gp.controllers.repository import BitbucketController
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from collections import OrderedDict
 from apps.history.models import DownloadHistory
+
 
 class BitbucketControllerTestCases(TestCase):
     """
@@ -19,8 +20,7 @@ class BitbucketControllerTestCases(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.user = User.objects.create(username='lrubiano@grplug.com',
-                                       email='lrubiano@grplug.com',
+        cls.user = User.objects.create(username='lrubiano@grplug.com', email='lrubiano@grplug.com',
                                        password='Prueba#2017')
         _dict_source_connection = {
             'user': cls.user,
@@ -47,15 +47,11 @@ class BitbucketControllerTestCases(TestCase):
         }
         cls.bitbucket_target_connection = BitbucketConnection.objects.create(**_dict_bitbucket_target_connection)
 
-        source_action = Action.objects.get(connector_id=ConnectorEnum.Bitbucket.value,
-                                    action_type='source',
-                                    name='new issue created',
-                                    is_active=True)
+        source_action = Action.objects.get(connector_id=ConnectorEnum.Bitbucket.value, action_type='source',
+                                           name='new issue created', is_active=True)
 
-        target_action = Action.objects.get(connector_id=ConnectorEnum.Bitbucket.value,
-                                           action_type='target',
-                                           name='create issue',
-                                           is_active=True)
+        target_action = Action.objects.get(connector_id=ConnectorEnum.Bitbucket.value, action_type='target',
+                                           name='create issue', is_active=True)
 
         _dict_source_action = {
             'name': 'PlugTest',
@@ -79,11 +75,9 @@ class BitbucketControllerTestCases(TestCase):
         }
         cls.plug_target = Plug.objects.create(**_dict_target_action)
 
-        cls.source_specification = ActionSpecification.objects.get(action=source_action,
-                                                         name='repository')
+        cls.source_specification = ActionSpecification.objects.get(action=source_action, name='repository')
 
-        cls.target_specification = ActionSpecification.objects.get(action=target_action,
-                                                               name='repository')
+        cls.target_specification = ActionSpecification.objects.get(action=target_action, name='repository')
 
         _dict_source_specification = {
             'plug': cls.plug_source,
@@ -118,36 +112,42 @@ class BitbucketControllerTestCases(TestCase):
 
         self.hook = {'issue':
                          {'assignee': None,
-                         'component': None,
-                         'content': {'html': '', 'markup': 'markdown', 'raw': ''},
-                         'created_on': '2017-10-09T18:35:25.476557+00:00',
-                         'edited_on': None,
-                         'id': 18,
-                         'kind': 'bug',
-                         'links': {'attachments': {'href': 'https://api.bitbucket.org/2.0/repositories/lyrubiano10/myrepository/issues/18/attachments'},
-                                   'comments': {'href': 'https://api.bitbucket.org/2.0/repositories/lyrubiano10/myrepository/issues/18/comments'},
-                                   'html': {'href': 'https://bitbucket.org/lyrubiano10/myrepository/issues/18/jjjjj'},
-                                   'self': {'href': 'https://api.bitbucket.org/2.0/repositories/lyrubiano10/myrepository/issues/18'},
-                                   'vote': {'href': 'https://api.bitbucket.org/2.0/repositories/lyrubiano10/myrepository/issues/18/vote'},
-                                   'watch': {'href': 'https://api.bitbucket.org/2.0/repositories/lyrubiano10/myrepository/issues/18/watch'}},
-                         'milestone': None,
-                         'priority': 'major',
-                         'reporter': {'display_name': 'Lelia Rubiano',
-                                      'links': {'avatar': {'href': 'https://bitbucket.org/account/lyrubiano10/avatar/32/'},
-                                                'html': {'href': 'https://bitbucket.org/lyrubiano10/'},
-                                                'self': {'href': 'https://api.bitbucket.org/2.0/users/lyrubiano10'}},
-                                      'type': 'user',
-                                      'username': 'lyrubiano10',
-                                      'uuid': '{df9a00c3-50e7-42a7-a41d-a465d122fc2e}'},
-                         'state': 'new',
-                         'title': 'jjjjj',
-                         'type': 'issue',
-                         'updated_on': '2017-10-09T18:35:25.476557+00:00',
-                         'version': None,
-                         'votes': 0,
-                         'watches': 1}}
+                          'component': None,
+                          'content': {'html': '', 'markup': 'markdown', 'raw': ''},
+                          'created_on': '2017-10-09T18:35:25.476557+00:00',
+                          'edited_on': None,
+                          'id': 18,
+                          'kind': 'bug',
+                          'links': {'attachments': {
+                              'href': 'https://api.bitbucket.org/2.0/repositories/lyrubiano10/myrepository/issues/18/attachments'},
+                              'comments': {
+                                  'href': 'https://api.bitbucket.org/2.0/repositories/lyrubiano10/myrepository/issues/18/comments'},
+                              'html': {'href': 'https://bitbucket.org/lyrubiano10/myrepository/issues/18/jjjjj'},
+                              'self': {
+                                  'href': 'https://api.bitbucket.org/2.0/repositories/lyrubiano10/myrepository/issues/18'},
+                              'vote': {
+                                  'href': 'https://api.bitbucket.org/2.0/repositories/lyrubiano10/myrepository/issues/18/vote'},
+                              'watch': {
+                                  'href': 'https://api.bitbucket.org/2.0/repositories/lyrubiano10/myrepository/issues/18/watch'}},
+                          'milestone': None,
+                          'priority': 'major',
+                          'reporter': {'display_name': 'Lelia Rubiano',
+                                       'links': {
+                                           'avatar': {'href': 'https://bitbucket.org/account/lyrubiano10/avatar/32/'},
+                                           'html': {'href': 'https://bitbucket.org/lyrubiano10/'},
+                                           'self': {'href': 'https://api.bitbucket.org/2.0/users/lyrubiano10'}},
+                                       'type': 'user',
+                                       'username': 'lyrubiano10',
+                                       'uuid': '{df9a00c3-50e7-42a7-a41d-a465d122fc2e}'},
+                          'state': 'new',
+                          'title': 'jjjjj',
+                          'type': 'issue',
+                          'updated_on': '2017-10-09T18:35:25.476557+00:00',
+                          'version': None,
+                          'votes': 0,
+                          'watches': 1}}
 
-        self.data_send = OrderedDict({'priority':'trivial','status':'new','title':'try', 'kind':'bug'})
+        self.data_send = OrderedDict({'priority': 'trivial', 'status': 'new', 'title': 'try', 'kind': 'bug'})
 
     def test_controller(self):
         """Comprueba los atributos del controlador estén instanciados.
@@ -165,18 +165,6 @@ class BitbucketControllerTestCases(TestCase):
         """
         result = self.source_controller.test_connection()
         self.assertNotEqual(result, None)
-
-    def test_has_webhook(self):
-        """Verifica que retorne True"""
-        result = self.source_controller.has_webhook()
-        self.assertTrue(result)
-
-    def test_get_header(self):
-        """Verifica que retorne las credenciales esperadas"""
-        result = self.source_controller._get_header()
-        self.assertIn('Accept', result)
-        self.assertIn('Authorization', result)
-        self.assertIsInstance(result, dict)
 
     def test_get_repositories(self):
         """Verifica que retorne la lista de repositorios, se verifica mediante la variable TEST_BITBUCKET_REPOSITORY, el
@@ -197,11 +185,11 @@ class BitbucketControllerTestCases(TestCase):
         """Testea que se cree un webhook en la aplicación y que se cree en la tabla Webhook, al final se borra el
         webhook de la aplicación"""
         result_create = self.source_controller.create_webhook()
-        count_webhook= Webhook.objects.filter(plug=self.plug_source).count()
+        count_webhook = Webhook.objects.filter(plug=self.plug_source).count()
         webhook = Webhook.objects.last()
         result_view = self.source_controller.view_webhook(webhook.generated_id)
         self.source_controller.delete_webhook(webhook.generated_id)
-        self.assertEqual(count_webhook , 1)
+        self.assertEqual(count_webhook, 1)
         self.assertTrue(result_create)
 
     def test_delete_webhook(self):
@@ -249,8 +237,8 @@ class BitbucketControllerTestCases(TestCase):
             {...}, {...},
          "last_source_record":(%last_order_by_value)},}
         """
-        result = self.source_controller.download_to_stored_data(self.plug_source.connection.related_connection, self.plug_source,
-                                                         issue=self.hook['issue'])
+        result = self.source_controller.download_to_stored_data(self.plug_source.connection.related_connection,
+                                                                self.plug_source, issue=self.hook['issue'])
         self.assertIn('downloaded_data', result)
         self.assertIsInstance(result['downloaded_data'], list)
         self.assertIsInstance(result['downloaded_data'][-1], dict)
@@ -287,12 +275,6 @@ class BitbucketControllerTestCases(TestCase):
         self.assertIsInstance(result, list)
         self.assertIsInstance(result[0], dict)
 
-    def test_request(self):
-        """Testea que se haga un request con una url determinada"""
-        url = '/2.0/repositories/{0}'.format(self.source_controller._user)
-        result = self.source_controller._request(url)
-        self.assertIn('values', result)
-
     def test_get_target_fiels(self):
         """Testea que retorne los campos de un contacto"""
         result = self.target_controller.get_target_fields()
@@ -305,11 +287,11 @@ class BitbucketControllerTestCases(TestCase):
         self.assertIsInstance(result, list)
         self.assertIsInstance(result[0], MapField)
 
-    def test_create_issue(self): #el mismo test para view_issue
+    def test_create_issue(self):  # el mismo test para view_issue
         """Testea que se cree un issue"""
         result_create = self.target_controller.create_issue(self.data_send)
-        result_view = self.target_controller.view_issue(result_create[1]['local_id'])
-        self.assertEqual(result_create[1]['local_id'], result_view['id'])
+        result_view = self.target_controller.view_issue(result_create['id'])
+        self.assertEqual(result_create['id'], result_view['id'])
 
     def test_send_stored_data(self):
         """Testea que el método retorne los paŕametros establecidos"""
@@ -327,4 +309,3 @@ class BitbucketControllerTestCases(TestCase):
         self.assertEqual(result[-1]['data'], dict(data_list[0]))
         result_view = self.target_controller.view_issue(int(result[-1]['identifier']))
         self.assertEqual(result_view['id'], result[-1]['identifier'])
-
