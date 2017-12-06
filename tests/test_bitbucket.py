@@ -187,7 +187,6 @@ class BitbucketControllerTestCases(TestCase):
         result_create = self.source_controller.create_webhook()
         count_webhook = Webhook.objects.filter(plug=self.plug_source).count()
         webhook = Webhook.objects.last()
-        result_view = self.source_controller.view_webhook(webhook.generated_id)
         self.source_controller.delete_webhook(webhook.generated_id)
         self.assertEqual(count_webhook, 1)
         self.assertTrue(result_create)
@@ -196,9 +195,9 @@ class BitbucketControllerTestCases(TestCase):
         """Testea que se borre un webhook de la aplicación, primero se crea un webhook"""
         self.source_controller.create_webhook()
         webhook = Webhook.objects.last()
-        self.source_controller.delete_webhook(webhook.generated_id)
         result_view = self.source_controller.view_webhook(webhook.generated_id)
-        self.assertEqual(result_view['type'], 'error')
+        self.source_controller.delete_webhook(webhook.generated_id)
+        self.assertEqual(result_view['type'], 'webhook_subscription')
 
     def test_view_webhook(self):
         """Testa que se mire los parámetros de un webhook, se crea un webhook y al final se borra"""
