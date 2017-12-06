@@ -576,15 +576,10 @@ def manual_queue(request, gear_id):
                 return JsonResponse(
                     {'data': "You don't have permission to toggle this gear."})
             try:
-                plug_id = g.source.id
-                update_plug(plug_id, gear_id)
-                plug_id = g.target.id
-                update_plug(plug_id, gear_id)
+                # update_plug.s(g.source.id, g.id).apply_async(queue='manual-queue')
+                update_plug.s(g.source.id, g.id).apply_async()
             except Exception as e:
-                return JsonResponse({'data': 'Updating Gear - {o}.'.format(e)})
+                return JsonResponse({'data': 'Problem updating Gear - {0}.'.format(e)})
         except Gear.DoesNotExist:
             return JsonResponse({'data': 'Error invalid gear id.'})
-        except GearMap.DoesNotExist:
-            return JsonResponse({'data': 'There\'s no active gear map.'})
-        return JsonResponse({'data': 'OK'})
     return JsonResponse({'data': 'request needs to be ajax'})
