@@ -39,6 +39,7 @@ class BitbucketController(BaseController):
             if self._plug is not None:
                 self._repo_id = self._plug.plug_action_specification.filter(
                     action_specification__name='repository').first().value
+                self._repo_slug = self.get_repository_name(self._repo_id)
         except Exception as e:
             raise ControllerError(code=1, controller=ConnectorEnum.Bitbucket,
                                   message='Error asignando los specifications. {}'.format(str(e)))
@@ -91,7 +92,7 @@ class BitbucketController(BaseController):
                 'issue:created'
             ]
         }
-        response = self._connection.create_webhook(self.get_repository_name(self._repo_id), data)
+        response = self._connection.create_webhook(self._repo_slug, data)
         if response:
             _id = response['uuid']
             webhook.url = url
@@ -105,10 +106,10 @@ class BitbucketController(BaseController):
             return False
 
     def delete_webhook(self, id_webhook):
-        return self._connection.delete_webhook(self.get_repository_name(self._repo_id), id_webhook)
+        return self._connection.delete_webhook(self._repo_slug, id_webhook)
 
     def view_webhook(self, id_webhook):
-        return self._connection.get_webhook(self.get_repository_name(self._repo_id), id_webhook)
+        return self._connection.get_webhook(self._repo_slug, id_webhook)
 
     def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
         webhook = Webhook.objects.get(pk=webhook_id)
@@ -126,7 +127,7 @@ class BitbucketController(BaseController):
         return sorted(r['values'], key=lambda i: i['name']) if r else []
 
     def get_repository_name(self, _id):
-        r = self._connection.get_repositories()
+        r = self._connection.get_repositories({'pagelen': 100})
         _name = ""
         for r in r['values']:
             if r['uuid'] == _id:
@@ -134,22 +135,22 @@ class BitbucketController(BaseController):
         return _name
 
     def get_components(self):
-        r = self._connection.get_repository_components(self.get_repository_name(self._repo_id))
+        r = self._connection.get_repository_components(self._repo_slug, params={'pagelen': 100})
         return r['values'] if r else []
 
     def get_milestones(self):
-        r = self._connection.get_repository_milestones(self.get_repository_name(self._repo_id))
+        r = self._connection.get_repository_milestones(self._repo_slug, params={'pagelen': 100})
         return r['values'] if r else []
 
     def get_versions(self):
-        r = self._connection.get_repository_versions(self.get_repository_name(self._repo_id))
+        r = self._connection.get_repository_versions(self._repo_slug, params={'pagelen': 100})
         return r['values'] if r else []
 
     def create_issue(self, fields):
-        return self._connection.create_issue(self.get_repository_name(self._repo_id), fields)
+        return self._connection.create_issue(self._repo_slug, fields)
 
     def view_issue(self, issue_id):
-        return self._connection.get_issue(self.get_repository_name(self._repo_id), issue_id)
+        return self._connection.get_issue(self._repo_slug, issue_id)
 
     def get_meta(self):
         return [{
