@@ -1,6 +1,6 @@
 .ayuda {
     /*background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 751px;*/
-    background: url(../../img/landing/plantilla.png) no-repeat scroll 61% 27px;
+    /*background: url(../../img/landing/plantilla.png) no-repeat scroll -459px 21px;*/
     /*background-size: cover;*/
 }
 
@@ -122,6 +122,7 @@ li.menu-login.dropdown.profile.open ul.dropdown-menu {
     border-radius: inherit;
     box-shadow: none;
     margin: 9.3% 0 0 24.1%;
+    padding: 0.7% 0 0.2% 0;
 }
 
 li.menu-login.dropdown.profile.open ul li {
@@ -130,6 +131,7 @@ li.menu-login.dropdown.profile.open ul li {
 
 li.menu-login.dropdown.profile.open ul li a {
     color: #4B464B;
+    font-family: "Sansation Light";
     font-size: 1.4em;
 }
 
@@ -139,11 +141,43 @@ li.menu-login.dropdown.profile ul.dropdown-menu li a:focus, li.menu-login.dropdo
 }
 
 .border-options {
-    border-bottom: 1px solid #09DE8D;
+    border-bottom: 2px solid #09DE8D;
+}
+
+li.menu-login.dropdown.profile ul li p{
+    margin: 0;
+    padding-bottom: 2.6%;
+}
+
+@media only screen and (max-width:1600px) {
+    li.menu-login.dropdown.profile.open ul.dropdown-menu {
+        margin: 10.8% 0 0 22.8%;
+    }
+}
+@media only screen and (max-width:1440px) {
+    ul.menu {
+        margin: 2.1% 19.5% 0 0;
+    }
+
+    li.menu-login.dropdown.profile.open ul.dropdown-menu {
+        margin: 12.5% 0 0 20.9%;
+    }
 }
 
 @media only screen and (max-width:1024px) {
     ul.menu {
-        margin: 4.1% 0% 0 -5%;
+        margin: 4.1% 4% 0 -16%;
+    }
+
+    img.logo_header{
+        margin: 4% 0 0 -13%;
+    }
+
+    ul.menu li {
+        padding-right: 3.1%;
+    }
+
+    li.menu-login.dropdown.profile.open ul.dropdown-menu {
+        margin: 11.6% 0 0 20.9%;
     }
 }

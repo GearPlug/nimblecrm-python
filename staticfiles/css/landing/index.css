@@ -334,6 +334,10 @@
     text-decoration: none;
 }
 
+img.img-comments {
+    margin-bottom: 50%;
+}
+
 @media only screen and (max-width:1600px) {
     .slide-caption {
         left: 8.9%;
@@ -351,6 +355,11 @@
     .bg_login {
         padding: 5.8% 7% 6% 6.1%;
         top: 18.2%;
+    }
+
+    .hr-comments {
+        margin: -0.4% 0 0 39%;
+        width: 16.9%;
     }
 }
 
@@ -376,6 +385,11 @@
         padding: 7% 7% 6% 7.4%;
         top: 15.2%;
     }
+
+    .hr-comments {
+        margin: -0.4% 0 0 37.7%;
+        width: 18.9%;
+    }
 }
 
 @media only screen and (max-width:1024px) {
@@ -390,7 +404,7 @@
     .bg-form {
         left: 63%;
         right: 5%;
-        top: 13.4%;
+        top: 16.9%;
     }
 
     .input-form {
@@ -416,7 +430,7 @@
     }
 
     .name11 {
-        padding-left: 26%;
+        padding-left: 0%;
     }
 
     .btn-login {
@@ -436,5 +450,31 @@
     .slide-caption-blog {
         font-size: 3.8em;
         top: 10.7%;
+    }
+
+    .bg_comments {
+        background: url(../../img/landing/icons3x1024.png) no-repeat scroll top right #005CA6;
+    }
+
+    .hr-comments {
+        margin: -0.4% 0 0 32.4%;
+        width: 26.9%;
+    }
+
+    .title-comments {
+        color: white;
+        font-family: "Sansation Bold";
+        font-size: 3.6em;
+        margin-bottom: 6.1%;
+        margin-top: 3.9%;
+    }
+
+    .not-padding{
+        padding: 0;
+    }
+
+    img.img-comments {
+        margin-bottom: 50%;
+        height: 10%;
     }
 }
