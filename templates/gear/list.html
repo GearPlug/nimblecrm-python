@@ -1,4 +1,4 @@
-{% extends 'layouts/console_base.html' %}
+    {% extends 'layouts/console_base.html' %}
 {% load static i18n %}
 
 {% block content %}
@@ -106,13 +106,36 @@
     <script type="application/javascript">
         $(document).ready(function () {
             var is_blocked = false;
+
+            $("a.manual-queue").click(function () {
+                var a = $(this);
+                var url = a.attr('href');
+                if (is_blocked == false) {
+                    is_blocked = true;
+
+                    $.ajax({
+                        method: "POST",
+                        url: url,
+                        beforeSend: function(){
+                            $(loading).attr('src', '{% static 'img/console/807.gif' %}');
+                        },
+                        success: function(){
+                            $(loading).attr('src', '{% static 'img/console/loader2.png' %}');
+                        }
+                    })
+                is_blocked = false;
+                }
+                return false;
+            });
+
             $("a.toggle-gear-btn").click(function () {
                 var a = $(this);
                 var url = a.attr('href');
                 if (is_blocked == false) {
                     is_blocked = true;
                     $.ajax({
-                        method: "POST", url: url
+                        method: "POST",
+                        url: url,
                     }).done(function (response) {
                         if (response.data == true) {
                             $(a).find("div.button").html('<img src="{% static "img/console/g3317.png" %}" width="36" ' +
