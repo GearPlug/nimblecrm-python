@@ -31,16 +31,16 @@
                     </div>
                 {% endif %}
             </div>
-            <a class="left carousel-control not-bg" href="#carousel-example-generic" data-slide="prev">
-                <span class="slide-arrow">
-                    <img src="{% static 'img/landing/arrow_left.png' %}">
-                </span>
-            </a>
-            <a class="right carousel-control not-bg" href="#carousel-example-generic" data-slide="next">
-                <span class="slide-arrow">
-                    <img src="{% static 'img/landing/arrow_right.png' %}">
-                </span>
-            </a>
+{#            <a class="left carousel-control not-bg" href="#carousel-example-generic" data-slide="prev">#}
+{#                <span class="slide-arrow">#}
+{#                    <img src="{% static 'img/landing/arrow_left.png' %}">#}
+{#                </span>#}
+{#            </a>#}
+{#            <a class="right carousel-control not-bg" href="#carousel-example-generic" data-slide="next">#}
+{#                <span class="slide-arrow">#}
+{#                    <img src="{% static 'img/landing/arrow_right.png' %}">#}
+{#                </span>#}
+{#            </a>#}
         </div>
         {% if request.user.is_authenticated == False %}
             <div class="bg-form">
