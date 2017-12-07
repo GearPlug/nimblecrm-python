@@ -278,6 +278,7 @@ class GoogleCalendarConnection(models.Model):
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
 
+
     def __str__(self):
         return self.name
 
@@ -436,6 +437,7 @@ class GmailConnection(models.Model):
                                       related_name='connection_gmail')
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
+    history = models.CharField('history', max_length=100)
 
     def __str__(self):
         return self.name

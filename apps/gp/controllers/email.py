@@ -40,12 +40,16 @@ class GmailController(GoogleBaseController):
             self._service = discovery.build('gmail', 'v1', http=self._credential.authorize(httplib2.Http()))
 
     def test_connection(self):
+        # TODO: revisar
         try:
             self._refresh_token()
             return self._service is not None
         except GoogleClient.HttpAccessTokenRefreshError:
-            print("ERROR EL TOKEN NO TIENE REFRESH TOKEN")
+            self._report_broken_token()
             return None
+            # except GoogleClient.HttpAccessTokenRefreshError:
+            #     print("ERROR EL TOKEN NO TIENE REFRESH TOKEN")
+            # return None
 
     def create_webhook(self):
         action = self._plug.action.name
@@ -54,12 +58,20 @@ class GmailController(GoogleBaseController):
             webhook = Webhook.objects.create(name='gmail', plug=self._plug, url='')
             request = {
                 'labelIds': ['INBOX'],
-                'topicName': 'projects/gearplug-167220/topics/gearplug',
+                'topicName': 'projects/gearplugtest2/topics/gearplugtest',
                 'name': 'webhook'
             }
-            res_watch = self._service.users().watch(userId='me', body=request).execute()
-            if res_watch['historyId'] is not None:
-                webhook.url = settings.WEBHOOK_HOST + reverse('home:webhook', kwargs={'connector': 'gmail', 'webhook_id': 0})
+            try:
+                res_watch = self._service.users().watch(userId='me', body=request).execute()
+            except:
+                res_watch is None
+            if res_watch is not None:
+                print("conection object", self._connection_object)
+                print("conection object type", type(self._connection_object))
+                self._connection_object.history = self.get_profile()['historyId']
+                self._connection_object.save(update_fields=['history'])
+                webhook.url = settings.WEBHOOK_HOST + reverse('home:webhook',
+                                                              kwargs={'connector': 'gmail', 'webhook_id': 0})
                 webhook.generated_id = self._plug.id
                 webhook.is_active = True
                 webhook.expiration = res_watch['expiration']
@@ -162,13 +174,24 @@ class GmailController(GoogleBaseController):
             raise ControllerError(
                 "That specification doesn't belong to an action in this connector.")
 
-    def get_history(self, history_id):
-        return self._service.users().history().list(userId="me", startHistoryId=history_id).execute()
+    def get_history(self, history_id, f=None):
+        print("h1: ", history_id)
+        params = {'userId': 'me', 'startHistoryId': history_id}
+        if f is not None:
+            params['historyTypes'] = f
+        return self._service.users().history().list(**params).execute()
 
     def get_message(self, message_id):
-        raw_message = self._service.users().messages().get(userId='me', id=message_id, format='raw').execute()
+        print(11)
+        raw_message = self._service.users().messages().get(userId="me", id=message_id, format="raw").execute()
+        #print(type(raw_message), raw_message.keys())
+        print(23)
         decoded_message = base64.urlsafe_b64decode(raw_message['raw'].encode('ASCII'))
+        # print(decoded_message)
+        print(24)
         text_message = message_from_bytes(decoded_message)
+        print(text_message)
+        print(25)
         return text_message
 
     def get_cleaned_message(self, message='', message_id=''):
@@ -183,26 +206,44 @@ class GmailController(GoogleBaseController):
                 'Content-Html': list_content[1]}
 
     def do_webhook_process(self, body=None, POST=None, **kwargs):
-        response = HttpResponse(status=400)
-
+        response = HttpResponse(status=200)
         encoded_message_data = base64.urlsafe_b64decode(body['message']['data'].encode('ASCII'))
         decoded_message_data = json.loads(encoded_message_data.decode('utf-8'))
-        history_id = decoded_message_data['historyId']
-        email = decoded_message_data['emailAddress']
+        print(1, decoded_message_data)
+        new_history_id = decoded_message_data['historyId']
+        _email = decoded_message_data['emailAddress']
         plug_list = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=False),
-                                        plug_type__iexact="source", action__name__iexact="read message",
-                                        plug_action_specification__value__iexact=email)
+                                        plug_action_specification__value__iexact=_email,
+                                        plug_action_specification__action_specification__name__iexact='email',
+                                        action__name='new email')
+        print(plug_list)
         if plug_list:
             for plug in plug_list:
+                print("PLUG-----------------------")
                 try:
                     self.create_connection(plug.connection.related_connection, plug)
-                    if self.test_connection():
-                        history = self.get_history(history_id)
-                        message_id = history['history'][0]['messages'][0]['id']
+                    history_id = self._connection_object.history
+                    ping = self.test_connection()
+                    print("P:", ping)
+                    if ping:
+                        history = self.get_history(history_id, f='messageAdded')
+                        print("H: ", history)
+                        print("P:", self.get_profile())
+                        try:
+                            print("uno")
+                            message_id = history['history'][0]['messagesAdded'][0]['message']['id']
+                            print(message_id)
+                            print(222222222222222222222222222)
+                        except KeyError:
+                            print("error en key en history")
                         message = self.get_message(message_id=message_id)
-                        message_dict = self.get_cleaned_message(message, message_id)
+                        print("M: ", message)
+                        message_dict = self.get_cleaned_message(message, body['message']['messageId'])
+                        self._connection_object.history = new_history_id
+                        self._connection_object.save(update_fields=['history'])
                         break
                 except Exception as e:
+                    # raise
                     continue
             for plug in plug_list:
                 try:
@@ -217,6 +258,7 @@ class GmailController(GoogleBaseController):
     @property
     def has_webhook(self):
         return True
+
 
 class SMTPController(BaseController):
     client = None
