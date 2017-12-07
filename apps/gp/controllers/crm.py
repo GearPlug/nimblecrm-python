@@ -3,8 +3,8 @@ from urllib.parse import urlparse
 from dateutil.parser import parse
 from django.core.urlresolvers import reverse
 from django.db.models import Q
-from simple_salesforce import Salesforce
-from simple_salesforce.login import SalesforceAuthenticationFailed
+from salesforce.client import Client as SalesforceClient
+from salesforce.exceptions import BadOAuthTokenError
 from sugarcrm.client import Client as SugarClient
 from sugarcrm.exception import BaseError, WrongParameter, InvalidLogin
 from apps.gp.controllers.base import BaseController
@@ -20,6 +20,7 @@ from batchbook.client import Client as ClientBatchbook
 from actcrm.client import Client as ActCRMClient
 from agilecrm.client import Client as AgileCRMClient
 from activecampaign.client import Client as ActiveCampaignClient
+import ast
 import datetime
 import time
 import requests
@@ -29,6 +30,7 @@ import string
 import base64
 import urllib.error
 import urllib.request
+import xmldict
 
 
 class SugarCRMController(BaseController):
@@ -415,31 +417,32 @@ class SalesforceController(BaseController):
     token = None
     _client = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        BaseController.__init__(self, connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(SalesforceController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self.token = self._connection_object.token
-                except Exception as e:
-                    print("Error getting salesforce attributes")
-                    print(e)
-
-    def test_connection(self):
-        if self.token is not None:
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(SalesforceController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
             try:
-                self._client = Salesforce(instance_url=self.get_instance_url(),
-                                          session_id=self.token)
-                self._client = Salesforce(instance_url=self.get_instance_url(),
-                                          session_id=self.token)
-            except SalesforceAuthenticationFailed:
+                self.token = self._connection_object.token
+            except Exception as e:
+                print("Error getting salesforce attributes")
+                print(e)
+            try:
+                self._client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
+                                                settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
+                self._client.set_access_token(ast.literal_eval(self.token))
+            except Exception as e:
                 self._client = None
 
     def test_connection(self):
-        return self._client is not None
+        try:
+            return True if self._client.get_user_info() else False
+        except BadOAuthTokenError as e:
+            new_token = self._client.refresh_token()
+            self._client.set_access_token(new_token)
+            self._connection_object.token = new_token
+            self._connection_object.save()
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         obj_list = []
@@ -458,29 +461,23 @@ class SalesforceController(BaseController):
             return
         raise ControllerError("Incomplete.")
 
-    def download_to_stored_data(self, connection_object=None, plug=None,
-                                event=None, **kwargs):
+    def download_to_stored_data(self, connection_object, plug, last_source_record=None, event=None, **kwargs):
         if event is not None:
             _items = []
             # Todo verificar que este ID siempre existe independiente del action
             event_id = event['new'][0]['Id']
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=event_id)
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=event_id)
             if not q.exists():
                 for k, v in event.items():
-                    obj = StoredData(connection=connection_object.connection,
-                                     plug=plug,
-                                     object_id=event_id, name=k, value=v or '')
+                    obj = StoredData(connection=connection_object.connection, plug=plug, object_id=event_id, name=k,
+                                     value=v or '')
                     _items.append(obj)
             extra = {}
             for item in _items:
                 extra['status'] = 's'
                 extra = {'controller': 'salesforce'}
-                self._log.info(
-                    'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                        item.object_id, item.plug.id, item.connection.id),
-                    extra=extra)
+                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+                    item.object_id, item.plug.id, item.connection.id), extra=extra)
                 item.save()
         return False
 
@@ -490,50 +487,37 @@ class SalesforceController(BaseController):
             fields['Birthdate'] = parse(birthdate).strftime('%Y-%m-%d')
         email_bounced_date = fields.pop('EmailBouncedDate', None)
         if email_bounced_date:
-            fields['EmailBouncedDate'] = parse(email_bounced_date).strftime(
-                '%Y-%m-%dT%H:%M:%S%z')
+            fields['EmailBouncedDate'] = parse(email_bounced_date).strftime('%Y-%m-%dT%H:%M:%S%z')
         last_activity_date = fields.pop('LastActivityDate', None)
         if last_activity_date:
-            fields['LastActivityDate'] = parse(last_activity_date).strftime(
-                '%Y-%m-%d')
+            fields['LastActivityDate'] = parse(last_activity_date).strftime('%Y-%m-%d')
         last_referenced_date = fields.pop('LastReferencedDate', None)
         if last_referenced_date:
             fields['LastReferencedDate'] = parse(
-                last_referenced_date).strftime(
-                '%Y-%m-%d')
+                last_referenced_date).strftime('%Y-%m-%d')
         last_viewed_date = fields.pop('LastViewedDate', None)
         if last_viewed_date:
-            fields['LastViewedDate'] = parse(last_viewed_date).strftime(
-                '%Y-%m-%d')
+            fields['LastViewedDate'] = parse(last_viewed_date).strftime('%Y-%m-%d')
         converted_date = fields.pop('ConvertedDate', None)
         if converted_date:
-            fields['ConvertedDate'] = parse(converted_date).strftime(
-                '%Y-%m-%d')
+            fields['ConvertedDate'] = parse(converted_date).strftime('%Y-%m-%d')
 
         if self._plug.action.name == 'create contact':
-            self._client.Contact.create(data=fields)
+            self._client.create_sobject.create('Contact', data=fields)
         else:
-            self._client.Lead.create(data=fields)
+            self._client.create_sobject.create('Lead', data=fields)
 
     def get_contact_meta(self):
-        data = self._client.Contact.describe()
-        return [
-            f for f in data['fields']
-            if f['createable'] and f['type'] != 'reference'
-        ]
+        data = self._client.get_sobject_describe('Contact')
+        return [f for f in data['fields'] if f['createable'] and f['type'] != 'reference']
 
     def get_lead_meta(self):
-        data = self._client.Lead.describe()
-        return [
-            f for f in data['fields']
-            if f['createable'] and f['type'] != 'reference'
-        ]
+        data = self._client.get_sobject_describe('Lead')
+        return [f for f in data['fields'] if f['createable'] and f['type'] != 'reference']
 
     def get_mapping_fields(self):
         fields = self.get_target_fields()
-        return [
-            MapField(f, controller=ConnectorEnum.Salesforce) for f in fields
-        ]
+        return [MapField(f, controller=ConnectorEnum.Salesforce) for f in fields]
 
     def get_target_fields(self, **kwargs):
         if self._plug.action.name == 'create contact':
@@ -541,123 +525,37 @@ class SalesforceController(BaseController):
         else:
             return self.get_lead_meta()
 
-    def user_info_url(self):
-        return 'https://login.salesforce.com/services/oauth2/userinfo'
-
-    def headers(self):
-        headers = {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer ' + self.token
-        }
-        return headers
-
-    def user_info(self):
-        r = requests.get(self.user_info_url(), headers=self.headers())
-        return r.json()
-
-    def api_url(self, path):
-        r = self.user_info()
-        path2 = r['urls'].get(path, None)
-        if path2:
-            return path2.replace('{version}', '40.0')
-        return path2
-
-    def rest_url(self):
-        return self.api_url('rest')
-
-    def metadata_url(self):
-        return self.api_url('metadata')
-
-    def get_objects(self):
-        return self.rest_url()
-
     def get_sobjects(self):
-        return requests.get(
-            self.rest_url() + 'sobjects', headers=self.headers()).json()
-
-    def create_apex_class(self, name, body):
-        _dict = {'ApiVersion': '40.0', 'Body': body, 'Name': name}
-
-        return requests.post(
-            self.rest_url() + 'tooling/sobjects/ApexClass',
-            headers=self.headers(),
-            json=_dict)
-
-    def create_apex_trigger(self, name, body, sobject):
-        _dict = {
-            'ApiVersion': '40.0',
-            'Body': body,
-            'Name': name,
-            'TableEnumOrId': sobject
-        }
-        return requests.post(
-            self.rest_url() + 'tooling/sobjects/ApexTrigger',
-            headers=self.headers(),
-            json=_dict)
-
-    def get_apex_triggers(self):
-        params = {'q': 'SELECT Name, Body from ApexTrigger'}
-        return requests.get(
-            self.rest_url() + 'tooling/query',
-            headers=self.headers(),
-            params=params).json()
-
-    def create_remote_site(self, name, url):
-        test = '<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><env:Header><urn:SessionHeader xmlns:urn="http://soap.sforce.com/2006/04/metadata"><urn:sessionId>{sessionId}</urn:sessionId></urn:SessionHeader></env:Header><env:Body><createMetadata xmlns="http://soap.sforce.com/2006/04/metadata"><metadata xsi:type="RemoteSiteSetting"><fullName>{name}</fullName><isActive>true</isActive><url>{url}</url></metadata></createMetadata></env:Body></env:Envelope>'.replace(
-            '{name}', name)
-        test = test.replace('{url}', url)
-        test = test.replace('{sessionId}', self.token)
-
-        headers = self.headers()
-        headers['SOAPAction'] = 'RemoteSiteSetting'
-        headers['Content-type'] = 'text/xml'
-
-        return requests.post(self.metadata_url(), headers=headers, data=test)
+        return self._client.get_describe_global()
 
     def cget_sobject(self):
         _dict = self.get_sobjects()
         return [o['name'] for o in _dict['sobjects'] if o['triggerable']]
 
-    def get_webhook(self):
-        _dict = self.get_apex_triggers()
-
     def create_webhook(self):
         action = self._plug.action.name
         if action == 'new event':
-            sobject = self._plug.plug_action_specification.get(
-                action_specification__name='sobject')
-            event = self._plug.plug_action_specification.get(
-                action_specification__name='event')
+            sobject = self._plug.plug_action_specification.get(action_specification__name='sobject')
+            event = self._plug.plug_action_specification.get(action_specification__name='event')
             # Creacion de Webhook
-            webhook = Webhook.objects.create(name='salesforce',
-                                             plug=self._plug, url='',
-                                             expiration='')
+            webhook = Webhook.objects.create(name='salesforce', plug=self._plug, url='', expiration='')
             # Verificar ngrok para determinar url_base
             url_base = settings.WEBHOOK_HOST
-            url_path = reverse('home:webhook',
-                               kwargs={'connector': 'salesforce',
-                                       'webhook_id': webhook.id})
+            url_path = reverse('home:webhook', kwargs={'connector': 'salesforce', 'webhook_id': webhook.id})
             url = url_base + url_path
-            with open(os.path.join(settings.BASE_DIR, 'files', 'Webhook.txt'),
-                      'r') as file:
+            with open(os.path.join(settings.BASE_DIR, 'files', 'Webhook.txt'), 'r') as file:
                 body = file.read()
-            response1 = self.create_apex_class('Webhook', body)
-            if response1.status_code != 201:
-                response = response1.json()
-                # Si el APEX Class ya existe (es duplicado), continuamos, si es otro error, paramos
-                if 'errorCode' in response[0] and response[0][
-                    'errorCode'] == 'DUPLICATE_VALUE':
-                    pass
-                else:
-                    return False
 
-            response2 = self.create_remote_site(
-                'GearPlug' + 'RemoteSiteSetting{}'.format(webhook.id), url)
-            if response2.status_code != 200:
+            apex_class_response = self._client.create_apex_class('Webhook', body)
+            # Si el APEX Class ya existe (es duplicado), continuamos, si es otro error, paramos
+            if 'errorCode' in apex_class_response and apex_class_response['errorCode'] != 'DUPLICATE_VALUE':
                 return False
 
-            with open(os.path.join(settings.BASE_DIR, 'files',
-                                   'WebhookTrigger.txt'), 'r') as file:
+            remote_site_response = self._client.create_remote_site(
+                'GearPlug' + 'RemoteSiteSetting{}'.format(webhook.id), url)
+            _dict = xmldict.xml_to_dict(remote_site_response)
+
+            with open(os.path.join(settings.BASE_DIR, 'files', 'WebhookTrigger.txt'), 'r') as file:
                 body = file.read()
 
             body = body.replace('{name}', 'GearPlug{}'.format(webhook.id))
@@ -665,13 +563,12 @@ class SalesforceController(BaseController):
             body = body.replace('{events}', event.value)
             body = body.replace('{url}', "'" + url + "'")
 
-            apex_trigger = self.create_apex_trigger('GearPlug', body, 'User')
-            if apex_trigger.status_code == 201:
+            apex_trigger_response = self._client.create_apex_trigger('GearPlug', body, 'User')
+            if 'success' in apex_trigger_response and apex_trigger_response['success']:
                 webhook.url = url_base + url_path
-                webhook.generated_id = apex_trigger.json()['id']
+                webhook.generated_id = apex_trigger_response['id']
                 webhook.is_active = True
-                webhook.save(
-                    update_fields=['url', 'generated_id', 'is_active'])
+                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
             else:
                 webhook.is_deleted = True
                 webhook.save(update_fields=['is_deleted', ])
@@ -679,8 +576,7 @@ class SalesforceController(BaseController):
         return False
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(
-            pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() in ['sobject']:
             tup = tuple({'id': p, 'name': p} for p in self.get_sobject_list())
             return tup
@@ -688,44 +584,14 @@ class SalesforceController(BaseController):
             tup = tuple({'id': p, 'name': p} for p in self.get_event_list())
             return tup
         else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector.")
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
     def get_sobject_list(self):
         return self.cget_sobject()
 
     def get_event_list(self):
-        return [
-            'before insert', 'before update', 'before delete', 'after insert',
-            'after update', 'after delete', 'after undelete'
-        ]
-
-    def get_instance_url(self):
-        o = urlparse(self.api_url('profile'))
-        return o.scheme + '://' + o.netloc
-
-    def get_specifications_values(self):
-        sobject = None
-        event = None
-        for specification in self._plug.plug_specification.all():
-            if specification.action_specification.name == 'SObject':
-                sobject = specification.value
-            elif specification.action_specification.name == 'Event':
-                event = specification.value
-        return sobject, event
-
-    def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(
-            pk=action_specification_id)
-        if action_specification.name.lower() == 'order by':
-            return tuple({'id': c['name'], 'name': c['name']} for c in
-                         self.describe_table())
-        elif action_specification.name.lower() == 'unique':
-            return tuple({'id': c['name'], 'name': c['name']} for c in
-                         self.describe_table())
-        else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector.")
+        return ['before insert', 'before update', 'before delete', 'after insert', 'after update', 'after delete',
+                'after undelete']
 
     @property
     def has_webhook(self):
