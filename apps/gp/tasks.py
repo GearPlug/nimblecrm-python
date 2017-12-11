@@ -10,7 +10,6 @@ from collections import OrderedDict
 LOCK_EXPIRE = 60 * 1
 
 
-# @app.task(queue="beat")
 @app.task
 def update_all_gears():
     print("Starting to update all gears...")
@@ -24,7 +23,6 @@ def update_all_gears():
         print("Assigning plug {0} to queue: {1}.".format(gear.source.id, connector.name.lower()))
 
 
-# @app.task(queue="connector")
 @app.task
 def update_plug(plug_id, gear_id, **query_params):
     plug = Plug.objects.get(pk=plug_id)
