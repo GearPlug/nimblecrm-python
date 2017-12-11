@@ -491,3 +491,121 @@ img.img-comments {
         height: 10%;
     }
 }
+
+@media only screen and (max-width:768px) {
+    .slide-caption {
+        font-size: 2.9em;
+        left: 2.6%;
+        top: -1.8%;
+    }
+
+    .button_form {
+        font-size: 1.6em;
+        margin: 2.3% 0 2.3% 3.8%;
+    }
+
+    .bg-form {
+        left: 64%;
+        right: 3%;
+        top: 23%;
+    }
+
+    .index-space1 {
+        margin-top: 6%;
+    }
+
+    img.logo-what {
+        width: 11%;
+    }
+
+    .text-what {
+        font-size: 3.5em;
+    }
+
+    .text-p {
+        font-size: 1.5em;
+    }
+
+    .hr-separator {
+        width: 94%;
+    }
+
+    .container.create {
+        width: auto;
+    }
+
+    .text-two {
+        font-size: 2em;
+    }
+
+    .facebook {
+        margin: 0 0 9% 0;
+    }
+
+    .text-bullet {
+        padding-top: 5%;
+    }
+
+    .border_process {
+        border-bottom: #E9EAED solid 2px;
+        border-left: none;
+        border-right: none;
+        border-top: #E9EAED solid 2px;
+    }
+
+    img.height_bullet1, img.height_bullet3{
+        margin-top: 40%;
+    }
+
+    .generator {
+        margin: 9% 0 9% 0;
+    }
+
+    img.height_bullet2{
+        margin-top: 60%;
+    }
+
+    .text-bullet1 {
+        padding-left: 4% !important;
+        padding-top: 3.8%;
+    }
+
+    .gmail {
+        margin: 9% 0 15% 0;
+    }
+
+    .text-connect {
+        font-size: 3.3em;
+    }
+
+    .title-comments {
+        padding-left: 1%;
+        text-align: left;
+    }
+
+    .hr-comments {
+        margin: -0.4% 0 0 9.4%;
+        width: 34.9%;
+    }
+
+    .title-comments {
+        margin-bottom: 7.3%;
+        margin-top: 5.1%;
+    }
+
+    .list-item1 .padding-sm{
+        padding: 0 8.5%;
+    }
+
+    .bg_login {
+        background: url(../../img/landing/icons4x768.png) no-repeat scroll 0 0;
+        left: 52.6%;
+        padding: 7.1% 15% 9% 7.1%;
+        top: 22.2%;
+    }
+
+    .btn-login {
+        font-size: 2.6em;
+        width: 116%;
+    }
+}

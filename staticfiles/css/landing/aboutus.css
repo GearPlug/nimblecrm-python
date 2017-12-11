@@ -131,3 +131,52 @@
         margin: 0 0 0 8.9%;
     }
 }
+
+@media only screen and (max-width:768px) {
+    .img-guy {
+        display: none;
+    }
+
+    .aboutus-text {
+        text-align: right;
+    }
+
+    .aboutus-text .text3 {
+        font-size: 4em;
+        margin: 0 0 9% 8.9%;
+    }
+
+    .aboutus-text .text1 {
+        font-size: 3.8em;
+    }
+
+    .aboutus-text .text2 {
+        font-size: 4em;
+    }
+
+    .aboutus-banner {
+        background: url(../../img/landing/icons1x768.png) no-repeat left bottom;
+    }
+
+    .aboutus-description .text3 {
+        padding: 4.7% 5.3% 2.2%;
+        font-size: 1.5em;
+    }
+
+    .aboutus-services .title {
+        font-size: 3.6em;
+        margin-top: 2.3%;
+    }
+
+    .aboutus-services .boxes .box .title2 {
+        font-size: 2.3em;
+    }
+
+    .img_automate {
+        margin: 31.3% 0 3.4% 0;
+    }
+
+    .img_integrate {
+        margin: 30.7% 0 2.5% 0;
+    }
+}

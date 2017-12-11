@@ -123,3 +123,13 @@ button.btn {
         font-size: 1.2em;
     }
 }
+
+@media only screen and (max-width:768px) {
+    .apps-banner .text1 {
+        font-size: 2.7em;
+    }
+
+    .apps-list .text2 {
+        font-size: 2.6em;
+    }
+}

@@ -5,31 +5,31 @@
     <div class="container-fluid sp">
         <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
             <div class="carousel-inner">
-                {% if request.user.is_authenticated == False %}
-                    <div class="item active container-fluid slide-item">
-                        <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
-                        <div class="carousel-caption slide-caption">
-                            {% blocktrans %}
-                                Conectándote <br/>
-                                <span class="slide-text-light"> en todos </span> <br/>
-                                <span class="slide-color-aqua"> lados </span>
-                            {% endblocktrans %}
-                        </div>
-                    </div>
-                {% else %}
+{#                {% if request.user.is_authenticated == False %}#}
+{#                    <div class="item active container-fluid slide-item">#}
+{#                        <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">#}
+{#                        <div class="carousel-caption slide-caption">#}
+{#                            {% blocktrans %}#}
+{#                                Conectándote <br/>#}
+{#                                <span class="slide-text-light"> en todos </span> <br/>#}
+{#                                <span class="slide-color-aqua"> lados </span>#}
+{#                            {% endblocktrans %}#}
+{#                        </div>#}
+{#                    </div>#}
+{#                {% else %}#}
                     <div class="item active">
                         <img src="{% static 'img/landing/slide2.jpg' %}" alt="First slide" class="slide">
                     </div>
-                    <div class="item">
-                        <img src="{% static 'img/landing/slide3.png' %}" alt="Second slide" class="slide-other">
-                        <div class="carousel-caption slide-caption-blog">
-                            Lo importante del <br /> mantenimiento de tus <span style="font-family: 'Sansation Bold'">Gears</span>
-                            <hr>
-                            <span class="minus">Lee nuestro Blog</span> <br />
-                            <button type="button" class="button-blog">click aquí</button>
-                        </div>
-                    </div>
-                {% endif %}
+{#                    <div class="item">#}
+{#                        <img src="{% static 'img/landing/slide3.png' %}" alt="Second slide" class="slide-other">#}
+{#                        <div class="carousel-caption slide-caption-blog">#}
+{#                            Lo importante del <br /> mantenimiento de tus <span style="font-family: 'Sansation Bold'">Gears</span>#}
+{#                            <hr>#}
+{#                            <span class="minus">Lee nuestro Blog</span> <br />#}
+{#                            <button type="button" class="button-blog">click aquí</button>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                {% endif %}#}
             </div>
 {#            <a class="left carousel-control not-bg" href="#carousel-example-generic" data-slide="prev">#}
 {#                <span class="slide-arrow">#}
@@ -42,22 +42,22 @@
 {#                </span>#}
 {#            </a>#}
         </div>
-        {% if request.user.is_authenticated == False %}
-            <div class="bg-form">
-                {% include 'landing/snippets/signup_form.html' %}
-            </div>
-        {% else %}
+{#        {% if request.user.is_authenticated == False %}#}
+{#            <div class="bg-form">#}
+{#                {% include 'landing/snippets/signup_form.html' %}#}
+{#            </div>#}
+{#        {% else %}#}
             <div class="bg_login text-center">
                 <button type="button" class="btn-login">¡Ingresa Ya!</button>
             </div>
-        {% endif %}
+{#        {% endif %}#}
     </div>
     <div class="container">
         <div class="row not-margin">
-            <div class="col-md-12 text-center index-space1">
-                <img src="{% static 'img/landing/logo_what.png' %}">
+            <div class="col-sm-12 col-md-12 text-center index-space1">
+                <img src="{% static 'img/landing/logo_what.png' %}" class="logo-what">
             </div>
-            <div class="col-md-12 text-center index-space2">
+            <div class="col-sm-12 col-md-12 text-center index-space2">
                 <span class="text-what">{% trans '¿Qué es GearPlug?' %}</span>
                 <br/>
                 <p class="text-p">
@@ -73,58 +73,58 @@
     </div>
     <div class="container-fluid">
         <div class="row not-margin">
-            <div class="col-md-12 index-space3">
+            <div class="col-sm-12 col-md-12 index-space3">
                 <hr class="hr-separator">
             </div>
         </div>
     </div>
     <div class="container create">
         <div class="row not-margin">
-            <div class="col-md-12 text-center index-space4">
+            <div class="col-sm-12 col-md-12 text-center index-space4">
                 <span class="text-what">{% trans '¡Crea los Gear que quieras!' %}</span> <br/>
                 <p class="text-two">{% trans '(2 aplicaciones por gear)' %}</p>
             </div>
-            <div class="col-md-12 index-space5">
-                <div class="col-md-4 text-center">
-                    <div class="col-md-12">
+            <div class="col-sm-12 col-md-12 index-space5">
+                <div class="col-sm-12 col-md-4 text-center">
+                    <div class="col-sm-6 col-md-12">
                         <img src="{% static 'img/landing/facebook.png' %}" class="facebook">
                     </div>
-                    <div class="col-md-2 sp">
-                        <img src="{% static 'img/landing/bullet1.png' %}" class="height_bullet">
+                    <div class="col-sm-1 col-md-2 sp">
+                        <img src="{% static 'img/landing/bullet1.png' %}" class="height_bullet1">
                     </div>
-                    <div class="col-md-10 text-bullet">{% trans 'Selecciona el Origen' %}</div>
+                    <div class="col-sm-5 col-md-10 text-bullet">{% trans 'Selecciona el Origen' %}</div>
                 </div>
-                <div class="col-md-4 text-center border_process">
-                    <div class="col-md-12">
+                <div class="col-sm-12 col-md-4 text-center border_process">
+                    <div class="col-sm-6 col-md-12">
                         <img src="{% static 'img/landing/generator.png' %}" class="generator">
                     </div>
-                    <div class="col-md-2 sp">
-                        <img src="{% static 'img/landing/bullet2.png' %}" class="height_bullet">
+                    <div class="col-sm-1 col-md-2 sp">
+                        <img src="{% static 'img/landing/bullet2.png' %}" class="height_bullet2">
                     </div>
-                    <div class="col-md-10 text-bullet1 sp">
+                    <div class="col-sm-5 col-md-10 text-bullet1 sp">
                         {% trans 'Selecciona la acción que deseas que realice el Gear.' %}
                     </div>
                 </div>
-                <div class="col-md-4 text-center">
-                    <div class="col-md-12">
+                <div class="col-sm-12 col-md-4 text-center">
+                    <div class="col-sm-6 col-md-12">
                         <img src="{% static 'img/landing/gmail.png' %}" class="gmail">
                     </div>
-                    <div class="col-md-2 sp">
-                        <img src="{% static 'img/landing/bullet3.png' %}" class="height_bullet">
+                    <div class="col-sm-1 col-md-2 sp">
+                        <img src="{% static 'img/landing/bullet3.png' %}" class="height_bullet3">
                     </div>
-                    <div class="col-md-10 text-bullet"> {% trans 'Selecciona el destino' %} </div>
+                    <div class="col-sm-5 col-md-10 text-bullet"> {% trans 'Selecciona el destino' %} </div>
                 </div>
             </div>
         </div>
     </div>
     <div class="container-fluid sp">
         <div class="row not-margin">
-            <div class="col-md-12 text-center index-space7 text-connect">
+            <div class="col-sm-12 col-md-12 text-center index-space7 text-connect">
                 {% trans 'Top 6 de Aplicaciones más usadas' %}
             </div>
-            <div class="col-md-10 col-md-offset-1 index-space8">
+            <div class="col-sm-12 col-md-10 col-md-offset-1 index-space8">
                 {% for app in top_apps %}
-                    <div class="col-md-2">
+                    <div class="col-sm-4 col-md-2">
                         <div class="list-item">
                             <div class="image1">
                                 <img src="{% if app.icon73 %}{{ app.icon73.url }}{% endif %}" width="73" height="73">
@@ -141,20 +141,20 @@
     </div>
     <div class="container-fluid sp">
         <div class="row not-margin">
-            <div class="col-md-12 bg_comments not-padding">
-                <div class="col-md-12 text-center title-comments">
+            <div class="col-sm-12 col-md-12 bg_comments not-padding">
+                <div class="col-sm-12 col-md-12 text-center title-comments">
                     La Experiencia Habla
                     <hr class="hr-comments">
                 </div>
-                <div class="col-md-10 col-md-offset-1 not-padding">
+                <div class="col-sm-12 col-md-10 col-md-offset-1 not-padding">
                     {% with name='Daniel Ricco' text='Lorem ipsum dolor sit amet, consectetur adipiscing elit.' image='img/landing/guy3.png' %}
                         {% for i in 'xxxxxx' %}
-                            <div class="col-md-4 not-padding">
+                            <div class="col-sm-6 col-md-4 not-padding">
                                 <div class="list-item1">
-                                    <div class="col-md-4 image11 not-padding">
+                                    <div class="col-sm-5 col-md-4 image11 not-padding padding-sm">
                                         <img src="{% static image %}" class="img-comments" style="margin-bottom: 50%;">
                                     </div>
-                                    <div class="col-md-8 name11">
+                                    <div class="col-sm-7 col-md-8 name11">
                                         {{ name }}<br/>
                                         {{ text }}
                                     </div>

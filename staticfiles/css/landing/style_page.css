@@ -196,3 +196,29 @@ li.menu-login.dropdown.profile ul li p{
         margin: 11.6% 0 0 20.9%;
     }
 }
+
+@media only screen and (max-width:768px) {
+    img.logo_header {
+        margin: 4% 0 0 0;
+    }
+
+    ul.menu {
+        margin: 4.1% 6.4% 2.1% -16%;
+    }
+
+    li.menu-login.profile img.img-avatar {
+        width: 4.9%;
+    }
+
+    li.menu-login.dropdown.profile.open ul.dropdown-menu {
+        margin: 2.6% 0 0 14.9%;
+    }
+
+    .text-menu a {
+        padding: 0 1.1%;
+    }
+
+    .privacy .border-privacy {
+        padding: 0.1% 0.7% 0.1% 0.7%;
+    }
+}
