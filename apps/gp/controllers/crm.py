@@ -499,8 +499,7 @@ class SalesforceController(BaseController):
             fields['LastActivityDate'] = parse(last_activity_date).strftime('%Y-%m-%d')
         last_referenced_date = fields.pop('LastReferencedDate', None)
         if last_referenced_date:
-            fields['LastReferencedDate'] = parse(
-                last_referenced_date).strftime('%Y-%m-%d')
+            fields['LastReferencedDate'] = parse( last_referenced_date).strftime('%Y-%m-%d')
         last_viewed_date = fields.pop('LastViewedDate', None)
         if last_viewed_date:
             fields['LastViewedDate'] = parse(last_viewed_date).strftime('%Y-%m-%d')
@@ -508,10 +507,16 @@ class SalesforceController(BaseController):
         if converted_date:
             fields['ConvertedDate'] = parse(converted_date).strftime('%Y-%m-%d')
 
+        for k, v in fields.items():
+            if v.lower() == 'true':
+                fields[k] = True
+            elif v.lower() == 'false':
+                fields[k] = False
+
         if self._plug.action.name == 'create contact':
-            self._client.create_sobject.create('Contact', data=fields)
+            self._client.create_sobject('Contact', data=dict(fields))
         else:
-            self._client.create_sobject.create('Lead', data=fields)
+            self._client.create_sobject('Lead', data=dict(fields))
 
     def get_contact_meta(self):
         data = self._client.get_sobject_describe('Contact')
