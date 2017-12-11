@@ -247,9 +247,7 @@ class SMTPController(BaseController):
                 port = self._connection_object.port
                 user = self._connection_object.connection_user
                 password = self._connection_object.connection_password
-                print(host, port, user, password)
                 self.client = SMTPClient(host, port, user, password)
-                print(self.client, self.client.is_active)
             except Exception as e:
                 print("Error getting the SMTP attributes")
 
