@@ -56,7 +56,7 @@ class smtpSender():
         """
         self.stablish_connection()
         if sender is None:
-            sender = "jira@grplug.com"
+            sender = "noreply@grplug.com"
         full_mail = self.compose_mail(recipient, message, sender)
         self.smtp_client.sendmail(sender, recipient, full_mail)
         self.smtp_client.close()

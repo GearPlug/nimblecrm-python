@@ -74,7 +74,8 @@ class GmailController(BaseController):
             }
             res_watch = self._service.users().watch(userId='me', body=request).execute()
             if res_watch['historyId'] is not None:
-                webhook.url = settings.WEBHOOK_HOST + reverse('home:webhook', kwargs={'connector': 'gmail', 'webhook_id': 0})
+                webhook.url = settings.WEBHOOK_HOST + reverse('home:webhook',
+                                                              kwargs={'connector': 'gmail', 'webhook_id': 0})
                 webhook.generated_id = self._plug.id
                 webhook.is_active = True
                 webhook.expiration = res_watch['expiration']
@@ -233,41 +234,43 @@ class GmailController(BaseController):
     def has_webhook(self):
         return True
 
+
 class SMTPController(BaseController):
     client = None
-    sender_identifier = 'ZAKARA .23'
+    sender_identifier = 'ZAKARA .23'  # TODO: get from settings
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(SMTPController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    host = self._connection_object.host
-                    port = self._connection_object.port
-                    user = self._connection_object.connection_user
-                    password = self._connection_object.connection_password
-                    self.client = SMTPClient(host, port, user, password)
-                except Exception as e:
-                    print("Error getting the SMS attributes")
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(SMTPController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(SMTPController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                host = self._connection_object.host
+                port = self._connection_object.port
+                user = self._connection_object.connection_user
+                password = self._connection_object.connection_password
+                self.client = SMTPClient(host, port, user, password)
+            except Exception as e:
+                print("Error getting the SMTP attributes")
 
     def test_connection(self):
+        print("hola")
+        print(self.client)
         return self.client is not None and self.client.is_valid_connection()
 
     def get_target_fields(self, **kwargs):
+        print("fields")
         return ['recipient', 'message']
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
+    def send_stored_data(self, data_list):
         obj_list = []
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[-1]]
-                except:
-                    data_list = []
-        if self._plug is not None:
-            for obj in data_list:
-                r = self.client.send_mail(**obj)
-            extra = {'controller': 'smtp'}
-            return
-        raise ControllerError("Incomplete.")
+
+        # data, response, sent, identifier
+        for obj in data_list:
+            print("1----------------")
+            print(obj)
+            r = self.client.send_mail(**obj)
+            print(r)
+            obj_list.append({'data': obj, 'response': r, 'identifier': '-1', 'sent': True})
+        return obj_list
