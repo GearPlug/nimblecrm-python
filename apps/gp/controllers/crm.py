@@ -449,7 +449,7 @@ class SalesforceController(BaseController):
             self._connection_object.save()
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
-        obj_list = []
+        result_list = []
         data_list = get_dict_with_source_data(source_data, target_fields)
         if is_first:
             if data_list:
@@ -459,15 +459,20 @@ class SalesforceController(BaseController):
                     data_list = []
         if self._plug is not None:
             for obj in data_list:
-                success = self.create(obj)
-                print(success)
-            extra = {'controller': 'salesforce'}
-            return
-        raise ControllerError("Incomplete.")
+                try:
+                    _result = self.create(obj)
+                    identifier = _result['id']
+                    _sent = True
+                except Exception as e:
+                    _result = str(e)
+                    identifier = ''
+                    _sent = False
+                result_list.append({'data': dict(obj), 'response': _result, 'sent': _sent, 'identifier': identifier})
+        return result_list
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, event=None, **kwargs):
         if event is not None:
-            _items = []
+            new_data = []
             # Todo verificar que este ID siempre existe independiente del action
             event_id = event['new'][0]['Id']
             new = event.pop('new')
@@ -477,14 +482,19 @@ class SalesforceController(BaseController):
                 for k, v in event.items():
                     obj = StoredData(connection=connection_object.connection, plug=plug, object_id=event_id, name=k,
                                      value=v or '')
-                    _items.append(obj)
-            extra = {}
-            for item in _items:
-                extra['status'] = 's'
-                extra = {'controller': 'salesforce'}
-                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                    item.object_id, item.plug.id, item.connection.id), extra=extra)
-                item.save()
+                    new_data.append(obj)
+            is_stored = False
+            if new_data:
+                for item in new_data:
+                    try:
+                        item.save()
+                        is_stored = True
+                    except Exception as e:
+                        print(e)
+            result_list = [{'raw': event, 'is_stored': is_stored, 'identifier': {'name': 'id', 'value': event_id}}]
+            print('result')
+            print(result_list)
+            return {'downloaded_data': result_list, 'last_source_record': event_id}
         return False
 
     def create(self, fields):
@@ -514,9 +524,12 @@ class SalesforceController(BaseController):
                 fields[k] = False
 
         if self._plug.action.name == 'create contact':
-            self._client.create_sobject('Contact', data=dict(fields))
+            r = self._client.create_sobject('Contact', data=dict(fields))
         else:
-            self._client.create_sobject('Lead', data=dict(fields))
+            r = self._client.create_sobject('Lead', data=dict(fields))
+        print('create')
+        print(r)
+        return r
 
     def get_contact_meta(self):
         data = self._client.get_sobject_describe('Contact')
