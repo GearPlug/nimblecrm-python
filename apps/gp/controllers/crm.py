@@ -424,14 +424,14 @@ class SalesforceController(BaseController):
         super(SalesforceController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
-                self.token = self._connection_object.token
+                self.token = ast.literal_eval(self._connection_object.token)
             except Exception as e:
                 print("Error getting salesforce attributes")
                 print(e)
             try:
                 self._client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
                                                 settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
-                self._client.set_access_token(ast.literal_eval(self.token))
+                self._client.set_access_token(self.token)
             except Exception as e:
                 self._client = None
 
@@ -440,8 +440,12 @@ class SalesforceController(BaseController):
             return True if self._client.get_user_info() else False
         except BadOAuthTokenError as e:
             new_token = self._client.refresh_token()
-            self._client.set_access_token(new_token)
-            self._connection_object.token = new_token
+            if not new_token:
+                raise Exception('Cannot refresh token, you need to authenticate again.')
+            # Actualiza el token del controlador con el nuevo token obtenido y posteriormente guarda en BD.
+            self.token.update(new_token)
+            self._client.set_access_token(self.token)
+            self._connection_object.token = self.token
             self._connection_object.save()
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
@@ -457,7 +461,7 @@ class SalesforceController(BaseController):
             for obj in data_list:
                 success = self.create(obj)
                 print(success)
-            extra = {'controller': 'bitbucket'}
+            extra = {'controller': 'salesforce'}
             return
         raise ControllerError("Incomplete.")
 
@@ -466,6 +470,8 @@ class SalesforceController(BaseController):
             _items = []
             # Todo verificar que este ID siempre existe independiente del action
             event_id = event['new'][0]['Id']
+            new = event.pop('new')
+            event.update(new[0])
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=event_id)
             if not q.exists():
                 for k, v in event.items():
@@ -574,6 +580,14 @@ class SalesforceController(BaseController):
                 webhook.save(update_fields=['is_deleted', ])
             return True
         return False
+
+    def do_webhook_process(self, body=None, POST=None, webhook_id=None, **kwargs):
+        webhook = Webhook.objects.get(pk=webhook_id)
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+            if self.test_connection():
+                self.download_source_data(event=body)
+        return HttpResponse(status=200)
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
