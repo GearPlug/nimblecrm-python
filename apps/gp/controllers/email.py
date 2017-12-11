@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from django.db.models import Q
 from django.conf import settings
 from django.urls import reverse
-from utils.smtp_sender import smtpSender as SMTPClient
+from utils.smtp_sender import SMTPCustomClient as SMTPClient
 from oauth2client import client as GoogleClient
 from apiclient import discovery, errors
 from email.mime.multipart import MIMEMultipart
@@ -118,10 +118,6 @@ class GmailController(BaseController):
                 {'name': 'subject', 'type': 'varchar', 'required': True},
                 {'name': 'msgHtml', 'type': 'varchar', 'required': True},
                 {'name': 'msgPlain', 'type': 'varchar', 'required': True}]
-
-    def get_mapping_fields(self, **kwargs):
-        fields = self.get_target_fields()
-        return [MapField(f, controller=ConnectorEnum.Gmail) for f in fields]
 
     def send_stored_data(self, source_data, target_fields, is_first=False):
         data_list = get_dict_with_source_data(source_data, target_fields)
@@ -246,31 +242,38 @@ class SMTPController(BaseController):
         super(SMTPController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
+
                 host = self._connection_object.host
                 port = self._connection_object.port
                 user = self._connection_object.connection_user
                 password = self._connection_object.connection_password
+                print(host, port, user, password)
                 self.client = SMTPClient(host, port, user, password)
+                print(self.client, self.client.is_active)
             except Exception as e:
                 print("Error getting the SMTP attributes")
 
     def test_connection(self):
-        print("hola")
-        print(self.client)
-        return self.client is not None and self.client.is_valid_connection()
+        return self.client.is_active
 
     def get_target_fields(self, **kwargs):
-        print("fields")
-        return ['recipient', 'message']
+        return [{'name': 'recipient', 'type': 'varchar', 'required': True},
+                {'name': 'subject', 'type': 'varchar', 'required': False},
+                {'name': 'message', 'type': 'varchar', 'required': True}, ]
+
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.SMTP) for f in fields]
 
     def send_stored_data(self, data_list):
         obj_list = []
-
-        # data, response, sent, identifier
         for obj in data_list:
-            print("1----------------")
-            print(obj)
-            r = self.client.send_mail(**obj)
-            print(r)
-            obj_list.append({'data': obj, 'response': r, 'identifier': '-1', 'sent': True})
+            try:
+                r = self.client.send_email(**obj)
+                sent = True
+            except:
+                r = "Could not send the message. Please check the data was valid and try again."
+                sent = False
+            obj_list.append({'data': obj, 'response': r, 'identifier': '-1', 'sent': sent})
+        self.client.close()
         return obj_list
