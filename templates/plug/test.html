@@ -9,6 +9,9 @@
                 <span>{% trans 'Plug Test' %} </span> <a href="{% url 'gear:filters' pk=request.session.gear_id %}">Agregar
                 Filtros</a>
             </div>
+            {% if test_information %}
+                <div>{{ test_information }}</div><br/>
+            {% endif %}
             <div class="list">
                 {% if plug_type == 'source' %}
                     <div class="test-wrapper">
