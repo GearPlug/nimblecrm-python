@@ -477,7 +477,7 @@ body {
 }
 
 .content-body .gears .list .item.extended .image-wrapper .control {
-    width: 214px;
+    width: 260px;
 }
 
 .content-body .gears .list .item.extended .image-wrapper .image,
@@ -502,7 +502,7 @@ body {
 }
 
 .content-body .gears .list .item.extended .image-wrapper .name {
-    width: calc(100% - 214px - 180px);
+    width: calc(100% - 260px - 180px);
 }
 
 .content-body .connections .list .item.extended .image-wrapper .name {
@@ -670,7 +670,7 @@ body {
 }
 
 .content-body .management .list .item.extended .image-wrapper .control {
-    width: 218px;
+    width: 260px;
 }
 
 .content-body .management .list .item.extended .image-wrapper .control a {
@@ -681,6 +681,7 @@ body {
 .content-body .gears .list .item.extended .image-wrapper .control .button,
 .content-body .gears .list .item.extended .image-wrapper .control .status,
 .content-body .gears .list .item.extended .image-wrapper .control .history,
+.content-body .gears .list .item.extended .image-wrapper .control .manual-queue,
 .content-body .management .list .item.extended .image-wrapper .control .edit,
 .content-body .management .list .item.extended .image-wrapper .control .gearlist,
 .content-body .management .list .item.extended .image-wrapper .control .status {
