@@ -47,13 +47,12 @@ class SlackController(BaseController):
 
         else:
             return []
-            # raise ("Not implemented yet.")
 
     def post_message_to_target(self, message='', target=''):
         try:
             return self._slacker.chat.post_message(target, message)
         except Exception as e:
-            raise
+            # raise
             return False
 
     def post_message_to_channel(self, message=None, channel=None):
@@ -92,8 +91,8 @@ class SlackController(BaseController):
                 response['sent'] = sent
                 response['identifier'] = _dict['body']['ts']
             except Exception as e:
-                raise
-                # print(e)
+                # raise
+                print(e)
                 response['response'] = "error al enviar el mensaje"
                 response['sent'] = sent
                 response['identifier'] = ""
