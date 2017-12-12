@@ -1,14 +1,15 @@
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse
-from django.db.models import IntegerField, Case, When, Sum
+from django.db.models import IntegerField, Case, When, Sum, Q
 from django.db.models.aggregates import Count
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
+from django.template import loader
 from django.views.generic import CreateView, ListView, View, TemplateView, UpdateView
 from apps.gp.enum import ConnectorEnum, GoogleAPIEnum
-from apps.gp.models import Connection, Connector, MercadoLibreConnection
+from apps.gp.models import Connection, Connector, MercadoLibreConnection, Gear, Category
 from urllib.parse import urlencode
 from oauth2client import client
 from requests_oauthlib import OAuth2Session
@@ -51,6 +52,7 @@ class ListConnectorView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super(ListConnectorView, self).get_context_data(**kwargs)
         context['type'] = self.kwargs['type']
+        context['categories'] = Category.objects.all()
         return context
 
 
@@ -726,3 +728,13 @@ class UpdateConnectionView(UpdateView):
                     settings.GITLAB_CLIENT_ID, settings.GITLAB_REDIRECT_URL))
             context['authorization_url'] = authorization_url
         return context
+
+
+def get_gears_from_connection(request):
+    if request.is_ajax() is True and request.method == 'POST':
+        connection_id = request.POST.get('connection_id', None)
+        gears = Gear.objects.filter(Q(source__connection_id=connection_id) | Q(target__connection_id=connection_id))
+        template = loader.get_template('connection/snippets/menu_gears.html')
+        context = {'gears': gears}
+        return JsonResponse({'data': True, 'html': template.render(context)})
+    return JsonResponse({'data': False})

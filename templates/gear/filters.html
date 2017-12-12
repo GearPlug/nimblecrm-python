@@ -31,6 +31,7 @@
 {% endblock %}
 
 {% block scripts %}
+    {{ block.super }}
     <script type="application/javascript">
         var pattern = /\d+/g;
         var pattern2 = new RegExp('\\b' + "DELETE" + '\\b');
