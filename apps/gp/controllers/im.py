@@ -2,14 +2,13 @@ from django.http import JsonResponse, HttpResponse
 from django.db.models import Q
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
-from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import StoredData, PlugActionSpecification, \
-    ActionSpecification, Plug
+from apps.gp.models import StoredData, ActionSpecification, Plug
 from apps.gp.map import MapField
 from apps.gp.enum import ConnectorEnum
 from slacker import Slacker
 from utils.nrsgateway import Client as SMSClient
 import json
+import re
 
 
 class SlackController(BaseController):
@@ -48,13 +47,12 @@ class SlackController(BaseController):
 
         else:
             return []
-            # raise ("Not implemented yet.")
 
     def post_message_to_target(self, message='', target=''):
         try:
             return self._slacker.chat.post_message(target, message)
         except Exception as e:
-            raise
+            # raise
             return False
 
     def post_message_to_channel(self, message=None, channel=None):
@@ -89,12 +87,12 @@ class SlackController(BaseController):
                 result = self.post_message_to_target(o, target.value)
                 sent = True
                 _dict = result.__dict__
-                response ['response'] = str(_dict['body']['message'])
-                response ['sent'] = sent
-                response ['identifier'] = _dict['body']['ts']
+                response['response'] = str(_dict['body']['message'])
+                response['sent'] = sent
+                response['identifier'] = _dict['body']['ts']
             except Exception as e:
-                raise
-                #print(e)
+                # raise
+                print(e)
                 response['response'] = "error al enviar el mensaje"
                 response['sent'] = sent
                 response['identifier'] = ""
@@ -180,46 +178,49 @@ class SlackController(BaseController):
 class SMSController(BaseController):
     client = None
     sender_identifier = 'ZAKARA .23'
+    is_active = False
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(SMSController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    user = self._connection_object.connection_user
-                    password = self._connection_object.connection_password
-                    self.client = SMSClient(user, password)
-                except Exception as e:
-                    print("Error getting the SMS attributes")
-                    print(e)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(SMSController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(SMSController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                user = self._connection_object.connection_user
+                password = self._connection_object.connection_password
+                self.client = SMSClient(user, password)
+                self.is_active = True
+            except Exception as e:
+                print(e)
+                self.is_active = False
 
     def test_connection(self):
-        return True
+        return self.is_active
 
     def get_target_fields(self, **kwargs):
-        return ['number_to', 'message']
-
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        obj_list = []
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[-1]]
-                except:
-                    data_list = []
-        if self._plug is not None:
-            for obj in data_list:
-                obj['sender_identifier'] = self.sender_identifier
-                print(obj)
-                r = self.client.send_message(**obj)
-                print(r.status_code)
-                print(r.text)
-                print(r.url)
-            extra = {'controller': 'sms'}
-            return
-        raise ControllerError("Incomplete.")
+        return [{'name': 'number_to', 'label': 'to', 'type': 'varchar', 'required': True},
+                {'name': 'message', 'label': 'text', 'type': 'varchar', 'required': True}, ]
 
     def get_mapping_fields(self, **kwargs):
-        fields = self.get_target_fields()
-        return fields
+        return [MapField(f, controller=ConnectorEnum.SMS) for f in self.get_target_fields()]
+
+    def send_stored_data(self, data_list):
+        obj_list = []
+        regex = re.compile('ID (\\d+)')
+        for obj in data_list:
+            obj['sender_identifier'] = self.sender_identifier
+            try:
+                r = self.client.send_message(**obj)
+                r = r.text
+                sent = True
+                try:
+                    identifier = regex.findall(r)[0]
+                except IndexError:
+                    identifier = "-1"
+            except:
+                r = 'Could not send the message. Please check the data was valid and try again.'
+                sent = False
+                identifier = '-1'
+            obj_list.append({'data': obj, 'response': r, 'identifier': identifier, 'sent': sent})
+        return obj_list
