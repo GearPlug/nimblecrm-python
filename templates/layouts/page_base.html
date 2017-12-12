@@ -55,12 +55,14 @@
                                             <a href="#" class="dropdown-toggle active" data-toggle="dropdown"
                                                role="button" aria-haspopup="true" aria-expanded="false">
                                                 <img src="{% static 'img/landing/avatar.png' %}" class="img-avatar">
-                                                <div class="text-avatar">{{ request.user.first_name }} Daniel</div>
+                                                <div class="text-avatar">
+                                                    {{ request.user.first_name|default:request.user.email }}</div>
                                             </a>
                                             <ul class="dropdown-menu">
-                                                <li><a href="#"><p class="border-options">Consola</p></a></li>
+                                                <li><a href="{% url 'home:dashboard' %}"><p
+                                                        class="border-options">Consola</p></a></li>
                                                 <li><a href="#"><p class="border-options">Configuración</p></a></li>
-                                                <li><a href="#"><p>Cerrar Sesión</p></a></li>
+                                                <li><a href="{% url 'account_logout' %}"><p>Cerrar Sesión</p></a></li>
                                             </ul>
                                         </li>
                                     {% endif %}
