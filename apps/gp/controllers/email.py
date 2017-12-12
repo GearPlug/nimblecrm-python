@@ -192,27 +192,20 @@ class GmailController(GoogleBaseController):
                 'Content-Html': list_content[1]}
 
     def do_webhook_process(self, body=None, POST=None, **kwargs):
-        print("body", body)
         response = HttpResponse(status=200)
         encoded_message_data = base64.urlsafe_b64decode(body['message']['data'].encode('ASCII'))
         decoded_message_data = json.loads(encoded_message_data.decode('utf-8'))
         new_history_id = decoded_message_data['historyId']
-        print("new history", new_history_id)
         _email = decoded_message_data['emailAddress']
-        print("email", _email)
         plug_list = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=False),
                                         plug_action_specification__value__iexact=_email,
                                         plug_action_specification__action_specification__name__iexact='email',
                                         action__name='new email')
-        print("pluglist", plug_list)
         if plug_list:
             for plug in plug_list:
                 try:
-                    print(1111)
                     self.create_connection(plug.connection.related_connection, plug)
-                    print(22222)
                     history_id = self._connection_object.history
-                    print(self._connection_object)
                     ping = self.test_connection()
                     if ping:
                         history = self.get_history(history_id, f='messageAdded')
@@ -222,8 +215,6 @@ class GmailController(GoogleBaseController):
                             print("error en key en history")
                         message = self.get_message(message_id=message_id)
                         message_dict = self.get_cleaned_message(message, body['message']['messageId'])
-                        print("dict")
-                        print(message_dict)
                         self._connection_object.history = new_history_id
                         self._connection_object.save(update_fields=['history'])
                         break
