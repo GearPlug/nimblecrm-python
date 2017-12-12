@@ -8,8 +8,8 @@
 .terms-title hr.hr_terms {
     border-bottom: #09DF8E solid 4px;
     border-top: transparent;
-    margin: -0.3% 0 0 36.6%;
-    width: 26.8%;
+    margin: -0.3% 0 0 28.6%;
+    width: 42.8%;
 }
 
 .terms-text {
@@ -26,4 +26,26 @@
 .terms-subtitle {
     font-family: 'Sansation';
     font-weight: bold;
+}
+
+@media only screen and (max-width:1024px) {
+    .terms-title hr.hr_terms {
+        margin: -0.3% 0 0 24.6%;
+        width: 51.8%;
+    }
+}
+
+@media only screen and (max-width:768px) {
+    .terms-title hr.hr_terms {
+        margin: -0.3% 0 0 19.6%;
+        width: 61.8%;
+    }
+
+    .terms-title .title {
+        font-size: 2.9em;
+    }
+
+    .terms-text {
+        font-size: 1.4em;
+    }
 }

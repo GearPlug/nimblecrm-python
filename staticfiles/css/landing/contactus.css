@@ -361,3 +361,68 @@
         width: 58.8%;
     }
 }
+
+@media only screen and (max-width:768px) {
+    .contactus-banner {
+        background: inherit;
+    }
+
+    .contactus-text {
+        margin-left: 0%;
+        padding-left: 31%;
+    }
+
+    .contactus-text .text1, .contactus-text .text2 {
+        font-size: 3.5em;
+    }
+
+    .contactus-text {
+        margin-top: 5%;
+    }
+
+    .contactus-footer .text-contact {
+        font-size: 4.9em;
+        margin-top: 3%;
+        padding: 0 3%;
+    }
+
+    .contactus-footer .text-contact1, .contactus-footer .text-contact2 {
+        padding: 0 3%;
+    }
+
+    .contactus-footer .img-direction {
+        margin-top: 2.6%;
+        padding-left: 3%;
+    }
+
+    .text-direction {
+        margin-top: -4.5%;
+    }
+
+    .contactus-footer .img-phone {
+        margin-top: -4.5%;
+    }
+
+    .text-phone {
+        margin-top: -5.3%;
+    }
+
+    .contactus-footer .img-email {
+        margin-top: -2.4%;
+    }
+
+    .text-email {
+        margin-top: -8%;
+    }
+
+    .contactus-footer .nets {
+        margin-top: 8.7%;
+        padding: 0 3%;
+    }
+
+    .form-contact {
+        margin-bottom: 5.2%;
+        margin-top: 5.2%;
+        padding-left: 5%;
+    }
+}

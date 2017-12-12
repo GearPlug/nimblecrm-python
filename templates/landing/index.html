@@ -5,18 +5,18 @@
     <div class="container-fluid sp">
         <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
             <div class="carousel-inner">
-{#                {% if request.user.is_authenticated == False %}#}
-{#                    <div class="item active container-fluid slide-item">#}
-{#                        <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">#}
-{#                        <div class="carousel-caption slide-caption">#}
-{#                            {% blocktrans %}#}
-{#                                Conectándote <br/>#}
-{#                                <span class="slide-text-light"> en todos </span> <br/>#}
-{#                                <span class="slide-color-aqua"> lados </span>#}
-{#                            {% endblocktrans %}#}
-{#                        </div>#}
-{#                    </div>#}
-{#                {% else %}#}
+                {% if request.user.is_authenticated == False %}
+                    <div class="item active container-fluid slide-item">
+                        <img src="{% static 'img/landing/slide1.png' %}" alt="First slide" class="slide">
+                        <div class="carousel-caption slide-caption">
+                            {% blocktrans %}
+                                Conectándote <br/>
+                                <span class="slide-text-light"> en todos </span> <br/>
+                                <span class="slide-color-aqua"> lados </span>
+                            {% endblocktrans %}
+                        </div>
+                    </div>
+                {% else %}
                     <div class="item active">
                         <img src="{% static 'img/landing/slide2.jpg' %}" alt="First slide" class="slide">
                     </div>
@@ -29,7 +29,7 @@
 {#                            <button type="button" class="button-blog">click aquí</button>#}
 {#                        </div>#}
 {#                    </div>#}
-{#                {% endif %}#}
+                {% endif %}
             </div>
 {#            <a class="left carousel-control not-bg" href="#carousel-example-generic" data-slide="prev">#}
 {#                <span class="slide-arrow">#}
@@ -42,15 +42,15 @@
 {#                </span>#}
 {#            </a>#}
         </div>
-{#        {% if request.user.is_authenticated == False %}#}
-{#            <div class="bg-form">#}
-{#                {% include 'landing/snippets/signup_form.html' %}#}
-{#            </div>#}
-{#        {% else %}#}
+        {% if request.user.is_authenticated == False %}
+            <div class="bg-form">
+                {% include 'landing/snippets/signup_form.html' %}
+            </div>
+        {% else %}
             <div class="bg_login text-center">
                 <button type="button" class="btn-login">¡Ingresa Ya!</button>
             </div>
-{#        {% endif %}#}
+        {% endif %}
     </div>
     <div class="container">
         <div class="row not-margin">
