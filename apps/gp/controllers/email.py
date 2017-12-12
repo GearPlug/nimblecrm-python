@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from django.db.models import Q
 from django.conf import settings
 from django.urls import reverse
-from utils.smtp_sender import smtpSender as SMTPClient
+from utils.smtp_sender import SMTPCustomClient as SMTPClient
 from oauth2client import client as GoogleClient
 from apiclient import discovery, errors
 from email.mime.multipart import MIMEMultipart
@@ -102,20 +102,18 @@ class GmailController(GoogleBaseController):
                     except Exception as e:
                         is_stored = False
                         print(e)
-            result_list = [{'raw':message, 'is_stored':is_stored, 'identifier':{'name':'Id', 'value':_id}}]
-            return {'downloaded_data':result_list, 'last_source_record':_id}
+            result_list = [{'raw': message, 'is_stored': is_stored, 'identifier': {'name': 'Id', 'value': _id}}]
+            return {'downloaded_data': result_list, 'last_source_record': _id}
         return False
 
     def get_target_fields(self, **kwargs):
-        return [{'name': 'to', 'label':'To', 'type': 'varchar', 'required': True},
-                {'name': 'sender', 'label':'Sender','type': 'varchar', 'required': True},
-                {'name': 'subject', 'label':'Subject', 'type': 'varchar', 'required': True},
-                {'name': 'msgHtml', 'label': 'Message', 'type': 'varchar', 'required': True},
-               ]
+        return [{'name': 'to', 'label': 'To', 'type': 'varchar', 'required': True},
+                {'name': 'sender', 'label': 'Sender', 'type': 'varchar', 'required': True},
+                {'name': 'subject', 'label': 'Subject', 'type': 'varchar', 'required': True},
+                {'name': 'msgHtml', 'label': 'Message', 'type': 'varchar', 'required': True}, ]
 
     def get_mapping_fields(self, **kwargs):
-        fields = self.get_target_fields()
-        return [MapField(f, controller=ConnectorEnum.Gmail) for f in fields]
+        return [MapField(f, controller=ConnectorEnum.Gmail) for f in self.get_target_fields()]
 
     def send_stored_data(self, data_list):
         obj_list = []
@@ -127,7 +125,8 @@ class GmailController(GoogleBaseController):
             else:
                 _identifier = ""
                 _sent = False
-            obj_list.append({'data':dict(item), 'response': email['labelIds'], 'sent': _sent, 'identifier':_identifier})
+            obj_list.append(
+                {'data': dict(item), 'response': email['labelIds'], 'sent': _sent, 'identifier': _identifier})
         return obj_list
 
     def create_message(self, sender='', to='', subject='', msgHtml='', msgPlain=''):
@@ -135,7 +134,7 @@ class GmailController(GoogleBaseController):
         msg['Subject'] = subject
         msg['From'] = sender
         msg['To'] = to
-        #msg.attach(MIMEText(msgPlain, 'plain'))
+        # msg.attach(MIMEText(msgPlain, 'plain'))
         msg.attach(MIMEText(msgHtml, 'html'))
         raw = base64.urlsafe_b64encode(msg.as_bytes())
         raw = raw.decode()
@@ -145,7 +144,6 @@ class GmailController(GoogleBaseController):
     def send_message_internal(self, user_id, message):
         try:
             message = (self._service.users().messages().send(userId=user_id, body=message).execute())
-            #print('Message Id: %s' % message['id'])
             return message
         except errors.HttpError as error:
             print('An error occurred: %s' % error)
@@ -228,7 +226,7 @@ class GmailController(GoogleBaseController):
                 if not self._plug.is_tested:
                     self._plug.is_tested = True
                     self._plug.save(update_fields=['is_tested', ])
-        return HttpResponse(status=200)
+        return response
 
     @property
     def has_webhook(self):
@@ -237,39 +235,45 @@ class GmailController(GoogleBaseController):
 
 class SMTPController(BaseController):
     client = None
-    sender_identifier = 'ZAKARA .23'
+    sender_identifier = 'ZAKARA .23'  # TODO: get from settings
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(SMTPController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    host = self._connection_object.host
-                    port = self._connection_object.port
-                    user = self._connection_object.connection_user
-                    password = self._connection_object.connection_password
-                    self.client = SMTPClient(host, port, user, password)
-                except Exception as e:
-                    print("Error getting the SMS attributes")
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(SMTPController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(SMTPController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+
+                host = self._connection_object.host
+                port = self._connection_object.port
+                user = self._connection_object.connection_user
+                password = self._connection_object.connection_password
+                self.client = SMTPClient(host, port, user, password)
+            except Exception as e:
+                print("Error getting the SMTP attributes")
 
     def test_connection(self):
-        return self.client is not None and self.client.is_valid_connection()
+        return self.client.is_active
 
     def get_target_fields(self, **kwargs):
-        return ['recipient', 'message']
+        return [{'name': 'recipient', 'type': 'varchar', 'required': True},
+                {'name': 'subject', 'type': 'varchar', 'required': False},
+                {'name': 'message', 'type': 'varchar', 'required': True}, ]
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.SMTP) for f in fields]
+
+    def send_stored_data(self, data_list):
         obj_list = []
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[-1]]
-                except:
-                    data_list = []
-        if self._plug is not None:
-            for obj in data_list:
-                r = self.client.send_mail(**obj)
-            extra = {'controller': 'smtp'}
-            return
-        raise ControllerError("Incomplete.")
+        for obj in data_list:
+            try:
+                r = self.client.send_email(**obj)
+                sent = True
+            except:
+                r = "Could not send the message. Please check the data was valid and try again."
+                sent = False
+            obj_list.append({'data': obj, 'response': r, 'identifier': '-1', 'sent': sent})
+        self.client.close()
+        return obj_list
