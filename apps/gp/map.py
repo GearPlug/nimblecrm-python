@@ -296,7 +296,8 @@ class MapField(object):
         elif controller == ConnectorEnum.Gmail:
             if 'name' in d:
                 self.name = d['name']
-                self.label = d['name']
+            if 'label' in d:
+                self.label = d['label']
             if 'required' in d:
                 self.required = d['required']
             if 'type' in d:

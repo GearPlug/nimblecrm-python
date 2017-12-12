@@ -198,9 +198,12 @@ class GoogleBaseController(BaseController):
         self._connection_object.save(update_fields=['credentials_json'])
 
     def _refresh_token(self, **kwargs):
-        if self._credential.access_token_expired:
-            self._credential.refresh(httplib2.Http())
-            self._upate_connection_object_credentials()
+        if self._credential.refresh_token is not None:
+            if self._credential.access_token_expired:
+                self._credential.refresh(httplib2.Http())
+                self._upate_connection_object_credentials()
+        else:
+            print("ERROR EL TOKEN NO TIENE REFRESH TOKEN")
 
     def _report_broken_token(self, scale=None):
         print("IMPOSIBLE REFRESCAR EL TOKEN!!!! NOTIFICAR AL USUARIO.")
