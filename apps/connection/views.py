@@ -370,7 +370,7 @@ class SalesforceAuthView(View):
         salesforce_client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
                                              settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
         response = salesforce_client.exchange_code(settings.SALESFORCE_REDIRECT_URI, request.GET['code'])
-        request.session['connection_data'] = {'token': response}
+        request.session['connection_data'] = {'token': json.dumps(response)}
         request.session['connector_name'] = ConnectorEnum.Salesforce.name
         return redirect(reverse('connection:create_token_authorized_connection'))
 

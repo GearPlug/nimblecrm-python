@@ -20,7 +20,6 @@ from batchbook.client import Client as ClientBatchbook
 from actcrm.client import Client as ActCRMClient
 from agilecrm.client import Client as AgileCRMClient
 from activecampaign.client import Client as ActiveCampaignClient
-import ast
 import datetime
 import time
 import requests
@@ -414,6 +413,10 @@ class ZohoCRMController(BaseController):
 
 
 class SalesforceController(BaseController):
+    """
+    Updated by Miguel on Dec 12 2017
+
+    """
     token = None
     _client = None
 
@@ -424,16 +427,17 @@ class SalesforceController(BaseController):
         super(SalesforceController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
-                self.token = ast.literal_eval(self._connection_object.token)
+                self.token = json.loads(self._connection_object.token)
             except Exception as e:
-                print("Error getting salesforce attributes")
-                print(e)
+                raise ControllerError(code=1, controller=ConnectorEnum.Salesforce,
+                                      message='Error getting the Salesforce attributes args. {}'.format(str(e)))
             try:
                 self._client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
                                                 settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
                 self._client.set_access_token(self.token)
             except Exception as e:
-                self._client = None
+                raise ControllerError(code=2, controller=ConnectorEnum.Salesforce,
+                                      message='Error initializing the Salesforce client. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -441,7 +445,8 @@ class SalesforceController(BaseController):
         except BadOAuthTokenError as e:
             new_token = self._client.refresh_token()
             if not new_token:
-                raise Exception('Cannot refresh token, you need to authenticate again.')
+                raise ControllerError(code=3, controller=ConnectorEnum.Salesforce,
+                                      message="Error refreshing the user's token. {}".format(str(e)))
             # Actualiza el token del controlador con el nuevo token obtenido y posteriormente guarda en BD.
             self.token.update(new_token)
             self._client.set_access_token(self.token)
@@ -451,12 +456,11 @@ class SalesforceController(BaseController):
     def send_stored_data(self, source_data, target_fields, is_first=False):
         result_list = []
         data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[-1]]
-                except:
-                    data_list = []
+        if is_first and data_list:
+            try:
+                data_list = [data_list[-1]]
+            except Exception as e:
+                data_list = []
         if self._plug is not None:
             for obj in data_list:
                 try:
@@ -465,37 +469,33 @@ class SalesforceController(BaseController):
                     _sent = True
                 except Exception as e:
                     _result = str(e)
-                    identifier = ''
+                    identifier = '-1'
                     _sent = False
                 result_list.append({'data': dict(obj), 'response': _result, 'sent': _sent, 'identifier': identifier})
         return result_list
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, event=None, **kwargs):
-        if event is not None:
-            new_data = []
-            # Todo verificar que este ID siempre existe independiente del action
-            event_id = event['new'][0]['Id']
-            new = event.pop('new')
-            event.update(new[0])
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=event_id)
-            if not q.exists():
-                for k, v in event.items():
-                    obj = StoredData(connection=connection_object.connection, plug=plug, object_id=event_id, name=k,
-                                     value=v or '')
-                    new_data.append(obj)
-            is_stored = False
-            if new_data:
-                for item in new_data:
-                    try:
-                        item.save()
-                        is_stored = True
-                    except Exception as e:
-                        print(e)
-            result_list = [{'raw': event, 'is_stored': is_stored, 'identifier': {'name': 'id', 'value': event_id}}]
-            print('result')
-            print(result_list)
-            return {'downloaded_data': result_list, 'last_source_record': event_id}
-        return False
+        if event is None:
+            return False
+        new_data = []
+        event_id = event['new'][0]['Id']
+        new = event.pop('new')
+        event.update(new[0])
+        q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=event_id)
+        if not q.exists():
+            for k, v in event.items():
+                obj = StoredData(connection=connection_object.connection, plug=plug, object_id=event_id, name=k,
+                                 value=v or '')
+                new_data.append(obj)
+        is_stored = False
+        for item in new_data:
+            try:
+                item.save()
+                is_stored = True
+            except Exception as e:
+                print(e)
+        result_list = [{'raw': event, 'is_stored': is_stored, 'identifier': {'name': 'id', 'value': event_id}}]
+        return {'downloaded_data': result_list, 'last_source_record': event_id}
 
     def create(self, fields):
         birthdate = fields.pop('Birthdate', None)
@@ -509,7 +509,7 @@ class SalesforceController(BaseController):
             fields['LastActivityDate'] = parse(last_activity_date).strftime('%Y-%m-%d')
         last_referenced_date = fields.pop('LastReferencedDate', None)
         if last_referenced_date:
-            fields['LastReferencedDate'] = parse( last_referenced_date).strftime('%Y-%m-%d')
+            fields['LastReferencedDate'] = parse(last_referenced_date).strftime('%Y-%m-%d')
         last_viewed_date = fields.pop('LastViewedDate', None)
         if last_viewed_date:
             fields['LastViewedDate'] = parse(last_viewed_date).strftime('%Y-%m-%d')
@@ -527,8 +527,6 @@ class SalesforceController(BaseController):
             r = self._client.create_sobject('Contact', data=dict(fields))
         else:
             r = self._client.create_sobject('Lead', data=dict(fields))
-        print('create')
-        print(r)
         return r
 
     def get_contact_meta(self):
@@ -557,47 +555,46 @@ class SalesforceController(BaseController):
         return [o['name'] for o in _dict['sobjects'] if o['triggerable']]
 
     def create_webhook(self):
-        action = self._plug.action.name
-        if action == 'new event':
-            sobject = self._plug.plug_action_specification.get(action_specification__name='sobject')
-            event = self._plug.plug_action_specification.get(action_specification__name='event')
-            # Creacion de Webhook
-            webhook = Webhook.objects.create(name='salesforce', plug=self._plug, url='', expiration='')
-            # Verificar ngrok para determinar url_base
-            url_base = settings.WEBHOOK_HOST
-            url_path = reverse('home:webhook', kwargs={'connector': 'salesforce', 'webhook_id': webhook.id})
-            url = url_base + url_path
-            with open(os.path.join(settings.BASE_DIR, 'files', 'Webhook.txt'), 'r') as file:
-                body = file.read()
+        sobject = self._plug.plug_action_specification.get(action_specification__name='sobject')
+        event = self._plug.plug_action_specification.get(action_specification__name='event')
+        # Creacion de Webhook
+        webhook = Webhook.objects.create(name='salesforce', plug=self._plug, url='', expiration='')
+        # Verificar host para determinar url_base
+        url_base = settings.WEBHOOK_HOST
+        url_path = reverse('home:webhook', kwargs={'connector': 'salesforce', 'webhook_id': webhook.id})
+        url = url_base + url_path
+        with open(os.path.join(settings.BASE_DIR, 'files', 'Webhook.txt'), 'r') as file:
+            body = file.read()
 
-            apex_class_response = self._client.create_apex_class('Webhook', body)
-            # Si el APEX Class ya existe (es duplicado), continuamos, si es otro error, paramos
-            if 'errorCode' in apex_class_response and apex_class_response['errorCode'] != 'DUPLICATE_VALUE':
-                return False
+        apex_class_response = self._client.create_apex_class('GearPlug Webhook', body)
+        # Si APEX Class ya existe (probablemente duplicado de GearPlug), entonces continuamos, si es otro error, paramos
+        if 'errorCode' in apex_class_response and apex_class_response['errorCode'] != 'DUPLICATE_VALUE':
+            return False
 
-            remote_site_response = self._client.create_remote_site(
-                'GearPlug' + 'RemoteSiteSetting{}'.format(webhook.id), url)
-            _dict = xmldict.xml_to_dict(remote_site_response)
+        remote_site_response = self._client.create_remote_site('GearPlugRemoteSiteSetting{}'.format(webhook.id), url)
+        _dict = xmldict.xml_to_dict(remote_site_response)
+        # TODO: Comprobar que _dict success es True, de lo contrario lanzar excepción (?)
 
-            with open(os.path.join(settings.BASE_DIR, 'files', 'WebhookTrigger.txt'), 'r') as file:
-                body = file.read()
+        with open(os.path.join(settings.BASE_DIR, 'files', 'WebhookTrigger.txt'), 'r') as file:
+            body = file.read()
 
-            body = body.replace('{name}', 'GearPlug{}'.format(webhook.id))
-            body = body.replace('{sobject}', sobject.value)
-            body = body.replace('{events}', event.value)
-            body = body.replace('{url}', "'" + url + "'")
+        body = body.replace('{name}', 'GearPlug')
+        body = body.replace('{number}', str(webhook.id))
+        body = body.replace('{sobject}', sobject.value)
+        body = body.replace('{events}', event.value)
+        body = body.replace('{url}', "'" + url + "'")
 
-            apex_trigger_response = self._client.create_apex_trigger('GearPlug', body, 'User')
-            if 'success' in apex_trigger_response and apex_trigger_response['success']:
-                webhook.url = url_base + url_path
-                webhook.generated_id = apex_trigger_response['id']
-                webhook.is_active = True
-                webhook.save(update_fields=['url', 'generated_id', 'is_active'])
-            else:
-                webhook.is_deleted = True
-                webhook.save(update_fields=['is_deleted', ])
+        apex_trigger_response = self._client.create_apex_trigger('GearPlug', body, 'User')
+        if 'success' in apex_trigger_response and apex_trigger_response['success']:
+            webhook.url = url_base + url_path
+            webhook.generated_id = apex_trigger_response['id']
+            webhook.is_active = True
+            webhook.save(update_fields=['url', 'generated_id', 'is_active'])
             return True
-        return False
+        else:
+            webhook.is_deleted = True
+            webhook.save(update_fields=['is_deleted', ])
+            return False
 
     def do_webhook_process(self, body=None, POST=None, webhook_id=None, **kwargs):
         webhook = Webhook.objects.get(pk=webhook_id)
@@ -610,11 +607,11 @@ class SalesforceController(BaseController):
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() in ['sobject']:
-            tup = tuple({'id': p, 'name': p} for p in self.get_sobject_list())
-            return tup
+            _tuple = tuple({'id': p, 'name': p} for p in self.get_sobject_list())
+            return _tuple
         if action_specification.name.lower() in ['event']:
-            tup = tuple({'id': p, 'name': p} for p in self.get_event_list())
-            return tup
+            _tuple = tuple({'id': p, 'name': p} for p in self.get_event_list())
+            return _tuple
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 

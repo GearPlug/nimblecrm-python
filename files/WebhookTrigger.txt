@@ -1,4 +1,4 @@
-trigger {name}WebhookTrigger on {sobject} ({events}) {
+trigger {name}WebhookTrigger{number} on {sobject} ({events}) {
 
     String url = {url};
 
