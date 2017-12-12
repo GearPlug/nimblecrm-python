@@ -288,7 +288,16 @@ class CreateTokenAuthorizedConnectionView(TemplateView):
                 except Exception:
                     # TODO: Connection Error
                     pass
-            return redirect(reverse('connection:create_success'))
+            return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        if 'plug_type' in self.request.session:
+            plug_type = self.request.session['plug_type']
+        else:
+            plug_type = 'source'
+        return reverse('connection:list', kwargs={
+            'connector_id': ConnectorEnum.get_connector(name=self.request.session['connector_name']).value,
+            'type': plug_type})
 
 
 class AuthSuccess(TemplateView):
@@ -351,6 +360,7 @@ class GoogleAuthView(View):
             credentials = get_flow(settings.GOOGLE_AUTH_CALLBACK_URL, scope=api.scope).step2_exchange(code)
             request.session['connection_data'] = {'credentials_json': credentials.to_json(), }
             request.session['connector_name'] = api.name
+
             return redirect(reverse('connection:create_token_authorized_connection'))
 
 

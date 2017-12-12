@@ -41,12 +41,11 @@
                     <div class="status">{{ gear.is_running|yesno:"ON,OFF" }}</div>
                 </div>
             </a>
-            <a class="manual-queue" href="{% url 'gear:manual_queue' gear_id=gear.id%}">
-                <img src="{% static 'img/console/loader2.png' %}" id="loading"/>
-            </a>
+            <div style="display: inline-block">
+                <a class="manual-queue" href="{% url 'gear:manual_queue' gear_id=gear.id %}">
+                    <img src="{% static 'img/console/loader2.png' %}" id="loading"/>
+                </a>
+            </div>
         </div>
     </div>
 </div>
-{#        <a href="{% url 'gear:send_history' pk=gear.id %}">A</a>#}
-{#        <a href="{% url 'gear:download_history' pk=gear.id %}">B</a>#}
-{#  #}
