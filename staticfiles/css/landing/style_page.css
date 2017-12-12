@@ -1,5 +1,6 @@
 .ayuda {
-    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 17px;*/
+    background: url(../../img/landing/plantilla.png) no-repeat scroll 0 0;
+    background-size: contain;
 }
 
 .bg_page {
