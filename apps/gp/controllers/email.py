@@ -88,12 +88,12 @@ class GmailController(GoogleBaseController):
         message_stored_data = []
         if message is not None:
             _id = message['Id']
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id)
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=_id)
             if not q.exists():
                 message_stored_data = []
                 for k, v in message.items():
                     message_stored_data.append(
-                        StoredData(connection=connection_object.connection, plug=plug, name=k, value=v, object_id=id))
+                        StoredData(connection=connection_object.connection, plug=plug, name=k, value=v, object_id=_id))
             if message_stored_data:
                 for msg in message_stored_data:
                     try:
@@ -229,7 +229,7 @@ class GmailController(GoogleBaseController):
                         break
                 except Exception as e:
                     raise
-                    #continue
+                    continue
             for plug in plug_list:
                 self.create_connection(plug.connection.related_connection, plug)
                 if self.test_connection():
