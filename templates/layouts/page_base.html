@@ -32,19 +32,19 @@
                                 <ul class="menu">
                                     <li>
                                         <a {% if request.path == "/about/" %}class="selected_page"{% endif %}
-                                        href="{% url 'landing:about' %}">{% trans 'Nosotros' %}</a>
+                                           href="{% url 'landing:about' %}">{% trans 'Nosotros' %}</a>
                                     </li>
                                     <li>
                                         <a {% if request.path == "/steps/" %}class="selected_page"{% endif %}
-                                        href="{% url 'landing:steps' %}">{% trans 'Cómo Funciona' %}</a>
+                                           href="{% url 'landing:steps' %}">{% trans 'Cómo Funciona' %}</a>
                                     </li>
                                     <li>
                                         <a {% if request.path == "/apps/directory/" %}class="selected_page"{% endif %}
-                                        href="{% url 'landing:apps_directory' %}">{% trans 'Apps' %}</a>
+                                           href="{% url 'landing:apps_directory' %}">{% trans 'Apps' %}</a>
                                     </li>
                                     <li>
                                         <a {% if request.path == "/contact/" %}class="selected_page"{% endif %}
-                                        href="{% url 'landing:contact' %}">{% trans 'Contacto' %}</a>
+                                           href="{% url 'landing:contact' %}">{% trans 'Contacto' %}</a>
                                     </li>
                                     {% if request.user.is_authenticated == False %}
                                         <li class="menu-login">

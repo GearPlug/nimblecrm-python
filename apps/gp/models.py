@@ -10,6 +10,9 @@ connections = ['connection_{0}'.format(connector.name.lower()) for connector in 
 class Category(models.Model):
     name = models.CharField('name', max_length=100)
 
+    def __str__(self):
+        return self.name
+
 
 class Connector(models.Model):
     name = models.CharField('name', max_length=120)
@@ -275,6 +278,7 @@ class GoogleCalendarConnection(models.Model):
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
 
+
     def __str__(self):
         return self.name
 
@@ -357,7 +361,7 @@ class SMSConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_sms')
     name = models.CharField('name', max_length=200)
     connection_user = models.CharField('user', max_length=60)
-    connection_password = models.CharField('password', max_length=40)
+    connection_password = models.CharField('password', max_length=100)
 
     def __str__(self):
         return self.name
@@ -378,7 +382,7 @@ class SMTPConnection(models.Model):
     host = models.CharField('host', max_length=200)
     port = models.CharField('port', max_length=200)
     connection_user = models.CharField('user', max_length=60)
-    connection_password = models.CharField('password', max_length=40)
+    connection_password = models.CharField('password', max_length=100)
 
     def __str__(self):
         return self.name
@@ -433,6 +437,7 @@ class GmailConnection(models.Model):
                                       related_name='connection_gmail')
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
+    history = models.CharField('history', max_length=100)
 
     def __str__(self):
         return self.name
@@ -504,6 +509,17 @@ class ActEssentialsConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_actessentials')
     name = models.CharField('name', max_length=200)
     api_key = models.CharField('API Key', max_length=400)
+
+    def __str__(self):
+        return self.name
+
+
+class AgileCRMConnection(models.Model):
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_agilecrm')
+    name = models.CharField('name', max_length=200)
+    api_key = models.CharField('api_key', max_length=200)
+    email = models.CharField('email', max_length=200)
+    domain = models.CharField('domain', max_length=200)
 
     def __str__(self):
         return self.name
@@ -658,6 +674,13 @@ class Subscriptions(models.Model):
     list = models.ForeignKey(SubscriptionsList, related_name="subscription_list")
 
 
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    avatar = models.ImageField(upload_to='avatar/', default='avatar/default.jpeg')
+
+    def __str__(self):
+        return self.user.username
+
 admin.site.register(Connector)
 admin.site.register(Action)
 admin.site.register(ActionSpecification)
@@ -666,3 +689,6 @@ admin.site.register(Gear)
 admin.site.register(GearGroup)
 admin.site.register(Plug)
 admin.site.register(PlugActionSpecification)
+admin.site.register(Profile)
+admin.site.register(Category)
+admin.site.register(ConnectorCategory)

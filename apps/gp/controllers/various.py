@@ -24,7 +24,8 @@ class WebhookController(BaseController):
         w = Webhook.objects.create(name='webhook', plug=self._plug, url='', expiration='')
         url = settings.WEBHOOK_HOST + reverse('home:webhook', kwargs={'connector': 'webhook', 'webhook_id': w.id})
         w.url = url
-        w.save(update_fields=['url', ])
+        w.is_active = True
+        w.save(update_fields=['url', 'is_active'])
 
     def do_webhook_process(self, body=None, webhook_id=None, **kwargs):
         webhook = Webhook.objects.get(pk=webhook_id)
@@ -56,3 +57,19 @@ class WebhookController(BaseController):
                                     'is_stored': is_stored, 'raw': body, })
             return {'downloaded_data': result_list, 'last_source_record': stored_data.object_id}
         return False
+
+    @property
+    def has_test_information(self):
+        return True
+
+    def get_test_information(self):
+        try:
+            webhook = Webhook.objects.get(plug=self._plug)
+            if webhook.is_active and not webhook.is_deleted:
+                text = 'Your webhook is:\n "{0}". \n\nPlease send information a press the test again button.'.format(
+                    webhook.url)
+            else:
+                text = 'There seems to be a problem with your webhook. Please contact support or try creating it again.'
+        except Webhook.DoesNotExist:
+            text = 'There seems to be a problem with your webhook. Please contact support or try creating it again.'
+        return text

@@ -4,7 +4,7 @@ from apps.connection.views import CreateConnectionView, ListConnectionView, List
     GoogleAuthView, SlackAuthView, TwitterAuthView, SurveyMonkeyAuthView, InstagramAuthView, SalesforceAuthView, \
     ShopifyAuthView, EvernoteAuthView, AsanaAuthView, MercadoLibreAuthView, WunderListAuthView, HubspotAuthView, \
     AjaxMercadoLibrePostSiteView, ManageConnectionView, MailchimpAuthView, GitLabAuthView, UpdateConnectionView, \
-    InfusionSoftAuthView
+    InfusionSoftAuthView, get_gears_from_connection
 
 urlpatterns = [
     # Create Connection
@@ -20,6 +20,7 @@ urlpatterns = [
 
     url(r'manage/', ManageConnectionView.as_view(), name="manage"),
     url(r'update/(?P<pk>\d+)/', UpdateConnectionView.as_view(), name='update'),
+    url(r'get_gears/', get_gears_from_connection, name='get_gears'),
 
     # Auth Callbacks
     url(r'^auth-callback/slack/', SlackAuthView.as_view(), name="slack_auth"),

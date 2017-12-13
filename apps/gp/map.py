@@ -296,7 +296,8 @@ class MapField(object):
         elif controller == ConnectorEnum.Gmail:
             if 'name' in d:
                 self.name = d['name']
-                self.label = d['name']
+            if 'label' in d:
+                self.label = d['label']
             if 'required' in d:
                 self.required = d['required']
             if 'type' in d:
@@ -327,11 +328,26 @@ class MapField(object):
                 self.required = d['required']
             if 'type' in d:
                 self.field_type = d['type']
+        elif controller == ConnectorEnum.AgileCRM:
+            if 'name' in d:
+                self.name = d['name']
+            if 'required' in d:
+                self.required = d['required']
+            if 'type' in d:
+                self.field_type = d['type']
+            if 'choices' in d:
+                self.choices = [(choice, choice) for choice in d['choices']]
+                self.choices.insert(0, ('', ''))
+                self.field_type = 'choices'
         else:
             if 'name' in d:
                 self.name = d['name']
+                if 'label' not in d:
+                    self.label = d['name']
             if 'label' in d:
                 self.label = d['label']
+                if 'name' not in d:
+                    self.name = d['label']
             if 'default' in d or 'default_value' in d:
                 self.default = d['default'] if 'default' in d else d[
                     'default_value']
