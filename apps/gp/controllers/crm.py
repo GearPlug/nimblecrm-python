@@ -450,12 +450,11 @@ class SalesforceController(BaseController):
             # Actualiza el token del controlador con el nuevo token obtenido y posteriormente guarda en BD.
             self.token.update(new_token)
             self._client.set_access_token(self.token)
-            self._connection_object.token = self.token
+            self._connection_object.token = json.dumps(self.token)
             self._connection_object.save()
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
+    def send_stored_data(self, data_list, is_first=False):
         result_list = []
-        data_list = get_dict_with_source_data(source_data, target_fields)
         if is_first and data_list:
             try:
                 data_list = [data_list[-1]]
