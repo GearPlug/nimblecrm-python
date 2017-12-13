@@ -1,6 +1,6 @@
 .ayuda {
-    background: url(../../img/landing/plantilla.png) no-repeat scroll 0 0;
-    background-size: contain;
+    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 0 18px;*/
+    /*background-size: contain;*/
 }
 
 .bg_page {
@@ -163,6 +163,11 @@ li.menu-login.dropdown.profile ul li p{
     border-right: 1px solid white;
     margin-right: 0.4%;
     padding: 0.1% 0.4% 0.1% 0;
+}
+
+.layout.navbar.navbar-default {
+    background-color: inherit;
+    border-color: transparent;
 }
 
 @media only screen and (max-width:1600px) {
