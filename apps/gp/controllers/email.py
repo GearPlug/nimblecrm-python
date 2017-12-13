@@ -1,4 +1,4 @@
-from apps.gp.controllers.base import BaseController
+from apps.gp.controllers.base import BaseController, GoogleBaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from apps.gp.map import MapField
@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from django.db.models import Q
 from django.conf import settings
 from django.urls import reverse
-from utils.smtp_sender import smtpSender as SMTPClient
+from utils.smtp_sender import SMTPCustomClient as SMTPClient
 from oauth2client import client as GoogleClient
 from apiclient import discovery, errors
 from email.mime.multipart import MIMEMultipart
@@ -19,62 +19,61 @@ import base64
 from email import message_from_bytes
 
 
-class GmailController(BaseController):
+class GmailController(GoogleBaseController):
     _credential = None
     _service = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        GoogleBaseController.__init__(self, connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
+    def create_connection(self, connection=None, plug=None, **kwargs):
         credentials_json = None
-        if args:
-            super(GmailController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    credentials_json = self._connection_object.credentials_json
-                except Exception as e:
-                    print(e)
-                    credentials_json = None
+        super(GmailController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                credentials_json = self._connection_object.credentials_json
+            except Exception as e:
+                print(e)
+                credentials_json = None
         if credentials_json is not None:
             self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
             self._service = discovery.build('gmail', 'v1', http=self._credential.authorize(httplib2.Http()))
 
     def test_connection(self):
         try:
-            self._refresh_token()
-        except GoogleClient.HttpAccessTokenRefreshError:
-            print("ERROR EL TOKEN NO TIENE REFRESH TOKEN")
-            return False
-        except Exception as e:
-            raise
-            print("Error Test connection Gmail")
-            self._service = None
-        return self._service is not None
-
-    def _refresh_token(self, token=''):
-        if self._credential.access_token_expired:
-            self._credential.refresh(httplib2.Http())
-            self._upate_connection_object_credentials()
-            self._service = discovery.build('gmail', 'v1', http=self._credential.authorize(httplib2.Http()))
-
-    def _upate_connection_object_credentials(self):
-        self._connection_object.credentials_json = self._credential.to_json()
-        self._connection_object.save()
+            self.get_profile()
+        except:
+            try:
+                self._refresh_token()
+            except GoogleClient.HttpAccessTokenRefreshError:
+                self._report_broken_token()
+                return None
+        return self._credential is not None
 
     def create_webhook(self):
+        """
+        Para que el res_watch funcione se necesita agregar a la cuenta gmail-api-push@system.gserviceaccount.com, con el rol PUB/SUB editor.
+        Adicionalmente se debe crear una susbscripción en la cual se agrega la url del webhook {host}/webhook/gmail/0
+        """
         action = self._plug.action.name
         if action.lower() == 'new email':
             # Creacion de Webhook
             webhook = Webhook.objects.create(name='gmail', plug=self._plug, url='')
             request = {
                 'labelIds': ['INBOX'],
-                'topicName': 'projects/gearplug-167220/topics/gearplug',
+                'topicName': settings.GMAIL_TOPIC_NAME,
                 'name': 'webhook'
             }
-            res_watch = self._service.users().watch(userId='me', body=request).execute()
-            if res_watch['historyId'] is not None:
-                webhook.url = settings.WEBHOOK_HOST + reverse('home:webhook', kwargs={'connector': 'gmail', 'webhook_id': 0})
+            try:
+                res_watch = self._service.users().watch(userId='me', body=request).execute()
+            except:
+                res_watch is None
+            if res_watch is not None:
+                _profile = self.get_profile()
+                self._connection_object.history = self.get_profile()['historyId']
+                self._connection_object.save(update_fields=['history'])
+                webhook.url = settings.WEBHOOK_HOST + reverse('home:webhook',
+                                                              kwargs={'connector': 'gmail', 'webhook_id': 0})
                 webhook.generated_id = self._plug.id
                 webhook.is_active = True
                 webhook.expiration = res_watch['expiration']
@@ -86,65 +85,56 @@ class GmailController(BaseController):
         return False
 
     def download_to_stored_data(self, connection_object=None, plug=None, message=None, **kwargs):
+        message_stored_data = []
         if message is not None:
-            id = message['Id']
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=id)
+            _id = message['Id']
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=_id)
             if not q.exists():
                 message_stored_data = []
                 for k, v in message.items():
                     message_stored_data.append(
-                        StoredData(connection=connection_object.connection, plug=plug, name=k, value=v, object_id=id))
-            extra = {}
-            for msg in message_stored_data:
-                try:
-                    extra['status'] = 's'
-                    extra = {'controller': 'gmail'}
-                    msg.save()
-                    self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (msg.object_id, msg.plug.id,
-                                                                                        msg.connection.id), extra=extra)
-                except Exception as e:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s failed.' % (msg.object_id, msg.plug.id,
-                                                                           msg.connection.id), extra=extra)
-            return True
+                        StoredData(connection=connection_object.connection, plug=plug, name=k, value=v, object_id=_id))
+            if message_stored_data:
+                for msg in message_stored_data:
+                    try:
+                        msg.save()
+                        is_stored = True
+                    except Exception as e:
+                        is_stored = False
+                        print(e)
+            result_list = [{'raw': message, 'is_stored': is_stored, 'identifier': {'name': 'Id', 'value': _id}}]
+            return {'downloaded_data': result_list, 'last_source_record': _id}
         return False
 
     def get_target_fields(self, **kwargs):
-        return [{'name': 'to', 'type': 'varchar', 'required': True},
-                {'name': 'sender', 'type': 'varchar', 'required': True},
-                {'name': 'subject', 'type': 'varchar', 'required': True},
-                {'name': 'msgHtml', 'type': 'varchar', 'required': True},
-                {'name': 'msgPlain', 'type': 'varchar', 'required': True}]
+        return [{'name': 'to', 'label': 'To', 'type': 'varchar', 'required': True},
+                {'name': 'sender', 'label': 'Sender', 'type': 'varchar', 'required': True},
+                {'name': 'subject', 'label': 'Subject', 'type': 'varchar', 'required': True},
+                {'name': 'msgHtml', 'label': 'Message', 'type': 'varchar', 'required': True}, ]
 
     def get_mapping_fields(self, **kwargs):
-        fields = self.get_target_fields()
-        return [MapField(f, controller=ConnectorEnum.Gmail) for f in fields]
+        return [MapField(f, controller=ConnectorEnum.Gmail) for f in self.get_target_fields()]
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if self._plug is not None:
-            obj_list = []
-            extra = {'controller': 'gmail'}
-            for item in data_list:
-                email = self.send_message(**item)
-                if email['id']:
-                    extra['status'] = 's'
-                    self._log.info('Item: %s successfully sent.' % (email['id']), extra=extra)
-                    obj_list.append(email['id'])
-                else:
-                    extra['status'] = 'f'
-                    self._log.info('Item: failed to send.', extra=extra)
-            return obj_list
-        raise ControllerError("There's no plug")
+    def send_stored_data(self, data_list):
+        obj_list = []
+        for item in data_list:
+            email = self.send_message(**item)
+            if email['id']:
+                _identifier = email['id']
+                _sent = True
+            else:
+                _identifier = ""
+                _sent = False
+            obj_list.append(
+                {'data': dict(item), 'response': email['labelIds'], 'sent': _sent, 'identifier': _identifier})
+        return obj_list
 
     def create_message(self, sender='', to='', subject='', msgHtml='', msgPlain=''):
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
         msg['From'] = sender
         msg['To'] = to
-        msg.attach(MIMEText(msgPlain, 'plain'))
+        # msg.attach(MIMEText(msgPlain, 'plain'))
         msg.attach(MIMEText(msgHtml, 'html'))
         raw = base64.urlsafe_b64encode(msg.as_bytes())
         raw = raw.decode()
@@ -154,12 +144,11 @@ class GmailController(BaseController):
     def send_message_internal(self, user_id, message):
         try:
             message = (self._service.users().messages().send(userId=user_id, body=message).execute())
-            print('Message Id: %s' % message['id'])
             return message
         except errors.HttpError as error:
             print('An error occurred: %s' % error)
 
-    def send_message(self, sender, to, subject, msgHtml, msgPlain):
+    def send_message(self, sender, to, subject, msgHtml, msgPlain=''):
         message1 = self.create_message(sender, to, subject, msgHtml, msgPlain)
         return self.send_message_internal("me", message1)
 
@@ -177,11 +166,14 @@ class GmailController(BaseController):
             raise ControllerError(
                 "That specification doesn't belong to an action in this connector.")
 
-    def get_history(self, history_id):
-        return self._service.users().history().list(userId="me", startHistoryId=history_id).execute()
+    def get_history(self, history_id, f=None):
+        params = {'userId': 'me', 'startHistoryId': history_id}
+        if f is not None:
+            params['historyTypes'] = f
+        return self._service.users().history().list(**params).execute()
 
     def get_message(self, message_id):
-        raw_message = self._service.users().messages().get(userId='me', id=message_id, format='raw').execute()
+        raw_message = self._service.users().messages().get(userId="me", id=message_id, format="raw").execute()
         decoded_message = base64.urlsafe_b64decode(raw_message['raw'].encode('ASCII'))
         text_message = message_from_bytes(decoded_message)
         return text_message
@@ -198,76 +190,90 @@ class GmailController(BaseController):
                 'Content-Html': list_content[1]}
 
     def do_webhook_process(self, body=None, POST=None, **kwargs):
-        response = HttpResponse(status=400)
-
+        response = HttpResponse(status=200)
         encoded_message_data = base64.urlsafe_b64decode(body['message']['data'].encode('ASCII'))
         decoded_message_data = json.loads(encoded_message_data.decode('utf-8'))
-        history_id = decoded_message_data['historyId']
-        email = decoded_message_data['emailAddress']
+        new_history_id = decoded_message_data['historyId']
+        _email = decoded_message_data['emailAddress']
         plug_list = Plug.objects.filter(Q(gear_source__is_active=True) | Q(is_tested=False),
-                                        plug_type__iexact="source", action__name__iexact="read message",
-                                        plug_action_specification__value__iexact=email)
+                                        plug_action_specification__value__iexact=_email,
+                                        plug_action_specification__action_specification__name__iexact='email',
+                                        action__name='new email')
         if plug_list:
             for plug in plug_list:
                 try:
                     self.create_connection(plug.connection.related_connection, plug)
-                    if self.test_connection():
-                        history = self.get_history(history_id)
-                        message_id = history['history'][0]['messages'][0]['id']
+                    history_id = self._connection_object.history
+                    ping = self.test_connection()
+                    if ping:
+                        history = self.get_history(history_id, f='messageAdded')
+                        try:
+                            message_id = history['history'][0]['messagesAdded'][0]['message']['id']
+                        except KeyError:
+                            print("error en key en history")
                         message = self.get_message(message_id=message_id)
-                        message_dict = self.get_cleaned_message(message, message_id)
+                        message_dict = self.get_cleaned_message(message, body['message']['messageId'])
+                        self._connection_object.history = new_history_id
+                        self._connection_object.save(update_fields=['history'])
                         break
                 except Exception as e:
+                    raise
                     continue
             for plug in plug_list:
-                try:
-                    self.create_connection(plug.connection.related_connection, plug)
-                    if self.test_connection():
-                        self.download_source_data(message=message_dict)
-                except:
-                    pass
-            response.status_code = 200
+                self.create_connection(plug.connection.related_connection, plug)
+                if self.test_connection():
+                    self.download_source_data(message=message_dict)
+                if not self._plug.is_tested:
+                    self._plug.is_tested = True
+                    self._plug.save(update_fields=['is_tested', ])
         return response
 
     @property
     def has_webhook(self):
         return True
 
+
 class SMTPController(BaseController):
     client = None
-    sender_identifier = 'ZAKARA .23'
+    sender_identifier = 'ZAKARA .23'  # TODO: get from settings
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(SMTPController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    host = self._connection_object.host
-                    port = self._connection_object.port
-                    user = self._connection_object.connection_user
-                    password = self._connection_object.connection_password
-                    self.client = SMTPClient(host, port, user, password)
-                except Exception as e:
-                    print("Error getting the SMS attributes")
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(SMTPController, self).__init__(connection=connection, plug=plug, **kwargs)
+
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(SMTPController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+
+                host = self._connection_object.host
+                port = self._connection_object.port
+                user = self._connection_object.connection_user
+                password = self._connection_object.connection_password
+                self.client = SMTPClient(host, port, user, password)
+            except Exception as e:
+                print("Error getting the SMTP attributes")
 
     def test_connection(self):
-        return self.client is not None and self.client.is_valid_connection()
+        return self.client.is_active
 
     def get_target_fields(self, **kwargs):
-        return ['recipient', 'message']
+        return [{'name': 'recipient', 'type': 'varchar', 'required': True},
+                {'name': 'subject', 'type': 'varchar', 'required': False},
+                {'name': 'message', 'type': 'varchar', 'required': True}, ]
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
+    def get_mapping_fields(self, **kwargs):
+        fields = self.get_target_fields()
+        return [MapField(f, controller=ConnectorEnum.SMTP) for f in fields]
+
+    def send_stored_data(self, data_list):
         obj_list = []
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[-1]]
-                except:
-                    data_list = []
-        if self._plug is not None:
-            for obj in data_list:
-                r = self.client.send_mail(**obj)
-            extra = {'controller': 'smtp'}
-            return
-        raise ControllerError("Incomplete.")
+        for obj in data_list:
+            try:
+                r = self.client.send_email(**obj)
+                sent = True
+            except:
+                r = "Could not send the message. Please check the data was valid and try again."
+                sent = False
+            obj_list.append({'data': obj, 'response': r, 'identifier': '-1', 'sent': sent})
+        self.client.close()
+        return obj_list

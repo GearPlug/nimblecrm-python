@@ -103,3 +103,13 @@ INFUSIONSOFT_CLIENT_ID = os.environ.get('INFUSIONSOFT_CLIENT_ID')
 INFUSIONSOFT_CLIENT_SECRET = os.environ.get('INFUSIONSOFT_CLIENT_SECRET')
 INFUSIONSOFT_AUTHORIZATION_URL = "https://signin.infusionsoft.com/app/oauth/authorize?"
 INFUSIONSOFT_REDIRECT_URL = '{0}/connection/auth-callback/infusionsoft/'.format(CURRENT_HOST)
+
+# Typeform
+TYPEFORM_CLIENT_ID = os.environ.get('TYPEFORM_CLIENT_ID')
+TYPEFORM_CLIENT_SECRET = os.environ.get('TYPEFORM_CLIENT_SECRET')
+TYPEFORM_AUTHORIZATION_URL = "https://api.typeform.com/oauth/authorize?"
+TYPEFORM_REDIRECT_URL = '{0}/connection/auth-callback/typeform/'.format(CURRENT_HOST)
+TYPEFROM_SCOPES = "forms:read+webhooks:read+webhooks:write+responses:read"
+
+#Gmail
+GMAIL_TOPIC_NAME = os.environ.get('GMAIL_TOPIC_NAME')

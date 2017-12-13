@@ -562,7 +562,7 @@ class SalesforceController(BaseController):
         url_base = settings.WEBHOOK_HOST
         url_path = reverse('home:webhook', kwargs={'connector': 'salesforce', 'webhook_id': webhook.id})
         url = url_base + url_path
-        with open(os.path.join(settings.BASE_DIR, 'files', 'salesforce_webhook.txt'), 'r') as file:
+        with open(os.path.join(settings.BASE_DIR, 'apps', 'gp', 'files', 'salesforce', 'webhook.txt'), 'r') as file:
             body = file.read()
 
         apex_class_response = self._client.create_apex_class('GearPlug Webhook', body)
@@ -574,7 +574,8 @@ class SalesforceController(BaseController):
         _dict = xmldict.xml_to_dict(remote_site_response)
         # TODO: Comprobar que _dict success es True, de lo contrario lanzar excepción (?)
 
-        with open(os.path.join(settings.BASE_DIR, 'files', 'salesforce_webhook_trigger.txt'), 'r') as file:
+        with open(os.path.join(settings.BASE_DIR, 'apps', 'gp', 'files', 'salesforce', 'webhook_trigger.txt'),
+                  'r') as file:
             body = file.read()
 
         body = body.replace('{name}', 'GearPlug')
