@@ -17,6 +17,7 @@ from slacker import Slacker
 from evernote.api.client import EvernoteClient
 from mercadolibre.client import Client as MercadolibreClient
 from instagram.client import InstagramAPI
+from salesforce.client import Client as SalesforceClient
 import tweepy
 import httplib2
 import json
@@ -376,12 +377,10 @@ class InstagramAuthView(View):
 
 class SalesforceAuthView(View):
     def get(self, request, *args, **kwargs):
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
-        data = {'grant_type': 'authorization_code', 'redirect_uri': settings.SALESFORCE_REDIRECT_URI,
-                'code': request.GET['code'], 'client_id': settings.SALESFORCE_CLIENT_ID,
-                'client_secret': settings.SALESFORCE_CLIENT_SECRET}
-        response = requests.post(settings.SALESFORCE_ACCESS_TOKEN_URL, data=data, headers=headers).json()
-        request.session['connection_data'] = {'token': response['access_token'], }
+        salesforce_client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
+                                             settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
+        response = salesforce_client.exchange_code(settings.SALESFORCE_REDIRECT_URI, request.GET['code'])
+        request.session['connection_data'] = {'token': json.dumps(response)}
         request.session['connector_name'] = ConnectorEnum.Salesforce.name
         return redirect(reverse('connection:create_token_authorized_connection'))
 
@@ -568,8 +567,9 @@ class AjaxMercadoLibrePostSiteView(View):
 
 
 def get_salesforce_auth():
-    return 'https://login.salesforce.com/services/oauth2/authorize?response_type=code&client_id={}&redirect_uri={}'.format(
-        settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_REDIRECT_URI)
+    salesforce_client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
+                                         settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
+    return salesforce_client.authorization_url(settings.SALESFORCE_REDIRECT_URI)
 
 
 def get_survey_monkey_url():

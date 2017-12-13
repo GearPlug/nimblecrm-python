@@ -39,7 +39,7 @@ class ConnectorEnum(Enum):
     SMS = 28, 'im', None
     SMTP = 29, 'email', None
     Evernote = 30, 'ofimatic', 'authorization'
-    Salesforce = 31, 'crm'
+    Salesforce = 31, 'crm', 'authorization'
     Vtiger = 32, 'crm'
     ProsperWorks = 33, 'crm'
     HubSpot = 34, 'crm'

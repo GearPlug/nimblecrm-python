@@ -48,9 +48,10 @@ INSTAGRAM_AUTH_REDIRECT_URL = 'connection:instagram_auth_success_create_connecti
 SALESFORCE_CLIENT_ID = os.environ.get('SALESFORCE_CLIENT_ID')
 SALESFORCE_CLIENT_SECRET = os.environ.get('SALESFORCE_CLIENT_SECRET')
 SALESFORCE_REQUEST_TOKEN_URL = 'https://login.salesforce.com/services/oauth2/token'
-SALESFORCE_ACCESS_TOKEN_URL = 'https://login.salesforce.com/services/oauth2/token'
 SALESFORCE_AUTHORIZE_URL = 'https://login.salesforce.com/services/oauth2/authorize'
 SALESFORCE_REDIRECT_URI = '{0}/connection/auth-callback/salesforce/'.format(CURRENT_HOST)
+SALESFORCE_INSTANCE_URL = 'https://na50.salesforce.com/'
+SALESFORCE_VERSION = 'v41.0'
 
 # Hubspot
 HUBSPOT_CLIENT_ID = os.environ.get('HUBSPOT_CLIENT_ID')
