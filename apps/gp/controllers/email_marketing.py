@@ -236,51 +236,50 @@ class MandrillController(BaseController):
     """
     _client = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(MandrillController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(MandrillController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._client = mandrill.Mandrill(
-                        self._connection_object.api_key)
-                except Exception as e:
-                    print("Error getting the Mandrill attributes")
-                    self._client = None
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(MandrillController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._client = mandrill.Mandrill(
+                    self._connection_object.api_key)
+            except Exception as e:
+                print("Error getting the Mandrill attributes")
+                self._client = None
 
     def test_connection(self):
         try:
-            return self._client is not None and self._client.users.info() is not None
+            self._client.users.info()
+            return self._client is not None
         except mandrill.InvalidKeyError:
             return False
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
+    def send_stored_data(self, data_list):
+        """
+        Se debe configurar en la cuenta Domain, DKIM Settings, SPF Settings, para que los emails sean entregados. El proceso funciona pero los emails son colocados en cola
+        """
         obj_list = []
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[-1]]
-                except:
-                    data_list = []
-        if self._plug is not None:
-            extra = {'controller': 'mandrill'}
-            for obj in data_list:
-                res = self.send_email(obj)
-            return
-        raise ControllerError("Incomplete.")
+        for obj in data_list:
+            _response = self.send_email(obj)
+            if '_id' in _response[0]:
+                _sent = True
+                _identifier = _response[0]['_id']
+            else:
+                _sent = False
+                _identifier = ""
+            obj_list.append({'data': dict(obj), 'response': _response, 'sent': _sent, 'identifier': _identifier})
+        return obj_list
 
     def send_email(self, obj):
         to_email = obj.pop('to_email')
         obj['to'] = [{'email': to_email}]
-        print(obj)
         result = self._client.messages.send(message=obj, async=False,
                                             ip_pool='Main Pool',
                                             send_at=datetime.datetime.now().strftime(
                                                 '%Y-%m-%d %H:%M:%S'))
-        print(result)
+        return result
 
     def get_meta(self):
         _dict = [
@@ -404,7 +403,7 @@ class MandrillController(BaseController):
             # To: originalmente una lista de diccionarios
             {
                 'name': 'to_email',
-                'required': False,
+                'required': True,
                 'type': 'text'
             },
             {
@@ -439,80 +438,88 @@ class MandrillController(BaseController):
     def get_target_fields(self):
         return self.get_meta()
 
-    def get_events(self):
-        return ['send', 'hard_bounce', 'soft_bounce', 'open', 'click', 'spam',
-                'unsub', 'reject']
+    # Los specifications existen para source y por el momento solo se tiene una acción de target
 
-    def download_to_stored_data(self, connection_object=None, plug=None,
-                                event=None, **kwargs):
-        if event is not None:
-            _items = []
-            # Todo verificar que este ID siempre existe independiente del action
+    # def get_events(self):
+    #     return ['send', 'hard_bounce', 'soft_bounce', 'open', 'click', 'spam',
+    #             'unsub', 'reject']
 
-            event_id = event.pop('_id')
-            msg = event.pop('msg')
-            event.update(msg)
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=event_id)
-            if not q.exists():
-                for k, v in event.items():
-                    obj = StoredData(connection=connection_object.connection,
-                                     plug=plug,
-                                     object_id=event_id, name=k, value=v or '')
-                    _items.append(obj)
-            extra = {}
-            for item in _items:
-                extra['status'] = 's'
-                extra = {'controller': 'mandril'}
-                self._log.info(
-                    'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                        item.object_id, item.plug.id, item.connection.id),
-                    extra=extra)
-                item.save()
-        return False
+    # Por ahora solo funciona como target
 
-    def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(
-            pk=action_specification_id)
-        if action_specification.name.lower() == 'event':
-            return tuple({'id': e, 'name': e} for e in self.get_events())
-        else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector.")
+    # def download_to_stored_data(self, connection_object=None, plug=None,
+    #                             event=None, **kwargs):
+    #     if event is not None:
+    #         _items = []
+    #         # Todo verificar que este ID siempre existe independiente del action
+    #
+    #         event_id = event.pop('_id')
+    #         msg = event.pop('msg')
+    #         event.update(msg)
+    #         q = StoredData.objects.filter(
+    #             connection=connection_object.connection, plug=plug,
+    #             object_id=event_id)
+    #         if not q.exists():
+    #             for k, v in event.items():
+    #                 obj = StoredData(connection=connection_object.connection,
+    #                                  plug=plug,
+    #                                  object_id=event_id, name=k, value=v or '')
+    #                 _items.append(obj)
+    #         extra = {}
+    #         for item in _items:
+    #             extra['status'] = 's'
+    #             extra = {'controller': 'mandril'}
+    #             self._log.info(
+    #                 'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
+    #                     item.object_id, item.plug.id, item.connection.id),
+    #                 extra=extra)
+    #             item.save()
+    #     return False
 
-    def create_webhook(self):
-        action = self._plug.action.name
-        if action == 'new email':
-            event = self._plug.plug_action_specification.get(
-                action_specification__name='event')
+    # Los specifications existen para source y por el momento solo se tiene una acción de target
 
-            # Creacion de Webhook
-            webhook = Webhook.objects.create(name='mandrill', plug=self._plug,
-                                             url='', expiration='')
+    # def get_action_specification_options(self, action_specification_id):
+    #     action_specification = ActionSpecification.objects.get(
+    #         pk=action_specification_id)
+    #     if action_specification.name.lower() == 'event':
+    #         return tuple({'id': e, 'name': e} for e in self.get_events())
+    #     else:
+    #         raise ControllerError(
+    #             "That specification doesn't belong to an action in this connector.")
 
-            # Verificar ngrok para determinar url_base
-            url_base = settings.WEBHOOK_HOST
-            url_path = reverse('home:webhook', kwargs={'connector': 'mandrill',
-                                                       'webhook_id': webhook.id})
-            url = url_base + url_path
+    # Por ahora solo funciona como target
 
-            try:
-                events = [event.value]
-                response = self._client.webhooks.add(url=url,
-                                                     description='GearPlug Webhook',
-                                                     events=events)
-                # El cliente parsea el response por lo cual siempre viene un diccionario.
-                webhook.url = url
-                webhook.generated_id = response['id']
-                webhook.is_active = True
-                webhook.save(
-                    update_fields=['url', 'generated_id', 'is_active'])
-                return True
-            except mandrill.Error as e:
-                webhook.is_deleted = True
-                webhook.save(update_fields=['is_deleted', ])
-                return False
+    # def create_webhook(self):
+    #     action = self._plug.action.name
+    #     if action == 'new email':
+    #         event = self._plug.plug_action_specification.get(
+    #             action_specification__name='event')
+    #
+    #         # Creacion de Webhook
+    #         webhook = Webhook.objects.create(name='mandrill', plug=self._plug,
+    #                                          url='', expiration='')
+    #
+    #         # Verificar ngrok para determinar url_base
+    #         url_base = settings.WEBHOOK_HOST
+    #         url_path = reverse('home:webhook', kwargs={'connector': 'mandrill',
+    #                                                    'webhook_id': webhook.id})
+    #         url = url_base + url_path
+    #
+    #         try:
+    #             events = [event.value]
+    #             response = self._client.webhooks.add(url=url,
+    #                                                  description='GearPlug Webhook',
+    #                                                  events=events)
+    #             # El cliente parsea el response por lo cual siempre viene un diccionario.
+    #             webhook.url = url
+    #             webhook.generated_id = response['id']
+    #             webhook.is_active = True
+    #             webhook.save(
+    #                 update_fields=['url', 'generated_id', 'is_active'])
+    #             return True
+    #         except mandrill.Error as e:
+    #             webhook.is_deleted = True
+    #             webhook.save(update_fields=['is_deleted', ])
+    #             return False
 
     @property
     def has_webhook(self):
