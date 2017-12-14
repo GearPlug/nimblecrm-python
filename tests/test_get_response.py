@@ -179,21 +179,22 @@ class GetResponseControllerTestCases(TestCase):
                 }
                 Al final se borra el contacto de la aplicación.
                 """
-        data_list = [OrderedDict(self._data)]
-        result = self.target_controller.send_stored_data(data_list)
-        self.assertIsInstance(result, list)
-        self.assertIsInstance(result[-1], dict)
-        self.assertIn('data', result[-1])
-        self.assertIn('response', result[-1])
-        self.assertIn('sent', result[-1])
-        self.assertIn('identifier', result[-1])
-        self.assertIsInstance(result[-1]['data'], dict)
-        self.assertIsInstance(result[-1]['response'], dict)
-        self.assertIsInstance(result[-1]['sent'], bool)
-        self.assertEqual(result[-1]['data'], dict(data_list[0]))
-        result_view = self.target_controller._client.get_contact(contact_id=result[-1]['identifier'])
-        self.assertEqual(result_view['id'], result[-1]['identifier'])
-        self.target_controller._client.delete_contact(contact_id=result[-1]['identifier'])
+        for _controller in self._list_target_controllers:
+            data_list = [OrderedDict(self._get_datalist())]
+            result = _controller['controller'].send_stored_data(data_list)
+            self.assertIsInstance(result, list)
+            self.assertIsInstance(result[-1], dict)
+            self.assertIn('data', result[-1])
+            self.assertIn('response', result[-1])
+            self.assertIn('sent', result[-1])
+            self.assertIn('identifier', result[-1])
+            self.assertIsInstance(result[-1]['data'], dict)
+            self.assertIsInstance(result[-1]['response'], dict)
+            self.assertIsInstance(result[-1]['sent'], bool)
+            self.assertEqual(result[-1]['data'], dict(data_list[0]))
+            result_view = self.target_controller._client.get_contact(contact_id=result[-1]['identifier'])
+            self.assertEqual(result_view['id'], result[-1]['identifier'])
+            self.target_controller._client.delete_contact(contact_id=result[-1]['identifier'])
 
     # def test_send_target_data(self):
     #     """Verifica que se cree el registro ingresado en la tabla Sendstoredata, al final se borra

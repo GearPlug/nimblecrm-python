@@ -50,15 +50,18 @@ class GetResponseController(BaseController):
                         _sent = False
                 except:
                     _sent = False
+                    res = ""
             elif _action == 'Unsubscribe':
                 try:
-                    res = self.unsubscribe_contact(obj)
+                    _campaign = self._plug.plug_action_specification.get(action_specification__name='campaign')
+                    res = self.unsubscribe_contact(obj, _campaign.value)
                     if res is True:
                         _sent = True
                     else:
                         _sent = False
                 except:
                     _sent = False
+                    res = ""
             else:
                 print("action not found")
             obj_list.append({'data':dict(obj), 'response': res, 'sent':_sent, 'identifier':''})
@@ -81,8 +84,20 @@ class GetResponseController(BaseController):
                                           for k, v in obj.items()]
         return self._client.create_contact(_dict)
 
-    def unsubscribe_contact(self, obj):
-        self._client.delete_contact(obj.pop('id'))
+    def unsubscribe_contact(self, obj, _campaign_id):
+        _email = obj.pop('email')
+        print("email", _email)
+        _contacts = self._client.get_campaign_contacts(_campaign_id)
+        print("contacts", _contacts)
+        _id = None
+        for contact in _contacts:
+            if contact.email == _email:
+                _id = contact.id
+        if _id is not None:
+            return self._client.delete_contact(_id)
+        else:
+            raise ControllerError("Email have not been found")
+
 
     def get_campaigns(self):
         if self._client:
@@ -130,7 +145,7 @@ class GetResponseController(BaseController):
 
     def get_unsubscribe_target_fields(self):
         return [{
-            'name': 'id',
+            'name': 'email',
             'required': True,
             'type': 'text',
 
