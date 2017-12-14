@@ -1,22 +1,24 @@
 from django.http import HttpResponse
+from django.core.urlresolvers import reverse
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from django.conf import settings
-from apps.gp.models import StoredData, ActionSpecification, PlugActionSpecification
+from apps.gp.models import StoredData, ActionSpecification, PlugActionSpecification, Webhook
 from instagram.client import InstagramAPI
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apiclient import discovery, errors, http
 from oauth2client import client as GoogleClient
 from http import client as httplib
+import datetime
 import httplib2
 import json
 import tweepy
 import requests
 import random
 import time
-
+import xmltodict
 import os
 
 
@@ -201,9 +203,12 @@ class InstagramController(BaseController):
     def has_webhook(self):
         return True
 
+
 class YouTubeController(BaseController):
     _credential = None
     _client = None
+    TOKEN = 'GearPlug2017'
+    LEASE_SECONDS = 60 * 60 * 24 * 30
 
     # Explicitly tell the underlying HTTP transport library not to retry, since
     # we are handling retry logic ourselves.
@@ -213,55 +218,42 @@ class YouTubeController(BaseController):
     MAX_RETRIES = 10
 
     # Always retry when these exceptions are raised.
-    RETRIABLE_EXCEPTIONS = (httplib2.HttpLib2Error, IOError, httplib.NotConnected,
-                            httplib.IncompleteRead, httplib.ImproperConnectionState,
-                            httplib.CannotSendRequest, httplib.CannotSendHeader,
-                            httplib.ResponseNotReady, httplib.BadStatusLine)
+    RETRIABLE_EXCEPTIONS = (
+        httplib2.HttpLib2Error, IOError, httplib.NotConnected, httplib.IncompleteRead, httplib.ImproperConnectionState,
+        httplib.CannotSendRequest, httplib.CannotSendHeader, httplib.ResponseNotReady, httplib.BadStatusLine
+    )
 
     # Always retry when an apiclient.errors.HttpError with one of these status
     # codes is raised.
     RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(YouTubeController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        credentials_json = None
-        if args:
-            super(YouTubeController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    credentials_json = self._connection_object.credentials_json
-                except Exception as e:
-                    print("Error getting the YouTube Token")
-                    print(e)
-                    credentials_json = None
-            elif not args and kwargs:
-                if 'credentials_json' in kwargs:
-                    credentials_json = kwargs.pop('credentials_json')
-            else:
-                credentials_json = None
-        me = None
-        if credentials_json is not None:
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(YouTubeController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
             try:
-                _json = json.dumps(credentials_json)
-                self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
-                print('1')
-                self._refresh_token()
-                print('2')
-                http_auth = self._credential.authorize(httplib2.Http())
-                self._client = discovery.build('youtube', 'v3', http=http_auth)
-                params = {
-                    'mine': True,
-                    'part': "id,snippet"
-                }
-                me = self._client.channels().list(**params).execute()
-            except ValueError:
-                print("Error getting the YouTube attributes 2")
-                self._credential = None
-                self._client = None
-                me = None
-        return me is not None
+                credentials_json = self._connection_object.credentials_json
+            except AttributeError as e:
+                raise ControllerError(code=1, controller=ConnectorEnum.YouTube,
+                                      message='Error getting the YouTube attributes args. {}'.format(str(e)))
+            if credentials_json is not None:
+                try:
+                    _json = json.dumps(credentials_json)
+                    self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
+                    self._refresh_token()
+                    http_auth = self._credential.authorize(httplib2.Http())
+                    self._client = discovery.build('youtube', 'v3', http=http_auth)
+                except ValueError:
+                    raise
+
+    def test_connection(self):
+        params = {
+            'mine': True,
+            'part': "id,snippet"
+        }
+        return True if self._client.channels().list(**params).execute() else False
 
     def _upate_connection_object_credentials(self):
         self._connection_object.credentials_json = self._credential.to_json()
@@ -272,65 +264,96 @@ class YouTubeController(BaseController):
             self._credential.refresh(httplib2.Http())
             self._upate_connection_object_credentials()
 
-    def download_to_stored_data(self, connection_object=None, plug=None, video=None, **kwargs):
+    def download_to_stored_data(self, connection_object, plug, video=None, last_source_record=None, **kwargs):
+        if video is None:
+            return False
+        new_data = []
         video = video['items'][0]
-        if video is not None:
-            _items = []
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                          object_id=video['id'])
-            if not q.exists():
-                for k, v in video['snippet'].items():
-                    obj = StoredData(connection=connection_object.connection, plug=plug,
-                                     object_id=video['id'], name=k, value=v or '')
-                    _items.append(obj)
-            extra = {}
-            for item in _items:
-                extra['status'] = 's'
-                extra = {'controller': 'youtube'}
-                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                    item.object_id, item.plug.id, item.connection.id), extra=extra)
+        video_id = video['id']
+        q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=video_id)
+        if not q.exists():
+            for k, v in video['snippet'].items():
+                obj = StoredData(connection=connection_object.connection, plug=plug, object_id=video_id, name=k,
+                                 value=v or '')
+                new_data.append(obj)
+        is_stored = False
+        for item in new_data:
+            try:
                 item.save()
-        return False
+                is_stored = True
+            except Exception as e:
+                print(e)
+        result_list = [{'raw': video, 'is_stored': is_stored, 'identifier': {'name': 'id', 'value': video_id}}]
+        return {'downloaded_data': result_list, 'last_source_record': video_id}
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[-1]]
-                except:
-                    data_list = []
-        if self._plug is not None:
-            for obj in data_list:
-                self.initialize_upload(obj)
-            extra = {'controller': 'youtube'}
+    def send_stored_data(self, data_list, is_first=False):
+        # if is_first and data_list:
+        #     try:
+        #         data_list = [data_list[-1]]
+        #     except:
+        #         data_list = []
+        # if self._plug is not None:
+        #     for obj in data_list:
+        #         self.initialize_upload(obj)
+        #     extra = {'controller': 'youtube'}
         raise ControllerError("Incomplete.")
 
     def create_webhook(self):
+        # Creacion de Webhook
+        webhook = Webhook.objects.create(name='youtube', plug=self._plug, url='', expiration='')
+        # Verificar host para determinar url_base
+        url_base = settings.WEBHOOK_HOST
+        url_path = reverse('home:webhook', kwargs={'connector': 'youtube', 'webhook_id': webhook.id})
+        url = url_base + url_path
+
         subscribe_url = 'https://pubsubhubbub.appspot.com/subscribe'
         topic_url = 'https://www.youtube.com/xml/feeds/videos.xml?channel_id='
-        callback_url = '%s/wizard/youtube/webhook/event/' % settings.WEBHOOK_HOST
 
         params = {
             'hub.mode': 'subscribe',
-            'hub.callback': callback_url,
-            'hub.lease_seconds': 60 * 60 * 24 * 365,
-            'hub.topic': topic_url + self._plug.plug_action_specification.all()[0].value
+            'hub.callback': url,
+            'hub.lease_seconds': self.LEASE_SECONDS,
+            'hub.topic': topic_url + self._plug.plug_action_specification.first().value,
+            'hub.verify_token': self.TOKEN
         }
 
         response = requests.post(url=subscribe_url, data=params)
 
-        if response.status_code == 204:
+        if response.status_code == 202:
+            webhook.url = url_base + url_path
+            webhook.is_active = True
+            webhook.expiration = (datetime.datetime.now() + datetime.timedelta(seconds=self.LEASE_SECONDS)).timestamp()
+            webhook.save(update_fields=['url', 'generated_id', 'is_active', 'expiration'])
             return True
-        return False
+        else:
+            webhook.is_deleted = True
+            webhook.save(update_fields=['is_deleted', ])
+            return False
+
+    def do_webhook_process(self, body=None, POST=None, webhook_id=None, **kwargs):
+        root = xmltodict.parse(body)
+        entry = root['feed']['entry']
+        channel_id = entry['yt:channelId']
+        video_id = entry['yt:videoId']
+        webhook = Webhook.objects.get(pk=webhook_id)
+
+        if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+            if not webhook.plug.is_tested:
+                webhook.plug.is_tested = True
+            self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+            if self.test_connection():
+                video = self.get_video(video_id)
+                self.download_source_data(video=video)
+                webhook.plug.save()
+        return HttpResponse(status=200)
 
     def get_channel_list(self):
         params = {
             'mine': True,
             'part': "id,snippet"
         }
-        me = self._client.channels().list(**params).execute()
-        return [{'id': i['id'], 'name': i['snippet']['title']} for i in me['items']]
+        response = self._client.channels().list(**params).execute()
+        return response['items']
 
     def get_video(self, video_id):
         params = {
@@ -455,6 +478,14 @@ class YouTubeController(BaseController):
     def get_mapping_fields(self, **kwargs):
         fields = self.get_target_fields()
         return [MapField(f, controller=ConnectorEnum.YouTube) for f in fields]
+
+    def get_action_specification_options(self, action_specification_id):
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
+        if action_specification.name.lower() in ['channel']:
+            _tuple = tuple({'id': p['id'], 'name': p['snippet']['title']} for p in self.get_channel_list())
+            return _tuple
+        else:
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
     @property
     def has_webhook(self):
