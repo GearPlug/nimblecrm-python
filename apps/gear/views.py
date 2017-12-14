@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.forms import modelform_factory, modelformset_factory
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
@@ -304,24 +305,10 @@ class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
     form_class = SendHistoryForm
     template_name = 'gear/send_history.html'
     login_url = '/accounts/login/'
+    paginate_by = 30
 
     def get_queryset(self, **kwargs):
-        order = 'date'
-        if self.request.method == "POST":
-            if 'date_from' in self.request.POST and self.request.POST['date_from']:
-                if 'date_to' in self.request.POST and self.request.POST['date_to']:
-                    kwargs['date__range'] = (self.request.POST['date_from'], self.request.POST['date_to'])
-                else:
-                    kwargs['date__gte'] = self.request.POST['date_from']
-            elif 'date_to' in self.request.POST and self.request.POST['date_to']:
-                kwargs['date__lte'] = self.request.POST['date_to']
-            if 'order' in self.request.POST and self.request.POST['order'] == 'desc':
-                order = '-date'
-            if 'sent' in kwargs and kwargs['sent'] == '0':
-                del kwargs['sent']
-            del kwargs['date_from']
-            del kwargs['date_to']
-            del kwargs['order']
+        order = '-date'
         return [{'connection': json.loads(item.connection)[0]['fields']['name'],
                  'data': [{'name': k, 'value': v} for k, v in json.loads(item.data).items()],
                  'date': item.date,
