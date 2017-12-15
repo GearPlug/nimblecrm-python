@@ -98,7 +98,7 @@ class GetResponseControllerTestCases(TestCase):
             }
             PlugActionSpecification.objects.create(**_target_action_specification)
             cls._list_target_plugs.append(
-                {'action': action, 'plug': _target_plug, 'specification': _target_action_specification})
+                {'action': action, 'plug': _target_plug, 'specification': _target_specification})
 
             for _plug in cls._list_target_plugs:
                 _dict_gear = {
@@ -155,46 +155,86 @@ class GetResponseControllerTestCases(TestCase):
     #         result = _controller['controller'].test_connection()
     #         self.assertTrue(result)
 
-    ##pendientes
-
-    # def test_get_target_fields(self):
-    #     """Verifica los fields de un contacto"""
-    #     result = self.target_controller.get_target_fields()
-    #     self.assertEqual(result, self._get_fields())
+    # def test_get_campaigns(self):
+    #     for _controller in self._list_target_controllers:
+    #         _result = _controller['controller'].get_campaigns()
+    #         _id = None
+    #         for _campaign in _result:
+    #             if _campaign['id'] == os.environ.get('TEST_GET_RESPONSE_CAMPAIGN'):
+    #                 _id = _campaign['id']
+    #         self.assertIsInstance(_result, list)
+    #         self.assertIsNotNone(_id)
     #
+    # def test_get_meta(self):
+    #     for _controller in self._list_target_controllers:
+    #         _result = _controller['controller'].get_meta()
+    #         self.assertIsInstance(_result, list)
+    #         self.assertIsInstance(_result[0], dict)
+    #
+    # def test_get_target_fields(self):
+    #     for _controller in self._list_target_controllers:
+    #         _meta = _controller['controller'].get_meta()
+    #         _result = _controller['controller'].get_target_fields()
+    #         self.assertEqual(_meta, _result)
+    #
+    # def test_get_unsubscribe_target_fields(self):
+    #     for _controller in self._list_target_controllers:
+    #         if _controller['action'] == 'Unsubscribe':
+    #             _result = _controller['controller'].get_unsubscribe_target_fields()
+    #             self.assertIsInstance(_result,list)
+    #             self.assertIn('name', _result[0])
+    #             self.assertIn('required', _result[0])
+    #             self.assertIn('type', _result[0])
+
     # def test_get_mapping_fields(self):
     #     """Testea que retorne los Mapping Fields de manera correcta"""
-    #     result = self.target_controller.get_mapping_fields()
-    #     self.assertIsInstance(result, list)
-    #     self.assertIsInstance(result[0], MapField)
+    #     for _controller in self._list_target_controllers:
+    #         result = _controller['controller'].get_mapping_fields()
+    #         self.assertIsInstance(result, list)
+    #         self.assertIsInstance(result[0], MapField)
 
-    ## pendientes
-
-    def test_send_stored_data(self):
-        """ Verifica que se cree un contacto y que el métod send_store_data retorne una lista de acuerdo a:
-                {'data': {(%dict del metodo 'get_dict_with_source_data')},
-                 'response': (%mensaje del resultado),
-                 'sent': True|False,
-                 'identifier': (%identificador del dato enviado. Ej: ID.)
-                }
-                Al final se borra el contacto de la aplicación.
-                """
+    def test_get_action_specification_options(self):
         for _controller in self._list_target_controllers:
-            data_list = [OrderedDict(self._get_datalist())]
-            result = _controller['controller'].send_stored_data(data_list)
-            self.assertIsInstance(result, list)
-            self.assertIsInstance(result[-1], dict)
-            self.assertIn('data', result[-1])
-            self.assertIn('response', result[-1])
-            self.assertIn('sent', result[-1])
-            self.assertIn('identifier', result[-1])
-            self.assertIsInstance(result[-1]['data'], dict)
-            self.assertIsInstance(result[-1]['response'], dict)
-            self.assertIsInstance(result[-1]['sent'], bool)
-            self.assertEqual(result[-1]['data'], dict(data_list[0]))
-            result_view = self.target_controller._client.get_contact(contact_id=result[-1]['identifier'])
-            self.assertEqual(result_view['id'], result[-1]['identifier'])
-            self.target_controller._client.delete_contact(contact_id=result[-1]['identifier'])
+            action_specification_id = _controller['specification'].id
+            result = _controller['controller'].get_action_specification_options(action_specification_id)
+            _campaign = None
+            for i in result:
+                if i["id"] == os.environ.get("TEST_GET_RESPONSE_CAMPAIGN"):
+                    _campaign = i["id"]
+            self.assertIsInstance(result, tuple)
+            self.assertEqual(_campaign, os.environ.get("TEST_GET_RESPONSE_CAMPAIGN"))
+
+     ##Pendientes
+
+    """Cualquier método que implique crear un contacto, no se puede realizar test, debido a que
+    el usuario queda registrado una vez acepte la subscripción en el correo"""
+
+    # def test_send_stored_data(self):
+    #     """ Verifica que se cree un contacto y que el métod send_store_data retorne una lista de acuerdo a:
+    #             {'data': {(%dict del metodo 'get_dict_with_source_data')},
+    #              'response': (%mensaje del resultado),
+    #              'sent': True|False,
+    #              'identifier': (%identificador del dato enviado. Ej: ID.)
+    #             }
+    #             Al final se borra el contacto de la aplicación.
+    #             """
+    #     for _controller in self._list_target_controllers:
+    #         if _controller['action'] != 'Unsubscribe':
+    #             data_list = [OrderedDict(self._get_datalist())]
+    #             result = _controller['controller'].send_stored_data(data_list)
+    #             self.assertIsInstance(result, list)
+    #             self.assertIsInstance(result[-1], dict)
+    #             self.assertIn('data', result[-1])
+    #             self.assertIn('response', result[-1])
+    #             self.assertIn('sent', result[-1])
+    #             self.assertIn('identifier', result[-1])
+    #             self.assertIsInstance(result[-1]['data'], dict)
+    #             self.assertIsInstance(result[-1]['response'], dict)
+    #             self.assertIsInstance(result[-1]['sent'], bool)
+    #             self.assertEqual(result[-1]['data'], dict(data_list[0]))
+    #             result_view = self.target_controller._client.get_contact(contact_id=result[-1]['identifier'])
+    #             self.assertEqual(result_view['id'], result[-1]['identifier'])
+    #             self.target_controller._client.delete_contact(contact_id=result[-1]['identifier'])
 
     # def test_send_target_data(self):
     #     """Verifica que se cree el registro ingresado en la tabla Sendstoredata, al final se borra
@@ -204,5 +244,16 @@ class GetResponseControllerTestCases(TestCase):
     #     count_history = SendHistory.objects.all().count()
     #     self.assertNotEqual(count_history, 0)
     #     self.target_controller._client.delete_contact(result[0])
-    #
+
+    # def test_subscribe contact(self):
+    #     """No se puede realizar debido a que implica crear un contacto"""
+    #     return None
+
+    # def test_unsubscribe_contact(self):
+    #     """No se puede realizar debido a que implica crear un contacto"""
+    #     return None
+
+
+
+
 

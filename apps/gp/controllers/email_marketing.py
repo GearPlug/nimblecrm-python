@@ -37,7 +37,6 @@ class GetResponseController(BaseController):
             return self._client is None
 
     def send_stored_data(self, data_list):
-        print("data list", data_list)
         obj_list = []
         _action = self._plug.action.name
         for obj in data_list:
