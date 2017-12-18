@@ -1,5 +1,5 @@
 .ayuda {
-    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 0 18px;*/
+    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 18px;*/
     /*background-size: contain;*/
 }
 
@@ -23,7 +23,7 @@
 
 ul.menu{
     list-style-type: none;
-    margin: 2.1% 20% 0 0;
+    margin: 2.4% 0 0 0;
 }
 
 ul.menu li{
@@ -31,11 +31,15 @@ ul.menu li{
     padding-right: 4.1%;
 }
 
-ul.menu li a{
+ul.menu.nav li a{
     color: #9C9BA0;
     font-family: 'Sansation Light';
     font-size: 1.6em;
     text-decoration: none;
+}
+
+ul.menu.nav li a:hover {
+    color: #9C9BA0;
 }
 
 ul.menu li.menu-login {
@@ -48,6 +52,10 @@ ul.menu li.menu-login {
 ul.menu li.menu-login a {
     color: #005CA6;
     font-family: 'Sansation';
+}
+
+ul.menu.nav li.menu-login a:hover {
+    color: #005CA6;
 }
 
 /* Footer */
@@ -170,6 +178,10 @@ li.menu-login.dropdown.profile ul li p{
     border-color: transparent;
 }
 
+img.logo_header {
+    margin: 11% 0 0 105%;
+}
+
 @media only screen and (max-width:1600px) {
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
         margin: 10.8% 0 0 22.8%;
@@ -226,5 +238,27 @@ li.menu-login.dropdown.profile ul li p{
 
     .privacy .border-privacy {
         padding: 0.1% 0.7% 0.1% 0.7%;
+    }
+}
+
+@media only screen and (max-width:320px) and (orientation: portrait) {
+    .navbar-header a.navbar-toggle {
+        border-color: transparent;
+        margin-right: 9.1%;
+        margin-top: 6.4%;
+        padding: 0 0;
+    }
+
+    .navbar-header a.navbar-toggle:hover {
+        background-color: inherit;
+    }
+
+    img.burguer-menu {
+        width: 74%;
+    }
+
+    img.logo_header {
+        margin: 4% 0 0 31%;
+        width: 38%;
     }
 }

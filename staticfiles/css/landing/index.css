@@ -222,8 +222,10 @@
 .name11 {
     color: white;
     font-family: "Sansation";
-    font-size: 1.2em;
-    margin-top: 5.6%;
+    font-size: 1.1em;
+    margin-top: 3.6%;
+    padding-left: 0;
+    text-align: justify;
 }
 
 .selected_page {
@@ -338,6 +340,18 @@ img.img-comments {
     margin-bottom: 50%;
 }
 
+.morecontent span {
+	display: none;
+}
+
+a.morelink {
+    color: #00E08F;
+    text-decoration: underline;
+}
+
+
+
+
 @media only screen and (max-width:1600px) {
     .slide-caption {
         left: 8.9%;
@@ -363,7 +377,9 @@ img.img-comments {
     }
 
     .name11 {
-        margin-top: 6.6%;
+        margin-top: 2.6%;
+        padding-left: 5%;
+        text-align: left;
     }
 }
 
@@ -382,7 +398,7 @@ img.img-comments {
     }
 
     .name11 {
-        padding-left: 8%;
+        padding-left: 1%;
     }
 
     .bg_login {
@@ -400,7 +416,8 @@ img.img-comments {
     }
 
     .name11 {
-        margin-top: 4.6%;
+        margin-top: 1.6%;
+        text-align: justify;
     }
 }
 
@@ -442,8 +459,11 @@ img.img-comments {
     }
 
     .name11 {
-        margin-top: -0.4%;
+        font-size: 1em;
+        line-height: 108%;
+        margin-top: 1.6%;
         padding-left: 0%;
+        .text-align: left;
     }
 
     .btn-login {

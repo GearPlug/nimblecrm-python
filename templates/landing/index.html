@@ -20,27 +20,27 @@
                     <div class="item active">
                         <img src="{% static 'img/landing/slide2.jpg' %}" alt="First slide" class="slide">
                     </div>
-{#                    <div class="item">#}
-{#                        <img src="{% static 'img/landing/slide3.png' %}" alt="Second slide" class="slide-other">#}
-{#                        <div class="carousel-caption slide-caption-blog">#}
-{#                            Lo importante del <br /> mantenimiento de tus <span style="font-family: 'Sansation Bold'">Gears</span>#}
-{#                            <hr>#}
-{#                            <span class="minus">Lee nuestro Blog</span> <br />#}
-{#                            <button type="button" class="button-blog">click aquí</button>#}
-{#                        </div>#}
-{#                    </div>#}
+                    {#                    <div class="item">#}
+                    {#                        <img src="{% static 'img/landing/slide3.png' %}" alt="Second slide" class="slide-other">#}
+                    {#                        <div class="carousel-caption slide-caption-blog">#}
+                    {#                            Lo importante del <br /> mantenimiento de tus <span style="font-family: 'Sansation Bold'">Gears</span>#}
+                    {#                            <hr>#}
+                    {#                            <span class="minus">Lee nuestro Blog</span> <br />#}
+                    {#                            <button type="button" class="button-blog">click aquí</button>#}
+                    {#                        </div>#}
+                    {#                    </div>#}
                 {% endif %}
             </div>
-{#            <a class="left carousel-control not-bg" href="#carousel-example-generic" data-slide="prev">#}
-{#                <span class="slide-arrow">#}
-{#                    <img src="{% static 'img/landing/arrow_left.png' %}">#}
-{#                </span>#}
-{#            </a>#}
-{#            <a class="right carousel-control not-bg" href="#carousel-example-generic" data-slide="next">#}
-{#                <span class="slide-arrow">#}
-{#                    <img src="{% static 'img/landing/arrow_right.png' %}">#}
-{#                </span>#}
-{#            </a>#}
+            {#            <a class="left carousel-control not-bg" href="#carousel-example-generic" data-slide="prev">#}
+            {#                <span class="slide-arrow">#}
+            {#                    <img src="{% static 'img/landing/arrow_left.png' %}">#}
+            {#                </span>#}
+            {#            </a>#}
+            {#            <a class="right carousel-control not-bg" href="#carousel-example-generic" data-slide="next">#}
+            {#                <span class="slide-arrow">#}
+            {#                    <img src="{% static 'img/landing/arrow_right.png' %}">#}
+            {#                </span>#}
+            {#            </a>#}
         </div>
         {% if request.user.is_authenticated == False %}
             <div class="bg-form">
@@ -62,8 +62,10 @@
                 <br/>
                 <p class="text-p">
                     {% blocktrans %}
-                        GearPlug es un software de automatización y optimización de todas las herramientas digitales para que su
-                        empresa logre todos los KPI (Indicadores de Rendimiento) dispuestos, los cuales pueden mejorar y hacer
+                        GearPlug es un software de automatización y optimización de todas las herramientas digitales
+                        para que su
+                        empresa logre todos los KPI (Indicadores de Rendimiento) dispuestos, los cuales pueden mejorar y
+                        hacer
                         efectivos por medio de diferentes soluciones integrales de marketing digital que ofrece nuestro
                         software.
                     {% endblocktrans %}
@@ -147,21 +149,96 @@
                     <hr class="hr-comments">
                 </div>
                 <div class="col-sm-12 col-md-10 col-md-offset-1 not-padding">
-                    {% with name='Daniel Ricco' text='Lorem ipsum dolor sit amet, consectetur adipiscing elit.' image='img/landing/guy3.png' %}
-                        {% for i in 'xxxxxx' %}
-                            <div class="col-sm-6 col-md-4 not-padding">
-                                <div class="list-item1">
-                                    <div class="col-sm-5 col-md-4 image11 not-padding padding-sm">
-                                        <img src="{% static image %}" class="img-comments" style="margin-bottom: 50%;">
-                                    </div>
-                                    <div class="col-sm-7 col-md-8 name11">
-                                        {{ name }}<br/>
-                                        {{ text }}
-                                    </div>
-                                </div>
+                    <div class="col-sm-6 col-md-4 not-padding ">
+                        <div class="list-item1">
+                            <div class="col-sm-5 col-md-4 image11 not-padding padding-sm">
+                                <img src="{% static 'img/landing/daniel.png' %}" class="img-comments"
+                                     style="margin-bottom: 50%;">
                             </div>
-                        {% endfor %}
-                    {% endwith %}
+                            <div class="col-sm-7 col-md-8 name11 comment more">
+                                <b>Daniel Ricco</b>
+                                <br/>
+                                Tengo una pyme y desde que me decidí a optimizar todos los procesos de mi empresa en
+                                serio se ven los resultados, solo es cuestión de arriesgarse y apostarle a tecnología,
+                                en serio, mi consejo para todos los emprendedores, microempresarios es a apostarle la
+                                tecnología.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-4 not-padding ">
+                        <div class="list-item1">
+                            <div class="col-sm-5 col-md-4 image11 not-padding padding-sm">
+                                <img src="{% static 'img/landing/patricia.png' %}" class="img-comments"
+                                     style="margin-bottom: 50%;">
+                            </div>
+                            <div class="col-sm-7 col-md-8 name11 comment more">
+                                <b>Patricia Romero</b>
+                                <br/>
+                                Llevo 6 años con mi empresa y por pensar en ahorrarse un dinero en innovación no estaba
+                                cumpliendo con las metas y un desorden ni el berraco, muy buen software y un gran
+                                soporte técnico, recomendado.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-4 not-padding ">
+                        <div class="list-item1">
+                            <div class="col-sm-5 col-md-4 image11 not-padding padding-sm">
+                                <img src="{% static 'img/landing/lorena.png' %}" class="img-comments"
+                                     style="margin-bottom: 50%;">
+                            </div>
+                            <div class="col-sm-7 col-md-8 name11 comment more">
+                                <b>Lorena Albar</b>
+                                <br/>
+                                Me demoraba mucho ingresando todos los datos de las páginas de redes sociales de mi
+                                empresa, en serio, era absurdo, gearplug lo hace por mí, gracias. Muy bueno,
+                                recomendado.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-md-4 not-padding ">
+                        <div class="list-item1">
+                            <div class="col-sm-5 col-md-4 image11 not-padding padding-sm">
+                                <img src="{% static 'img/landing/miguel.png' %}" class="img-comments"
+                                     style="margin-bottom: 50%;">
+                            </div>
+                            <div class="col-sm-7 col-md-8 name11 comment more">
+                                <b>Miguel Gaviria</b>
+                                <br/>
+                                De un tiempo para acá, más exactamente 4 meses, mi equipo es inusualmente eficiente,
+                                todo es más ordenado y los reportes llegan como deben ser y al tiempo que debe ser,
+                                pero lo mejor, gracias a ustedes ya no nos quedamos hasta tarde los viernes.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-4 not-padding ">
+                        <div class="list-item1">
+                            <div class="col-sm-5 col-md-4 image11 not-padding padding-sm">
+                                <img src="{% static 'img/landing/pablo.png' %}" class="img-comments"
+                                     style="margin-bottom: 50%;">
+                            </div>
+                            <div class="col-sm-7 col-md-8 name11 comment more">
+                                <b>Pablo Gomez</b>
+                                <br/>
+                                Acabé de adquirir el software, les estaré contando cómo me va.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-4 not-padding ">
+                        <div class="list-item1">
+                            <div class="col-sm-5 col-md-4 image11 not-padding padding-sm">
+                                <img src="{% static 'img/landing/angela.png' %}" class="img-comments"
+                                     style="margin-bottom: 50%;">
+                            </div>
+                            <div class="col-sm-7 col-md-8 name11 comment more">
+                                <b>Angela McKenzie</b>
+                                <br/>
+                                Gearplug se convirtió en un compañero más del equipo, nos ahorra mucho tiempo
+                                ingresando los datos y pasándolos a una base de datos para las campañas de mailing,
+                                recomendado full.
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -188,6 +265,36 @@
                 });
                 return false;
             })
+
+            var showChar = 230;
+            var ellipsestext = "...";
+            var moretext = "Ver más";
+            var lesstext = "Menos";
+
+            $('.more').each(function () {
+                var content = $(this).html();
+                if (content.length > showChar) {
+                    var c = content.substr(0, showChar);
+                    var h = content.substr(showChar - 1, content.length - showChar);
+                    var html = c + '<span class="moreellipses">' + ellipsestext + '&nbsp;</span><span class="morecontent"><span>' + h + '</span>&nbsp;&nbsp;<a href="" class="morelink">' + moretext + '</a></span>';
+
+                    $(this).html(html);
+                }
+            });
+            $(".morelink").click(function () {
+                if ($(this).hasClass("less")) {
+                    $(this).removeClass("less");
+                    $(this).html(moretext);
+                    $('.comment').height(84);
+                } else {
+                    $(this).addClass("less");
+                    $(this).html(lesstext);
+                    $('.comment').height(180);
+                }
+                $(this).parent().prev().toggle();
+                $(this).prev().toggle();
+                return false;
+            });
         })
     </script>
 {% endblock %}
