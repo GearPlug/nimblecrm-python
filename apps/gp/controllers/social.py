@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse
-from apps.gp.controllers.base import BaseController
+from apps.gp.controllers.base import BaseController, GoogleBaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from django.conf import settings
@@ -204,7 +204,7 @@ class InstagramController(BaseController):
         return True
 
 
-class YouTubeController(BaseController):
+class YouTubeController(GoogleBaseController):
     _credential = None
     _client = None
     TOKEN = 'GearPlug2017'
@@ -240,13 +240,19 @@ class YouTubeController(BaseController):
                                       message='Error getting the YouTube attributes args. {}'.format(str(e)))
             if credentials_json is not None:
                 try:
-                    _json = json.dumps(credentials_json)
-                    self._credential = GoogleClient.OAuth2Credentials.from_json(_json)
+                    if isinstance(credentials_json, dict):
+                        self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
+                    else:
+                        self._credential = GoogleClient.OAuth2Credentials.from_json(credentials_json)
+                except ValueError:
+                    raise
+
+                try:
                     self._refresh_token()
                     http_auth = self._credential.authorize(httplib2.Http())
                     self._client = discovery.build('youtube', 'v3', http=http_auth)
-                except ValueError:
-                    raise
+                except GoogleClient.HttpAccessTokenRefreshError:
+                    self._report_broken_token()
 
     def test_connection(self):
         params = {
@@ -254,15 +260,6 @@ class YouTubeController(BaseController):
             'part': "id,snippet"
         }
         return True if self._client.channels().list(**params).execute() else False
-
-    def _upate_connection_object_credentials(self):
-        self._connection_object.credentials_json = self._credential.to_json()
-        self._connection_object.save()
-
-    def _refresh_token(self, token=''):
-        if self._credential.access_token_expired:
-            self._credential.refresh(httplib2.Http())
-            self._upate_connection_object_credentials()
 
     def download_to_stored_data(self, connection_object, plug, video=None, last_source_record=None, **kwargs):
         if video is None:
@@ -329,6 +326,25 @@ class YouTubeController(BaseController):
             webhook.is_deleted = True
             webhook.save(update_fields=['is_deleted', ])
             return False
+
+    def delete_webhook(self, webhook):
+        # Verificar host para determinar url_base
+        url_base = settings.WEBHOOK_HOST
+        url_path = reverse('home:webhook', kwargs={'connector': 'youtube', 'webhook_id': webhook.id})
+        url = url_base + url_path
+
+        subscribe_url = 'https://pubsubhubbub.appspot.com/subscribe'
+        topic_url = 'https://www.youtube.com/xml/feeds/videos.xml?channel_id='
+
+        params = {
+            'hub.mode': 'unsubscribe',
+            'hub.callback': url,
+            'hub.lease_seconds': self.LEASE_SECONDS,
+            'hub.topic': topic_url + self._plug.plug_action_specification.first().value,
+            'hub.verify_token': self.TOKEN
+        }
+
+        return requests.post(url=subscribe_url, data=params)
 
     def do_webhook_process(self, body=None, POST=None, webhook_id=None, **kwargs):
         root = xmltodict.parse(body)
