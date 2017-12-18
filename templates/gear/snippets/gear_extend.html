@@ -1,6 +1,6 @@
 {% load static %}
 
-<div class="col-md-7 item extended" data-gear-id="{{ gear.id }}">
+<div class="col-md-7 item extended" data-gear-id="{{ id }}">
     <div class="image-wrapper">
         <div class="image">
             <div class="connector">
@@ -23,26 +23,26 @@
             </div>
         </div>
         <div class="name">
-            {{ gear.name }}
+            {{ name }}
         </div>
         <div class="control">
             <div class="history">
-                <a href="{% url 'gear:send_history' pk=gear.id %}">
+                <a href="{% url 'gear:send_history' pk=id %}">
                     <img src="{% static 'img/console/g8645.png' %}" width="36">
                 </a>
             </div>
             <div class="edit">
                 <img src="{% static 'img/console/g3125.png' %}" width="34">
             </div>
-            <a class="toggle-gear-btn" href="{% url 'gear:toggle' gear_id=gear.id %}">
+            <a class="toggle-gear-btn" href="{% url 'gear:toggle' gear_id=id %}">
                 <div class="button">
-                    <img src="{% static gear.is_running|yesno:'img/console/g3317.png,img/console/g3333.png' %}"
+                    <img src="{% static is_running|yesno:'img/console/g3317.png,img/console/g3333.png' %}"
                          width="36" height="36">
-                    <div class="status">{{ gear.is_running|yesno:"ON,OFF" }}</div>
+                    <div class="status">{{ is_running|yesno:"ON,OFF" }}</div>
                 </div>
             </a>
             <div style="display: inline-block">
-                <a class="manual-queue" href="{% url 'gear:manual_queue' gear_id=gear.id %}">
+                <a class="manual-queue" href="{% url 'gear:manual_queue' gear_id=id %}">
                     <img src="{% static 'img/console/loader2.png' %}" id="loading"/>
                 </a>
             </div>
