@@ -631,18 +631,17 @@ class HubSpotController(BaseController):
     _token = None
     _refresh_token = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(HubSpotController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(HubSpotController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token = self._connection_object.token
-                    self._refresh_token = self._connection_object.refresh_token
-                except Exception as e:
-                    print("Error getting the hubspot token")
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(HubSpotController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+                self._refresh_token = self._connection_object.refresh_token
+            except Exception as e:
+                print("Error getting the hubspot token")
 
     def test_connection(self):
         response = self.request()
