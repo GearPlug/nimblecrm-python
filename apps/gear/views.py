@@ -4,14 +4,14 @@ from django.forms import modelform_factory, modelformset_factory
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
 from django.views.generic.edit import FormMixin
-from django.http.response import JsonResponse, HttpResponseForbidden, HttpResponseRedirect
+from django.http.response import JsonResponse, HttpResponseForbidden, HttpResponseRedirect, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm, FiltersForm
 from apps.gp.enum import ConnectorEnum
 from apps.gp.tasks import update_plug
-from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, GearGroup, GearFilter
+from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, GearGroup, GearFilter, Connector
 from apps.history.models import DownloadHistory, SendHistory
 from oauth2client import client
 import httplib2
@@ -317,6 +317,7 @@ class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
                  'sent': item.sent,
                  'response': item.response,
                  'identifier': item.identifier,
+                 'connector': Connector.objects.get(id=item.connector_id),
                  'id': item.id,
                  } for item in self.model.objects.filter(gear_id=self.kwargs['pk'], **kwargs).order_by(order)]
 
@@ -352,7 +353,7 @@ class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
 class GearActivitiesHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
     model = SendHistory
     form_class = SendHistoryForm
-    template_name = 'gear/send_history.html'
+    template_name = 'gear/activity_history.html'
     login_url = '/accounts/login/'
 
     def get_queryset(self, **kwargs):
@@ -363,18 +364,28 @@ class GearActivitiesHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
         today_max = datetime.datetime.combine(timezone.now().date(), datetime.time.max)
         if settings.USE_TZ:
             today_max = timezone.make_aware(today_max, timezone.get_current_timezone())
-        return [{'connection': json.loads(item.connection)[0]['fields']['name'],
-                 'data': [{'name': k, 'value': v} for k, v in json.loads(item.data).items()],
-                 'date': item.date,
-                 'connector_id': item.connector_id,
-                 'connector_name': ConnectorEnum.get_connector(item.connector_id).name,
-                 'sent': item.sent,
-                 'response': item.response,
-                 'identifier': item.identifier,
-                 'id': item.id,
-                 } for item in self.model.objects.filter(gear_id__in=gears,
-                                                         date__range=(today_min,today_max),
-                                                         **kwargs).order_by('-date')[:30]]
+        context=[]
+        for gear in gears:
+            g = Gear.objects.get(pk=gear)
+            try:
+                for item in self.model.objects.filter(gear_id=gear,date__range=(today_min,today_max),**kwargs).order_by('-date')[:30]:
+                    a = {
+                        'connection': json.loads(item.connection)[0]['fields']['name'],
+                        'data': [{'name': k, 'value': v} for k, v in json.loads(item.data).items()],
+                        'date': item.date,
+                        'connector_name': ConnectorEnum.get_connector(item.connector_id).name,
+                        'sent': item.sent,
+                        'response': item.response,
+                        'identifier': item.identifier,
+                        'connector_source': Connector.objects.get(id=g.source.connection.connector.id),
+                        'connector_target': Connector.objects.get(id=g.target.connection.connector.id),
+                        'id': item.id
+                    }
+                    context.append(a)
+            except Exception as e:
+                print(e)
+                pass
+        return context
 
     def get(self, request, *args, **kwargs):
         try:
