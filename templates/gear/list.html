@@ -1,4 +1,4 @@
-    {% extends 'layouts/console_base.html' %}
+{% extends 'layouts/console_base.html' %}
 {% load static i18n %}
 
 {% block content %}
@@ -82,7 +82,7 @@
                     <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;"
                          id="group_gear_{{ group.id }}" data-show="True">
                         {% for gear in group.gear.all %}
-                            {% include 'gear/snippets/gear_extend.html' with id=gear.id name=gear.name source=gear.source.connection.connector.icon.url target=gear.target.connection.connector.icon.url %}
+                            {% include 'gear/snippets/gear_extend.html' with id=gear.id name=gear.name is_running=gear.is_running %}
                         {% endfor %}
                     </div>
                 {% endfor %}
@@ -116,14 +116,14 @@
                     $.ajax({
                         method: "POST",
                         url: url,
-                        beforeSend: function(){
+                        beforeSend: function () {
                             $(loading).attr('src', '{% static 'img/console/807.gif' %}');
                         },
-                        success: function(){
+                        success: function () {
                             $(loading).attr('src', '{% static 'img/console/loader2.png' %}');
                         }
                     })
-                is_blocked = false;
+                    is_blocked = false;
                 }
                 return false;
             });

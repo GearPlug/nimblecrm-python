@@ -8,13 +8,14 @@ from django.views.decorators.csrf import csrf_exempt
 from apps.gear.apps import APP_NAME as app_name
 from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm, FiltersForm
 from apps.gp.enum import ConnectorEnum
-from apps.gp.tasks import update_plug
+from apps.gp.tasks import dispatch
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, GearGroup, GearFilter
 from apps.history.models import DownloadHistory, SendHistory
 from oauth2client import client
 import httplib2
 import json
 from django.apps import apps
+
 
 class ListGearView(LoginRequiredMixin, ListView):
     """
@@ -35,8 +36,9 @@ class ListGearView(LoginRequiredMixin, ListView):
         return context
 
     def get_queryset(self):
-        return self.model.objects.filter(
-            user=self.request.user).prefetch_related('gear')
+        return self.model.objects.filter(user=self.request.user).prefetch_related('gear').prefetch_related(
+            'gear__source__connection__connector').prefetch_related(
+            'gear__target__connection__connector').prefetch_related('gear__gear_map')
 
 
 class CreateGearView(LoginRequiredMixin, CreateView):
@@ -552,6 +554,7 @@ def set_gear_id_to_session(request):
         return JsonResponse({'data': True})
     return JsonResponse({'data': False})
 
+
 @csrf_exempt
 def manual_queue(request, gear_id):
     if request.is_ajax() is True and request.method == 'POST':
@@ -564,20 +567,21 @@ def manual_queue(request, gear_id):
                     return JsonResponse({'data': 'Error'})
                 connector_source = ConnectorEnum.get_connector(source.connection.connector.id)
                 controller_class = ConnectorEnum.get_controller(connector_source)
-                controller = controller_class(connection=source.connection.related_connection, plug=source)
-                if not controller.test_connection():
-                    return JsonResponse({'data': 'Error'})
+                controller_s = controller_class(connection=source.connection.related_connection, plug=source)
+                if not controller_s.test_connection():
+                    return JsonResponse({'data': 'Error. Source is inactive.'})
                 connector_target = ConnectorEnum.get_connector(target.connection.connector.id)
                 controller_class = ConnectorEnum.get_controller(connector_target)
-                controller = controller_class(connection=target.connection.related_connection, plug=target)
-                if not controller.test_connection():
-                    return JsonResponse({'data': 'Error'})
+                controller_t = controller_class(connection=target.connection.related_connection, plug=target)
+                if not controller_t.test_connection():
+                    return JsonResponse({'data': 'Error. Target is inactive.'})
             else:
                 return JsonResponse(
                     {'data': "You don't have permission to toggle this gear."})
             try:
-                # update_plug.s(g.source.id, g.id).apply_async(queue='manual-queue')
-                update_plug.s(g.source.id, g.id).apply_async()
+                dispatch.s(g.id).apply_async(queue='dispatch')
+                # dispatch.s(g.id).apply_async()
+                pass
             except Exception as e:
                 return JsonResponse({'data': 'Problem updating Gear - {0}.'.format(e)})
         except Gear.DoesNotExist:
