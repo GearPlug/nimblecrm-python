@@ -1,0 +1,148 @@
+{% extends 'layouts/console_base.html' %}
+{% load static tz%}
+{% block content %}
+    <link rel="stylesheet"
+    <input type="hidden" id="retry_url" value="{% url 'gear:retry_send_history' %}">
+    <div class="row history">
+    <div class="title">
+        {% if recent %}
+        <span>Actividad Reciente</span>
+        {% else %}
+        <span>Historial Entrante</span>
+        {% endif %}
+    </div>
+    <div class="col-md-12 history-list">
+        {% for obj in object_list %}
+        <div class="row">
+            <div class="item history-item" data-history="{{ obj.id }}">
+                <div class="col-md-1">
+                    <img src="{{ obj.connector_source.icon73.url }}" width="35px"></img>
+                    <img src="{% static 'img/console/g7316.png' %}" width="9">
+                    <img src="{{ obj.connector_target.icon73.url }}" width="35px"></img>
+                </div>
+                <div class="col-md-1">
+                    {% if obj.sent == 0 %}
+                        <div class="indicator red">FAILED</div>
+                    {% elif obj.sent == 1 %}
+                        <div class="indicator green">SUCCESS</div>
+                    {% elif obj.sent == 2 %}
+                        <div class="indicator orange">FILTERED</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-5">
+                    <div class="text">
+                        {{ obj.date|localtime }}
+                        {% if obj.sent != 1 %}
+                            <b class="resend">resend</b>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <ul style="display:none;" data-show="false" data-history="{{ obj.id }}">
+                        {% if obj.sent != 1 %}
+                            <li><b>Response</b>: {{ obj.response }}</li>
+                        {% endif %}
+                            <li><b>Identifier</b>: {{ obj.identifier }}</li>
+                        {% for item in obj.data %}
+                            {% if item.value == 'item.date' %}
+                                <li>{{ item.name }}: {{ item.value|localtime }}</li>
+                            {% else %}
+                                <li>{{ item.name }}: {{ item.value }}</li>
+                            {% endif %}
+                        {% endfor %}
+
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endblock %}
+    {% block scripts %}
+    {{ block.super }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/js/bootstrap-datepicker.js"></script>
+    <script src="https://momentjs.com/downloads/moment.js"></script>
+    <script src="https://cdn.rawgit.com/Eonasdan/bootstrap-datetimepicker/e8bddc60e73c1ec2475f827be36e1957af72e2ea/src/js/bootstrap-datetimepicker.js"></script>
+
+    <script type="application/javascript">
+        $(document).ready(function () {
+            $('div.history-item').on('click', function (e) {
+                var item_id = $(this).attr('data-history');
+                var item_ul = $('ul[data-history=' + item_id + ']');
+                var must_show = !($(item_ul).attr('data-show') === "true");
+                $(item_ul).attr('data-show', must_show);
+                if (must_show === true) {
+                    $(item_ul).show();
+                } else {
+                    $(item_ul).hide();
+                }
+            });
+            $('div#id_order span.input-group-addon').click(function (e) {
+                var order = $(this).parent().attr('data-order');
+                if (order.toLowerCase() == 'asc') {
+                    order = 'desc';
+                    var old_arrow = 'up';
+                    var new_arrow = 'down';
+                } else if (order.toLowerCase() == 'desc') {
+                    order = 'asc';
+                    var old_arrow = 'down';
+                    var new_arrow = 'up';
+                }
+                $(this).parent().attr('data-order', order);
+                $(this).parent().find('select').val(order);
+                $(this).find('span').removeClass('glyphicon-arrow-' + old_arrow);
+                $(this).find('span').addClass('glyphicon-arrow-' + new_arrow);
+            });
+
+            $('div#id_order select').on('change', function (e) {
+                var order = $(this).val();
+                $(this).parent().attr('data-order', order);
+                console.log(order)
+                if (order.toLowerCase() == 'asc') {
+                    var old_arrow = 'down';
+                    var new_arrow = 'up';
+                } else if (order.toLowerCase() == 'desc') {
+                    var old_arrow = 'up';
+                    var new_arrow = 'down';
+                }
+                $(this).parent().find('span span').removeClass('glyphicon-arrow-' + old_arrow);
+                $(this).parent().find('span span').addClass('glyphicon-arrow-' + new_arrow);
+            });
+        });
+
+        $(function () {
+            $('#datepicker-from input').datetimepicker({
+                showTodayButton: true,
+                format: "YYYY-MM-DD HH:mm"
+
+            });
+            $('#datepicker-to input').datetimepicker({
+                useCurrent: false,
+                showTodayButton: true,
+                format: "YYYY-MM-DD HH:mm"
+            });
+            $("#datepicker-from input").on("dp.change", function (e) {
+                $('#datepicker-to input').data("DateTimePicker").minDate(e.date);
+            });
+            $("#datepicker-to input").on("dp.change", function (e) {
+                $('#datepicker-from input').data("DateTimePicker").maxDate(e.date);
+            });
+        });
+
+        $('.resend').click(function () {
+            var button = $(this);
+            $.ajax({
+                method: "POST",
+                url: $('#retry_url').val(),
+                data: {history_id: $(this).parent().data('history')}
+            }).done(function (response) {
+                if (response.data) {
+                    button.text('sent');
+                }
+            });
+            return false;
+        })
+    </script>
+    {% endblock %}
+</div>
