@@ -305,7 +305,8 @@ class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
     form_class = SendHistoryForm
     template_name = 'gear/send_history.html'
     login_url = '/accounts/login/'
-    paginate_by = 30
+
+    # paginate_by = 30
 
     def get_queryset(self, **kwargs):
         order = '-date'
@@ -364,11 +365,12 @@ class GearActivitiesHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
         today_max = datetime.datetime.combine(timezone.now().date(), datetime.time.max)
         if settings.USE_TZ:
             today_max = timezone.make_aware(today_max, timezone.get_current_timezone())
-        context=[]
+        activity = []
         for gear in gears:
             g = Gear.objects.get(pk=gear)
             try:
-                for item in self.model.objects.filter(gear_id=gear,date__range=(today_min,today_max),**kwargs).order_by('-date')[:30]:
+                for item in self.model.objects.filter(gear_id=gear, date__range=(today_min, today_max),
+                                                      **kwargs).order_by('date')[:30]:
                     a = {
                         'connection': json.loads(item.connection)[0]['fields']['name'],
                         'data': [{'name': k, 'value': v} for k, v in json.loads(item.data).items()],
@@ -381,11 +383,10 @@ class GearActivitiesHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
                         'connector_target': Connector.objects.get(id=g.target.connection.connector.id),
                         'id': item.id
                     }
-                    context.append(a)
+                    activity.append(a)
             except Exception as e:
-                print(e)
-                pass
-        return context
+                return e
+        return activity
 
     def get(self, request, *args, **kwargs):
         try:
