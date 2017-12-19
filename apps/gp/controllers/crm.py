@@ -645,9 +645,14 @@ class HubSpotController(BaseController):
 
     def test_connection(self):
         response = self.request()
-        if 'status' in response and response['status'] == "error":
-            self.get_refresh_token(self._refresh_token)
-        return self._token is not None
+        if not response.ok:
+            try:
+                self.get_refresh_token(self._refresh_token)
+                return self._token is not None and self._refresh_token is not None
+            except:
+                self._token is None
+        else:
+            return self._token is not None and self._refresh_token is not None
 
     def get_modules(self):
         return [{
@@ -662,10 +667,9 @@ class HubSpotController(BaseController):
         }]
 
     def get_action_specification_options(self, action_specification_id):
-        print("actions")
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
-        if action_specification.name.lower() == 'data':
+        if action_specification.name.lower() == 'module':
             return tuple({
                              'name': o['name'],
                              'id': o['id']
@@ -822,7 +826,7 @@ class HubSpotController(BaseController):
         headers = {
             'Authorization': 'Bearer {0}'.format(self._token),
         }
-        return requests.get(url, headers=headers).json()
+        return requests.get(url, headers=headers)
 
 
 class VtigerController(BaseController):
