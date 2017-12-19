@@ -59,7 +59,8 @@
                                            role="button" aria-haspopup="true" aria-expanded="false">
                                             <img src="{% static 'img/landing/avatar.png' %}" class="img-avatar">
                                             <div class="text-avatar">
-                                                {{ request.user.first_name|default:request.user.email }}</div>
+                                                {{ request.user.first_name|default:request.user.email }}
+                                            </div>
                                         </a>
                                         <ul class="dropdown-menu">
                                             <li><a href="{% url 'home:dashboard' %}"><p

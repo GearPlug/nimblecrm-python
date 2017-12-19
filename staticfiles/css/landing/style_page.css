@@ -23,12 +23,12 @@
 
 ul.menu{
     list-style-type: none;
-    margin: 2.4% 0 0 0;
+    margin: 2.4% 2.3% 0 0;
 }
 
 ul.menu li{
     display: inline;
-    padding-right: 4.1%;
+    padding-right: 1.5%;
 }
 
 ul.menu.nav li a{
@@ -46,12 +46,13 @@ ul.menu li.menu-login {
     border-left: #09DF8E solid 3px;
     color: #9B999F;
     font-family: 'Sansation';
-    padding: 1.7% 0 1% 3%;
+    padding: 1.3% 0 0 1.2%;
 }
 
 ul.menu li.menu-login a {
     color: #005CA6;
     font-family: 'Sansation';
+    padding-top: 4%;
 }
 
 ul.menu.nav li.menu-login a:hover {
@@ -122,13 +123,13 @@ footer {
 }
 
 li.menu-login.profile img.img-avatar {
-    margin-top: -0.5%;
+    margin-top: -3.6%;
 }
 
 li.menu-login.dropdown.profile.open ul.dropdown-menu {
     border-radius: inherit;
     box-shadow: none;
-    margin: 9.3% 0 0 24.1%;
+    margin: 4.4% 0 0 17.7%;
     padding: 0.7% 0 0.2% 0;
 }
 
@@ -140,6 +141,7 @@ li.menu-login.dropdown.profile.open ul li a {
     color: #4B464B;
     font-family: "Sansation Light";
     font-size: 1.4em;
+    padding: 2.5% 12.3%;
 }
 
 li.menu-login.dropdown.profile ul.dropdown-menu li a:focus, li.menu-login.dropdown.profile ul.dropdown-menu li a:hover {
@@ -178,22 +180,39 @@ li.menu-login.dropdown.profile ul li p{
     border-color: transparent;
 }
 
+ul.navbar-nav {
+    float: right;
+    width: 53.6%;
+}
+
 img.logo_header {
     margin: 11% 0 0 105%;
+}
+
+li.profile.open a{
+    background-color: transparent !important;
 }
 
 @media only screen and (max-width:1600px) {
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
         margin: 10.8% 0 0 22.8%;
     }
+
+    img.logo_header {
+        margin: 11% 0 0 62%;
+    }
 }
 @media only screen and (max-width:1440px) {
     ul.menu {
-        margin: 2.1% 19.5% 0 0;
+        margin: 2.1% 5.5% 0 0;
     }
 
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
         margin: 12.5% 0 0 20.9%;
+    }
+
+    img.logo_header {
+        margin: 11% 0 0 44%;
     }
 }
 
