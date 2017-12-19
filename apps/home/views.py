@@ -29,6 +29,7 @@ class DashBoardView(LoginRequiredMixin, TemplateView):
 
 class IncomingWebhook(View):
     INSTAGRAM_TOKEN = 'GearPlug2017'
+    YOUTUBE_TOKEN = 'GearPlug2017'
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
@@ -51,6 +52,17 @@ class IncomingWebhook(View):
             if mode != 'subscribe' or not token or token != self.INSTAGRAM_TOKEN:
                 response.status_code = 200
                 response.content = challenge
+        if connector == ConnectorEnum.YouTube:
+            mode = request.GET.get('hub.mode', None)
+            challenge = request.GET.get('hub.challenge', None)
+            token = request.GET.get('hub.verify_token', None)
+            if token and token == self.YOUTUBE_TOKEN:
+                if mode == 'subscribe':
+                    response.status_code = 200
+                    response.content = challenge
+                elif mode == 'unsubscribe':
+                    response.status_code = 200
+                    response.content = challenge
         return response
 
     def head(self, request, *args, **kwargs):
@@ -67,8 +79,12 @@ class IncomingWebhook(View):
         controller_class = ConnectorEnum.get_controller(connector)
         controller = controller_class()
         try:
-            print(request.body.decode('utf-8'))
-            body = json.loads(request.body.decode('utf-8'))
+            if connector == ConnectorEnum.YouTube:
+                # TODO: Youtube receibe XML, por tanto no es necesario parsear el response a JSON.
+                body = request.body.decode('utf-8')
+            else:
+                print(request.body.decode('utf-8'))
+                body = json.loads(request.body.decode('utf-8'))
         except Exception as e:
             print(e)
             body = None

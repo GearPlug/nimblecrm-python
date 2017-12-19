@@ -191,6 +191,10 @@ class BaseController(FilterBaseController):
     def has_test_information(self):
         return False
 
+    @property
+    def needs_polling(self):
+        return not self.has_webhook
+
 
 class GoogleBaseController(BaseController):
     def _upate_connection_object_credentials(self):
