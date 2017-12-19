@@ -1,15 +1,11 @@
 from apps.gp.models import Gear, StoredData, GearMapData, Plug
 from apps.gp.enum import ConnectorEnum
 from apiconnector.celery import app
-from django.core.cache import cache
+from django.conf import settings
+from django.core.mail import send_mail
 from django.utils import timezone, dateparse
 from collections import OrderedDict
-
-# TEST
-import random
 import redis
-import time
-from celery.task.control import inspect
 
 LOCK_EXPIRE = 60 * 1
 REDIS_HOST = 'localhost'
@@ -28,7 +24,7 @@ def dispatch_all_gears():
     return True
 
 
-@app.task(bind=True, time_limit=30, )
+@app.task(bind=True, max_retries=5, soft_time_limit=20, time_limit=25, )
 def dispatch(self, gear_id, skip_source=False):
     con = redis.StrictRedis(REDIS_HOST, REDIS_PORT, db=0, charset="utf-8", decode_responses=True)
     NOW = timezone.now()
@@ -39,6 +35,7 @@ def dispatch(self, gear_id, skip_source=False):
             source_connector = ConnectorEnum.get_connector(source.connection.connector.id)
             source_controller_class = ConnectorEnum.get_controller(source_connector)
             source_controller = source_controller_class(connection=source.connection.related_connection, plug=source)
+            # TODO: VALIDAR QUE SE INSTANCIE BIEN SINO DESACTIVAR.
             if source_controller.needs_polling:
                 if source_controller.test_connection():
                     source_task_name = "lock-{0}-task-plug".format(source.id)
@@ -59,7 +56,21 @@ def dispatch(self, gear_id, skip_source=False):
                                 # TODO: CHECK THIS TASK AND REMOVE IT.
                         print("This plug's source seems to be updating already.")
                 else:
-                    raise Exception("Desactivar gear por connection al tercer intento.")
+                    if self.request.retries >= 5:
+                        gear.is_active = False
+                        gear.save(update_fields=['is_active', ])
+                        # TODO: EMAIL NOTIFICAR GEAR APAGADO.
+                        m = 'Hello, your GEAR {0} [{1}] has been deactivated due to an error with your source connection {2}[' \
+                            '{3}].\nPlease review your connection is still valid and turn on your Gear again.\n' \
+                            '{4}'.format(gear.name, gear.id, source_controller.connector, source.connection.id,
+                                         settings.CURRENT_HOST)
+                        send_notification_email.s(m, 'Deactivated Gear', recipient=gear.user.email).apply_async(
+                            queue='misc')
+                    else:
+                        next_retry = 2 ** (self.request.retries + 1)
+                        print("Retrying [{0}] in: {1} seconds.".format(self.request.retries, next_retry))
+                        raise self.retry(countdown=next_retry)
+                    return False
         # TODO: TARGET
         query_params = {'connection_id': source.connection.id, 'plug_id': source.id, }
         target = Plug.objects.filter(pk=gear.target.id).prefetch_related('connection__connector').first()
@@ -95,12 +106,14 @@ def do_poll(self, plug_id):
     con = redis.StrictRedis(REDIS_HOST, REDIS_PORT, db=0, charset="utf-8", decode_responses=True)
     task_name = "lock-{0}-task-plug".format(plug_id)
     try:
-        source = Plug.objects.filter(pk=plug_id).prefetch_related('connection__connector').first()
+        source = Plug.objects.filter(pk=plug_id).prefetch_related('connection__connector').prefetch_related(
+            'connection').prefetch_related('user').first()
         gear = Gear.objects.get(source_id=plug_id)
         print("POLLING DATA FROM: {0} from GEAR [{1}]".format(source.connection.connector.name, gear.id))
         source_connector = ConnectorEnum.get_connector(source.connection.connector.id)
         source_controller_class = ConnectorEnum.get_controller(source_connector)
         source_controller = source_controller_class(connection=source.connection.related_connection, plug=source)
+        # TODO: VALIDAR QUE SE INSTANCIE BIEN SINO DESACTIVAR.
         if source_controller.test_connection():
             last_order_by_value = gear.gear_map.last_source_order_by_field_value
             # TODO: ADD VALIDATIONS FOR THIS VALUE.
@@ -115,6 +128,14 @@ def do_poll(self, plug_id):
         else:
             if self.request.retries >= 6:
                 print("Ya hay muchos retries. desactivar el gear y notificar al usuario.")
+                gear.is_active = False
+                gear.save(update_fields=['is_active', ])
+                # TODO: EMAIL NOTIFICAR GEAR APAGADO.
+                m = 'Hello, your GEAR {0} [{1}] has been deactivated due to an error with your source connection {2}[' \
+                    '{3}].\nPlease review your connection is still valid and turn on your Gear again.\n' \
+                    '{4}'.format(gear.name, gear.id, source_controller.connector, source.connection.id,
+                                 settings.CURRENT_HOST)
+                send_notification_email.s(m, 'Deactivated Gear', recipient=gear.user.email).apply_async(queue='misc')
             else:
                 next_retry = 2 ** (self.request.retries + 1)
                 print("Retrying [{0}] in: {1} seconds.".format(self.request.retries, next_retry))
@@ -133,7 +154,8 @@ def send_data(self, plug_id, params):
     con = redis.StrictRedis(REDIS_HOST, REDIS_PORT, db=0)
     task_name = "lock-{0}-task-plug".format(plug_id)
     try:
-        target = Plug.objects.filter(pk=plug_id).prefetch_related('connection__connector').first()
+        target = Plug.objects.filter(pk=plug_id).prefetch_related('connection__connector').prefetch_related(
+            'connection').prefetch_related('user').first()
         gear = Gear.objects.get(target_id=plug_id)
         print("SENDING DATA TO: {0} from GEAR [{1}]".format(target.connection.connector.name, gear.id))
         stored_data = StoredData.objects.filter(**params)
@@ -156,6 +178,14 @@ def send_data(self, plug_id, params):
         else:
             if self.request.retries >= 6:
                 print("Ya hay muchos retries. desactivar el gear y notificar al usuario.")
+                gear.is_active = False
+                gear.save(update_fields=['is_active', ])
+                # TODO: EMAIL NOTIFICAR GEAR APAGADO.
+                m = 'Hello, your GEAR {0} [{1}] has been deactivated due to an error with your target connection {2}[' \
+                    '{3}].\nPlease review your connection is still valid and turn on your Gear again.\n' \
+                    '{4}'.format(gear.name, gear.id, target_controller.connector, target.connection.id,
+                                 settings.CURRENT_HOST)
+                send_notification_email.s(m, 'Deactivated Gear', recipient=gear.user.email).apply_async(queue='misc')
             else:
                 next_retry = 2 ** (self.request.retries + 1)
                 print("Retrying [{0}] in: {1} seconds.".format(self.request.retries, next_retry))
@@ -167,3 +197,17 @@ def send_data(self, plug_id, params):
         return False
     finally:
         con.delete(task_name)
+
+
+@app.task(bind=True, soft_time_limit=40, time_limit=45, )
+def send_notification_email(self, message, subject, recipient=None, recipient_list=[], from_email=None, ):
+    if from_email is None:
+        from_email = settings.DEFAULT_FROM_EMAIL
+    if recipient is not None:
+        try:
+            recipient_list.append(recipient)
+        except:
+            recipient_list = []
+    if recipient_list:
+        return send_mail(subject, message, from_email, recipient_list)
+    return False

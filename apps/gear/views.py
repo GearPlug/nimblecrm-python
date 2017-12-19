@@ -501,13 +501,14 @@ def gear_toggle(request, gear_id):
                 controller = controller_class(connection=target.connection.related_connection, plug=target)
                 if not controller.test_connection():
                     return JsonResponse({'data': 'Error'})
-
-                if g.gear_map.is_active is True:
-                    g.is_active = not g.is_active
-                    g.save()
-                else:
-                    return JsonResponse(
-                        {'data': 'There\'s no active gear map.'})
+                try:
+                    if g.gear_map.is_active is True:
+                        g.is_active = not g.is_active
+                        g.save(update_fields=['is_active', ])
+                    else:
+                        return JsonResponse({'data': 'There\'s no active gear map.'})
+                except:
+                    return JsonResponse({'data': 'There\'s no active gear map.'})
             else:
                 return JsonResponse(
                     {'data': "You don't have permission to toggle this gear."})
