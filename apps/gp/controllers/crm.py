@@ -20,6 +20,7 @@ from batchbook.client import Client as ClientBatchbook
 from actcrm.client import Client as ActCRMClient
 from agilecrm.client import Client as AgileCRMClient
 from activecampaign.client import Client as ActiveCampaignClient
+from hubspot.client import Client as HubSpotClient
 import datetime
 import time
 import requests
@@ -630,6 +631,7 @@ class SalesforceController(BaseController):
 class HubSpotController(BaseController):
     _token = None
     _refresh_token = None
+    _client = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
         super(HubSpotController, self).__init__(connection=connection, plug=plug, **kwargs)
@@ -640,47 +642,26 @@ class HubSpotController(BaseController):
             try:
                 self._token = self._connection_object.token
                 self._refresh_token = self._connection_object.refresh_token
+                self._client = HubSpotClient(self._token)
             except Exception as e:
                 print("Error getting the hubspot token")
 
     def test_connection(self):
-        response = self.request()
-        if not response.ok:
-            try:
-                self.get_refresh_token(self._refresh_token)
-                return self._token is not None and self._refresh_token is not None
-            except:
-                self._token is None
-        else:
+        try:
+            self._client.contacts.get_contacts()
             return self._token is not None and self._refresh_token is not None
+        except:
+            try:
+                _refresh = self.get_refresh_token()
+                if _refresh is True:
+                    return self._token is not None and self._refresh_token is not None
+                else:
+                    return self._token is None
+            except:
+                return self._token is None
 
-    def get_modules(self):
-        return [{
-            'name': 'companies',
-            'id': 'companies'
-        }, {
-            'name': 'contacts',
-            'id': 'contacts'
-        }, {
-            'name': 'deals',
-            'id': 'deals'
-        }]
-
-    def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(
-            pk=action_specification_id)
-        if action_specification.name.lower() == 'module':
-            return tuple({
-                             'name': o['name'],
-                             'id': o['id']
-                         } for o in self.get_modules())
-        else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector."
-            )
-
-    def download_to_stored_data(self, connection_object, plug, ):
-        module_id = self._plug.plug_action_specification.all()[0].value
+    def download_to_stored_data(self, connection_object=None, plug=None, data=None, **kwargs):
+        action = self._plug.action.name
         new_data = []
         data = self.get_data(module_id)
         for item in data:
@@ -802,31 +783,31 @@ class HubSpotController(BaseController):
             id = data['dealId']
         return id
 
-    def get_refresh_token(self, refresh_token):
-        url = "https://api.hubapi.com/oauth/v1/token"
-        headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'charset': 'utf-8'
-        }
+    def get_refresh_token(self):
         data = {
-            'grant_type': 'refresh_token',
             'client_id': settings.HUBSPOT_CLIENT_ID,
             'client_secret': settings.HUBSPOT_CLIENT_SECRET,
             'redirect_uri': settings.HUBSPOT_REDIRECT_URI,
             'refresh_token': self._refresh_token
         }
-        response = requests.post(url, headers=headers, data=data).json()
+        try:
+            response = self._client.get_refresh_token(data).json()
+        except:
+            return False
         self._connection_object.token = response['access_token']
         self._connection_object.refresh_token = response['refresh_token']
         self._connection_object.save()
-        return None
+        return True
 
-    def request(self):
-        url = "https://api.hubapi.com/contacts/v1/lists/all/contacts/all"
-        headers = {
-            'Authorization': 'Bearer {0}'.format(self._token),
-        }
-        return requests.get(url, headers=headers)
+        # Aunque la API de hubspot cuenta con webhooks, estos no se implementaron debido a que no se pueden crear con
+        # el token, para crear un webhook se requiere autenticación del portal para developers es decir un (hapikey).
+        # Los webhooks son configurados en el setting del portal, y las notificaciones son enviadas el mismo.
+        # No es posible configurar las notificaciones del webhook para un portal especifico.
+        #  Documentacion: https://integrate.hubspot.com/t/how-to-do-oauth2-for-app/5591
+
+        # @property
+        # def has_webhook(self):
+        #     return True
 
 
 class VtigerController(BaseController):
