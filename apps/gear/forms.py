@@ -3,6 +3,7 @@ from apps.gp.map import MapField
 from apps.gp.models import GearFilter
 from django.forms import modelformset_factory
 
+
 class MapForm(forms.Form):
     def __init__(self, *args, **kwargs):
         try:
@@ -73,7 +74,7 @@ class MapForm(forms.Form):
 class SendHistoryForm(forms.Form):
     date_from = forms.DateTimeField(required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
     date_to = forms.DateTimeField(required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    order = forms.ChoiceField(required=True, choices=(('asc', 'Ascending'), ('desc', 'Descending')),
+    order = forms.ChoiceField(required=True, choices=(('desc', 'Descending'), ('asc', 'Ascending')),
                               widget=forms.Select(attrs={'class': 'form-control'}))
     sent = forms.ChoiceField(required=True, choices=((0, 'All'), (True, 'Successful'), (False, 'Failed')),
                              widget=forms.Select(attrs={'class': 'form-control'}))
