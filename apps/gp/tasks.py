@@ -100,7 +100,7 @@ def dispatch(self, gear_id, skip_source=False):
         return False
 
 
-@app.task(bind=True, max_retries=6, soft_time_limit=55, time_limit=60, )
+@app.task(bind=True, max_retries=6, soft_time_limit=110, time_limit=120, )
 def do_poll(self, plug_id):
     con = redis.StrictRedis(REDIS_HOST, REDIS_PORT, db=0, charset="utf-8", decode_responses=True)
     task_name = "lock-{0}-task-plug".format(plug_id)
@@ -147,7 +147,7 @@ def do_poll(self, plug_id):
         con.delete(task_name)
 
 
-@app.task(bind=True, max_retries=6, soft_time_limit=40, time_limit=45, )
+@app.task(bind=True, max_retries=6, soft_time_limit=110, time_limit=120, )
 def send_data(self, plug_id, params):
     con = redis.StrictRedis(REDIS_HOST, REDIS_PORT, db=0)
     task_name = "lock-{0}-task-plug".format(plug_id)

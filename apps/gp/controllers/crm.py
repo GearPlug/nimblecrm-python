@@ -132,25 +132,27 @@ class SugarCRMController(BaseController):
                 query += " AND {0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
         entries = self.get_entry_list(self._module, max_results=limit, order_by=order_by, query=query)['entry_list']
         new_data = []
+        print(query)
+        print(len(entries))
         for item in entries:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
             if not q.exists():
                 item_data = []
-                for k, v in item.items():
-                    item_data.append(StoredData(name=k, value=v or '', object_id=item['id'],
+                for k, v in item['name_value_list'].items():
+                    item_data.append(StoredData(name=k, value=v['value'] or '', object_id=item['id'],
                                                 connection=connection_object.connection, plug=plug))
-                    new_data.append(item_data)
+                new_data.append(item_data)
         downloaded_data = []
         for new_item in new_data:
-            history_obj = {'identifier': None, 'is_stored': False, 'raw': {}}
+            history_obj = {'identifier': None, 'is_stored': True, 'raw': {}}
+            StoredData.objects.bulk_create(new_item)
             for field in new_item:
-                field.save()
                 history_obj['raw'][field.name] = field.value
-                history_obj['is_stored'] = True
             history_obj['identifier'] = {'name': 'id', 'value': field.object_id}
             downloaded_data.append(history_obj)
         if downloaded_data:
-            return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw']['date_entered']}
+            return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw'][
+                'date_entered']['value']}
         return False
 
     def dictfy(self, _dict):
