@@ -116,10 +116,12 @@ footer {
 	right:20px;
 }
 
-.text-avatar {
+li.menu-login.dropdown.profile ul li p.text-avatar {
     color: #9B999F;
     display: inline;
-    font-size: 1.2em;
+    font-size: 1.8em;
+    padding: 0 12%;
+    white-space: nowrap;
 }
 
 li.menu-login.profile img.img-avatar {
@@ -131,6 +133,7 @@ li.menu-login.dropdown.profile.open ul.dropdown-menu {
     box-shadow: none;
     margin: 4.4% 0 0 17.7%;
     padding: 0.7% 0 0.2% 0;
+    overflow: hidden;
 }
 
 li.menu-login.dropdown.profile.open ul li {
@@ -189,13 +192,23 @@ img.logo_header {
     margin: 11% 0 0 105%;
 }
 
-li.profile.open a{
+li.profile.open a {
     background-color: transparent !important;
+}
+
+ul.menu li.menu-login.profile a {
+    margin-top: -1px;
+    padding-bottom: 0;
+    padding-top: 0;
+}
+
+ul.menu li.menu-login.profile {
+    padding: 0 0 0 1.2%;
 }
 
 @media only screen and (max-width:1600px) {
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
-        margin: 10.8% 0 0 22.8%;
+        margin: 4.8% 0 0 11.8%;
     }
 
     img.logo_header {
@@ -208,7 +221,7 @@ li.profile.open a{
     }
 
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
-        margin: 12.5% 0 0 20.9%;
+        margin: 6.5% 0 0 11.9%;
     }
 
     img.logo_header {
@@ -218,7 +231,7 @@ li.profile.open a{
 
 @media only screen and (max-width:1024px) {
     ul.menu {
-        margin: 4.1% 4% 0 -16%;
+        margin: 8.1% 4% 0 -16%;
     }
 
     img.logo_header{
@@ -230,25 +243,33 @@ li.profile.open a{
     }
 
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
-        margin: 11.6% 0 0 20.9%;
+        margin: 5.6% 0 0 14.9%;
+    }
+
+    img.logo_header {
+        margin: 4% 0 0 167%;
+    }
+
+    ul.navbar-nav {
+        width: 81.6%;
     }
 }
 
 @media only screen and (max-width:768px) {
     img.logo_header {
-        margin: 4% 0 0 0;
+        margin: 4% 0 0 111%;
     }
 
     ul.menu {
-        margin: 4.1% 6.4% 2.1% -16%;
+        margin: 1.1% -0.2% 2.1% -16%;
     }
 
     li.menu-login.profile img.img-avatar {
-        width: 4.9%;
+        width: 37.9%;
     }
 
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
-        margin: 2.6% 0 0 14.9%;
+        margin: 2.6% 0 0 5.9%;
     }
 
     .text-menu a {
@@ -257,6 +278,26 @@ li.profile.open a{
 
     .privacy .border-privacy {
         padding: 0.1% 0.7% 0.1% 0.7%;
+    }
+
+    ul.navbar-nav {
+        width: 99.6%;
+    }
+
+    ul.menu.nav li a {
+        font-size: 1.5em;
+    }
+
+    ul.menu li {
+        padding-right: 1.9%;
+    }
+
+    ul.menu li.menu-login.profile a {
+        padding-left: 0;
+    }
+
+    ul.menu li.menu-login.profile a {
+        margin-top: 3px;
     }
 }
 
