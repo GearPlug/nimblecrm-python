@@ -424,8 +424,13 @@ class MSSQLController(BaseController):
         except Exception as e:
             return False
 
+    @property
     def has_webhook(self):
-        return None
+        return False
+
+    @property
+    def needs_polling(self):
+        return True
 
     def describe_table(self):
         try:
@@ -554,7 +559,7 @@ class MSSQLController(BaseController):
         return obj_list
 
     def get_mapping_fields(self, **kwargs):
-        return [item['name'] for item in self.describe_table() if item['name'] not in self.get_primary_keys()]
+        return [MapField(item, controller=ConnectorEnum.MSSQL) for item in self.describe_table()]
 
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
