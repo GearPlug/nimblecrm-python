@@ -7,7 +7,6 @@ from django.utils import timezone, dateparse
 from collections import OrderedDict
 import redis
 
-LOCK_EXPIRE = 60 * 1
 REDIS_HOST = 'localhost'
 REDIS_PORT = '6379'
 
@@ -24,7 +23,7 @@ def dispatch_all_gears():
     return True
 
 
-@app.task(bind=True, max_retries=5, soft_time_limit=20, time_limit=25, )
+@app.task(bind=True, max_retries=5, soft_time_limit=45, time_limit=50, )
 def dispatch(self, gear_id, skip_source=False):
     con = redis.StrictRedis(REDIS_HOST, REDIS_PORT, db=0, charset="utf-8", decode_responses=True)
     NOW = timezone.now()
@@ -101,7 +100,7 @@ def dispatch(self, gear_id, skip_source=False):
         return False
 
 
-@app.task(bind=True, max_retries=6, soft_time_limit=50, time_limit=51, )
+@app.task(bind=True, max_retries=6, soft_time_limit=55, time_limit=60, )
 def do_poll(self, plug_id):
     con = redis.StrictRedis(REDIS_HOST, REDIS_PORT, db=0, charset="utf-8", decode_responses=True)
     task_name = "lock-{0}-task-plug".format(plug_id)
@@ -117,8 +116,7 @@ def do_poll(self, plug_id):
         if source_controller.test_connection():
             last_order_by_value = gear.gear_map.last_source_order_by_field_value
             # TODO: ADD VALIDATIONS FOR THIS VALUE.
-            last_source_record = source_controller.download_source_data(
-                last_source_record=last_order_by_value)
+            last_source_record = source_controller.download_source_data(last_source_record=last_order_by_value)
             if last_source_record and last_source_record is not True:
                 gear.gear_map.last_source_update = timezone.now()
                 gear.gear_map.last_source_order_by_field_value = last_source_record
@@ -174,6 +172,7 @@ def send_data(self, plug_id, params):
             if entries or target_controller.connector == ConnectorEnum.MailChimp:
                 gear.gear_map.last_sent_stored_data_id = last_sent_data.id
                 gear.gear_map.save(update_fields=['last_sent_stored_data_id'])
+                dispose_gear_stored_data.s(gear.id).apply_async(queue="misc")
             return True
         else:
             if self.request.retries >= 6:
@@ -211,3 +210,13 @@ def send_notification_email(self, message, subject, recipient=None, recipient_li
     if recipient_list:
         return send_mail(subject, message, from_email, recipient_list)
     return False
+
+
+@app.task(bind=True)
+def dispose_gear_stored_data(self, gear_id):
+    gear = Gear.objects.filter(pk=gear_id).prefetch_related('source', 'gear_map__gear_map_data')
+    source = gear[0].source
+    # TODO: FILTRAR POR CANTIDAD: SOLO DEJAR UNO #TODO: FILTRAR POR CANTIDAD: SOLO DEJAR UNO
+    sd = StoredData.objects.filter(connection_id=source.connection, plug=source)
+    sd = sd.exclude(object_id=sd.last().object_id)
+    sd.delete()
