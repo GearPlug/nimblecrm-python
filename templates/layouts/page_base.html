@@ -20,7 +20,7 @@
     <div class="content">
         {% block header_content %}
             <header>
-                <nav class="layout nav_spaces navbar navbar-default">
+                <nav class="layout navbar navbar-default">
                     <div class="container-fluid sp">
                         <div class="navbar-header">
                             <a class="navbar-toggle collapsed" data-toggle="collapse"
@@ -33,6 +33,12 @@
                         </div>
                         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                             <ul class="menu nav navbar-nav">
+                                <li class="visible-xs">
+                                    <img src="{% static 'img/landing/logo_header_mb.png' %}" class="img-logo-mb">
+                                </li>
+{#                                <li class="inicio-mb">#}
+{#                                    <img src="{% static 'img/landing/logo_header_mb.png' %}" class="img-logo-mb">#}
+{#                                </li>#}
                                 <li>
                                     <a {% if request.path == "/about/" %}class="selected_page"{% endif %}
                                        href="{% url 'landing:about' %}">{% trans 'Nosotros' %}</a>
@@ -49,11 +55,11 @@
                                     <a {% if request.path == "/contact/" %}class="selected_page"{% endif %}
                                        href="{% url 'landing:contact' %}">{% trans 'Contacto' %}</a>
                                 </li>
-{#                                {% if request.user.is_authenticated == False %}#}
-{#                                    <li class="menu-login">#}
-{#                                        <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>#}
-{#                                    </li>#}
-{#                                {% else %}#}
+                                {% if request.user.is_authenticated == False %}
+                                    <li class="menu-login">
+                                        <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>
+                                    </li>
+                                {% else %}
                                     <li class="menu-login dropdown profile">
                                         <a href="#" class="dropdown-toggle active" data-toggle="dropdown"
                                            role="button" aria-haspopup="true" aria-expanded="false">
@@ -65,8 +71,9 @@
                                         <ul class="dropdown-menu">
                                             <li>
                                                 <p class="text-avatar">
-{#                                                    {{ request.user.first_name|default:request.user.email }}#}
-                                                    dmanrique@grplug.com
+                                                    {{ request.user.first_name|default:request.user.email }}
+{#                                                    damanrique@grplug.com#}
+{#                                                    lulu#}
                                                 </p>
                                             </li>
                                             <li><a href="{% url 'home:dashboard' %}"><p
@@ -75,60 +82,11 @@
                                             <li><a href="{% url 'account_logout' %}"><p>Cerrar Sesión</p></a></li>
                                         </ul>
                                     </li>
-{#                                {% endif %}#}
+                                {% endif %}
                             </ul>
                         </div>
                     </div>
                 </nav>
-{#                <nav class="nav_spaces">#}
-{#                    <div class="row not-margin">#}
-{#                        <div class="col-sm-12 col-md-4 text-center">#}
-{#                            <a href="{% url 'landing:index' %}">#}
-{#                                <img src="{% static 'img/landing/logo_header.png' %}" class="logo_header">#}
-{#                            </a>#}
-{#                        </div>#}
-{#                        <div class="col-sm-12 col-md-8 text-right">#}
-{#                            <ul class="menu">#}
-{#                                <li>#}
-{#                                    <a {% if request.path == "/about/" %}class="selected_page"{% endif %}#}
-{#                                       href="{% url 'landing:about' %}">{% trans 'Nosotros' %}</a>#}
-{#                                </li>#}
-{#                                <li>#}
-{#                                    <a {% if request.path == "/steps/" %}class="selected_page"{% endif %}#}
-{#                                       href="{% url 'landing:steps' %}">{% trans 'Cómo Funciona' %}</a>#}
-{#                                </li>#}
-{#                                <li>#}
-{#                                    <a {% if request.path == "/apps/directory/" %}class="selected_page"{% endif %}#}
-{#                                       href="{% url 'landing:apps_directory' %}">{% trans 'Apps' %}</a>#}
-{#                                </li>#}
-{#                                <li>#}
-{#                                    <a {% if request.path == "/contact/" %}class="selected_page"{% endif %}#}
-{#                                       href="{% url 'landing:contact' %}">{% trans 'Contacto' %}</a>#}
-{#                                </li>#}
-{#                                {% if request.user.is_authenticated == False %}#}
-{#                                    <li class="menu-login">#}
-{#                                        <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>#}
-{#                                    </li>#}
-{#                                {% else %}#}
-{#                                    <li class="menu-login dropdown profile">#}
-{#                                        <a href="#" class="dropdown-toggle active" data-toggle="dropdown"#}
-{#                                           role="button" aria-haspopup="true" aria-expanded="false">#}
-{#                                            <img src="{% static 'img/landing/avatar.png' %}" class="img-avatar">#}
-{#                                            <div class="text-avatar">#}
-{#                                                {{ request.user.first_name|default:request.user.email }}</div>#}
-{#                                        </a>#}
-{#                                        <ul class="dropdown-menu">#}
-{#                                            <li><a href="{% url 'home:dashboard' %}"><p#}
-{#                                                    class="border-options">Consola</p></a></li>#}
-{#                                            <li><a href="#"><p class="border-options">Configuración</p></a></li>#}
-{#                                            <li><a href="{% url 'account_logout' %}"><p>Cerrar Sesión</p></a></li>#}
-{#                                        </ul>#}
-{#                                    </li>#}
-{#                                {% endif %}#}
-{#                            </ul>#}
-{#                        </div>#}
-{#                    </div>#}
-{#                </nav>#}
             </header>
         </div>
     {% endblock %}

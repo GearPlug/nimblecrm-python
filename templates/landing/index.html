@@ -15,11 +15,18 @@
                                 <span class="slide-color-aqua"> lados </span>
                             {% endblocktrans %}
                         </div>
+                        <div class="bg-form">
+                            {% include 'landing/snippets/signup_form.html' %}
+                        </div>
                     </div>
                 {% else %}
                     <div class="item active">
                         <img src="{% static 'img/landing/slide2.jpg' %}" alt="First slide" class="slide">
+                        <div class="bg_login text-center">
+                            <button type="button" class="btn-login">¡Ingresa Ya!</button>
+                        </div>
                     </div>
+{#                    OTRO SLIDE#}
                     {#                    <div class="item">#}
                     {#                        <img src="{% static 'img/landing/slide3.png' %}" alt="Second slide" class="slide-other">#}
                     {#                        <div class="carousel-caption slide-caption-blog">#}
@@ -31,6 +38,7 @@
                     {#                    </div>#}
                 {% endif %}
             </div>
+{#            BOTONES PARA EL SLIDER#}
             {#            <a class="left carousel-control not-bg" href="#carousel-example-generic" data-slide="prev">#}
             {#                <span class="slide-arrow">#}
             {#                    <img src="{% static 'img/landing/arrow_left.png' %}">#}
@@ -42,15 +50,6 @@
             {#                </span>#}
             {#            </a>#}
         </div>
-        {% if request.user.is_authenticated == False %}
-            <div class="bg-form">
-                {% include 'landing/snippets/signup_form.html' %}
-            </div>
-        {% else %}
-            <div class="bg_login text-center">
-                <button type="button" class="btn-login">¡Ingresa Ya!</button>
-            </div>
-        {% endif %}
     </div>
     <div class="container">
         <div class="row not-margin">

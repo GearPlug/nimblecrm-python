@@ -1,5 +1,5 @@
 .ayuda {
-    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 50% 18px;*/
+    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 0 54px;*/
     /*background-size: contain;*/
 }
 
@@ -17,9 +17,6 @@
 }
 
 /* Header */
-.nav_spaces {
-    margin: 1% 0 1% 0;
-}
 
 ul.menu{
     list-style-type: none;
@@ -116,12 +113,11 @@ footer {
 	right:20px;
 }
 
-li.menu-login.dropdown.profile ul li p.text-avatar {
-    color: #9B999F;
+li.menu-login.dropdown.profile .text-avatar {
+    color: #005CA7;
     display: inline;
-    font-size: 1.8em;
-    padding: 0 12%;
-    white-space: nowrap;
+    font-size: 1.5em;
+    font-weight: bold;
 }
 
 li.menu-login.profile img.img-avatar {
@@ -131,9 +127,8 @@ li.menu-login.profile img.img-avatar {
 li.menu-login.dropdown.profile.open ul.dropdown-menu {
     border-radius: inherit;
     box-shadow: none;
-    margin: 4.4% 0 0 17.7%;
-    padding: 0.7% 0 0.2% 0;
-    overflow: hidden;
+    margin-top: 7%;
+    padding: 0.7% 8% 0.2% 8%;
 }
 
 li.menu-login.dropdown.profile.open ul li {
@@ -144,7 +139,7 @@ li.menu-login.dropdown.profile.open ul li a {
     color: #4B464B;
     font-family: "Sansation Light";
     font-size: 1.4em;
-    padding: 2.5% 12.3%;
+    padding-top: 3%;
 }
 
 li.menu-login.dropdown.profile ul.dropdown-menu li a:focus, li.menu-login.dropdown.profile ul.dropdown-menu li a:hover {
@@ -206,9 +201,13 @@ ul.menu li.menu-login.profile {
     padding: 0 0 0 1.2%;
 }
 
+ul.menu li.logo-mb {
+    display: none;
+}
+
 @media only screen and (max-width:1600px) {
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
-        margin: 4.8% 0 0 11.8%;
+        margin: 4.8% 0 0 -15%;
     }
 
     img.logo_header {
@@ -221,7 +220,7 @@ ul.menu li.menu-login.profile {
     }
 
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
-        margin: 6.5% 0 0 11.9%;
+        margin: 6.5% 0 0 -47%;
     }
 
     img.logo_header {
@@ -243,11 +242,11 @@ ul.menu li.menu-login.profile {
     }
 
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
-        margin: 5.6% 0 0 14.9%;
+        margin: 5.6% 0 0 -66.1%;
     }
 
     img.logo_header {
-        margin: 4% 0 0 167%;
+        margin: 5% 0 0 167%;
     }
 
     ul.navbar-nav {
@@ -265,11 +264,11 @@ ul.menu li.menu-login.profile {
     }
 
     li.menu-login.profile img.img-avatar {
-        width: 37.9%;
+        width: 79.9%;
     }
 
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
-        margin: 2.6% 0 0 5.9%;
+        margin: 2.6% 0 0 -65.1%;
     }
 
     .text-menu a {
@@ -299,6 +298,18 @@ ul.menu li.menu-login.profile {
     ul.menu li.menu-login.profile a {
         margin-top: 3px;
     }
+
+    li.menu-login.dropdown.profile .text-avatar {
+        font-size: 1.4em;
+    }
+
+    li.menu-login.dropdown.profile.open ul li a {
+        font-size: 1.3em;
+    }
+
+    nav.navbar {
+        margin-bottom: 0;
+    }
 }
 
 @media only screen and (max-width:320px) and (orientation: portrait) {
@@ -320,5 +331,26 @@ ul.menu li.menu-login.profile {
     img.logo_header {
         margin: 4% 0 0 31%;
         width: 38%;
+    }
+
+    .layout .navbar-collapse, .layout .navbar-default {
+        border-color: transparent;
+    }
+
+    ul.navbar-nav {
+        width: 79.6%;
+    }
+
+    ul.menu {
+        margin: 0 -0.2% 2.1% -16%;
+    }
+
+    ul.menu li.logo-mb {
+        display: block;
+    }
+
+    img.img-logo-mb {
+        margin: 12.3% 0 0 44%;
+        width: 20%;
     }
 }
