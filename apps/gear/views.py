@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Prefetch, prefetch_related_objects
 from django.forms import modelform_factory, modelformset_factory
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
@@ -305,22 +306,57 @@ class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
     form_class = SendHistoryForm
     template_name = 'gear/send_history.html'
     login_url = '/accounts/login/'
-
-    # paginate_by = 30
+    paginate_by = 30
 
     def get_queryset(self, **kwargs):
         order = '-date'
-        return [{'connection': json.loads(item.connection)[0]['fields']['name'],
-                 'data': [{'name': k, 'value': v} for k, v in json.loads(item.data).items()],
-                 'date': item.date,
-                 'connector_id': item.connector_id,
-                 'connector_name': ConnectorEnum.get_connector(item.connector_id).name,
-                 'sent': item.sent,
-                 'response': item.response,
-                 'identifier': item.identifier,
-                 'connector': Connector.objects.get(id=item.connector_id),
-                 'id': item.id,
-                 } for item in self.model.objects.filter(gear_id=self.kwargs['pk'], **kwargs).order_by(order)]
+        if self.request.method == "POST":
+            if 'date_from' in self.request.POST and self.request.POST['date_from']:
+                if 'date_to' in self.request.POST and self.request.POST['date_to']:
+                    kwargs['date__range'] = (self.request.POST['date_from'], self.request.POST['date_to'])
+                else:
+                    kwargs['date__gte'] = self.request.POST['date_from']
+            elif 'date_to' in self.request.POST and self.request.POST['date_to']:
+                kwargs['date__lte'] = self.request.POST['date_to']
+            if 'order' in self.request.POST and self.request.POST['order'] == 'asc':
+                order = 'date'
+            if 'sent' in kwargs and kwargs['sent'] == '0':
+                del kwargs['sent']
+            del kwargs['date_from']
+            del kwargs['date_to']
+            del kwargs['order']
+        queryset = self.model.objects.filter(gear_id=self.kwargs['pk'], **kwargs).order_by(order)
+        connector_list = Connector.objects.filter(pk__in=[i.connector_id for i in queryset.iterator()])
+        if connector_list.count() > 1:
+            for item in queryset:
+                connector = None
+                for c in connector_list:
+                    if str(c.id) == item.connector_id:
+                        connector = c
+                        break
+                setattr(item, 'connector', connector)
+                setattr(item, 'parsed_data', [{'name': k, 'value': v} for k, v in json.loads(item.data).items()])
+        else:
+            connector = connector_list[0]
+            for item in queryset:
+                setattr(item, 'parsed_data', [{'name': k, 'value': v} for k, v in json.loads(item.data).items()])
+                setattr(item, 'connector', connector)
+
+        # result = []
+        # for item in queryset:
+        #     a = {'connection': json.loads(item.connection)[0]['fields']['name'],
+        #          'data': [{'name': k, 'value': v} for k, v in json.loads(item.data).items()],
+        #          'date': item.date,
+        #          'connector_id': item.connector_id,
+        #          'connector_name': ConnectorEnum.get_connector(item.connector_id).name,
+        #          'sent': item.sent,
+        #          'response': item.response,
+        #          'identifier': item.identifier,
+        #          # 'connector': connector_list.get(id=item.connector_id),
+        #          'id': item.id,
+        #          }
+        #     result.append(a)
+        return queryset
 
     def get(self, request, *args, **kwargs):
         try:
@@ -358,35 +394,37 @@ class GearActivitiesHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
     login_url = '/accounts/login/'
 
     def get_queryset(self, **kwargs):
-        gears = list(Gear.objects.filter(user_id=self.request.user.id).values_list('id', flat=True))
+        gears = Gear.objects.filter(user_id=self.request.user.id).prefetch_related(
+            Prefetch('source__connection__connector'), Prefetch('target__connection__connector'))
         today_min = datetime.datetime.combine(timezone.now().date(), datetime.time.min)
         if settings.USE_TZ:
             today_min = timezone.make_aware(today_min, timezone.get_current_timezone())
         today_max = datetime.datetime.combine(timezone.now().date(), datetime.time.max)
         if settings.USE_TZ:
             today_max = timezone.make_aware(today_max, timezone.get_current_timezone())
-        activity = []
-        for gear in gears:
-            g = Gear.objects.get(pk=gear)
-            try:
-                for item in self.model.objects.filter(gear_id=gear, date__range=(today_min, today_max),
-                                                      **kwargs).order_by('date')[:30]:
-                    a = {
-                        'connection': json.loads(item.connection)[0]['fields']['name'],
-                        'data': [{'name': k, 'value': v} for k, v in json.loads(item.data).items()],
-                        'date': item.date,
-                        'connector_name': ConnectorEnum.get_connector(item.connector_id).name,
-                        'sent': item.sent,
-                        'response': item.response,
-                        'identifier': item.identifier,
-                        'connector_source': Connector.objects.get(id=g.source.connection.connector.id),
-                        'connector_target': Connector.objects.get(id=g.target.connection.connector.id),
-                        'id': item.id
-                    }
-                    activity.append(a)
-            except Exception as e:
-                return e
-        return activity
+        activity_result = []
+        activity_list = self.model.objects.filter(gear_id__in=[str(g.id) for g in gears.iterator()],
+                                                  date__range=(today_min, today_max)).order_by('-date')[:30]
+        for activity in activity_list.iterator():
+            current_gear = None
+            for g in gears:
+                if str(g.id) == activity.gear_id:
+                    current_gear = g
+                    break
+            if current_gear is not None:
+                a = {
+                    'id': activity.id,
+                    'data': [{'name': k, 'value': v} for k, v in json.loads(activity.data).items()],
+                    'date': activity.date,
+                    'sent': activity.sent,
+                    'response': activity.response,
+                    'identifier': activity.identifier,
+                    'connection': json.loads(activity.connection)[0]['fields']['name'],
+                    'connector_source': current_gear.source.connection.connector,
+                    'connector_target': current_gear.target.connection.connector,
+                }
+                activity_result.append(a)
+        return activity_result
 
     def get(self, request, *args, **kwargs):
         try:

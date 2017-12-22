@@ -131,40 +131,28 @@ class SugarCRMController(BaseController):
             else:
                 query += " AND {0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
         entries = self.get_entry_list(self._module, max_results=limit, order_by=order_by, query=query)['entry_list']
-        raw_data = []
         new_data = []
+        print(query)
+        print(len(entries))
         for item in entries:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
             if not q.exists():
                 item_data = []
-                obj_raw = self.dictfy(item['name_value_list'])
-                for k, v in obj_raw.items():
-                    if isinstance(v, str) and v.isspace():
-                        obj_raw[k] = ''
-                for k, v in obj_raw.items():
-                    item_data.append(StoredData(name=k, value=v or '', object_id=item['id'],
+                for k, v in item['name_value_list'].items():
+                    item_data.append(StoredData(name=k, value=v['value'] or '', object_id=item['id'],
                                                 connection=connection_object.connection, plug=plug))
-                raw_data.append(obj_raw)
                 new_data.append(item_data)
-        if new_data:
-            result_list = []
-            for item in new_data:
-                for stored_data in item:
-                    try:
-                        stored_data.save()
-                        is_stored = True
-                    except Exception as e:
-                        is_stored = False
-                        break
-                obj_raw = "RAW DATA NOT FOUND."
-                for obj in raw_data:
-                    if stored_data.object_id == obj['id']:
-                        obj_raw = obj
-                        break
-                raw_data.remove(obj_raw)
-                result_list.append({'identifier': {'name': 'id', 'value': stored_data.object_id},
-                                    'is_stored': is_stored, 'raw': obj_raw, })
-            return {'downloaded_data': result_list, 'last_source_record': result_list[0]['raw']['date_entered']}
+        downloaded_data = []
+        for new_item in new_data:
+            history_obj = {'identifier': None, 'is_stored': True, 'raw': {}}
+            StoredData.objects.bulk_create(new_item)
+            for field in new_item:
+                history_obj['raw'][field.name] = field.value
+            history_obj['identifier'] = {'name': 'id', 'value': field.object_id}
+            downloaded_data.append(history_obj)
+        if downloaded_data:
+            return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw'][
+                'date_entered']['value']}
         return False
 
     def dictfy(self, _dict):
@@ -233,10 +221,8 @@ class ZohoCRMController(BaseController):
         data = self.get_feeds(module_name)
         new_data = []
         for item in data:
-            q = StoredData.objects.filter(
-                connection=connection_object.connection,
-                plug=plug,
-                object_id=item[item['id']])
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                          object_id=item[item['id']])
             if not q.exists():
                 for column in item:
                     new_data.append(
