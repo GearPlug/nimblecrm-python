@@ -99,7 +99,7 @@ class BaseController(FilterBaseController):
                     for item in result['downloaded_data']:
                         DownloadHistory.objects.create(gear_id=str(self._plug.gear_source.first().id),
                                                        plug_id=str(self._plug.id), connection=serialized_connection,
-                                                       raw=json.dumps(item['raw']), connector_id=self._connector.id,
+                                                       raw=json.dumps(item['raw'], default=str), connector_id=self._connector.id,
                                                        identifier=item['identifier'], )
                     return result['last_source_record']
                 except KeyError:
@@ -112,7 +112,7 @@ class BaseController(FilterBaseController):
             except TypeError:
                 return self.download_to_stored_data(self._connection_object, self._plug)
         raise ControllerError(code=0, controller=self.connector.name,
-                              message="Please check you're using a valid connection and a valid plug.")
+                             message="Please check you're using a valid connection and a valid plug.")
 
     def send_target_data(self, source_data, target_fields, is_first=False, **kwargs):
         """
