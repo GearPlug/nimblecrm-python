@@ -55,29 +55,29 @@
                                     <a {% if request.path == "/contact/" %}class="selected_page"{% endif %}
                                        href="{% url 'landing:contact' %}">{% trans 'Contacto' %}</a>
                                 </li>
-{#                                {% if request.user.is_authenticated == False %}#}
-{#                                    <li class="menu-login">#}
-{#                                        <a href="{% url 'account_login' %}">#}
-{#                                            <span class="visible-xs border-sign">&nbsp;</span>#}
-{#                                            {% trans 'Ingresar' %}#}
-{#                                        </a>#}
-{#                                    </li>#}
-{#                                {% else %}#}
+                                {% if request.user.is_authenticated == False %}
+                                    <li class="menu-login">
+                                        <a href="{% url 'account_login' %}">
+                                            <span class="visible-xs border-sign">&nbsp;</span>
+                                            {% trans 'Ingresar' %}
+                                        </a>
+                                    </li>
+                                {% else %}
                                     <li class="menu-login dropdown profile">
                                         <a href="#" class="dropdown-toggle active hidden-xs" data-toggle="dropdown"
                                            role="button" aria-haspopup="true" aria-expanded="false">
                                             <img src="{% static 'img/landing/avatar.png' %}" class="img-avatar">
                                         </a>
                                         <p class="text-avatar visible-xs">
-{#                                                    {{ request.user.first_name|default:request.user.email }}#}
-                                            damanrique@grplug.com
+                                                    {{ request.user.first_name|default:request.user.email }}
+{#                                            damanrique@grplug.com#}
 {#                                                    lulu#}
                                         </p>
                                         <ul class="dropdown-menu">
                                             <li>
                                                 <p class="text-avatar">
-{#                                                    {{ request.user.first_name|default:request.user.email }}#}
-                                                    damanrique@grplug.com
+                                                    {{ request.user.first_name|default:request.user.email }}
+{#                                                    damanrique@grplug.com#}
 {#                                                    lulu#}
                                                 </p>
                                             </li>
@@ -87,7 +87,7 @@
                                             <li><a href="{% url 'account_logout' %}"><p>Cerrar Sesión</p></a></li>
                                         </ul>
                                     </li>
-{#                                {% endif %}#}
+                                {% endif %}
                             </ul>
                         </div>
                     </div>
