@@ -1,0 +1,22 @@
+{% extends 'connection/create.html' %}
+{% load static %}
+
+{% block content %}
+    <form id="formCreateConnection" class="create-connection-form form-horizontal" action=""
+          method="post" autocomplete="off">
+        Hub ID: <input type="text" name="hub_id" >
+        <a href="javascript:auth('{{ authorization_url }}')">HubSpot Auth</a>
+        {% csrf_token %}
+    </form>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        function auth(url) {
+            url = url.replace('1234', $('input[name=hub_id]').val());
+            this.location = url;
+        }
+    </script>
+{% endblock %}
