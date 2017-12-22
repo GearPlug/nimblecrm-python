@@ -1,6 +1,6 @@
 .ayuda {
-    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 0 54px;*/
-    /*background-size: contain;*/
+    background: url(../../img/landing/plantilla.png) no-repeat scroll 0 14px;
+    background-size: contain;
 }
 
 .bg_page {
@@ -201,10 +201,6 @@ ul.menu li.menu-login.profile {
     padding: 0 0 0 1.2%;
 }
 
-ul.menu li.logo-mb {
-    display: none;
-}
-
 @media only screen and (max-width:1600px) {
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
         margin: 4.8% 0 0 -15%;
@@ -342,7 +338,11 @@ ul.menu li.logo-mb {
     }
 
     ul.menu {
-        margin: 0 -0.2% 2.1% -16%;
+        background-color: #005CA5;
+        margin: 0 -0.2% 0 -16%;
+        padding-bottom: 7%;
+        padding-left: 7%;
+        padding-right: 7%;
     }
 
     ul.menu li.logo-mb {
@@ -350,7 +350,37 @@ ul.menu li.logo-mb {
     }
 
     img.img-logo-mb {
-        margin: 12.3% 0 0 44%;
-        width: 20%;
+        margin: 14.7% 0 28.4% 41.2%;
+        width: 23.4%;
+    }
+
+    ul.menu li {
+        display: block;
+        padding-right: 0;
+    }
+
+    ul.menu.nav li a {
+        border-bottom: 1px solid #004178;
+        color: white;
+        font-size: 1.4em;
+    }
+
+    ul.menu li.menu-login {
+        border-left: transparent;
+    }
+
+    ul.menu li.menu-login a {
+        font-family: 'Sansation Light';
+    }
+
+    ul.menu li.menu-login span.border-sign {
+        display: inline !important;
+        border-left: 3px solid #09de8d;
+    }
+
+    li.menu-login.dropdown.profile .text-avatar {
+        color: white;
+        font-size: 1.2em;
+        padding-top: 6%;
     }
 }
