@@ -110,6 +110,10 @@ button.btn {
     width: 1400px;
 }
 
+.text1 .apps-favs {
+    font-family: 'Sansation Bold';
+}
+
 @media only screen and (max-width:1024px) {
     .apps-banner .text1 {
         font-size: 3.3em;
@@ -131,5 +135,43 @@ button.btn {
 
     .apps-list .text2 {
         font-size: 2.6em;
+    }
+}
+
+@media only screen and (max-width:320px) and (orientation: portrait) {
+    .apps-banner .text1 {
+        font-size: 1.6em;
+        line-height: 101%;
+        padding: 9% 0 8.2% 0;
+    }
+
+    .text1 .apps-favs {
+        color: #005CA5;
+    }
+
+    .apps-banner {
+        margin-top: 7%;
+    }
+
+    .apps-list .search1 {
+        margin-left: 19.4%;
+        margin-top: 5.9%;
+        width: 61.3%;
+    }
+
+    .apps-list .search1 input {
+        height: 5.6%;
+        font-size: 1.0em;
+        margin: 3.4% 0 3.4% 3.7%;
+        padding-left: 16%;
+        width: 92.3%;
+    }
+
+    .apps-list .list-wrapper .list-item .name1 {
+        font-size: 0.8em;
+    }
+
+    .apps-list .list-wrapper {
+        margin: 12.6% 3.5% 0 5.6%;
     }
 }
