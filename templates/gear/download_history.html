@@ -71,6 +71,8 @@
                     {% endfor %}
                 </ul>
             </li>
+        {% empty %}
+            There hasn't been any activity in this gear. a {{ form.date_from.value }}  b {{ form.date_to.value }}
         {% endfor %}
     </ul>
 {% endblock %}

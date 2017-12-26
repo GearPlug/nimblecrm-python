@@ -117,6 +117,10 @@
 
                 </div>
             </div>
+        {% empty %}
+            {% now "Y-m-d H:i" as now %}
+            There hasn't been any activity in this gear in the range: {{ form.date_from.value|default:'all' }} to
+            {{ form.date_to.value|default:now }}
         {% endfor %}
     </div>
     <div class="row history">

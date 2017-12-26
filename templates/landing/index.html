@@ -24,13 +24,15 @@
                     <div class="item active hidden-xs">
                         <img src="{% static 'img/landing/slide2.jpg' %}" alt="First slide" class="slide">
                         <div class="bg_login text-center">
-                            <button type="button" class="btn-login">¡Ingresa Ya!</button>
+                            <a href="{% url 'home:dashboard' %}">
+                                <button type="button" class="btn-login">¡Ingresa Ya!</button>
+                            </a>
                         </div>
                     </div>
                     <div class="item active visible-xs">
                         <img src="{% static 'img/landing/slide1mb.png' %}" alt="First slide" class="slide">
                     </div>
-{#                    OTRO SLIDE - DESACTIVADO POR EL MOMENTO#}
+                    {#                    OTRO SLIDE - DESACTIVADO POR EL MOMENTO#}
                     {#                    <div class="item">#}
                     {#                        <img src="{% static 'img/landing/slide3.png' %}" alt="Second slide" class="slide-other">#}
                     {#                        <div class="carousel-caption slide-caption-blog">#}
@@ -42,16 +44,16 @@
                     {#                    </div>#}
                 {% endif %}
             </div>
-{#            BOTONES PARA EL SLIDER - DESACTIVADO POR EL MOMENTO #}
+            {#            BOTONES PARA EL SLIDER - DESACTIVADO POR EL MOMENTO #}
             {#            <a class="left carousel-control not-bg" href="#carousel-example-generic" data-slide="prev">#}
-{#                            <span class="slide-arrow">#}
-{#                                <img src="{% static 'img/landing/arrow_left.png' %}">#}
-{#                            </span>#}
+            {#                            <span class="slide-arrow">#}
+            {#                                <img src="{% static 'img/landing/arrow_left.png' %}">#}
+            {#                            </span>#}
             {#            </a>#}
             {#            <a class="right carousel-control not-bg" href="#carousel-example-generic" data-slide="next">#}
-{#                            <span class="slide-arrow">#}
-{#                                <img src="{% static 'img/landing/arrow_right.png' %}">#}
-{#                            </span>#}
+            {#                            <span class="slide-arrow">#}
+            {#                                <img src="{% static 'img/landing/arrow_right.png' %}">#}
+            {#                            </span>#}
             {#            </a>#}
         </div>
     </div>
@@ -376,7 +378,7 @@
                 return false;
             })
 
-            if(window.matchMedia("(min-width: 769px)").matches) {
+            if (window.matchMedia("(min-width: 769px)").matches) {
                 var showChar = 230;
                 var ellipsestext = "...";
                 var moretext = "Ver más";

@@ -1,0 +1,25 @@
+{% load static i18n %}
+<div class="context-menu" id="context-menu" style="display: none;">
+    <a id="menu-editar-gear" href="#!">
+        <div class="menu-item">
+            Editar Gear
+        </div>
+    </a>
+    <a href="#!">
+        <div class="menu-item">
+            Editar Grupo
+        </div>
+    </a>
+    <div class="menu-separator"></div>
+    <a href="{% url 'connection:connector_list' type='source' %}">
+        <div class="menu-item">
+            Editar Origen
+        </div>
+    </a>
+    <div class="menu-separator"></div>
+    <a href="{% url 'connection:connector_list' type='target' %}">
+        <div class="menu-item">
+            Editar Destino
+        </div>
+    </a>
+</div>
