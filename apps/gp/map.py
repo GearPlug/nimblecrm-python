@@ -177,9 +177,8 @@ class MapField(object):
                 self.name = d['name']
             if 'label' in d:
                 self.label = d['label']
-            if d['name'] == "dealname" or d['name'] == "name" or d[
-                'name'] == "firstname":
-                self.required = d['name']
+            if 'required' in d:
+                self.required = d['required']
             if 'type' in d:
                 self.field_type = d['type']
             if d['type'] == 'enumeration':
