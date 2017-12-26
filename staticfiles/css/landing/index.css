@@ -8,6 +8,7 @@
     font-size: 4.4em;
     left: 13.9%;
     line-height: 89%;
+    right: 64%;
     text-align: justify;
     text-shadow: inherit;
     top: 8.2%;
@@ -526,13 +527,13 @@ a.morelink {
 
     .button_form {
         font-size: 1.6em;
-        margin: 2.3% 0 2.3% 3.8%;
+        margin: 2.3% 0 5.3% 3.8%;
     }
 
     .bg-form {
         left: 64%;
         right: 3%;
-        top: 5%;
+        top: 2%;
     }
 
     .index-space1 {
@@ -641,6 +642,10 @@ a.morelink {
     .name11 {
         height: 20%;
         padding-bottom: 0;
+    }
+
+    .padding-checkbox {
+        padding-left: 11.9%;
     }
 }
 
