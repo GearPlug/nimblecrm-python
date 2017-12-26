@@ -111,6 +111,20 @@
     }
 }
 
+@media only screen and (max-width: 1370px) and (min-width: 1025px){
+    .aboutus-banner .aboutus-text .text2 {
+        margin: -0.6% 0 0 6.9%;
+    }
+
+    .aboutus-banner .aboutus-text .text1 {
+        margin: 3% 0 0 15.4%;
+    }
+
+    .aboutus-banner .aboutus-text .text3 {
+        margin: 0 0 0 9.9%;
+    }
+}
+
 @media only screen and (max-width:1024px) {
     .img-guy {
         width: 70%;
@@ -118,17 +132,17 @@
 
     .aboutus-text .text1 {
         font-size: 4.1em;
-        margin: 3% 0 0 19.4%;
+        margin: 3% 0 0 18.4%;
     }
 
     .aboutus-text .text2 {
         font-size: 4.3em;
-        margin: -0.6% 0 0 5.9%;
+        margin: -0.6% 0 0 4.9%;
     }
 
     .aboutus-text .text3 {
         font-size: 4.3em;
-        margin: 0 0 0 8.9%;
+        margin: 0 0 0 7.9%;
     }
 }
 
