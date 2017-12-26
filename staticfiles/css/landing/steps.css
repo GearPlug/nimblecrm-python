@@ -43,3 +43,19 @@ img.steps-img{
         margin-top: 1.7%;
     }
 }
+
+@media only screen and (max-width:320px) and (orientation: portrait) {
+    .steps-title {
+        margin-top: 3.4%;
+    }
+
+    .steps-title .title {
+        font-size: 1.6em;
+        padding: 6% 0 6% 0;
+    }
+
+    img.steps-img {
+        height: 204%;
+        margin-top: 3.4%;
+    }
+}

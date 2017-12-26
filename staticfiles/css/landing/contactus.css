@@ -14,7 +14,7 @@
     line-height: 5em;
     text-align: center;
     position: absolute;
-    margin-left: 8%;
+    padding-left: 8%;
 }
 
 .contactus-text .text1 {
@@ -31,7 +31,7 @@
 }
 
 .contactus-footer {
-    background-color: #005ca7;
+    background-color: #005CA5;
 }
 
 .contactus-footer .text-contact {
@@ -184,6 +184,11 @@
     padding: 2.8%;
     text-align: center;
     width: 67%;
+}
+
+.text-email a {
+    color: white;
+    text-decoration: none;
 }
 
 @media only screen and (max-width:1600px) {
@@ -424,5 +429,112 @@
         margin-bottom: 5.2%;
         margin-top: 5.2%;
         padding-left: 5%;
+    }
+}
+
+@media only screen and (max-width:320px) and (orientation: portrait) {
+    .contactus-footer {
+        margin-top: 5%;
+    }
+
+    .contactus-footer .text-contact {
+        font-size: 2.9em;
+        margin-top: 12%;
+        padding: 0 0;
+        text-align: center;
+    }
+
+    .contactus-footer .text-contact1 {
+        padding: 0;
+        text-align: center;
+    }
+
+    .contactus-footer .text-contact2 {
+        font-size: 0.8em;
+        margin-top: 4.8%;
+        padding: 0 17%;
+        text-align: justify;
+    }
+
+    .form-contact {
+        padding-left: 20%;
+    }
+
+    .form-contact .form-group input {
+        font-size: 0.8em;
+        margin-bottom: -3.7%;
+        padding: 0 4%;
+        width: 74.8%;
+    }
+
+    .form-contact .form-group textarea {
+        font-size: 0.8em;
+        max-width: 74.8%;
+        min-width: 74.8%;
+        padding: 0 4%;
+    }
+
+    .form-contact .form-group label {
+        font-size: 0.8em;
+    }
+
+    .form-contact .form-group .inline button {
+        font-size: 1.4em;
+        margin-top: -0.1%;
+        width: 75.4%;
+    }
+
+    .img-direction-mb img {
+        margin-left: 5%;
+        width: 6%;
+    }
+
+    .img-direction-mb .text-direction-mb {
+        color: white;
+        font-family: 'Sansation';
+        font-size: 0.6em;
+        margin: -6% 0 0 13%;
+    }
+
+    .img-phone-mb img {
+        margin: -7% 0 0 36%;
+        width: 6%;
+    }
+
+    .img-phone-mb .text-phone-mb {
+        color: white;
+        font-family: 'Sansation';
+        font-size: 0.6em;
+        margin: -6% 0 0 43%;
+    }
+
+    .img-email-mb img {
+        margin: -7% 0 0 61%;
+        width: 6%;
+    }
+
+    .img-email-mb .text-email-mb {
+        color: white;
+        font-family: 'Sansation';
+        font-size: 0.6em;
+        margin: -6% 0 0 68%;
+    }
+
+    .contactus-footer .contact-direction-mb {
+        margin-bottom: 8%;
+    }
+
+    .contact-direction-mb {
+        margin-top: 158%;
+    }
+
+    .pop-thanks {
+        left: 19.2%;
+        top: 47.1%;
+    }
+
+    .bg_pop {
+        font-size: 1.2em;
+        width: 71%;
     }
 }
