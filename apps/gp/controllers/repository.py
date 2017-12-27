@@ -24,11 +24,12 @@ class BitbucketController(BaseController):
     def create_connection(self, connection=None, plug=None):
         super(BitbucketController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
-            if '@' in self._connection_object.connection_user:
-                self._user = self._connection_object.connection_user.split('@')[0]
-            else:
+            try:
                 self._user = self._connection_object.connection_user
-            self._password = self._connection_object.connection_password
+                self._password = self._connection_object.connection_password
+            except Exception as e:
+                print("Error getting the Bitbucket attributes")
+                self._connection = None
         try:
             self._connection = BibucketClient(self._user, self._password)
         except Exception as e:
@@ -45,7 +46,11 @@ class BitbucketController(BaseController):
                                   message='Error asignando los specifications. {}'.format(str(e)))
 
     def test_connection(self):
-        return True if self._connection.get_user() else False
+        user_info = self._connection.get_user()
+        if user_info is not None and 'account_id' in user_info and user_info['account_id'] != '':
+            return True
+        else:
+            return False
 
     def download_to_stored_data(self, connection_object=None, plug=None, issue=None, **kwargs):
         if issue is not None:
