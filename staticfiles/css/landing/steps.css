@@ -44,6 +44,7 @@ img.steps-img{
     }
 }
 
+/* Iphone 4, Iphone 5 - Portrait */
 @media only screen and (max-width:320px) and (orientation: portrait) {
     .steps-title {
         margin-top: 3.4%;

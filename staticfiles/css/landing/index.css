@@ -357,7 +357,7 @@ a.morelink {
 
     .bg-form {
         right: 14%;
-        top: 15.6%;
+        top: 13.6%;
     }
 
     .list-item .name1 {
@@ -388,7 +388,7 @@ a.morelink {
 
     .bg-form {
         right: 12%;
-        top: 12.6%;
+        top: 10.6%;
     }
 
     .list-item .name1 {
@@ -420,6 +420,12 @@ a.morelink {
     }
 }
 
+@media only screen and (max-width: 1370px) {
+    .bg-form {
+        top: 8.6%;
+    }
+}
+
 @media only screen and (max-width: 1024px) {
     .slide-arrow {
         top: 35.5%;
@@ -432,7 +438,7 @@ a.morelink {
     .bg-form {
         left: 63%;
         right: 5%;
-        top: 10.9%;
+        top: 8.9%;
     }
 
     .input-form {
@@ -442,7 +448,7 @@ a.morelink {
     }
 
     .button_form {
-        margin: 8.3% 0 9.3% 3.8%;
+        margin: 5.3% 0 9.3% 3.8%;
     }
 
     .container.create {
@@ -508,6 +514,10 @@ a.morelink {
     img.img-comments {
         margin-bottom: 50%;
         height: 66%;
+    }
+
+    .btn {
+        padding: 1px 1px;
     }
 }
 
@@ -649,6 +659,7 @@ a.morelink {
     }
 }
 
+/* Iphone 4, Iphone 5 - Portrait */
 @media only screen and (max-width:320px) and (orientation: portrait) {
     img.slide {
         margin-top: 4.9%;
@@ -658,7 +669,7 @@ a.morelink {
         background-color: #09DE8D;
         border-radius: inherit;
         left: 0;
-        padding: 9.3% 0 61.3% 0;
+        padding: 9.3% 0 67.3% 0;
         position: relative;
         right: 0;
         top: 0;
@@ -794,5 +805,13 @@ a.morelink {
 
     .bg_footer {
         padding: 4.3% 0 5.5% 0;
+    }
+
+    .checkbox-form {
+        font-size: 0.8em;
+    }
+
+    .btn-group label.btn {
+        margin-left: 29px;
     }
 }

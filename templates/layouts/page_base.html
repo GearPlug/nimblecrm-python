@@ -70,7 +70,7 @@
                                         <p class="text-avatar visible-xs">
                                                     {{ request.user.first_name|default:request.user.email }}
                                         </p>
-                                        <ul class="dropdown-menu">
+                                        <ul class="dropdown-menu pull-right">
                                             <li>
                                                 <p class="text-avatar">
                                                     {{ request.user.first_name|default:request.user.email }}
@@ -78,7 +78,8 @@
                                             </li>
                                             <li><a href="{% url 'home:dashboard' %}"><p
                                                     class="border-options">Consola</p></a></li>
-{#                                            <li><a href="#"><p class="border-options">Configuración</p></a></li>#}
+                                            <li><a href="{#% url 'home:profile' %#}"><p
+                                                    class="border-options">Configuración</p></a></li>
                                             <li id="logout_menu" data-toggle="modal" data-target="#logout-modal">
                                                 <a><p>Cerrar Sesión</p></a>
                                             </li>
@@ -100,11 +101,17 @@
                     <div class="row not-margin">
                         <div class="col-sm-12 col-md-12 bg_nets text-center">
                             <div class="col-xs-12 col-sm-12 col-md-12">
-                                <a href="#"> <img src="{% static 'img/landing/facebook1.png' %}"
-                                                  class="padding-nets"></a>
-                                <a href="#"> <img src="{% static 'img/landing/gplus.png' %}" class="padding-nets">
+                                <a href="https://www.facebook.com/GrPlug/" target="_blank">
+                                    <img src="{% static 'img/landing/facebook1.png' %}" class="padding-nets">
                                 </a>
-                                <a href="#"> <img src="{% static 'img/landing/twitter.png' %}" class="padding-nets">
+                                <a href="https://twitter.com/gr_plug" target="_blank">
+                                    <img src="{% static 'img/landing/twitter.png' %}" class="padding-nets">
+                                </a>
+                                <a href="https://www.instagram.com/gr_plug/" target="_blank">
+                                    <img src="{% static 'img/landing/instagram.svg' %}" class="padding-nets instagram">
+                                </a>
+                                <a href="#" target="_blank">
+                                    <img src="{% static 'img/landing/linkedin.svg' %}" class="padding-nets linkedin">
                                 </a>
                             </div>
                             <div class="col-sm-12 col-md-12 text-menu hidden-xs">
