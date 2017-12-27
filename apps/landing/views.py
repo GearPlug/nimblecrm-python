@@ -48,8 +48,7 @@ class AppsView(ListView):
 
 class CustomSignup(SignupView):
     form_class = NameSignupForm
-    template_name = 'landing/snippets/signup_form.html'
-    http_method_names = 'post'
+    http_method_names = ['post', 'get']
     success_url = reverse_lazy('home:dashboard')
 
     def form_valid(self, form, **kwargs):
@@ -64,6 +63,17 @@ class CustomSignup(SignupView):
     def get_form(self, form_class=None, **kwargs):
         form = super(CustomSignup, self).get_form(form_class=form_class, **kwargs)
         return form
+
+    def get(self, request, **kwargs):
+        self.template_name = 'account/signup.html'
+        return super(CustomSignup, self).get(request, **kwargs)
+
+    def post(self, request, **kwargs):
+        if request.is_ajax():
+            self.template_name = 'landing/snippets/signup_form.html'
+        else:
+            self.template_name = 'account/signup.html'
+        return super(CustomSignup, self).post(request, **kwargs)
 
 
 class StepsView(TemplateView):
