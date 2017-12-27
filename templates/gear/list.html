@@ -2,30 +2,7 @@
 {% load static i18n %}
 
 {% block content %}
-    <div class="context-menu" id="context-menu" style="display: none;">
-        <a id="menu-editar-gear" href="#!">
-            <div class="menu-item">
-                Editar Gear
-            </div>
-        </a>
-        <a href="#!">
-            <div class="menu-item">
-                Editar Grupo
-            </div>
-        </a>
-        <div class="menu-separator"></div>
-        <a href="{% url 'connection:connector_list' type='source' %}">
-            <div class="menu-item">
-                Editar Origen
-            </div>
-        </a>
-        <div class="menu-separator"></div>
-        <a href="{% url 'connection:connector_list' type='target' %}">
-            <div class="menu-item">
-                Editar Destino
-            </div>
-        </a>
-    </div>
+    {% include 'gear/snippets/list_context_menu.html' %}
     <div class="row projects">
         <div class="title">
             <span>{% trans 'Proyectos' %}</span>
@@ -81,6 +58,7 @@
                 {% for group in object_list %}
                     <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;"
                          id="group_gear_{{ group.id }}" data-show="True">
+                        <div class="col-md-7 group-name">{{ group.name }}</div>
                         {% for gear in group.gear.all %}
                             {% include 'gear/snippets/gear_extend.html' with id=gear.id name=gear.name is_running=gear.is_running %}
                         {% endfor %}

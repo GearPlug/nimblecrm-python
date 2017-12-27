@@ -124,11 +124,6 @@ class TypeFormControllerTestCases(TestCase):
         self.assertIsInstance(result, tuple)
         self.assertEqual(_form, os.environ.get("TEST_TYPEFORM_FORM"))
 
-    def test_has_webhook(self):
-        """Testea que el método retorne True"""
-        result = self.controller.has_webhook()
-        self.assertTrue(result)
-
     def test_download_source_data(self):
         """Simula un dato de entrada (self.hook) y se verifica que este dato se cree en las tablas DownloadHistory y StoreData"""
         self.controller.download_source_data(self.plug.connection.related_connection, self.plug, answer=self.hook)

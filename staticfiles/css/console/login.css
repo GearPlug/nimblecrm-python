@@ -45,7 +45,7 @@
     margin-top: 10%;
 }
 
-.login-wrapper .form input[type="text"], input[type="password"] {
+.login-wrapper .form input[type="text"],.login-wrapper .form input[type="email"], input[type="password"] {
     width: 100%;
     height: 56px;
 
@@ -70,6 +70,7 @@
     color: #FFFFFF;
     background-color: #005ca7;
     outline: none;
+    margin-top: 5px;
 
     border-radius: 10px 10px 10px 10px;
     -moz-border-radius: 10px 10px 10px 10px;

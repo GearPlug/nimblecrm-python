@@ -1,31 +1,34 @@
 <form method="POST" action="{% url 'landing:signup' %}" autocomplete="off" id="signup_form">
     {% csrf_token %}
-    <div class="col-md-12{% if signup_form.first_name.errors %} has-error{% endif %}">
+    {% for error in form.non_field_errors %}
+        {{ error|escape }}
+    {% endfor %}
+    <div class="col-md-12 col-sm-12 col-xs-12 {% if signup_form.first_name.errors %} has-error{% endif %}">
         {{ signup_form.first_name }}
         {% for error in signup_form.first_name.errors %}
             <div class="text-danger">{{ error }}</div>
         {% endfor %}
     </div>
-    <div class="col-md-12{% if signup_form.last_name.errors %} has-error{% endif %}">
+    <div class="col-md-12 col-sm-12 col-xs-12 {% if signup_form.last_name.errors %} has-error{% endif %}">
         {{ signup_form.last_name }}
         {% for error in signup_form.last_name.errors %}
             <div class="text-danger">{{ error }}</div>
         {% endfor %}
     </div>
-    <div class="col-md-12{% if signup_form.email.errors %} has-error{% endif %}">
+    <div class="col-md-12 col-sm-12 col-xs-12 {% if signup_form.email.errors %} has-error{% endif %}">
         {{ signup_form.email }}
         {% for error in signup_form.email.errors %}
             <div class="text-danger">{{ error }}</div>
         {% endfor %}
     </div>
-    <div class="col-md-12{% if signup_form.password1.errors %} has-error{% endif %}">
+    <div class="col-md-12 col-sm-12 col-xs-12 {% if signup_form.password1.errors %} has-error{% endif %}">
         {{ signup_form.password1 }}
         {% for error in signup_form.password1.errors %}
             <div class="text-danger">{{ error }}</div>
         {% endfor %}
     </div>
     {% for id,name in signup_form.subscription_list.field.choices %}
-        <div class="col-md-12 padding-checkbox{% if signup_form.subscription_list.errors %} has-error{% endif %}">
+        <div class="col-md-12 col-sm-12 col-xs-12 padding-checkbox{% if signup_form.subscription_list.errors %} has-error{% endif %}">
             <div class="btn-group" data-toggle="buttons">
                 <label for="id_subscription_list{{ forloop.counter0 }}" class="btn btn-primary">
                     <input type="checkbox" name="subscription_list" value="1"
@@ -33,10 +36,10 @@
                     <span class="glyphicon glyphicon-ok"></span>
                 </label>
             </div>
-            <span class="checkbox-form">{{ name }}</span>
+            <span class="checkbox-form">{{ name }}aaa</span>
         </div>
     {% endfor %}
-    <div class="col-md-12">
+    <div class="col-md-12 col-sm-12 col-xs-12">
         <button type="submit" class="button_form">Regístrate</button>
     </div>
 </form>

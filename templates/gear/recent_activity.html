@@ -1,65 +1,65 @@
 {% extends 'layouts/console_base.html' %}
-{% load static tz%}
+{% load static tz %}
 {% block content %}
     <link rel="stylesheet"
     <input type="hidden" id="retry_url" value="{% url 'gear:retry_send_history' %}">
     <div class="row history">
     <div class="title">
         {% if recent %}
-        <span>Actividad Reciente</span>
+            <span>Actividad Reciente</span>
         {% else %}
-        <span>Historial Entrante</span>
+            <span>Historial Entrante</span>
         {% endif %}
     </div>
     <div class="col-md-12 history-list">
         {% for obj in object_list %}
-        <div class="row">
-            <div class="item history-item" data-history="{{ obj.id }}">
-                <div class="col-md-1">
-                    <img src="{{ obj.connector_source.icon73.url }}" width="30px"></img>
-                    <img src="{% static 'img/console/g7316.png' %}" width="9">
-                    <img src="{{ obj.connector_target.icon73.url }}" width="30px"></img>
-                </div>
-                <div class="col-md-1">
-                    {% if obj.sent == 0 %}
-                        <div class="indicator red">FAILED</div>
-                    {% elif obj.sent == 1 %}
-                        <div class="indicator green">SUCCESS</div>
-                    {% elif obj.sent == 2 %}
-                        <div class="indicator orange">FILTERED</div>
-                    {% endif %}
-                </div>
-                <div class="col-md-5">
-                    <div class="text">
-                        {{ obj.date|localtime }}
-                        {% if obj.sent != 1 %}
-                            <b class="resend">resend</b>
+            <div class="row">
+                <div class="item history-item" data-history="{{ obj.id }}">
+                    <div class="col-md-1">
+                        <img src="{{ obj.connector_source.icon73.url }}" width="30px"></img>
+                        <img src="{% static 'img/console/g7316.png' %}" width="9">
+                        <img src="{{ obj.connector_target.icon73.url }}" width="30px"></img>
+                    </div>
+                    <div class="col-md-1">
+                        {% if obj.sent == 0 %}
+                            <div class="indicator red">FAILED</div>
+                        {% elif obj.sent == 1 %}
+                            <div class="indicator green">SUCCESS</div>
+                        {% elif obj.sent == 2 %}
+                            <div class="indicator orange">FILTERED</div>
                         {% endif %}
                     </div>
-                </div>
-                <div class="col-md-12">
-                    <ul style="display:none;" data-show="false" data-history="{{ obj.id }}">
-                        {% if obj.sent != 1 %}
-                            <li><b>Response</b>: {{ obj.response }}</li>
-                        {% endif %}
-                            <li><b>Identifier</b>: {{ obj.identifier }}</li>
-                        {% for item in obj.data %}
-                            {% if item.value == 'item.date' %}
-                                <li>{{ item.name }}: {{ item.value|localtime }}</li>
-                            {% else %}
-                                <li>{{ item.name }}: {{ item.value }}</li>
+                    <div class="col-md-5">
+                        <div class="text">
+                            {{ obj.date|localtime }}
+                            {% if obj.sent != 1 %}
+                                <b class="resend">Try again</b>
                             {% endif %}
-                        {% endfor %}
-
-                    </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <ul style="display:none;" data-show="false" data-history="{{ obj.id }}">
+                            {% if obj.sent != 1 %}
+                                <li><b>Response</b>: {{ obj.response }}</li>
+                            {% endif %}
+                            <li><b>Identifier</b>: {{ obj.identifier }}</li>
+                            {% for item in obj.data %}
+                                {% if item.value == 'item.date' %}
+                                    <li>{{ item.name }}: {{ item.value|localtime }}</li>
+                                {% else %}
+                                    <li>{{ item.name }}: {{ item.value }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
-
             </div>
-        </div>
+        {% empty %}
+            There hasn't been any activity for your gears in the last 24 hours.
         {% endfor %}
     </div>
-    {% endblock %}
-    {% block scripts %}
+{% endblock %}
+{% block scripts %}
     {{ block.super }}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/js/bootstrap-datepicker.js"></script>
     <script src="https://momentjs.com/downloads/moment.js"></script>
@@ -144,5 +144,5 @@
             return false;
         })
     </script>
-    {% endblock %}
+{% endblock %}
 </div>

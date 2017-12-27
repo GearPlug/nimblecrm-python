@@ -180,3 +180,83 @@
         margin: 30.7% 0 2.5% 0;
     }
 }
+
+@media only screen and (max-width:320px) and (orientation: portrait) {
+    .no-padding, .xs-padding {
+        padding: 0;
+    }
+
+    hr.hr-about-mb{
+        margin: 5% 0 0 0;
+    }
+
+    .aboutus-banner {
+        background: inherit;
+    }
+
+    .aboutus-text .text1 {
+        font-size: 1.4em;
+        margin: 7% 0 0 2.4%;
+        text-align: center;
+    }
+
+    .aboutus-text .text2 {
+        font-size: 1.4em;
+        margin: -0.6% 0 0 -0.1%;
+        text-align: center;
+    }
+
+    .aboutus-text .text3 {
+        font-size: 1.6em;
+        margin: 0 0 9% 7.9%;
+        text-align: center;
+    }
+
+    img.img-guy-mb {
+        margin-top: -9%;
+        width: 100%;
+    }
+
+    .aboutus-description .text3 {
+        padding: 8.7% 16.3% 2.2%;
+        font-size: 0.9em;
+    }
+
+    .aboutus-description .text3 p {
+        margin: 0 0 5% 0;
+    }
+
+    .aboutus-services .title {
+        font-size: 1.6em;
+        margin-top: 8.3%;
+    }
+
+    .hr_service {
+        margin: -0.7% 0 0 25.1%;
+        width: 49.5%;
+    }
+
+    .img_integrate {
+        margin: 17.7% 0 1.5% 0;
+        width: 55%;
+    }
+
+    .aboutus-services .boxes .box .title2 {
+        font-size: 1.4em;
+        padding-bottom: 0;
+    }
+
+    .img_automate {
+        margin: 18.3% 0 7.4% 0;
+        width: 51%;
+    }
+
+    .img_evolve {
+        margin: 8.6% 0 8.8% 0;
+        width: 43%;
+    }
+
+    .aboutus-services .boxes {
+        margin-bottom: 5%;
+    }
+}

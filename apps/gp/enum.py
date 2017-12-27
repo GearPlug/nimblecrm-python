@@ -42,7 +42,7 @@ class ConnectorEnum(Enum):
     Salesforce = 31, 'crm', 'authorization'
     Vtiger = 32, 'crm'
     ProsperWorks = 33, 'crm'
-    HubSpot = 34, 'crm'
+    HubSpot = 34, 'crm', 'special'
     PipeDrive = 35, 'crm'
     DynamicCRM = 36, 'crm'
     FreshDesk = 37, 'crm'
