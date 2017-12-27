@@ -278,7 +278,6 @@ class GoogleCalendarConnection(models.Model):
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
 
-
     def __str__(self):
         return self.name
 
@@ -676,10 +675,16 @@ class Subscriptions(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-    avatar = models.ImageField(upload_to='avatar/', default='avatar/default.jpeg')
+    avatar = models.ImageField('avatar', upload_to='avatar/', default='avatar/default.jpeg')
+    address = models.CharField('address', max_length=500, default='', blank=True, null=False)
+    zip_code = models.CharField('zip code', max_length=30, default='', blank=True, null=False)
+    country = models.CharField('country', max_length=50, default='Colombia', blank=True, null=False)
+    state = models.CharField('state', max_length=50, default='', blank=True, null=False)
+    city = models.CharField('country', max_length=50, default='', blank=True, null=False)
 
     def __str__(self):
         return self.user.username
+
 
 admin.site.register(Connector)
 admin.site.register(Action)

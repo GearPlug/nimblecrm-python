@@ -34,10 +34,12 @@
                 <div class="col-md-4 right-side">
                     <div class="user">
                         <div class="icon">
-                            <img src="{% static 'img/console/g6630.png' %}" width="48">
+                            <img src="{% if request.user.profile.avatar %}{{ request.user.profile.avatar.url }}{% else %}{% static 'img/console/g6630.png' %}{% endif %}" width="48">
                         </div>
                         <div class="name">
-                            {% trans 'Perfil' %}
+                            <a href="{% url 'home:profile' %}">
+                                {% trans 'Perfil' %}
+                            </a>
                         </div>
                         <div class="icon">
                             <img src="{% static 'img/console/notifications.png' %}" width="48">
