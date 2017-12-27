@@ -161,8 +161,8 @@ class BaseController(FilterBaseController):
                 if not data_list:
                     return [-1, ]
             return data_list_result
-            # raise ControllerError(code=0, controller=self._connector.name,
-            #                       message="Please check you're using a valid connection and a valid plug.")
+        raise ControllerError(code=0, controller=self._connector.name,
+                              message="Please check you're using a valid connection and a valid plug.")
 
     def get_target_fields(self, **kwargs):
         raise ControllerError('Not implemented yet.')
@@ -182,9 +182,18 @@ class BaseController(FilterBaseController):
     @property
     def connector(self):
         return self._connector
+
     @property
     def has_webhook(self):
         return False
+
+    @property
+    def has_test_information(self):
+        return False
+
+    @property
+    def needs_polling(self):
+        return not self.has_webhook
 
 
 class GoogleBaseController(BaseController):
@@ -193,9 +202,12 @@ class GoogleBaseController(BaseController):
         self._connection_object.save(update_fields=['credentials_json'])
 
     def _refresh_token(self, **kwargs):
-        if self._credential.access_token_expired:
-            self._credential.refresh(httplib2.Http())
-            self._upate_connection_object_credentials()
+        if self._credential.refresh_token is not None:
+            if self._credential.access_token_expired:
+                self._credential.refresh(httplib2.Http())
+                self._upate_connection_object_credentials()
+        else:
+            print("ERROR EL TOKEN NO TIENE REFRESH TOKEN")
 
     def _report_broken_token(self, scale=None):
         print("IMPOSIBLE REFRESCAR EL TOKEN!!!! NOTIFICAR AL USUARIO.")

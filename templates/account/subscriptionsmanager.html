@@ -1,0 +1,12 @@
+{% extends 'layouts/console_base.html' %}
+{% load static i18n %}
+
+{% block content %}
+    <h1>Subscriptions Manager</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Submit</button>
+    </form>
+{% endblock %}

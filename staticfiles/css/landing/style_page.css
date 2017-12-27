@@ -1,13 +1,13 @@
 .ayuda {
-    background: url(../../img/landing/plantilla.png) no-repeat scroll -467px 0;
-    background-size: cover;
+    /*background: url(../../img/landing/plantilla.png) no-repeat scroll 0 12px;*/
+    /*background-size: contain;*/
 }
 
 .bg_page {
     background-color: white;
 }
 
-.row {
+.not-margin {
     margin: 0;
     padding: 0;
 }
@@ -17,62 +17,63 @@
 }
 
 /* Header */
-.nav_spaces {
-    margin: 2.62% 0 2.1% 0;
+
+ul.menu{
+    list-style-type: none;
+    margin: 2.4% 2.3% 0 0;
 }
 
-.logo_header {
-    display: inherit;
+ul.menu li{
+    display: inline;
+    padding-right: 1.5%;
 }
 
-.text_menu {
-    padding-left: 6.4%;
-    padding-top: 25px;
-}
-
-.text_menu a {
+ul.menu.nav li a{
     color: #9C9BA0;
     font-family: 'Sansation Light';
-    font-size: 2.1em;
-    letter-spacing: 0.3px;
-    padding-left: 3.6%;
+    font-size: 1.6em;
     text-decoration: none;
 }
 
-.border_login {
-    border-left: #09DF8E solid 5px;
+ul.menu.nav li a:hover {
+    color: #9C9BA0;
+}
+
+ul.menu li.menu-login {
+    border-left: #09DF8E solid 3px;
     color: #9B999F;
     font-family: 'Sansation';
-    margin-top: 8%;
-    padding: 1% 0 2% 7.5%;
+    padding: 1.3% 0 0 1.2%;
 }
 
-.border_login a {
+ul.menu li.menu-login a {
     color: #005CA6;
     font-family: 'Sansation';
-    font-size: 2.1em;
-    letter-spacing: 0.3px;
-    text-decoration: none;
+    padding-top: 4%;
+}
+
+ul.menu.nav li.menu-login a:hover {
+    color: #005CA6;
 }
 
 /* Footer */
 .bg_nets {
     background-color: #09DE8D;
-    padding: 2.6% 0 2% 0;
+    padding: 1.8% 0 1.7% 0;
 }
 
 .padding-nets {
-    padding-right: 1.2%;
+    padding-right: 0.8%;
 }
 
 .text-menu {
-    padding-top: 0.9%;
+    padding-top: 0.8%;
 }
 
 .text-menu a{
     color: white;
     font-family: 'Sansation Bold';
-    font-size: 1.75em;
+    font-size: 1.7em;
     padding: 0 0.8%;
     text-decoration: none;
 }
@@ -83,7 +84,7 @@
 
 .bg_footer {
     background-color: #005CA5;
-    padding: 1.3% 0 1.7% 0;
+    padding: 1.5% 0 1.5% 0;
 }
 
 .text-footer {
@@ -112,16 +113,299 @@ footer {
 	right:20px;
 }
 
-.img-avatar {
-    margin-right: 6%;
+li.menu-login.dropdown.profile .text-avatar {
+    color: #005CA7;
+    display: inline;
+    font-size: 1.5em;
+    font-weight: bold;
 }
 
-.text-avatar {
-    font-size: 2.1em;
+li.menu-login.profile img.img-avatar {
+    margin-top: -3.6%;
 }
 
-@media only screen and (max-width:1910px) {
-    .text_menu a {
-        padding-left: 3.5%;
+li.menu-login.dropdown.profile.open ul.dropdown-menu {
+    border-radius: inherit;
+    box-shadow: none;
+    margin-top: 7%;
+    padding: 0.7% 8% 0.2% 8%;
+}
+
+li.menu-login.dropdown.profile.open ul li {
+    padding-right: 0;
+}
+
+li.menu-login.dropdown.profile.open ul li a {
+    color: #4B464B;
+    font-family: "Sansation Light";
+    font-size: 1.4em;
+    padding-top: 3%;
+}
+
+li.menu-login.dropdown.profile ul.dropdown-menu li a:focus, li.menu-login.dropdown.profile ul.dropdown-menu li a:hover {
+    background-color: transparent;
+    outline: none;
+}
+
+.border-options {
+    border-bottom: 2px solid #09DE8D;
+}
+
+li.menu-login.dropdown.profile ul li p{
+    margin: 0;
+    padding-bottom: 2.6%;
+}
+
+.privacy {
+    margin-top: 0.6%;
+}
+
+.privacy a {
+    color: #005CA5;
+    font-family: "Sansation Bold";
+    font-size: 0.8em;
+    text-decoration: none;
+}
+
+.privacy .border-privacy {
+    border-right: 1px solid white;
+    margin-right: 0.4%;
+    padding: 0.1% 0.4% 0.1% 0;
+}
+
+.layout.navbar.navbar-default {
+    background-color: inherit;
+    border-color: transparent;
+}
+
+ul.navbar-nav {
+    float: right;
+    width: 53.6%;
+}
+
+img.logo_header {
+    margin: 11% 0 0 105%;
+}
+
+li.profile.open a {
+    background-color: transparent !important;
+}
+
+ul.menu li.menu-login.profile a {
+    margin-top: -1px;
+    padding-bottom: 0;
+    padding-top: 0;
+}
+
+ul.menu li.menu-login.profile {
+    padding: 0 0 0 1.2%;
+}
+
+@media only screen and (max-width:1600px) {
+    li.menu-login.dropdown.profile.open ul.dropdown-menu {
+        margin: 4.8% 0 0 -15%;
+    }
+
+    img.logo_header {
+        margin: 11% 0 0 62%;
+    }
+}
+
+@media only screen and (max-width:1440px) {
+    ul.menu {
+        margin: 2.1% 5.5% 0 0;
+    }
+
+    li.menu-login.dropdown.profile.open ul.dropdown-menu {
+        margin: 6.5% 0 0 -47%;
+    }
+
+    img.logo_header {
+        margin: 11% 0 0 44%;
+    }
+}
+
+@media only screen and (max-width: 1370px) {
+    ul.navbar-nav {
+        width: 54.6%;
+    }
+
+    .aboutus-banner .aboutus-text .text2 {
+        margin: -0.6% 0 0 6.9%;
+    }
+
+    .aboutus-banner .aboutus-text .text1 {
+        margin: 3% 0 0 15.4%;
+    }
+
+    .aboutus-banner .aboutus-text .text3 {
+        margin: 0 0 0 9.9%;
+    }
+}
+
+
+@media only screen and (max-width:1024px) {
+    ul.menu {
+        margin: 8.1% 4% 0 -16%;
+    }
+
+    img.logo_header{
+        margin: 4% 0 0 -13%;
+    }
+
+    ul.menu li {
+        padding-right: 3.1%;
+    }
+
+    li.menu-login.dropdown.profile.open ul.dropdown-menu {
+        margin: 5.6% 0 0 -66.1%;
+    }
+
+    img.logo_header {
+        margin: 5% 0 0 167%;
+    }
+
+    ul.navbar-nav {
+        width: 81.6%;
+    }
+}
+
+@media only screen and (max-width:768px) {
+    img.logo_header {
+        margin: 4% 0 0 111%;
+    }
+
+    ul.menu {
+        margin: 1.1% -0.2% 2.1% -16%;
+    }
+
+    li.menu-login.profile img.img-avatar {
+        width: 79.9%;
+    }
+
+    li.menu-login.dropdown.profile.open ul.dropdown-menu {
+        margin: 2.6% 0 0 -65.1%;
+    }
+
+    .text-menu a {
+        padding: 0 1.1%;
+    }
+
+    .privacy .border-privacy {
+        padding: 0.1% 0.7% 0.1% 0.7%;
+    }
+
+    ul.navbar-nav {
+        width: 99.6%;
+    }
+
+    ul.menu.nav li a {
+        font-size: 1.5em;
+    }
+
+    ul.menu li {
+        padding-right: 1.9%;
+    }
+
+    ul.menu li.menu-login.profile a {
+        padding-left: 0;
+    }
+
+    ul.menu li.menu-login.profile a {
+        margin-top: 3px;
+    }
+
+    li.menu-login.dropdown.profile .text-avatar {
+        font-size: 1.4em;
+    }
+
+    li.menu-login.dropdown.profile.open ul li a {
+        font-size: 1.3em;
+    }
+
+    nav.navbar {
+        margin-bottom: 0;
+    }
+}
+
+@media only screen and (max-width:320px) and (orientation: portrait) {
+    .navbar-header a.navbar-toggle {
+        border-color: transparent;
+        margin-right: 9.1%;
+        margin-top: 6.4%;
+        padding: 0 0;
+    }
+
+    .navbar-header a.navbar-toggle:hover {
+        background-color: inherit;
+    }
+
+    img.burguer-menu {
+        width: 74%;
+    }
+
+    img.logo_header {
+        margin: 4% 0 0 31%;
+        width: 38%;
+    }
+
+    .layout .navbar-collapse, .layout .navbar-default {
+        border-color: transparent;
+    }
+
+    ul.navbar-nav {
+        width: 79.6%;
+    }
+
+    ul.menu {
+        background-color: #005CA5;
+        margin: 0 -0.2% 0 -16%;
+        padding-bottom: 7%;
+        padding-left: 7%;
+        padding-right: 7%;
+    }
+
+    ul.menu li.logo-mb {
+        display: block;
+    }
+
+    img.img-logo-mb {
+        margin: 14.7% 0 28.4% 41.2%;
+        width: 23.4%;
+    }
+
+    ul.menu li {
+        display: block;
+        padding-right: 0;
+    }
+
+    ul.menu.nav li a {
+        border-bottom: 1px solid #004178;
+        color: white;
+        font-size: 1.4em;
+    }
+
+    ul.menu li.menu-login {
+        border-left: transparent;
+    }
+
+    ul.menu li.menu-login a {
+        font-family: 'Sansation Light';
+    }
+
+    ul.menu li.menu-login span.border-sign {
+        display: inline !important;
+        border-left: 3px solid #09de8d;
+    }
+
+    li.menu-login.dropdown.profile .text-avatar {
+        color: white;
+        font-size: 1.2em;
+        padding-top: 6%;
+    }
+
+    .selected_page {
+        color: white !important;
+        font-family: 'Sansation Bold' !important;
     }
 }

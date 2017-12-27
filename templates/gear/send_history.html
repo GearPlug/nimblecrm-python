@@ -1,5 +1,5 @@
 {% extends 'layouts/console_base.html' %}
-{% load static %}
+{% load static tz %}
 {% block content %}
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/css/bootstrap-datepicker.css"/>
@@ -15,106 +15,142 @@
             background-color: darkgreen;
         }
     </style>
-    <div class="content-body col-md-10 col-md-offset-1">
-        <input type="hidden" id="retry_url" value="{% url 'gear:retry_send_history' %}">
-        <div class="row history">
-            <div class="title">
-                <span>Historial Entrante</span>
-            </div>
-            <div class="col-md-12 navbar">
-                <form action="" method="POST">
-                    {% csrf_token %}
-                    <div class="row">
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <div class='input-group date' id='datepicker-from'>
-                                    {{ form.date_from }}
-                                    <span class="input-group-addon">
-                                    <span class="glyphicon glyphicon-calendar"></span>
-                                </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <div class='input-group date' id='datepicker-to'>
-                                    {{ form.date_to }}
-                                    <span class="input-group-addon">
-                                    <span class="glyphicon glyphicon-calendar"></span>
-                                </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <div class='input-group' id='id_{{ form.order.label|lower }}'
-                                     data-order="{{ form.order.value|default_if_none:"asc" }}">
-                                    {{ form.order }}
-                                    <span class="input-group-addon">
-                                    <span class="glyphicon glyphicon-arrow-{% if form.order.value == 'desc' %}down{% else %}up{% endif %}"></span>
-                                </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <div class='input-group' id='id_{{ form.sent.label|lower }}'>
-                                    {{ form.sent }}
-                                    <span class="input-group-addon">
-                                        <span class="glyphicon glyphicon-check"></span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2 pull-right">
-                            <button type="submit">
-                                Filtrar
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="col-md-12 history-list">
-                {% for obj in object_list %}
-                    <div class="row">
-                        <div class="item history-item" data-history="{{ obj.id }}">
-                            <div class="col-md-1">
-                                {% if obj.sent == 0 %}
-                                    <div class="indicator red">FAILED</div>
-                                {% elif obj.sent == 1 %}
-                                    <div class="indicator green">SUCCESS</div>
-                                {% elif obj.sent == 2 %}
-                                    <div class="indicator orange">FILTERED</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-5">
-                                <div class="text">
-                                    {{ obj.date }}
-                                    {% if obj.sent != 1 %}
-                                        <b class="resend">resend</b>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-12">
-                                <ul style="display:none;" data-show="false" data-history="{{ obj.id }}">
-                                    {% if obj.sent != 1 %}
-                                        <li><b>Response</b>: {{ obj.response }}</li>
-                                    {% endif %}
-                                    <li><b>Identifier</b>: {{ obj.identifier }}</li>
-                                    {% for item in obj.data %}
-                                        <li>{{ item.name }}: {{ item.value }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
+    <br>
+    <form action="" method="POST">
+        {% csrf_token %}
+        <div class='col-md-2'>
+            <div class=" form-group">
+                <div class='input-group date' id='datepicker-from'>
+                    {{ form.date_from }}
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
             </div>
         </div>
-    </div>
-{% endblock %}
+        <div class='col-md-2'>
+            <div class=" form-group">
+                <div class='input-group date' id='datepicker-to'>
+                    {{ form.date_to }}
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class='col-md-2'>
+            <div style=""></div>
+            <div class="form-group">
+                <div class='input-group' id='id_{{ form.order.label|lower }}'
+                     data-order="{{ form.order.value|default_if_none:"desc" }}">
+                    {{ form.order }}
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-arrow-{% if form.order.value == 'asc' %}up{% else %}down{% endif %}"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class='col-md-2'>
+            <div style=""></div>
+            <div class="form-group">
+                <div class='input-group' id='id_{{ form.sent.label|lower }}'>
+                    {{ form.sent }}
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-check"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <button class="btn col-md-1">Filter</button>
+    </form>
 
+    <br>
+    <br>
+    <br>
+    <br>
+
+    <input type="hidden" id="retry_url" value="{% url 'gear:retry_send_history' %}">
+    <div class="row history">
+    <div class="title">
+        <span>Historial de datos enviados</span>
+    </div>
+    <div class="col-md-12 history-list">
+        {% for obj in object_list %}
+            <div class="row">
+                <div class="item history-item" data-history="{{ obj.id }}">
+                    <div class="col-md-1">
+                        <img src="{{ obj.connector.icon73.url }}" width="35px"></img>
+                    </div>
+                    <div class="col-md-1">
+                        {% if obj.sent == 0 %}
+                            <div class="indicator red">FAILED</div>
+                        {% elif obj.sent == 1 %}
+                            <div class="indicator green">SUCCESS</div>
+                        {% elif obj.sent == 2 %}
+                            <div class="indicator orange">FILTERED</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-5">
+                        <div class="text">
+                            {{ obj.date|localtime }}
+                            {% if obj.sent != 1 %}
+                                <b class="resend">resend</b>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <ul style="display:none;" data-show="false" data-history="{{ obj.id }}">
+                            {% if obj.sent != 1 %}
+                                <li><b>Response</b>: {{ obj.response }}</li>
+                            {% endif %}
+                            <li><b>Identifier</b>: {{ obj.identifier }}</li>
+                            {% for item in obj.parsed_data %}
+                                {% if item.value == 'item.date' %}
+                                    <li>{{ item.name }}: {{ item.value|localtime }}</li>
+                                {% else %}
+                                    <li>{{ item.name }}: {{ item.value }}</li>
+                                {% endif %}
+                            {% endfor %}
+
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+        {% empty %}
+            {% now "Y-m-d H:i" as now %}
+            There hasn't been any activity in this gear in the range: {{ form.date_from.value|default:'all' }} to
+            {{ form.date_to.value|default:now }}
+        {% endfor %}
+    </div>
+    <div class="row history">
+    {% if is_paginated %}
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li><a href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
+            {% else %}
+                <li class="disabled"><span>&laquo;</span></li>
+            {% endif %}
+
+            {% for i in paginator.page_range %}
+                {% if page_obj.number == i %}
+                    <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+                {% else %}
+                    <li><a href="?page={{ i }}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li><a href="?page={{ page_obj.next_page_number }}">&raquo;</a></li>
+            {% else %}
+                <li class="disabled"><span>&raquo;</span></li>
+            {% endif %}
+        </ul>
+    {% endif %}
+{% endblock %}
+</div>
 {% block scripts %}
+    {{ block.super }}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/js/bootstrap-datepicker.js"></script>
     <script src="https://momentjs.com/downloads/moment.js"></script>
     <script src="https://cdn.rawgit.com/Eonasdan/bootstrap-datetimepicker/e8bddc60e73c1ec2475f827be36e1957af72e2ea/src/js/bootstrap-datetimepicker.js"></script>
@@ -199,3 +235,4 @@
         })
     </script>
 {% endblock %}
+</div>

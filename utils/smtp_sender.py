@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import smtplib
 
 """
@@ -6,46 +7,26 @@ import smtplib
 """
 
 
-class smtpSender():
-    smtp_client = None
+class SMTPCustomClient():
+    client = None
+    is_active = False
 
-    def __init__(self, server_name, server_port, server_user, server_password):
-        self.server_name = server_name
-        self.server_port = server_port
-        self.server_user = server_user
-        self.server_password = server_password
+    def __init__(self, host, port, user, password, sender="noreply@grplug.com"):
+        self.sender = sender
+        try:
+            self.client = smtplib.SMTP(host, port, timeout=3)
+            self.client.ehlo()
+            self.client.starttls()
+            self.client.login(user, password)
+            self.is_active = True
+        except (smtplib.SMTPAuthenticationError, OSError):
+            # Usuario y/o contraseña incorrectos, TimeOut
+            self.is_active = False
+        except Exception:
+            # Hostname inalcanzable
+            self.is_active = False
 
-    def compose_mail(self, recipient, message, sender):
-        """
-        Este metodo se encarga de comṕoner el mensaje para su envio.
-
-        :param recipient - Email de quien recibe el mensaje:
-        :param message - Texto del mensaje:
-        :param sender - Email de quien envia el mensaje:
-        :return:
-        """
-        header = 'To:' + recipient + '\n' + 'From: ' + sender + '\n' + 'Subject:testing \n'
-        full_mail = header + message
-        return full_mail
-
-    def stablish_connection(self):
-        """
-        Este metodo crea una conexion con un servidor SMTP.
-
-        :param server_name:
-        :param server_port:
-        :param server_user:
-        :param server_password:
-        :param message - Texto del mensaje:
-        :param recipient - Email que recibe el mensaje:
-        :return:
-        """
-        self.smtp_client = smtplib.SMTP(self.server_name, self.server_port, timeout=3)
-        self.smtp_client.ehlo()
-        self.smtp_client.starttls()
-        self.smtp_client.login(self.server_user, self.server_password)
-
-    def send_mail(self, recipient, message, sender=None):
+    def send_email(self, recipient=None, message="", subject=""):
         """
         Este metodo se encarga del envio del mensaje.
 
@@ -54,23 +35,21 @@ class smtpSender():
         :param message - Texto del Email.:
         :return:
         """
-        self.stablish_connection()
-        if sender is None:
-            sender = "jira@grplug.com"
-        full_mail = self.compose_mail(recipient, message, sender)
-        self.smtp_client.sendmail(sender, recipient, full_mail)
-        self.smtp_client.close()
-
-    def is_valid_connection(self):
+        if not self.is_active:
+            raise Exception("There's no active connection. Please provide valid credentials to continue.")
+        if recipient is None:
+            raise Exception("Recipient can't be empty.")
+        email_content = 'To:{0} \nFrom:{1} \nSubject:{2} \n{3}'.format(recipient, self.sender, subject,
+                                                                       message).encode('utf-8')
         try:
-            self.stablish_connection()
+            self.client.sendmail(self.sender, recipient, email_content)
+            return "Message successfully sent to: {}".format(recipient)
+        except:
+            return "The message to: {}  has FAILED.".format(recipient)
+
+    def close(self):
+        try:
+            self.client.close()
             return True
-        except smtplib.SMTPAuthenticationError:
-            # Usuario y/o contraseña incorrectos
-            return False
-        except OSError:
-            # Timeout
-            return False
-        except Exception:
-            # Hostname inalcanzable
+        except:
             return False

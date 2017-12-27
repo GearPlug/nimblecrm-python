@@ -1,14 +1,15 @@
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse
-from django.db.models import IntegerField, Case, When, Sum
+from django.db.models import IntegerField, Case, When, Sum, Q
 from django.db.models.aggregates import Count
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
+from django.template import loader
 from django.views.generic import CreateView, ListView, View, TemplateView, UpdateView
 from apps.gp.enum import ConnectorEnum, GoogleAPIEnum
-from apps.gp.models import Connection, Connector, MercadoLibreConnection
+from apps.gp.models import Connection, Connector, MercadoLibreConnection, Gear, Category
 from urllib.parse import urlencode
 from oauth2client import client
 from requests_oauthlib import OAuth2Session
@@ -16,6 +17,7 @@ from slacker import Slacker
 from evernote.api.client import EvernoteClient
 from mercadolibre.client import Client as MercadolibreClient
 from instagram.client import InstagramAPI
+from salesforce.client import Client as SalesforceClient
 import tweepy
 import httplib2
 import json
@@ -51,6 +53,7 @@ class ListConnectorView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super(ListConnectorView, self).get_context_data(**kwargs)
         context['type'] = self.kwargs['type']
+        context['categories'] = Category.objects.all()
         return context
 
 
@@ -286,7 +289,16 @@ class CreateTokenAuthorizedConnectionView(TemplateView):
                 except Exception:
                     # TODO: Connection Error
                     pass
-            return redirect(reverse('connection:create_success'))
+            return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        if 'plug_type' in self.request.session:
+            plug_type = self.request.session['plug_type']
+        else:
+            plug_type = 'source'
+        return reverse('connection:list', kwargs={
+            'connector_id': ConnectorEnum.get_connector(name=self.request.session['connector_name']).value,
+            'type': plug_type})
 
 
 class AuthSuccess(TemplateView):
@@ -349,6 +361,7 @@ class GoogleAuthView(View):
             credentials = get_flow(settings.GOOGLE_AUTH_CALLBACK_URL, scope=api.scope).step2_exchange(code)
             request.session['connection_data'] = {'credentials_json': credentials.to_json(), }
             request.session['connector_name'] = api.name
+
             return redirect(reverse('connection:create_token_authorized_connection'))
 
 
@@ -364,12 +377,10 @@ class InstagramAuthView(View):
 
 class SalesforceAuthView(View):
     def get(self, request, *args, **kwargs):
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
-        data = {'grant_type': 'authorization_code', 'redirect_uri': settings.SALESFORCE_REDIRECT_URI,
-                'code': request.GET['code'], 'client_id': settings.SALESFORCE_CLIENT_ID,
-                'client_secret': settings.SALESFORCE_CLIENT_SECRET}
-        response = requests.post(settings.SALESFORCE_ACCESS_TOKEN_URL, data=data, headers=headers).json()
-        request.session['connection_data'] = {'token': response['access_token'], }
+        salesforce_client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
+                                             settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
+        response = salesforce_client.exchange_code(settings.SALESFORCE_REDIRECT_URI, request.GET['code'])
+        request.session['connection_data'] = {'token': json.dumps(response)}
         request.session['connector_name'] = ConnectorEnum.Salesforce.name
         return redirect(reverse('connection:create_token_authorized_connection'))
 
@@ -556,8 +567,9 @@ class AjaxMercadoLibrePostSiteView(View):
 
 
 def get_salesforce_auth():
-    return 'https://login.salesforce.com/services/oauth2/authorize?response_type=code&client_id={}&redirect_uri={}'.format(
-        settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_REDIRECT_URI)
+    salesforce_client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
+                                         settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
+    return salesforce_client.authorization_url(settings.SALESFORCE_REDIRECT_URI)
 
 
 def get_survey_monkey_url():
@@ -726,3 +738,13 @@ class UpdateConnectionView(UpdateView):
                     settings.GITLAB_CLIENT_ID, settings.GITLAB_REDIRECT_URL))
             context['authorization_url'] = authorization_url
         return context
+
+
+def get_gears_from_connection(request):
+    if request.is_ajax() is True and request.method == 'POST':
+        connection_id = request.POST.get('connection_id', None)
+        gears = Gear.objects.filter(Q(source__connection_id=connection_id) | Q(target__connection_id=connection_id))
+        template = loader.get_template('connection/snippets/menu_gears.html')
+        context = {'gears': gears}
+        return JsonResponse({'data': True, 'html': template.render(context)})
+    return JsonResponse({'data': False})

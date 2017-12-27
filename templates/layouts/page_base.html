@@ -15,79 +15,127 @@
     <link href="{% static 'css/landing/terms.css' %}" rel="stylesheet">
     <link href="{% static 'css/landing/privacy.css' %}" rel="stylesheet">
 {% endblock %}
-{% block body_class %}{% endblock %}
+{% block body_class %}ayuda{% endblock %}
 {% block body_base %}
     <div class="content">
         {% block header_content %}
             <header>
-                <nav class="nav_spaces">
-                    <div class="row">
-                        <div class="col-md-2 col-md-offset-1">
+                <nav class="layout navbar navbar-default">
+                    <div class="container-fluid sp">
+                        <div class="navbar-header">
+                            <a class="navbar-toggle collapsed" data-toggle="collapse"
+                               data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                                <img src="{% static 'img/landing/burguer.png' %}" class="burguer-menu">
+                            </a>
                             <a href="{% url 'landing:index' %}">
-                                <img src="{% static 'img/landing/logo_header.png' %}"
-                                     class="img-responsive logo_header">
+                                <img src="{% static 'img/landing/logo_header.png' %}" class="logo_header">
                             </a>
                         </div>
-                        <div class="col-md-5 col-md-offset-2 text_menu">
-                            <a {% if request.path == "/about/" %}class="selected_page"{% endif %}
-                               href="{% url 'landing:about' %}">{% trans 'Nosotros' %}</a>
-                            <a {% if request.path == "/steps/" %}class="selected_page"{% endif %}
-                               href="{% url 'landing:steps' %}">{% trans 'Cómo Funciona' %}</a>
-                            <a {% if request.path == "/apps/directory/" %}class="selected_page"{% endif %}
-                               href="{% url 'landing:apps_directory' %}">{% trans 'Apps' %}</a>
-                            <a {% if request.path == "/contact/" %}class="selected_page"{% endif %}
-                               href="{% url 'landing:contact' %}">{% trans 'Contacto' %}</a>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="border_login">
+                        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                            <ul class="menu nav navbar-nav">
+                                <li class="visible-xs">
+                                    <img src="{% static 'img/landing/logo_header_mb.png' %}" class="img-logo-mb">
+                                </li>
+                                <li class="visible-xs">
+                                    <a href="{% url 'landing:index' %}"> Inicio </a>
+                                </li>
+                                <li>
+                                    <a {% if request.path == "/about/" %}class="selected_page"{% endif %}
+                                       href="{% url 'landing:about' %}">{% trans 'Nosotros' %}</a>
+                                </li>
+                                <li>
+                                    <a {% if request.path == "/steps/" %}class="selected_page"{% endif %}
+                                       href="{% url 'landing:steps' %}">{% trans 'Cómo Funciona' %}</a>
+                                </li>
+                                <li>
+                                    <a {% if request.path == "/apps/directory/" %}class="selected_page"{% endif %}
+                                       href="{% url 'landing:apps_directory' %}">{% trans 'Apps' %}</a>
+                                </li>
+                                <li>
+                                    <a {% if request.path == "/contact/" %}class="selected_page"{% endif %}
+                                       href="{% url 'landing:contact' %}">{% trans 'Contacto' %}</a>
+                                </li>
                                 {% if request.user.is_authenticated == False %}
-                                    <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>
+                                    <li class="menu-login">
+                                        <a href="{% url 'account_login' %}">
+                                            <span class="visible-xs border-sign">&nbsp;</span>
+                                            {% trans 'Ingresar' %}
+                                        </a>
+                                    </li>
                                 {% else %}
-                                    <img src="{% static 'img/landing/avatar.png' %}" class="img-avatar">
-                                    <span class="text-avatar">{{ request.user.first_name }}</span>
-{#                                    <span class="text-avatar">Luisa Johanna Torres Moncaleano</span>#}
+                                    <li class="menu-login dropdown profile">
+                                        <a href="#" class="dropdown-toggle active hidden-xs" data-toggle="dropdown"
+                                           role="button" aria-haspopup="true" aria-expanded="false">
+                                            <img src="{% static 'img/landing/avatar.png' %}" class="img-avatar">
+                                        </a>
+                                        <p class="text-avatar visible-xs">
+                                                    {{ request.user.first_name|default:request.user.email }}
+{#                                            damanrique@grplug.com#}
+{#                                                    lulu#}
+                                        </p>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <p class="text-avatar">
+                                                    {{ request.user.first_name|default:request.user.email }}
+{#                                                    damanrique@grplug.com#}
+{#                                                    lulu#}
+                                                </p>
+                                            </li>
+                                            <li><a href="{% url 'home:dashboard' %}"><p
+                                                    class="border-options">Consola</p></a></li>
+                                            <li><a href="#"><p class="border-options">Configuración</p></a></li>
+                                            <li><a href="{% url 'account_logout' %}"><p>Cerrar Sesión</p></a></li>
+                                        </ul>
+                                    </li>
                                 {% endif %}
-                            </div>
-
+                            </ul>
                         </div>
                     </div>
                 </nav>
             </header>
-        {% endblock %}
-        <div class="row">
-            <div class="col-md-12 sp">
-                {% block content %}{% endblock %}
-            </div>
         </div>
-    </div>
-    <footer>
-        {% block footer_base %}
-            {% block footer_content %}
-                <div class="row">
-                    <div class="col-md-12 bg_nets text-center">
-                        <div class="col-md-12">
-                            <a href="#"> <img src="{% static 'img/landing/facebook1.png' %}" class="padding-nets"> </a>
-                            <a href="#"> <img src="{% static 'img/landing/twitter.png' %}" class="padding-nets"> </a>
+    {% endblock %}
+    {% block content %}{% endblock %}
+    {% block footer_base %}
+        {% block footer_content %}
+            <footer>
+                <div class="container-fluid sp">
+                    <div class="row not-margin">
+                        <div class="col-sm-12 col-md-12 bg_nets text-center">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <a href="#"> <img src="{% static 'img/landing/facebook1.png' %}"
+                                                  class="padding-nets"></a>
+                                <a href="#"> <img src="{% static 'img/landing/gplus.png' %}" class="padding-nets">
+                                </a>
+                                <a href="#"> <img src="{% static 'img/landing/twitter.png' %}" class="padding-nets">
+                                </a>
+                            </div>
+                            <div class="col-sm-12 col-md-12 text-menu hidden-xs">
+                                <a href="{% url 'landing:about' %}" class="border-menu">{% trans 'Nosotros' %}</a>
+                                <a href="{% url 'landing:steps' %}" class="border-menu">
+                                    {% trans 'Cómo Funciona' %}
+                                </a>
+                                <a href="{% url 'landing:apps_directory' %}" class="border-menu">
+                                    {% trans 'Apps' %}
+                                </a>
+                                <a href="{% url 'landing:contact' %}" class="border-menu">{% trans 'Contacto' %}</a>
+                                <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>
+                            </div>
+                            <div class="col-sm-12 col-md-12 privacy hidden-xs">
+                                <a href="{% url 'landing:terms' %}" class="border-privacy">
+                                    {% trans 'TERMINOS Y CONDICIONES' %}
+                                </a>
+                                <a href="{% url 'landing:privacy' %}"> {% trans 'POLÍTICAS DE PRIVACIDAD' %} </a>
+                            </div>
                         </div>
-                        <div class="col-md-12 text-menu">
-                            <a href="{% url 'landing:about' %}" class="border-menu">{% trans 'Nosotros' %}</a>
-                            <a href="{% url 'landing:steps' %}" class="border-menu">{% trans 'Cómo Funciona' %}</a>
-                            <a href="{% url 'landing:apps_directory' %}" class="border-menu">{% trans 'Apps' %}</a>
-                            <a href="{% url 'landing:contact' %}" class="border-menu">{% trans 'Contacto' %}</a>
-                            <a href="{% url 'account_login' %}">{% trans 'Ingresar' %}</a>
-
-
+                        <div class="col-sm-12 col-md-12 bg_footer text-center text-footer">
+                            <a href="{% url 'landing:index' %}">GearPlug</a> - All rights reserved &reg;
                         </div>
-                    </div>
-                    <div class="col-md-12 bg_footer text-center text-footer">
-                        <a href="{% url 'landing:index' %}">www.gearplug.com</a> - All rights reserved &reg; -
-                        <a href="{% url 'landing:terms' %}">Términos y Condiciones</a> -
-                        <a href="{% url 'landing:privacy' %}">Políticas de Privacidad</a>
                     </div>
                 </div>
-            {% endblock %}
+            </footer>
         {% endblock %}
-    </footer>
+    {% endblock %}
     <span class="ir-arriba icon-arrow-up2"></span>
     {% block scripts_gear %}{% endblock %}
 {% endblock %}

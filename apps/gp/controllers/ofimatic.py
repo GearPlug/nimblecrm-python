@@ -1,8 +1,7 @@
 from apps.gp.controllers.base import BaseController, GoogleBaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification, \
-    Webhook, PlugActionSpecification, Plug
+from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification, Plug
 from django.db.models import Q
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
@@ -149,10 +148,9 @@ class GoogleSpreadSheetsController(GoogleBaseController):
         credential = self._credential
         http_auth = credential.authorize(httplib2.Http())
         drive_service = discovery.build('drive', 'v3', http=http_auth)
-        files = drive_service.files().list().execute()
-        sheet_list = tuple(
-            f for f in files['files'] if 'mimeType' in f and f[
-                'mimeType'] == 'application/vnd.google-apps.spreadsheet')
+        files = drive_service.files().list(q="mimeType='application/vnd.google-apps.spreadsheet'",
+                                           spaces='drive').execute()
+        sheet_list = tuple(f for f in files['files'])
         return sheet_list
 
     def get_worksheet_list(self, sheet_id):
@@ -464,6 +462,7 @@ class GoogleCalendarController(GoogleBaseController):
     def has_webhook(self):
         return True
 
+
 class EvernoteController(BaseController):
     _token = None
 
@@ -685,9 +684,9 @@ class WunderListController(BaseController):
     # Metodo de borrado de webhooks, utilizacion manual.
     def delete_webhook(self, id_webhook):
         headers = {
-                'X-Access-Token': self._token,
-                'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
-            }
+            'X-Access-Token': self._token,
+            'X-Client-ID': settings.WUNDERLIST_CLIENT_ID
+        }
         body_data = {
             'revision': 0,
         }
@@ -721,14 +720,15 @@ class WunderListController(BaseController):
                 except Exception as e:
                     is_stored = False
                     last_object_id = ""
-                result_list = [{'raw': task, 'is_stored': is_stored, 'identifier': {'name': 'id', 'value': last_object_id}}]
-            return {'downloaded_data' : result_list, 'last_source_record': last_object_id}
+                result_list = [
+                    {'raw': task, 'is_stored': is_stored, 'identifier': {'name': 'id', 'value': last_object_id}}]
+            return {'downloaded_data': result_list, 'last_source_record': last_object_id}
 
     def get_target_fields(self, **kwargs):
         users = self.get_users()
         return [{'name': 'title', 'type': 'text', 'required': True, 'label': 'Title'},
                 {"name": "assignee_id", "required": False, "type": 'varchar',
-                 "choices": users, 'label':'Assignee'},
+                 "choices": users, 'label': 'Assignee'},
                 ]
 
     def get_mapping_fields(self, **kwargs):
@@ -746,7 +746,7 @@ class WunderListController(BaseController):
             else:
                 sent = False
                 identifier = ""
-            result_list.append({'data': dict(item), 'response': "", 'sent': sent, 'identifier':identifier})
+            result_list.append({'data': dict(item), 'response': "", 'sent': sent, 'identifier': identifier})
         return result_list
 
     def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
@@ -778,5 +778,4 @@ class WunderListController(BaseController):
         }
         response = requests.get(
             'http://a.wunderlist.com/api/v1/users', headers=headers)
-        return [{'name': r['name'],'id': r['id']} for r in response.json()]
-
+        return [{'name': r['name'], 'id': r['id']} for r in response.json()]

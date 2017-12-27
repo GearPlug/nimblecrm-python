@@ -2,73 +2,20 @@
 {% load static i18n %}
 
 {% block content %}
-    <div class="col-md-12 steps-title text-center">
-        <div class="title">
-            {% trans '¿Cómo Funciona?' %}
+    <div class="container-fluid sp">
+        <div class="row not-margin">
+            <div class="col-md-12 steps-title text-center">
+                <div class="title">
+                    {% trans '¿Cómo Funciona?' %}
+                </div>
+            </div>
         </div>
     </div>
-    <div class="col-md-12 steps">
-        <div class="col-md-4 step1-title">
-            Paso 1
-            <hr class="hr-steps" />
-        </div>
-        <div class="col-md-8 step1-text">
-            <div class="border-step1text">
-                Debes crear un grupo, asignarle un nombre y proceder a seleccionar uno de los conectores (aplicaciones)
-                disponible en GearPlug, por ejemplo Facebook.
-            </div>
-        </div>
-        <div class="col-md-9 step2-text">
-           <div class="border-step2text">
-               Ahora proporciona la autorización necesaria para conectar esta aplicación con GearPlug. Esta
-               autorización varía de acuerdo a la aplicación que se seleccione, en este caso, permitirnos el acceso a
-               Facebook para enviar o recibir información relevante.
-            </div>
-        </div>
-        <div class="col-md-3 step2-title">
-            Paso 2
-            <hr class="hr-steps" />
-        </div>
-        <div class="col-md-4 step3-title">
-            Paso 3
-            <hr class="hr-steps" />
-        </div>
-        <div class="col-md-8 step3-text">
-           <div class="border-step3text">
-               En el tercer paso, indícanos qué acción realizar desde la aplicación de origen, como registrar la
-               información que llega de un nuevo lead, o cada vez que un usuario especiﬁco haga una comentario
-               mencionando tu marca.
-            </div>
-        </div>
-        <div class="col-md-12 step4-title">
-            Paso 4
-            <hr class="hr-steps" />
-        </div>
-        <div class="col-md-6 step5-title">
-            Paso 5
-            <hr class="hr-steps" />
-        </div>
-        <div class="col-md-6 step4-text">
-           <div class="border-step4text">
-               Repetir el proceso del paso 1 y 2 pero con la aplicación de destino. Es decir, la información que se
-               adquiere debe llegar a otra aplicación para automatizar el proceso, por ejemplo escoges Facebook – Hoja
-               de Cálculo de Google.
-            </div>
-        </div>
-        <div class="col-md-6 step5-text">
-           <div class="border-step5text">
-               Indícanos qué información vamos a enviar y de qué forma. En este punto estás a muy cerca de terminar el
-               proceso de creación de un Gear, solo debes seleccionar la información que quieres que se automatice y de
-               qué manera, estas opciones están ligadas a las aplicaciones que escojas, una vez acabes este paso, el
-               Gear estará listo para empezar a optimizar la recepción de datos.
-            </div>
-        </div>
-        <div class="col-md-6 stepfinal">
-            <div class="congratulation">
-                ¡Felicitaciones!
-            </div>
-            <div class="border-stepfinal">
-                Haz terminado los pasos para un Gear perfecto.
+    <div class="container-fluid sp">
+        <div class="row not-margin">
+            <div class="col-xs-12 col-sm-12 col-md-12 text-center">
+                <img src="{% static 'img/landing/steps.svg' %}" class="steps-img hidden-xs">
+                <img src="{% static 'img/landing/steps_mb.png' %}" class="steps-img visible-xs">
             </div>
         </div>
     </div>
