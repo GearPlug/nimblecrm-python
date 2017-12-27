@@ -88,11 +88,8 @@ class MapField(object):
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
         elif controller == ConnectorEnum.GetResponse:
-            if 'id' in d:
-                self.name = d['id']
-            else:
-                self.name = d['name']
             if 'name' in d:
+                self.name = d['name']
                 self.label = d['name']
             if 'required' in d:
                 self.required = d['required']
