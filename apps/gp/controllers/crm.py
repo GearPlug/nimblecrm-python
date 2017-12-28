@@ -77,6 +77,9 @@ class SugarCRMController(BaseController):
             except InvalidLogin as e:
                 raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
                                       message='Invalid login. {}'.format(str(e)))
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         """
