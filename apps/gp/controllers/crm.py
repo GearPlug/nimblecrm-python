@@ -1681,21 +1681,40 @@ class OdooCRMController(BaseController):
                 self._url = self._connection_object.url
                 self._database = self._connection_object.database
             except AttributeError as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.OdooCRM,
-                                      message='Error getting the OdooCRM attributes args. {}'.format(str(e)))
+                raise ControllerError(code=1001, controller=ConnectorEnum.OdooCRM,
+                                      message='The attributes necessary to make the connection were not obtained.. {}'.format(str(e)))
         else:
-            raise ControllerError('No connection.')
+            raise ControllerError(code=1002, controller=ConnectorEnum.OdooCRM,
+                                      message='The controller is not instantiated correctly.. {}'.format(str(e)))
         if self._url is not None and self._database is not None and self._user is not None and self._password is not None:
             try:
                 self._client = OdooCRMClient(self._url, self._database, self._user, self._password)
             except requests.exceptions.MissingSchema:
-                raise
+                raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
+                                      message='Missing Schema.')
             except InvalidLogin as e:
-                raise ControllerError(code=2, controller=ConnectorEnum.OdooCRM,
+                raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
                                       message='Invalid login. {}'.format(str(e)))
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
-        return self._client is not None
+        """
+        Debido a la falta de un metodo mas apropiado, se decidio utilizar el metodo list_fields_partner()
+        para verificar la conexion con el servidor.
+        :return:
+        """
+        try:
+            response = self._client.list_fields_partner()
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.OdooCRM,
+            # message='Error in the connection test. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, dict):
+            return True
+        else:
+            return False
 
     def get_search_partner(self, query, params):
         try:
