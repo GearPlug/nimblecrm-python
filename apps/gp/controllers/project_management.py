@@ -40,7 +40,14 @@ class JIRAController(BaseController):
                                       message='Error instantiating the JIRA client. {}'.format(str(e)))
 
     def test_connection(self):
-        return True if self._connection.get_permissions() else False
+        try:
+            response = self._connection.get_permissions()
+        except Exception as e:
+            return False
+        if response is not None and isinstance(response, dict) and 'permissions' in response:
+            return True
+        else:
+            return False
 
     def send_stored_data(self, data_list, **kwargs):
         result_list = []
