@@ -8,8 +8,8 @@
 .privacy-title hr.hr_privacy {
     border-bottom: #09DF8E solid 4px;
     border-top: transparent;
-    margin: -0.3% 0 0 29.6%;
-    width: 41%;
+    margin: -0.3% 0 0 16.6%;
+    width: 67%;
 }
 
 .privacy-text {
@@ -26,4 +26,26 @@
 .privacy-subtitle {
     font-family: 'Sansation';
     font-weight: bold;
+}
+
+@media only screen and (max-width:1024px) {
+    .privacy-title hr.hr_privacy {
+        margin: -0.3% 0 0 9.6%;
+        width: 81%;
+    }
+}
+
+@media only screen and (max-width:768px) {
+    .privacy-title .title {
+        font-size: 2.9em;
+    }
+
+    .privacy-title hr.hr_privacy {
+        margin: -0.3% 0 0 1.6%;
+        width: 97%;
+    }
+
+    .privacy-text {
+        font-size: 1.4em;
+    }
 }

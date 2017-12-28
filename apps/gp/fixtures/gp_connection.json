@@ -1,1 +1,68 @@
-[{"model": "gp.connection", "pk": 1, "fields": {"user": 1, "connector": 52, "created": "2017-11-08T18:51:56.916Z", "last_update": "2017-11-08T18:51:56.916Z", "is_deleted": false, "is_active": true}}, {"model": "gp.connection", "pk": 2, "fields": {"user": 1, "connector": 28, "created": "2017-11-08T18:52:31.197Z", "last_update": "2017-11-08T18:54:13.187Z", "is_deleted": false, "is_active": true}}, {"model": "gp.connection", "pk": 3, "fields": {"user": 1, "connector": 29, "created": "2017-11-08T19:03:05.827Z", "last_update": "2017-11-08T19:03:05.827Z", "is_deleted": false, "is_active": true}}, {"model": "gp.smsconnection", "pk": 1, "fields": {"connection": 2, "name": "SMS default connection", "connection_user": "user", "connection_password": "password"}}, {"model": "gp.smtpconnection", "pk": 1, "fields": {"connection": 3, "name": "SMTP default connection", "host": "host", "port": "port", "connection_user": "user", "connection_password": "password"}}, {"model": "gp.webhookconnection", "pk": 1, "fields": {"connection": 1, "name": "webhook default connection"}}]
+[
+  {
+    "model": "gp.connection",
+    "pk": 1,
+    "fields": {
+      "user": 1,
+      "connector": 52,
+      "created": "2017-11-08T18:51:56.916Z",
+      "last_update": "2017-11-08T18:51:56.916Z",
+      "is_deleted": false,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.connection",
+    "pk": 2,
+    "fields": {
+      "user": 1,
+      "connector": 28,
+      "created": "2017-11-08T18:52:31.197Z",
+      "last_update": "2017-11-08T18:54:13.187Z",
+      "is_deleted": false,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.connection",
+    "pk": 3,
+    "fields": {
+      "user": 1,
+      "connector": 29,
+      "created": "2017-11-08T19:03:05.827Z",
+      "last_update": "2017-11-08T19:03:05.827Z",
+      "is_deleted": false,
+      "is_active": true
+    }
+  },
+  {
+    "model": "gp.smsconnection",
+    "pk": 1,
+    "fields": {
+      "connection": 2,
+      "name": "SMS default connection",
+      "connection_user": "user",
+      "connection_password": "password"
+    }
+  },
+  {
+    "model": "gp.smtpconnection",
+    "pk": 1,
+    "fields": {
+      "connection": 3,
+      "name": "SMTP default connection",
+      "host": "host",
+      "port": "port",
+      "connection_user": "user",
+      "connection_password": "password"
+    }
+  },
+  {
+    "model": "gp.webhookconnection",
+    "pk": 1,
+    "fields": {
+      "connection": 1,
+      "name": "webhook default connection"
+    }
+  }
+]

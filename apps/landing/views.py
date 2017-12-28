@@ -1,6 +1,7 @@
 from django.views.generic import TemplateView, ListView, CreateView
 from django.urls import reverse_lazy
 from django.db.models import Q
+from django.http.response import JsonResponse
 from allauth.account.views import SignupView
 from apps.landing.forms import NameSignupForm
 from apps.gp.models import Connector, Subscriptions
@@ -29,6 +30,13 @@ class ContactUsView(CreateView):
     fields = ['email', 'name', 'text']
     success_url = reverse_lazy('landing:contact')
 
+    def form_valid(self, form):
+        response = super(ContactUsView, self).form_valid(form)
+        if self.request.is_ajax():
+            self.object = form.save()
+            response = JsonResponse({'data': True})
+        return response
+
 
 class AppsView(ListView):
     template_name = 'landing/apps.html'
@@ -40,8 +48,7 @@ class AppsView(ListView):
 
 class CustomSignup(SignupView):
     form_class = NameSignupForm
-    template_name = 'landing/snippets/signup_form.html'
-    http_method_names = 'post'
+    http_method_names = ['post', 'get']
     success_url = reverse_lazy('home:dashboard')
 
     def form_valid(self, form, **kwargs):
@@ -56,6 +63,17 @@ class CustomSignup(SignupView):
     def get_form(self, form_class=None, **kwargs):
         form = super(CustomSignup, self).get_form(form_class=form_class, **kwargs)
         return form
+
+    def get(self, request, **kwargs):
+        self.template_name = 'account/signup.html'
+        return super(CustomSignup, self).get(request, **kwargs)
+
+    def post(self, request, **kwargs):
+        if request.is_ajax():
+            self.template_name = 'landing/snippets/signup_form.html'
+        else:
+            self.template_name = 'account/signup.html'
+        return super(CustomSignup, self).post(request, **kwargs)
 
 
 class StepsView(TemplateView):

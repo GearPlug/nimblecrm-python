@@ -1,61 +1,26 @@
 {% extends 'layouts/base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block styles %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/console/login.css' %}">
 {% endblock %}
 
 {% block body_base %}
-    <div class="main-text hidden-xs">
-        <div class="col-md-7"> &nbsp;</div>
-        <div class="col-md-5">
-            <div class="col-md-1"> &nbsp;</div>
-            <div class="col-md-9 bg-form">
-
+    <div class="content">
+        <div class="login-wrapper">
+            <div class="logo">
+                <img src="{% static 'img/console/logo1.png' %}" width="35%">
             </div>
-            <div class="col-md-2"> &nbsp;</div>
+            <div class="form">
+                {% with signup_form=form %}
+                    {% include 'landing/snippets/signup_form.html' %}
+                {% endwith %}
+                <div class="account-link">
+                    {% trans '¿Ya tienes una cuenta?' %}
+                    <a href="{% url 'account_login' %}" class="create-account"
+                       style="font-family: 'Sansation Bold'">{% trans 'Crea una cuenta' %}</a>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="col-md-12">
-        <div class="col-md-4"> &nbsp;</div>
-        <div class="col-md-4 card card-container">
-            <img id="profile-img" class="profile-img-card" src={% static 'img/gp_logo.png' %}/>
-            <p id="profile-name" class="profile-name-card"></p>
-            <form class="form-register" method="post" action="">
-                <span id="reauth-email" class="reauth-email"></span>
-                <p>Enter your e-mail acount and your password to sign up</p>
-                {#                {{ form }}#}
-                <form method="post" action="{% url 'landing:signup' %}" autocomplete="off">
-                    {% csrf_token %}
-                    <div class="col-md-12">
-                        {{ form.first_name }}
-                    </div>
-                    <div class="col-md-12">
-                        {{ form.last_name }}
-                    </div>
-                    <div class="col-md-12">
-                        {{ form.email }}
-                    </div>
-                    <div class="col-md-12" {% if form.password1.errors %}style="border:1px solid red;"{% endif %}>
-                        {{ form.password1 }}
-                        {{ form.password1.errors }}
-
-                    </div>
-                    <div class="col-md-12 padding-checkbox">
-                        <input type="checkbox" name="notification" value="True" checked>
-                        <span class="checkbox-form">Enviarme notificaciones a mi correo</span>
-                    </div>
-                    <div class="col-md-12">
-                        <button class="btn btn-lg btn-primary btn-block btn-signin" type="submit">Sign up</button>
-                    </div>
-                </form>
-                {% if form.error %}
-                    <div class="error">{{ form.error }}</div>
-                {% endif %}
-            </form><!-- /form -->
-            <br/><br/>
-            <p class="message">Already registered? <a href="{% url 'account_login' %}" class="login-account">Log in</a>
-        </div>
-        <div class="col-md-4"> &nbsp;</div>
-        {#    </div>#}
 {% endblock %}

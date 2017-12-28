@@ -1,8 +1,7 @@
 from apps.gp.controllers.base import BaseController, GoogleBaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import StoredData, GooglePushWebhook, ActionSpecification, \
-    Webhook, PlugActionSpecification, Plug
+from apps.gp.models import StoredData, ActionSpecification, Webhook, PlugActionSpecification, Plug
 from django.db.models import Q
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField

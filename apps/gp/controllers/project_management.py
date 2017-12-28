@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.conf import settings
 import requests
 from base64 import b64encode
-from jira import JIRA
+from jira.client import Client as JIRAClient
 import time
 import datetime
 import json
@@ -34,13 +34,13 @@ class JIRAController(BaseController):
                                       message='Error getting the JIRA attributes args. {}'.format(str(e)))
             try:
                 if host and user and password:
-                    self._connection = JIRA(host, basic_auth=(user, password))
+                    self._connection = JIRAClient(host, user, password)
             except Exception as e:
                 raise ControllerError(code=2, controller=ConnectorEnum.JIRA.name,
                                       message='Error instantiating the JIRA client. {}'.format(str(e)))
 
     def test_connection(self):
-        return self._connection is not None
+        return True if self._connection.get_permissions() else False
 
     def send_stored_data(self, data_list, **kwargs):
         result_list = []
@@ -48,7 +48,7 @@ class JIRAController(BaseController):
             extra = {'controller': 'jira'}
             try:
                 result = self.create_issue(self._plug.plug_action_specification.all()[0].value, obj)
-                identifier = result
+                identifier = result['id']
                 sent = True
             except:
                 identifier = ""
@@ -78,7 +78,7 @@ class JIRAController(BaseController):
             return {'downloaded_data': result, 'last_source_record': issue_key}
 
     def get_projects(self):
-        return self._connection.projects()
+        return self._connection.get_all_projects()
 
     def create_issue(self, project_id, fields):
         if 'reporter' in fields:
@@ -93,32 +93,30 @@ class JIRAController(BaseController):
         if 'priority' in fields:
             priority = fields['priority']
             fields['priority'] = {'id': priority}
-        fields['project'] = project_id
-        return self._connection.create_issue(fields=fields)
+        fields['project'] = {'id': project_id}
+        data = {'fields': fields}
+        return self._connection.create_issue(data)
 
     def create_webhook(self):
-        webhook = Webhook.objects.create(name='jira', url='',
-                                         plug=self._plug, expiration='')
-
-        url = '{}/rest/webhooks/1.0/webhook'.format(self._connection_object.host)
+        webhook = Webhook.objects.create(name='jira', url='', plug=self._plug, expiration='')
+        url = '{0}/webhook/jira/{1}'.format(settings.WEBHOOK_HOST, webhook.id)
         key = self.get_key(self._plug.plug_action_specification.all()[0].value)
-        body = {
+        data = {
             "name": "Gearplug Webhook",
-            "url": '{0}/webhook/jira/{1}'.format(settings.CURRENT_HOST, webhook.id),
+            "url": url,
             "events": [
                 "jira:issue_created",
             ],
-            "jqlFilter": "Project={}".format(key),
+            "jqlFilter": "Project = {}".format(key),
             "excludeIssueDetails": False
         }
-        r = requests.post(url, headers=self._get_header(), json=body)
-        if r.status_code == 201:
-            _id = r.json()['self'].split('/')[-1]
+        response = self._connection.create_webhook(data)
+        if response:
+            _id = response['self'].split('/')[-1]
             webhook.url = url
-            webhook.generated_id = r.json()['self'].split('/')[-1]
+            webhook.generated_id = _id
             webhook.is_active = True
-            webhook.save(
-                update_fields=['url', 'generated_id', 'is_active'])
+            webhook.save(update_fields=['url', 'generated_id', 'is_active'])
             return True
         else:
             webhook.is_deleted = True
@@ -127,29 +125,25 @@ class JIRAController(BaseController):
 
     def get_key(self, project_id):
         for project in self.get_projects():
-            if project.id == project_id:
-                return project.key
+            if project['id'] == project_id:
+                return project['key']
         return None
 
-    def _get_header(self):
-        authorization = '{}:{}'.format(self._connection_object.connection_user,
-                                       self._connection_object.connection_password)
-        return {'Accept': 'application/json',
-                'Authorization': 'Basic {0}'.format(b64encode(authorization.encode('UTF-8')).decode('UTF-8'))}
-
     def get_users(self):
-        payload = {
+        params = {
             'project': self.get_key(self._plug.plug_action_specification.all()[0].value)
         }
-        url = '{}/rest/api/2/user/assignable/search'.format(self._connection_object.host)
-        r = requests.get(url, headers=self._get_header(), params=payload)
-        if r.status_code == requests.codes.ok:
-            return [{'id': u['name'], 'name': u['displayName']} for u in r.json()]
+        response = self._connection.find_assignable_users(params)
+        if response:
+            return [{'id': u['name'], 'name': u['displayName']} for u in response]
         return []
 
     def get_meta(self):
-        meta = self._connection.createmeta(projectIds=self._plug.plug_action_specification.all()[0].value,
-                                           issuetypeNames='Task', expand='projects.issuetypes.fields')
+        params = {
+            'projectIds': self._plug.plug_action_specification.all()[0].value,
+            'issuetypeNames': 'Task', 'expand': 'projects.issuetypes.fields'
+        }
+        meta = self._connection.get_create_issue_meta(params)
         exclude = ['attachment', 'project']
         users = self.get_users()
 
@@ -173,7 +167,7 @@ class JIRAController(BaseController):
     def get_action_specification_options(self, action_specification_id):
         action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         if action_specification.name.lower() == 'project_id':
-            return tuple({'id': p.id, 'name': p.name} for p in self.get_projects())
+            return tuple({'id': p['id'], 'name': p['name']} for p in self.get_projects())
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
@@ -194,27 +188,21 @@ class JIRAController(BaseController):
         return HttpResponse(status=200)
 
     def view_issue(self, issue_id):
-        return self._connection.issue(issue_id)
+        return self._connection.get_issue(issue_id)
 
     def delete_issue(self, issue_id):
-        _issue = self._connection.issue(issue_id)
-        return _issue.delete()
-
-    def delete_webhook(self, webhook_id):
-        url = '{0}/rest/webhooks/1.0/webhook/{1}'.format(self._connection_object.host, webhook_id)
-        response = requests.delete(url, headers=self._get_header())
-        if response.status_code == 204:
-            return None
-        return response.json()
+        return self._connection.delete_issue(issue_id)
 
     def view_webhook(self, webhook_id):
-        url = '{0}/rest/webhooks/1.0/webhook/{1}'.format(self._connection_object.host, webhook_id)
-        response = requests.get(url, headers=self._get_header())
-        return response.json()
+        return self._connection.get_webhook(webhook_id)
+
+    def delete_webhook(self, webhook_id):
+        return self._connection.delete_webhook(webhook_id)
 
     @property
     def has_webhook(self):
         return True
+
 
 class AsanaController(BaseController):
     _token = None

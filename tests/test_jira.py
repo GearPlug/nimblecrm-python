@@ -5,7 +5,7 @@ from apps.gp.models import Connection, JiraConnection, Plug, Action, ActionSpeci
     Gear, GearMap, StoredData, GearMapData, Webhook
 from apps.gp.controllers.project_management import JIRAController
 from apps.history.models import DownloadHistory
-from jira import JIRA as JiraClient
+from jira.client import Client as JIRAClient
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from collections import OrderedDict
@@ -209,7 +209,7 @@ class JiraControllerTestCases(TestCase):
                               'displayName': 'Diego Manrique'}}
 
     def _data(self):
-        return {'description': 'mm', 'reporter': 'lrubiano', 'assignee': 'lrubiano', 'issuetype': '10002',
+        return {'description': 'mm', 'reporter': 'damanrique', 'assignee': 'damanrique', 'issuetype': '10002',
                 'summary': 'mm'}
 
     def test_controller(self):
@@ -220,7 +220,7 @@ class JiraControllerTestCases(TestCase):
         self.assertIsInstance(self.source_controller._plug, Plug)
         # Error 1
         # self.assertIsInstance(self.controller._connector, ConnectorEnum.SugarCRM)
-        self.assertIsInstance(self.source_controller._connection, JiraClient)
+        self.assertIsInstance(self.source_controller._connection, JIRAClient)
 
     def test_get_projects(self):
         """Testea que traiga todos los proyectos"""
@@ -251,12 +251,9 @@ class JiraControllerTestCases(TestCase):
     def test_create_issue(self):
         """Comprueba que se cree un issue, al final borra el issue de la aplicación"""
         result_create = self.target_controller.create_issue(os.environ.get('TEST_JIRA_PROJECT'), self._data())
-        try:
-            result_view = self.target_controller.view_issue(result_create)
-        except:
-            result_view = ''
-        self.assertEqual(result_create, result_view)
-        self.target_controller.delete_issue(result_create)
+        result_view = self.target_controller.view_issue(result_create['id'])
+        self.assertEqual(result_create['id'], result_view['id'])
+        self.target_controller.delete_issue(result_create['id'])
 
     def test_create_webhook(self):
         """Testea que se cree un webhook en la aplicación y que se cree en la tabla Webhook, al final se borra el
@@ -274,14 +271,6 @@ class JiraControllerTestCases(TestCase):
         """
         result = self.source_controller.get_key(os.environ.get('TEST_JIRA_PROJECT'))
         self.assertTrue(result)
-
-    def test_get_header(self):
-        """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
-        """
-        result = self.source_controller._get_header()
-        self.assertIsInstance(result, dict)
-        self.assertIn('Accept', result)
-        self.assertIn('Authorization', result)
 
     def test_get_users(self):
         """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
@@ -323,9 +312,9 @@ class JiraControllerTestCases(TestCase):
         Testea que traiga los parámetros de un issue, al final borra de la aplicación el issue
         """
         result_create = self.target_controller.create_issue(os.environ.get('TEST_JIRA_PROJECT'), self._data())
-        result_view = self.target_controller.view_issue(result_create)
-        self.assertEqual(result_create, result_view)
-        self.target_controller.delete_issue(result_create)
+        result_view = self.target_controller.view_issue(result_create['id'])
+        self.assertEqual(result_create['id'], result_view['id'])
+        self.target_controller.delete_issue(result_create['id'])
 
     def test_delete_issue(self):
         """
@@ -333,7 +322,7 @@ class JiraControllerTestCases(TestCase):
         """
         result_create = self.target_controller.create_issue(os.environ.get('TEST_JIRA_PROJECT'), self._data())
         try:
-            self.target_controller.delete_issue(result_create)
+            self.target_controller.delete_issue(result_create['id'])
             _delete = True
         except:
             _delete = False
@@ -392,9 +381,9 @@ class JiraControllerTestCases(TestCase):
         self.assertIsInstance(result[-1]['sent'], bool)
         self.assertEqual(result[-1]['data'], dict(data_list[0]))
         result_view = self.target_controller.view_issue(result[-1]['identifier'])
-        self.assertEqual(result_view, result[-1]['identifier'])
+        self.assertEqual(result_view['id'], result[-1]['identifier'])
         self.target_controller.delete_issue(result[-1]['identifier'])
 
     def test_has_webhook(self):
-        result = self.source_controller.has_webhook()
+        result = self.source_controller.has_webhook
         self.assertTrue(result)

@@ -278,6 +278,7 @@ class GoogleCalendarConnection(models.Model):
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
 
+
     def __str__(self):
         return self.name
 
@@ -347,7 +348,7 @@ class ZohoCRMConnection(models.Model):
 
 
 class HubSpotConnection(models.Model):
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_hubspotcrm')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_hubspot')
     name = models.CharField('name', max_length=200)
     token = models.CharField('token', max_length=300)
     refresh_token = models.CharField('token', max_length=300)
@@ -360,7 +361,7 @@ class SMSConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_sms')
     name = models.CharField('name', max_length=200)
     connection_user = models.CharField('user', max_length=60)
-    connection_password = models.CharField('password', max_length=40)
+    connection_password = models.CharField('password', max_length=100)
 
     def __str__(self):
         return self.name
@@ -369,7 +370,7 @@ class SMSConnection(models.Model):
 class SalesforceConnection(models.Model):
     connection = models.OneToOneField(Connection, on_delete=models.CASCADE, related_name='connection_salesforce')
     name = models.CharField('name', max_length=200)
-    token = models.CharField('token', max_length=300)
+    token = models.CharField('token', max_length=2000)
 
     def __str__(self):
         return self.name
@@ -381,7 +382,7 @@ class SMTPConnection(models.Model):
     host = models.CharField('host', max_length=200)
     port = models.CharField('port', max_length=200)
     connection_user = models.CharField('user', max_length=60)
-    connection_password = models.CharField('password', max_length=40)
+    connection_password = models.CharField('password', max_length=100)
 
     def __str__(self):
         return self.name
@@ -436,6 +437,7 @@ class GmailConnection(models.Model):
                                       related_name='connection_gmail')
     name = models.CharField('name', max_length=200)
     credentials_json = JSONField(blank=True, null=True)
+    history = models.CharField('history', max_length=100)
 
     def __str__(self):
         return self.name

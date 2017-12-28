@@ -2,81 +2,131 @@
 {% load static i18n %}
 
 {% block content %}
-    <div class="row contactus-banner">
-        <div class="col-md-3">
-            <img src="{% static 'img/landing/guy1.png' %}">
-        </div>
-        <div class="col-md-6">
-            <div class="contactus-text">
-                <div class="text1">
-                    {% trans 'Ponte en Contacto' %}
+    <div class="container-fluid sp hidden-xs">
+        <div class="row not-margin">
+            <div class="col-sm-12 col-md-12 sp contactus-banner">
+                <div>
+                    <img src="{% static 'img/landing/guy1.png' %}">
                 </div>
-                <div class="text2">
-                    {% trans 'con uno de nuestros' %}
-                </div>
-                <div class="text2">
-                    {% trans 'asesores' %}
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row contactus-footer">
-        <div class="col-md-6">
-            <div class="col-md-12 sp text-contact">
-                Contact <span style="font-family: 'Sansation Bold'">us</span>
-            </div>
-            <div class="col-md-12 sp text-contact1">
-                Que no te de pena preguntar, estamos aquí para asesorarte!
-            </div>
-            <div class="col-md-12 sp text-contact2">
-                La satisfacción de nuestros clientes es nuestra prioridad y entendemos que puedes necesitar ayuda de
-                vez en cuando. Nosotros te asesoramos de una manera amistosa y colaboradora para todos tus servicios.
-            </div>
-            <div class="col-md-5 sp img-direction">
-                <img src="{% static 'img/landing/direction.png' %}">
-                <div class="text-direction">Cra 49B #93-68 <br /> Bogotá, Colombia.</div>
-            </div>
-            <div class="col-md-3 sp img-phone">
-                <img src="{% static 'img/landing/phone.png' %}">
-                <div class="text-phone">031 - 4758333</div>
-            </div>
-            <div class="col-md-4 sp img-email">
-                <img src="{% static 'img/landing/email.png' %}">
-                <div class="text-email">info@gearplug.com</div>
-            </div>
-            <div class="col-md-12 sp nets">
-                <a href="#"><img src="{% static 'img/landing/twitter1.png' %}"></a>
-                <a href="#"><img src="{% static 'img/landing/facebook2.png' %}" class="icon-facebook"></a>
-            </div>
-        </div>
-        <div class="col-md-6 form-contact">
-            <form action="" method="post">
-                {% csrf_token %}
-                <div class="col-md-12{% if signup_form.first_name.errors %} has-error{% endif %}">
-                    {{ signup_form.first_name }}
-                    {{ signup_form.first_name.errors }}
-                </div>
-                <div class="form-group">
-                    {{ form.name.label_tag }}
-                    <br />
-                    {{ form.name }}
-                </div>
-                <div class="form-group">
-                    {{ form.email.label_tag }}
-                    <br />
-                    {{ form.email }}
-                </div>
-                <div class="form-group">
-                    {{ form.text.label_tag }}
-                    <br />
-                    {{ form.text }}
-                </div>
-                <div class="form-group">
-                    <div class="inline">
-                        <button type="submit">{% trans 'Enviar' %}</button>
+                <div class="col-sm-12 col-md-12 text-center contactus-text">
+                    <div class="text1">
+                        {% trans 'Ponte en Contacto' %}
+                    </div>
+                    <div class="text2">
+                        {% trans 'con uno de nuestros' %}
+                    </div>
+                    <div class="text2">
+                        {% trans 'asesores' %}
                     </div>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
+    <div class="container-fluid sp">
+        <div class="row not-margin position-contact">
+            <div class="pop-thanks" style="display: none;" id="pop-thanks">
+                {% include 'landing/snippets/popup_thanks.html' %}
+            </div>
+            <div class="col-xs-12 col-sm-12 col-md-12 sp contactus-footer">
+                <div class="col-xs-12 col-sm-12 col-md-6">
+                    <div class="col-xs-12 col-sm-12 col-md-12 sp text-contact">
+                        {% blocktrans %} Contact <span style="font-family: 'Sansation Bold'">us</span> {% endblocktrans %}
+                    </div>
+                    <div class="col-xs-12 col-sm-12 col-md-12 sp text-contact1">
+                        {% trans 'Que no te de pena preguntar, estamos aquí para asesorarte!' %}
+                    </div>
+                    <div class="col-xs-12 col-sm-12 col-md-12 sp text-contact2">
+                        {% blocktrans %}
+                            La satisfacción de nuestros clientes es nuestra prioridad y entendemos que puedes necesitar ayuda de
+                            vez en cuando. Nosotros te asesoramos de una manera amistosa y colaboradora para todos tus servicios.
+                        {% endblocktrans %}
+                    </div>
+                    <div class="col-sm-12 col-md-12 sp hidden-xs">
+                        <div class="img-direction">
+                            <img src="{% static 'img/landing/direction.png' %}">
+                            <div class="text-direction">Cra 49B #93-68 <br /> Bogotá, Colombia.</div>
+                        </div>
+                        <div class="img-phone">
+                            <img src="{% static 'img/landing/phone.png' %}">
+                            <div class="text-phone">031 - 4758333</div>
+                        </div>
+                        <div class="img-email">
+                            <img src="{% static 'img/landing/email.png' %}">
+                            <div class="text-email"><a href="mailto:info@gearplug.com">info@gearplug
+                                .com</a></div>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-md-12 sp nets hidden-xs">
+                        <a href="#"><img src="{% static 'img/landing/twitter1.png' %}"></a>
+                        <a href="#"><img src="{% static 'img/landing/facebook2.png' %}" class="icon-facebook"></a>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-6 form-contact">
+                    <form action="" method="post" id="form-contact">
+                        {% csrf_token %}
+                        <div class="col-xs-12 col-sm-12 col-md-12{% if signup_form.first_name.errors %} has-error{% endif %}">
+                            {{ signup_form.first_name }}
+                            {{ signup_form.first_name.errors }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.name.label_tag }}
+                            <br />
+                            {{ form.name }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.email.label_tag }}
+                            <br />
+                            {{ form.email }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.text.label_tag }}
+                            <br />
+                            {{ form.text }}
+                        </div>
+                        <div class="form-group">
+                            <div class="inline">
+                                <button type="submit">{% trans 'Enviar' %}</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-sm-12 col-md-12 sp visible-xs contact-direction-mb">
+                    <div class="img-direction-mb">
+                        <img src="{% static 'img/landing/direction.png' %}">
+                        <div class="text-direction-mb">Cra 49B #93-68 <br /> Bogotá, Colombia.</div>
+                    </div>
+                    <div class="img-phone-mb">
+                        <img src="{% static 'img/landing/phone.png' %}">
+                        <div class="text-phone-mb">031 - 4758333</div>
+                    </div>
+                    <div class="img-email-mb">
+                        <img src="{% static 'img/landing/email.png' %}">
+                        <div class="text-email-mb">info@gearplug.com</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block scripts %}
+     {{ block.super }}
+    <script>
+         $('#form-contact').on('submit', function (e) {
+             e.preventDefault();
+             var form = $(this);
+             $.ajax({
+                method: "POST",
+                url: "{% url 'landing:contact' %}",
+                data: form.serialize()
+            }).done(function (response) {
+                $('#pop-thanks').show();
+                $(form)[0].reset();
+                setTimeout(function () {
+                    $('#pop-thanks').hide();
+                }, 5000);
+
+            });
+         })
+
+    </script>
 {% endblock %}

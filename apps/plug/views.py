@@ -173,6 +173,9 @@ class TestPlugView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(TestPlugView, self).get_context_data()
         p = Plug.objects.get(pk=self.kwargs.get('pk'))
+        c = ConnectorEnum.get_connector(p.connection.connector.id)
+        controller_class = ConnectorEnum.get_controller(c)
+        controller = controller_class(connection=p.connection.related_connection, plug=p)
         if p.plug_type == 'source':
             try:
                 sd_sample = StoredData.objects.filter(plug=p, connection=p.connection).order_by('-id').last()
@@ -181,14 +184,13 @@ class TestPlugView(TemplateView):
             except Exception:
                 print("Failed. no data.")
         elif p.plug_type == 'target':
-            c = ConnectorEnum.get_connector(p.connection.connector.id)
-            controller_class = ConnectorEnum.get_controller(c)
-            controller = controller_class(connection=p.connection.related_connection, plug=p)
-            ping = controller.test_connection()
-            if ping:
+            if controller.test_connection():
                 target_fields = [field.name for field in controller.get_mapping_fields()]
                 context['object_list'] = target_fields
         context['plug_type'] = p.plug_type
+        if controller.test_connection():
+            if controller.has_test_information:
+                context['test_information'] = controller.get_test_information()
         return context
 
     def post(self, request, *args, **kwargs):

@@ -1,4 +1,5 @@
 import requests
+import urllib
 import re
 
 
@@ -20,7 +21,7 @@ class Client(object):
         """
         self.username = username
         self.password = password
-        self.url_params.update({'username':username, 'password':password})
+        self.url_params.update({'username': username, 'password': password})
 
     def send_message(self, number_to, message, sender_identifier):
         """
@@ -30,16 +31,11 @@ class Client(object):
         :param sender_identifier:
         :return:
         """
-        params = {"to": self.prepare_number(number_to), 'text': self.prepare_text(message),
+        params = {'to': self.prepare_number(number_to), 'text': self.prepare_text(message),
                   'from': self.prepare_text(sender_identifier)}
         params.update(self.url_params)
-        list_data = []
-        string_url = ""
-        for key, val in params.items():
-            list_data.append("{0}={1}".format(key, val))
-        final_url_params = "&".join(list_data)
-        final_url = "{0}{1}{2}".format(self.base_api_url,'?', final_url_params)
-        return requests.get(final_url)
+        url_params = urllib.parse.urlencode(params)
+        return requests.get("{0}{1}{2}".format(self.base_api_url, '?', url_params))
 
     def prepare_number(self, number):
         """
@@ -47,6 +43,8 @@ class Client(object):
         :param number:
         :return:
         """
+
+        #TODO: ESTA VALIDACION NO DEBE EXISTIR AQUI. LOS NUMEROS DEBEN TENER EL CODIGO DEL PAIS.
         clean_number = re.sub(r'\D+', '', number)
         l = len(clean_number)
         if l >= 10:
@@ -54,7 +52,7 @@ class Client(object):
             code = clean_number[0:l - 10] or '57'
         else:
             raise Exception("El número no tiene 10 digitos.")
-        return code+last_10_numbers
+        return code + last_10_numbers
 
     def prepare_text(self, text):
         """
@@ -62,5 +60,5 @@ class Client(object):
         :param text:
         :return:
         """
-        clean_text = re.sub(r'\s+', '+', text)
+        clean_text = re.sub(r'\s+', ' ', text)
         return clean_text
