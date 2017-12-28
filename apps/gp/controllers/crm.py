@@ -79,7 +79,21 @@ class SugarCRMController(BaseController):
                                       message='Invalid login. {}'.format(str(e)))
 
     def test_connection(self):
-        return self._client is not None and self._client.session_id is not None
+        """
+        Debido a un mejor metodo para verificar la conexion se utiliza el metodo
+        get_available_modules()
+        :return:
+        """
+        try:
+            response = self.get_available_modules()
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.SugarCRM,
+            #                       message='Error in the connection test.. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, type):
+            return True
+        else:
+            return False
 
     def get_available_modules(self):
         try:
