@@ -62,18 +62,20 @@ class SugarCRMController(BaseController):
                     print("No module found. If this is a test_connection ignore the following message."
                           " \nMessage: {0}".format(str(e)))
             except AttributeError as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.SugarCRM,
-                                      message='Error getting the SugarCRM attributes args. {}'.format(str(e)))
+                raise ControllerError(code=1001, controller=ConnectorEnum.SugarCRM,
+                                      message='The attributes necessary to make the connection were not obtained.. {}'.format(str(e)))
         else:
-            raise ControllerError('No connection.')
+            raise ControllerError(code=1002, controller=ConnectorEnum.SugarCRM,
+                                      message='The controller is not instantiated correctly.')
         if self._url is not None and self._user is not None and self._password is not None:
             try:
                 session = requests.Session()
                 self._client = SugarClient(self._url, self._user, self._password, session=session)
             except requests.exceptions.MissingSchema:
-                raise
+                raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
+                                      message='Missing Schema.')
             except InvalidLogin as e:
-                raise ControllerError(code=2, controller=ConnectorEnum.SugarCRM,
+                raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
                                       message='Invalid login. {}'.format(str(e)))
 
     def test_connection(self):
@@ -1685,7 +1687,7 @@ class OdooCRMController(BaseController):
                                       message='The attributes necessary to make the connection were not obtained.. {}'.format(str(e)))
         else:
             raise ControllerError(code=1002, controller=ConnectorEnum.OdooCRM,
-                                      message='The controller is not instantiated correctly.. {}'.format(str(e)))
+                                      message='The controller is not instantiated correctly.')
         if self._url is not None and self._database is not None and self._user is not None and self._password is not None:
             try:
                 self._client = OdooCRMClient(self._url, self._database, self._user, self._password)
