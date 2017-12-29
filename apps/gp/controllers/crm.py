@@ -191,25 +191,37 @@ class SugarCRMController(BaseController):
 class ZohoCRMController(BaseController):
     _token = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(ZohoCRMController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(ZohoCRMController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token = self._connection_object.token
-                except Exception as e:
-                    print("Error getting zohocrm token")
-                    print(e)
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(ActEssentialsController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+            except Exception as e:
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.ZohoCRM,
+                    message='The attributes necessary to make the connection were not obtained.. {}'.format(str(e)))
 
     def test_connection(self):
-        if self._token is not None:
+        try:
             response = json.loads(self.get_modules()['_content'].decode())
-            if "result" in response["response"]:
-                return self._token is not None
-        return False
+        except Exception as e:
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.ZohoCRM,
+            #     message='Error in the connection test. {}'.format(str(e)))
+            return False
+        if "result" in response["response"]:
+            return True
+        else:
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.ZohoCRM,
+            #     message='Error in the connection test. {}'.format(str(e)))
+            return False
 
     def get_modules(self):
         params = {'authtoken': self._token, 'scope': 'crmapi'}
@@ -225,59 +237,43 @@ class ZohoCRMController(BaseController):
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
                                           object_id=item[item['id']])
             if not q.exists():
-                for column in item:
-                    new_data.append(
-                        StoredData(
-                            name=column,
-                            value=item[column],
-                            object_id=item[item['id']],
-                            connection=connection_object.connection,
-                            plug=plug))
-        if new_data:
-            field_count = len(data)
-            extra = {'controller': 'zohocrm'}
-            for i, item in enumerate(new_data):
-                try:
-                    item.save()
-                    if (i + 1) % field_count == 0:
-                        extra['status'] = 's'
-                        self._log.info(
-                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.'
-                            % (item.object_id, item.plug.id,
-                               item.connection.id),
-                            extra=extra)
-                except:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.'
-                        % (item.object_id, item.name, item.plug.id,
-                           item.connection.id),
-                        extra=extra)
-            return True
+                new_item = [(
+                    StoredData(
+                        name=column,
+                        value=item[column],
+                        object_id=item[item['id']],
+                        connection=connection_object.connection,
+                        plug=plug)) for column in item]
+                new_data.append(new_item)
+        downloaded_data = []
+        for new_item in new_data:
+            history_obj = {'identifier': None, 'is_stored': False, 'raw': {}}
+            for field in new_item:
+                field.save()
+                history_obj['raw'][field.name] = field.value
+                history_obj['is_stored'] = True
+            history_obj['identifier'] = {'name': 'id', 'value': field.object_id}
+            downloaded_data.append(history_obj)
+        if downloaded_data:
+            return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw']['created']}
         return False
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if self._plug is not None:
-            obj_list = []
-            module_id = self._plug.plug_action_specification.all()[0].value
-            extra = {'controller': 'zohocrm'}
-            for item in data_list:
-                try:
-                    response = self.insert_records(item, module_id)
-                    self._log.info(
-                        'Item: %s successfully sent.' %
-                        (int(response['#text'])),
-                        extra=extra)
-                    obj_list.append(id)
-                except Exception as e:
-                    print(e)
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item: %s failed to send.' % (int(response['#text'])),
-                        extra=extra)
-            return obj_list
-        raise ControllerError("There's no plug")
+    def send_stored_data(self, data_list, *args, **kwargs):
+        obj_list = []
+        module_id = self._plug.plug_action_specification.all()[0].value
+        for item in data_list:
+            try:
+                result = self.insert_records(item, module_id)
+                obj_result = {'data': dict(item)}
+                obj_result['response'] = result
+                obj_result['identifier'] = result['id']
+                obj_result['sent'] = True
+            except Exception as e:
+                obj_result['response'] = str(e)
+                obj_result['identifier'] = '-1'
+                obj_result['sent'] = False
+            obj_list.append(obj_result)
+        return obj_list
 
     def get_target_fields(self, module, **kwargs):
         return self.get_module_fields(module, **kwargs)
