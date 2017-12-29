@@ -659,8 +659,8 @@ a.morelink {
     }
 }
 
-/* Iphone 4, Iphone 5 - Portrait */
-@media only screen and (max-width:320px) and (orientation: portrait) {
+/* Iphone 6 Plus - Portrait */
+@media only screen and (max-width:414px) and (orientation: portrait) {
     img.slide {
         margin-top: 4.9%;
     }

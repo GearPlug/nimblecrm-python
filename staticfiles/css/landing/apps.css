@@ -171,8 +171,8 @@ button.btn {
     }
 }
 
-/* Iphone 4, Iphone 5 - Portrait */
-@media only screen and (max-width:320px) and (orientation: portrait) {
+/* Iphone 6 Plus - Portrait */
+@media only screen and (max-width:414px) and (orientation: portrait) {
     .apps-banner .text1 {
         font-size: 1.6em;
         line-height: 101%;

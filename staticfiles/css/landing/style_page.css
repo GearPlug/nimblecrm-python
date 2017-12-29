@@ -400,8 +400,8 @@ ul.menu li.menu-login.profile {
     }
 }
 
-/* Iphone 4, Iphone 5 - Portrait */
-@media only screen and (max-width:320px) and (orientation: portrait) {
+/* Iphone 6 Plus - Portrait */
+@media only screen and (max-width:414px) and (orientation: portrait) {
     .navbar-header a.navbar-toggle {
         border-color: transparent;
         margin-right: 9.1%;
