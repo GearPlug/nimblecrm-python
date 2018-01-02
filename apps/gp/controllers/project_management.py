@@ -240,15 +240,36 @@ class AsanaController(BaseController):
     def create_connection(self, connection=None, plug=None, **kwargs):
         super(AsanaController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
-            self._token = self._connection_object.token
-            self._refresh_token = self._connection_object.refresh_token
-            self._token_expiration_timestamp = self._connection_object.token_expiration_timestamp
+            try:
+                self._token = self._connection_object.token
+                self._refresh_token = self._connection_object.refresh_token
+                self._token_expiration_timestamp = self._connection_object.token_expiration_timestamp
+            except Exception as e:
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.Asana,
+                    message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
+        else:
+            raise ControllerError(
+                code=1002,
+                controller=ConnectorEnum.Asana,
+                message='The controller is not instantiated correctly.')
 
     def test_connection(self):
         if self.is_token_expired():
             self.refresh_token()
-        information = self.get_user_information()
-        return information is not None
+        try:
+            response = self.get_user_information()
+        except Exception as e:
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.Asana,
+            #     message='Error in the connection test. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, dict) and 'data' in response and  'id' in response['data']:
+            return True
+        else:
+            return False
 
     def is_token_expired(self):
         return float(self._token_expiration_timestamp) < time.time()
@@ -284,17 +305,9 @@ class AsanaController(BaseController):
             return None
 
     def get_user_information(self):
-        # Headers para Request de usuario principal
-        headers_1 = {  # data = {'resource', project.value,
-            #             'target', url_base + url_path}
-            #
-            #     response = requests.post('https://app.asana.com/api/1.0/webhooks',
-            #                              headers=headers, data=data)
-            #     print("response", response.json())
-            #     print("code", response.status_code)
+        headers_1 = {
             'Authorization': 'Bearer {0}'.format(self._token),
         }
-        # Request para obtener datos de usuario creador de la tarea
         r = requests.get('https://app.asana.com/api/1.0/users/me',
                          headers=headers_1)
         try:
@@ -433,6 +446,7 @@ class AsanaController(BaseController):
                 connection=connection_object.connection, plug=plug,
                 object_id=event_resource)
             task_stored_data = []
+            new_data = []
             if not q.exists():
                 task_data = self.get_task(event_resource).json()['data']
                 for k, v in task_data.items():
@@ -441,6 +455,7 @@ class AsanaController(BaseController):
                             StoredData(connection=connection_object.connection,
                                        plug=plug, object_id=event_resource,
                                        name=k, value=v or ''))
+                    new_data.append(task_stored_data)
                 for key, value in task_data['memberships'][0].items():
                     if key == 'project':
                         for k, v in value.items():
@@ -449,25 +464,22 @@ class AsanaController(BaseController):
                                            plug=plug, object_id=event_resource,
                                            name='{0}_{1}'.format(key, k),
                                            value=v or ''))
-            extra = {}
-            for task in task_stored_data:
-                try:
-                    extra['status'] = 's'
-                    extra = {'controller': 'asana'}
-                    task.save()
-                    self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            task.object_id, task.plug.id,
-                            task.connection.id),
-                        extra=extra)
-                except Exception as e:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s failed.' % (
-                            task.object_id, task.plug.id,
-                            task.connection.id),
-                        extra=extra)
-            return True
+                            new_data.append(task_stored_data)
+            downloaded_data = []
+            for new_item in new_data:
+                history_obj = {'identifier': None, 'is_stored': False, 'raw': {}}
+                for field in new_item:
+                    new_item.save()
+                    history_obj['raw'][field.name] = field.value
+                    history_obj['is_stored'] = True
+                history_obj['identifier'] = {'name': 'id', 'value': field.object_id}
+                downloaded_data.append(history_obj)
+            if downloaded_data:
+                return {
+                    'downloaded_data': downloaded_data,
+                    'last_source_record': downloaded_data[0]['raw']['created']
+                }
+            return False
         return False
 
     def get_target_fields(self, **kwargs):
@@ -485,23 +497,21 @@ class AsanaController(BaseController):
         fields = self.get_target_fields()
         return [MapField(f, controller=ConnectorEnum.Asana) for f in fields]
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if self._plug is not None:
-            obj_list = []
-            extra = {'controller': 'Asana'}
-            for item in data_list:
-                task = self.create_task(**item)
-                if task.status_code in [200, 201]:
-                    extra['status'] = 's'
-                    self._log.info('Item: %s successfully sent.' % (task.json()['data']['name']),
-                                   extra=extra)
-                    obj_list.append(task)
-                else:
-                    extra['status'] = 'f'
-                    self._log.info('Item: failed to send.', extra=extra)
-            return obj_list
-        raise ControllerError("There's no plug")
+    def send_stored_data(self, data_list, *args, **kwargs):
+        obj_list = []
+        for item in data_list:
+            try:
+                obj_result = {'data': dict(item)}
+                result = self.create_task(**item)
+                obj_result['response'] = result
+                obj_result['identifier'] = result['id']
+                obj_result['sent'] = True
+            except Exception as e:
+                obj_result['response'] = str(e)
+                obj_result['identifier'] = '-1'
+                obj_result['sent'] = False
+            obj_list.append(obj_result)
+        return obj_list
 
     def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
         if 'HTTP_X_HOOK_SECRET' in META:
