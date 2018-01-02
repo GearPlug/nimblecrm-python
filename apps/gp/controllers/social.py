@@ -25,6 +25,7 @@ import os
 class TwitterController(BaseController):
     _token = None
     _token_secret = None
+    _api = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
         BaseController.__init__(self, connection=connection, plug=plug, **kwargs)
@@ -36,16 +37,33 @@ class TwitterController(BaseController):
                 self._token = self._connection_object.token
                 self._token_secret = self._connection_object.token_secret
             except Exception as e:
-                print("Error getting the Twitter Token")
-                print(e)
-        me = None
-        if self._token and self._token_secret:
-            api = tweepy.API(self.get_twitter_auth())
-            me = api.me()
-        return me is not None
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.Twitter,
+                    message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.Twitter,
+                                  message='The controller is not instantiated correctly.. {}'.format(str(e)))
 
+        try:
+            self._api = tweepy.API(self.get_twitter_auth())
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.Twitter,
+                                  message='Error in the instantiation of the client. {}'.format(str(e)))
+    # api deberia ir en el test connection
     def test_connection(self):
-        return self._token is not None
+        try:
+            response = self._api.me()
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.Twitter,
+            #                       message='Error in the connection test.. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, dict) and "id" in response:
+            return True
+        else:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.Twitter,
+            #                       message='Error in the connection test {}'.format(str(e)))
+            return False
 
     def send_stored_data(self, data_list, **kwargs):
         obj_list = []
