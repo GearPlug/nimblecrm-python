@@ -31,6 +31,7 @@ class SendHistory(models.Model):
     sent = models.SmallIntegerField('sent', choices=SENT, default=0)
     identifier = models.CharField('identifier', max_length=500)
     tries = models.IntegerField(default=1)
+    version = models.CharField('version', default=1, max_length=500)
 
     class Meta:
         db_table = "gp_sendhistory"
