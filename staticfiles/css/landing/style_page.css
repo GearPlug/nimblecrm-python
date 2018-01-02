@@ -127,8 +127,12 @@ li.menu-login.profile img.img-avatar {
 li.menu-login.dropdown.profile.open ul.dropdown-menu {
     border-radius: inherit;
     box-shadow: none;
+    display: table;
+    float: right;
     margin-top: 7%;
-    padding: 0.7% 8% 0.2% 8%;
+    padding: 0.7% 15% 0.2% 15%;
+    right: 0;
+    text-align: center;
 }
 
 li.menu-login.dropdown.profile.open ul li {
@@ -152,6 +156,7 @@ li.menu-login.dropdown.profile ul.dropdown-menu li a:focus, li.menu-login.dropdo
 }
 
 li.menu-login.dropdown.profile ul li p{
+    cursor: pointer;
     margin: 0;
     padding-bottom: 2.6%;
 }
@@ -180,7 +185,7 @@ li.menu-login.dropdown.profile ul li p{
 
 ul.navbar-nav {
     float: right;
-    width: 53.6%;
+    width: 38.6%;
 }
 
 img.logo_header {
@@ -201,6 +206,82 @@ ul.menu li.menu-login.profile {
     padding: 0 0 0 1.2%;
 }
 
+.gp-modal .modal-content3 {
+    font-size: 14px;
+    width: 580px;
+    background-color: #f8f8f8;
+    padding: 30px 36px;
+    text-align: center;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+}
+
+.gp-modal .modal-content3 .image-wrapper {
+    width: 136px;
+    height: 136px;
+    border-radius: 200px 200px 200px 200px;
+    -moz-border-radius: 200px 200px 200px 200px;
+    -webkit-border-radius: 200px 200px 200px 200px;
+    border: 4px solid #00f493;
+    background-color: #FFFFFF;
+    overflow: hidden;
+    margin: 0 auto;
+}
+
+.gp-modal .modal-content3 .text1 {
+    font-family: "Sansation Bold";
+    font-size: 2.00em;
+    color: #0054a3;
+    padding-top: 20px;
+}
+
+.gp-modal .modal-content3 .text2 {
+    font-size: 1.60em;
+    color: #9d9ba1;
+    padding: 10px 0;
+    font-family: "Sansation", sans-serif;
+}
+
+.content-body .button-create.gray, .gp-modal .modal-content3 .button-create.gray {
+    background-color: #9d9ba1 !important;
+}
+
+.content-body .connection .form .button-create, .content-body .mapping .form .button-create, .content-body .connections .form .button-create, .content-body .specifications .form .button-create, .content-body .plug-test .form .button-create, .content-body .gear-update .form .button-create, .gp-modal .modal-content3 .button-create {
+    font-family: "Sansation Bold";
+    font-size: 1.60em;
+    min-width: 200px;
+    padding: 0 15px;
+    height: 45px;
+    margin: 12px 0;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+    text-align: center;
+    background-color: #005ca7;
+    color: #FFFFFF;
+    display: inline-block;
+    vertical-align: top;
+    outline: none;
+    text-decoration: none;
+}
+
+.bg_nets img.instagram, .bg_nets img.linkedin {
+    height: 5%;
+}
+
+.dropdown-menu li a {
+    padding: 0;
+}
+
+@-moz-document url-prefix() {
+    img.logo_header {
+        margin: 5% 0 0 52%;
+    }
+}
+
 @media only screen and (max-width:1600px) {
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
         margin: 4.8% 0 0 -15%;
@@ -209,13 +290,13 @@ ul.menu li.menu-login.profile {
     img.logo_header {
         margin: 11% 0 0 62%;
     }
+
+    ul.navbar-nav {
+        width: 43.6%;
+    }
 }
 
 @media only screen and (max-width:1440px) {
-    ul.menu {
-        margin: 2.1% 5.5% 0 0;
-    }
-
     li.menu-login.dropdown.profile.open ul.dropdown-menu {
         margin: 6.5% 0 0 -47%;
     }
@@ -223,26 +304,17 @@ ul.menu li.menu-login.profile {
     img.logo_header {
         margin: 11% 0 0 44%;
     }
+
+    ul.navbar-nav {
+        width: 48.6%;
+    }
 }
 
 @media only screen and (max-width: 1370px) {
     ul.navbar-nav {
-        width: 54.6%;
-    }
-
-    .aboutus-banner .aboutus-text .text2 {
-        margin: -0.6% 0 0 6.9%;
-    }
-
-    .aboutus-banner .aboutus-text .text1 {
-        margin: 3% 0 0 15.4%;
-    }
-
-    .aboutus-banner .aboutus-text .text3 {
-        margin: 0 0 0 9.9%;
+        width: 51.6%;
     }
 }
-
 
 @media only screen and (max-width:1024px) {
     ul.menu {
@@ -328,7 +400,8 @@ ul.menu li.menu-login.profile {
     }
 }
 
-@media only screen and (max-width:320px) and (orientation: portrait) {
+/* Iphone 6 Plus - Portrait */
+@media only screen and (max-width:414px) and (orientation: portrait) {
     .navbar-header a.navbar-toggle {
         border-color: transparent;
         margin-right: 9.1%;
@@ -407,5 +480,11 @@ ul.menu li.menu-login.profile {
     .selected_page {
         color: white !important;
         font-family: 'Sansation Bold' !important;
+    }
+
+    .ir-arriba {
+        background: url(../../img/landing/top_mobile.png) no-repeat;
+        bottom: 10px;
+        right: 10px;
     }
 }
