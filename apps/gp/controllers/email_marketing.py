@@ -178,8 +178,7 @@ class MailChimpController(BaseController):
     _token = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
-        BaseController.__init__(self, connection=connection, plug=plug,
-                                **kwargs)
+        super(MailChimpController, self).__init__(connection=connection, plug=plug, **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
         super(MailChimpController, self).create_connection(
@@ -187,18 +186,37 @@ class MailChimpController(BaseController):
         if self._connection_object is not None:
             try:
                 self._token = self._connection_object.token
-                self._client = Client(access_token=self._token)
             except Exception as e:
-                print("Error getting the MailChimp attributes")
-                self._client = None
-                self._token = None
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.MailChimp,
+                    message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
+        else:
+            raise ControllerError(
+                code=1002,
+                controller=ConnectorEnum.MailChimp,
+                message='The controller is not instantiated correctly.')
+        try:
+            self._client = Client(access_token=self._token)
+        except Exception as e:
+            raise ControllerError(
+                code=1003,
+                controller=ConnectorEnum.MailChimp,
+                message='Error in the instantiation of the client. {}'.format(str(e)))
 
     def test_connection(self):
         try:
-            self._client.get_lists()
-            return True
+            response = self._client.get_lists()
         except Exception as e:
-            print(e)
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.MailChimp,
+            #     message='Error in the connection test.. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response,
+                                               dict) and 'id' in response and 'name' in response and 'contact' in response:
+            return True
+        else:
             return False
 
     def send_stored_data(self, data_list, **kwargs):
