@@ -226,12 +226,11 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         for f, v in form.cleaned_data.items():
             try:
                 field = all_data.get(target_name=f)
-                if isinstance(v, str) and (v == '' or v.isspace()):
-                    field.delete()
-                else:
-                    if field.source_value != v:
-                        field.source_value = v
-                        field.save(update_fields=['source_value'])
+                if v is not None and (v != '' or not v.isspace()):
+                    _version = field.version + 1
+                    GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v, version=_version)
+                self.gear_map.version = _version
+                self.gear_map.save()
             except GearMapData.DoesNotExist:
                 if v is not None and (v != '' or not v.isspace()):
                     GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v)
