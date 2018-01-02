@@ -222,19 +222,18 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
 
     def form_valid(self, form, *args, **kwargs):
-        all_data = GearMapData.objects.filter(gear_map=self.gear_map)
+        _version = GearMapData.objects.filter(gear_map=self.gear_map).last()
         for f, v in form.cleaned_data.items():
-            try:
-                field = all_data.get(target_name=f)
+            if _version is not None:
                 if v is not None and (v != '' or not v.isspace()):
-                    _version = field.version + 1
-                    GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v, version=_version)
-                self.gear_map.version = _version
+                    _final_version = _version.version + 1
+                    GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v, version=_final_version)
+                self.gear_map.version = _final_version
                 self.gear_map.save()
-            except GearMapData.DoesNotExist:
+            elif _version is None:
                 if v is not None and (v != '' or not v.isspace()):
                     GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v)
-            except Exception as e:
+            else:
                 raise
         self.gear_map.gear.is_active = True
         self.gear_map.gear.save()
