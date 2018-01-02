@@ -10,29 +10,23 @@
            transparent; background-size: cover;" border="0" cellspacing="0" cellpadding="0">
         <tbody>
             <tr>
-                <td style="font-family: Trebuchet MS; font-size: 70px; color: #005CA6; text-align: center;
-                padding-top: 17%; font-weight: bold;">
-                    Bienvenido
-                </td>
-            </tr>
-            <tr>
-                <td style="font-family: Trebuchet MS; font-size: 21px; color: #09DF8E; text-align: center;
-                padding-top: 2%; font-style: italic">
-                    ¡Gracias por registrarte con nosotros!
+                <td style="font-family: Trebuchet MS; font-size: 62px; color: #005CA6; text-align: center;
+                padding-top: 19%; font-weight: bold;">
+                    Deactivated Gear
                 </td>
             </tr>
             <tr>
                 <td style="font-family: Trebuchet MS; font-size: 17px; color: #9C9AA0; text-align: center;
-                padding: 3% 12% 0">
-                    A partir de ahora podrás crear los Gear que quieras para optimizar el marketing digital de tu
-                    empresa, si tienes alguna duda, comunícate con nosotros aquí:
+                padding: 5% 12% 0">
+                    Hello, your GEAR {{ gear }}{{ gear_id }} has been deactivated due to an error with your source
+                    connection {{ connection }}{{ connection_id }}.
+                    Please review your connection is still valid and turn on your Gear again.
                 </td>
             </tr>
             <tr>
-{#                TODO validar correo de soporte #}
-                <td style="text-align: center; padding-top: 2%;">
-                    <a href="mailto:soporte@grplug.com">
-                        <img src="http://localhost:8000/static/mailing/img/bt_support.png" style="width: 25%">
+                <td style="text-align: center; padding-top: 3%;">
+                    <a href="{{ url }}">
+                        <img src="http://localhost:8000/static/mailing/img/bt_url.png" style="width: 25%">
                     </a>
                 </td>
             </tr>
