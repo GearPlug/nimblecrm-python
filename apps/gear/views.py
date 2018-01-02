@@ -226,12 +226,11 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         for f, v in form.cleaned_data.items():
             try:
                 field = all_data.get(target_name=f)
-                if isinstance(v, str) and (v == '' or v.isspace()):
-                    field.delete()
-                else:
-                    if field.source_value != v:
-                        field.source_value = v
-                        field.save(update_fields=['source_value'])
+                if v is not None and (v != '' or not v.isspace()):
+                    _version = field.version + 1
+                    GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v, version=_version)
+                self.gear_map.version = _version
+                self.gear_map.save()
             except GearMapData.DoesNotExist:
                 if v is not None and (v != '' or not v.isspace()):
                     GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v)
@@ -267,8 +266,8 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         if c == ConnectorEnum.GoogleContacts:
             self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
             return ['%%{0}%%'.format(field) for field in self.google_contacts_controller.get_contact_fields()]
-        return ['%%{0}%%'.format(item['name']) for item in
-                StoredData.objects.filter(plug=plug, connection=plug.connection).values('name').distinct()]
+        return [('%%{0}%%'.format(item['name']), item['value']) for item in
+                StoredData.objects.filter(plug=plug, connection=plug.connection).values()]
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
