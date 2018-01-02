@@ -16,8 +16,7 @@ class GetResponseController(BaseController):
     _client = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
-        BaseController.__init__(self, connection=connection, plug=plug,
-                                **kwargs)
+        super(GetResponseController, self).__init__(connection=connection, plug=plug, **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
         super(GetResponseController, self).create_connection(
@@ -26,15 +25,26 @@ class GetResponseController(BaseController):
             try:
                 self._client = GetResponse(self._connection_object.api_key)
             except Exception as e:
-                print("Error getting the GetResponse attributes")
-                self._client = None
+                raise ControllerError(code=1003, controller=ConnectorEnum.GetResponse,
+                                      message='Error in the instantiation of the client. {}'.format(str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.GetResponse,
+                                  message='The controller is not instantiated correctly.')
 
     def test_connection(self):
         try:
-            self.get_campaigns()
-            return self._client is not None
+            response = self.get_campaigns()
         except:
-            return self._client is None
+            # raise ControllerError(code=1004, controller=ConnectorEnum.GetResponse,
+            #                       message='Error in the connection test.')
+            return False
+        if response is not None and isinstance(response, list) and isinstance(response[0], dict) and 'campaignId' in \
+                response[0]:
+            return True
+        else:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.GetResponse,
+            #                       message='Error in the connection test.')
+            return False
 
     def send_stored_data(self, data_list):
         obj_list = []
@@ -65,7 +75,6 @@ class GetResponseController(BaseController):
                 print("action not found")
             obj_list.append({'data':dict(obj), 'response': res, 'sent':_sent, 'identifier':''})
         return obj_list
-
 
     def subscribe_contact(self, campaign_id, obj):
         _dict = {
