@@ -7,29 +7,7 @@
 
 {% block body_base %}
     <div class="info-tool"></div>
-    <div id="logout-modal" class="modal fade" role="dialog">
-        <div class="gp-modal modal-dialog">
-            <div class="modal-content3">
-                <div class="image-wrapper">
-                    <div class="image">
-                        <img src="{% static 'img/console/g6630.png' %}" width="128" height="128">
-                    </div>
-                </div>
-                <div class="text1">
-                    ¡{% trans 'Adios' %} Bill Gates!
-                </div>
-                <div class="text2">
-                    ¿Estás seguro que quieres salir de sesión?
-                </div>
-                <button type="button" class="button-create gray" data-dismiss="modal">
-                    Cancelar
-                </button>
-                <button type="button" id="logout" class="button-create">
-                    Cerrar Sesión
-                </button>
-            </div>
-        </div>
-    </div>
+    {% include 'account/snippets/logout.html' %}
     <div id="dashboard-header">
         <div class="left">
             <a href="{% url 'home:dashboard' %}">
@@ -86,7 +64,7 @@
                     </div>
                 </a>
                 <div class="divider"></div>
-                <a href="{% url 'gear:activities_history' %}">
+                <a href="{% url 'gear:recent_activity' %}">
                     <div class="item">
                         <div class="image">
                             <img src="{% static 'img/console/g5752.png' %}">

@@ -152,11 +152,6 @@ class WunderlistControllerTestCases(TestCase):
                 _id_list = str(r['id'])
         self.assertEqual(_id_list, os.environ.get('TEST_WUNDERLIST_LIST'))
 
-    def test_has_webhook(self):
-        """Verifica que retorne True"""
-        result = self.source_controller.has_webhook()
-        self.assertTrue(result)
-
     def test_create_webhook(self):
         """Testea que se cree un webhook en la aplicación y que se cree en la tabla Webhook, al final se borra el
         webhook de la aplicación"""

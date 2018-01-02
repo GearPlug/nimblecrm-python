@@ -88,11 +88,8 @@ class MapField(object):
                 self.choices.insert(0, ('', ''))
                 self.field_type = 'choices'
         elif controller == ConnectorEnum.GetResponse:
-            if 'id' in d:
-                self.name = d['id']
-            else:
-                self.name = d['name']
             if 'name' in d:
+                self.name = d['name']
                 self.label = d['name']
             if 'required' in d:
                 self.required = d['required']
@@ -177,9 +174,8 @@ class MapField(object):
                 self.name = d['name']
             if 'label' in d:
                 self.label = d['label']
-            if d['name'] == "dealname" or d['name'] == "name" or d[
-                'name'] == "firstname":
-                self.required = d['name']
+            if 'required' in d:
+                self.required = d['required']
             if 'type' in d:
                 self.field_type = d['type']
             if d['type'] == 'enumeration':

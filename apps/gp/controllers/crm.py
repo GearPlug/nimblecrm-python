@@ -20,6 +20,7 @@ from batchbook.client import Client as ClientBatchbook
 from actcrm.client import Client as ActCRMClient
 from agilecrm.client import Client as AgileCRMClient
 from activecampaign.client import Client as ActiveCampaignClient
+from hubspot.client import Client as HubSpotClient
 import datetime
 import time
 import requests
@@ -616,200 +617,174 @@ class SalesforceController(BaseController):
 class HubSpotController(BaseController):
     _token = None
     _refresh_token = None
+    _client = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(HubSpotController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(HubSpotController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token = self._connection_object.token
-                    self._refresh_token = self._connection_object.refresh_token
-                except Exception as e:
-                    print("Error getting the hubspot token")
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(HubSpotController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+                self._refresh_token = self._connection_object.refresh_token
+                self._client = HubSpotClient(self._token)
+            except Exception as e:
+                print("Error getting the hubspot token")
 
     def test_connection(self):
-        response = self.request()
-        if 'status' in response and response['status'] == "error":
-            self.get_refresh_token(self._refresh_token)
-        return self._token is not None
+        try:
+            self._client.contacts.get_contacts()
+            return self._token is not None and self._refresh_token is not None
+        except:
+            try:
+                _refresh = self.get_refresh_token()
+                if _refresh is True:
+                    return self._token is not None and self._refresh_token is not None
+                else:
+                    return self._token is None
+            except:
+                return self._token is None
 
-    def get_modules(self):
-        return [{
-            'name': 'companies',
-            'id': 'companies'
-        }, {
-            'name': 'contacts',
-            'id': 'contacts'
-        }, {
-            'name': 'deals',
-            'id': 'deals'
-        }]
-
-    def get_action_specification_options(self, action_specification_id):
-        print("actions")
-        action_specification = ActionSpecification.objects.get(
-            pk=action_specification_id)
-        if action_specification.name.lower() == 'data':
-            return tuple({
-                             'name': o['name'],
-                             'id': o['id']
-                         } for o in self.get_modules())
-        else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector."
-            )
-
-    def download_to_stored_data(self, connection_object, plug, ):
-        module_id = self._plug.plug_action_specification.all()[0].value
+    def download_to_stored_data(self, connection_object, plug, last_source_record=None, **kwargs):
+        action = self._plug.action.name
         new_data = []
-        data = self.get_data(module_id)
+        data = self.get_data(action)
+        _id_name = self.get_id(action)
         for item in data:
-            q = StoredData.objects.filter(
-                connection=connection_object.connection,
-                plug=plug,
-                object_id=item['id'])
-            if not q.exists():
-                for column in item:
-                    new_data.append(
-                        StoredData(
-                            name=column,
-                            value=item[column],
-                            object_id=item['id'],
-                            connection=connection_object.connection,
-                            plug=plug))
-        if new_data:
-            field_count = len(data)
-            extra = {'controller': 'hubspot'}
-            for i, item in enumerate(new_data):
-                try:
-                    item.save()
-                    if (i + 1) % field_count == 0:
-                        extra['status'] = 's'
-                        self._log.info(
-                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.'
-                            % (item.object_id, item.plug.id,
-                               item.connection.id),
-                            extra=extra)
-                except:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.'
-                        % (item.object_id, item.name, item.plug.id,
-                           item.connection.id),
-                        extra=extra)
-            return True
-        return False
+            _new_item = self.get_item(action, item[_id_name])
+            _new_item['properties']['createdate']['value'] = datetime.datetime.fromtimestamp(int(_new_item['properties']['createdate']['value']) / 1000)
+            if last_source_record is not None:
+                if _new_item['properties']['createdate']['value'] > last_source_record:
+                    _new = True
+                else:
+                    _new = False
+            else:
+                _new = True
+            if _new is True:
+                q = StoredData.objects.filter(
+                    connection=connection_object.connection,
+                    plug=plug,
+                    object_id=item[_id_name])
+                if not q.exists():
+                    for k,v in _new_item['properties'].items():
+                        new_data.append(
+                            StoredData(
+                                name=k,
+                                value=v['value'],
+                                object_id=item[_id_name],
+                                connection=connection_object.connection,
+                                plug=plug))
+            result_list = []
+            if new_data:
+                for data in new_data:
+                    try:
+                        data.save()
+                        _is_stored = True
+                    except:
+                        _is_stored = False
+                result_list.append({'identifier': {'name': _id_name, 'value': item[_id_name]}, 'is_stored': _is_stored, 'raw': ''.join(_new_item['properties'])})
+            return {'downloaded_data': result_list, 'last_source_record':_new_item['properties']['createdate']['value']}
 
-    def get_data(self, module_id):
-        if (module_id == 'contacts'):
-            url = "https://api.hubapi.com/contacts/v1/lists/all/contacts/all"
-        if (module_id == 'companies'):
-            url = "https://api.hubapi.com/companies/v2/companies/"
-        if (module_id == 'deals'):
-            url = "https://api.hubapi.com/deals/v1/deal/paged?includeAssociations=true&limit=30&properties=dealname"
-        headers = {
-            'Authorization': 'Bearer {0}'.format(self._token),
-        }
-        result = requests.get(url, headers=headers).json()[module_id]
-        data = []
-        for i in result:
-            item = {}
-            id = self.get_id(module_id, i)
-            item['id'] = id
-            for d in i["properties"]:
-                item[d] = i["properties"][d]['value']
-            data.append(item)
-        return data
+    def get_item(self, action, _id):
+        if (action == 'new contact'):
+            result = self._client.contacts.get_contact(_id).json()
+        elif (action == 'new company'):
+            result = self._client.companies.get_company(_id).json()
+        elif (action == 'new deal'):
+            result = self._client.deals.get_deal(_id).json()
+        return result
+
+    def get_data(self, action):
+        if (action == 'new contact'):
+            result = self._client.contacts.get_recently_created_contacts(30).json()['contacts']
+        elif (action == 'new company'):
+            result = self._client.companies.get_recently_created_companies(30).json()['results']
+        elif (action == 'new deal'):
+            result = self._client.deals.get_recently_created_deals(30).json()['results']
+        else:
+            print ("This action don't belong to this controller")
+            return None
+        return result
 
     def get_mapping_fields(self):
+        action = self._plug.action.name
+        actions = {'create contact': 'email', 'create company': 'name', 'create deal': 'dealname'}
         fields = self.get_target_fields()
+        for f in fields:
+            if f["name"] == actions[action]:
+                f['required'] = True
+            else:
+                f['required'] = False
         return [MapField(f, controller=ConnectorEnum.HubSpot) for f in fields]
 
     def get_target_fields(self, **kwargs):
-        module_id = self._plug.plug_action_specification.all()[0].value
-        url = "https://api.hubapi.com/properties/v1/" + module_id + "/properties"
-        headers = {'Authorization': 'Bearer {0}'.format(self._token)}
-        response = requests.get(url, headers=headers).json()
+        action = self._plug.action.name
+        actions = {'create contact': 'contacts', 'create company' : 'companies', 'create deal': 'deals'}
+        response = self._client.fields.get_fields(actions[action]).json()
         return [
             i for i in response if "label" in i and i['readOnlyValue'] == False
         ]
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if self._plug is not None:
-            obj_list = []
-            module_id = self._plug.plug_action_specification.all()[0].value
-            extra = {'controller': 'hubspot'}
-            for item in data_list:
-                try:
-                    response = self.insert_data(item, module_id).json()
-                    id = self.get_id(module_id, response)
-                    self._log.info(
-                        'Item: %s successfully sent.' % (id), extra=extra)
-                    obj_list.append(id)
-                except Exception as e:
-                    print(e)
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item: %s failed to send.' % (id), extra=extra)
-            return obj_list
-        raise ControllerError("There's no plug")
+    def send_stored_data(self, data_list):
+        result_list = []
+        action = self._plug.action.name
+        for item in data_list:
+            try:
+                response = self.insert_data(item, action)
+                sent = True
+            except Exception as e:
+                print(e)
+                sent = False
+            result_list.append({'data': dict(item), 'response': response['response'], 'sent': sent, 'identifier': response['id']})
+        return result_list
 
-    def insert_data(self, fields, module_id):
-        if (module_id == 'contacts'):
-            url = "https://api.hubapi.com/contacts/v1/contact/"
-            name = "property"
-        if (module_id == 'companies'):
-            url = "https://api.hubapi.com/companies/v2/companies/"
-            name = "name"
-        if (module_id == 'deals'):
-            url = "https://api.hubapi.com/deals/v1/deal"
-            name = "name"
-        headers = {'Authorization': 'Bearer {0}'.format(self._token)}
-        list = []
-        for i in fields:
-            write = {name: i, 'value': fields[i]}
-            list.append(write)
-        json = {"properties": list}
-        return requests.post(url, json=json, headers=headers)
+    def insert_data(self, data, action):
+        if (action == 'create contact'):
+            response = self._client.contacts.create_contact(data).json()
+            _id = response['vid']
+        elif (action == 'create company'):
+            response = self._client.companies.create_company(data).json()
+            _id = response['companyId']
+        elif (action == 'create deal'):
+            response = self._client.deals.create_deal(data).json()
+            _id = response['dealId']
+        return {'id': _id, 'response': response}
 
-    def get_id(self, module_id, data):
-        if (module_id == 'contacts'):
-            id = data['vid']
-        if (module_id == 'companies'):
-            id = data['companyId']
-        if (module_id == 'deals'):
-            id = data['dealId']
-        return id
+    def get_id(self, action):
+        if (action == 'new contact'):
+            _id_name = 'vid'
+        elif (action == 'new company'):
+            _id_name = 'companyId'
+        elif (action == 'new deal'):
+            _id_name = 'dealId'
+        return _id_name
 
-    def get_refresh_token(self, refresh_token):
-        url = "https://api.hubapi.com/oauth/v1/token"
-        headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'charset': 'utf-8'
-        }
+    def get_refresh_token(self):
         data = {
-            'grant_type': 'refresh_token',
             'client_id': settings.HUBSPOT_CLIENT_ID,
             'client_secret': settings.HUBSPOT_CLIENT_SECRET,
             'redirect_uri': settings.HUBSPOT_REDIRECT_URI,
             'refresh_token': self._refresh_token
         }
-        response = requests.post(url, headers=headers, data=data).json()
+        try:
+            response = self._client.get_refresh_token(data).json()
+        except:
+            return False
         self._connection_object.token = response['access_token']
         self._connection_object.refresh_token = response['refresh_token']
         self._connection_object.save()
-        return None
+        return True
 
-    def request(self):
-        url = "https://api.hubapi.com/contacts/v1/lists/all/contacts/all"
-        headers = {
-            'Authorization': 'Bearer {0}'.format(self._token),
-        }
-        return requests.get(url, headers=headers).json()
+        # Aunque la API de hubspot cuenta con webhooks, estos no se implementaron debido a que no se pueden crear con
+        # el token, para crear un webhook se requiere autenticación del portal para developers es decir un (hapikey).
+        # Los webhooks son configurados en el setting del portal, y las notificaciones son enviadas el mismo.
+        # No es posible configurar las notificaciones del webhook para un portal especifico.
+        #  Documentacion: https://integrate.hubspot.com/t/how-to-do-oauth2-for-app/5591
+
+        # @property
+        # def has_webhook(self):
+        #     return True
 
 
 class VtigerController(BaseController):
