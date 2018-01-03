@@ -16,24 +16,36 @@ class SlackController(BaseController):
     _slacker = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
-        BaseController.__init__(self, connection=connection, plug=plug,
-                                **kwargs)
+        BaseController.__init__(self, connection=connection, plug=plug, **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
-        super(SlackController, self).create_connection(
-            connection=connection, plug=plug)
+        super(SlackController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
                 self._token = self._connection_object.token
-                self._slacker = Slacker(self._token)
             except Exception as e:
-                print("Error getting the Slack Token")
+                raise ControllerError(code=1001, controller=ConnectorEnum.Slack.name,
+                                      message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.Slack.name,
+                                  message='The controller is not instantiated correctly. {}')
+        try:
+            self._slacker = Slacker(self._token)
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.Slack.name,
+                                  message='Error in the instantiation of the client. {}'.format(str(e)))
 
     def test_connection(self):
-        if self._token is not None and self._slacker is not None:
-            response = self.get_channel_list()
-            if isinstance(response, tuple):
-                return True
+        try:
+            response = self._slacker.api.test()
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.Slack.name,
+            #                       message='Error in the connection test. {}'.format(str(e)))
+            return False
+
+        body = response.body
+        if 'ok' in body and body['ok'] is True:
+            return True
         return False
 
     def get_channel_list(self):
