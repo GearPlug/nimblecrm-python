@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.generic.edit import FormView
 from django.urls import reverse_lazy
@@ -116,3 +116,16 @@ class SubscriptionsManagerView(LoginRequiredMixin, FormView):
             else:
                 Subscriptions.objects.filter(user=self.request.user, list=list).delete()
         return super(SubscriptionsManagerView, self).form_valid(form)
+
+
+class GroupSessionStoreView(View):
+    def get(self, request):
+        store = request.session.get('group_store', {k['name']: {'is_active': True, 'id': k['id']} for k in
+                                                    GearGroup.objects.filter(user=request.user).values('name', 'id')})
+        if 'group_store' not in request.session:
+            request.session['group_store'] = store
+        return JsonResponse(store)
+
+    def post(self, request):
+        request.session['group_store'] = json.loads(request.body.decode('utf-8'))
+        return JsonResponse(request.session.get('group_store'))

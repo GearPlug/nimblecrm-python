@@ -57,7 +57,7 @@
             <div class="row list">
                 {% for group in object_list %}
                     <div class="group-gear" data-group-id="{{ group.id }}" style="display: block;"
-                         id="group_gear_{{ group.id }}" data-show="True">
+                         id="group_gear_{{ group.id }}">
                         <div class="col-md-7 group-name">{{ group.name }}</div>
                         {% for gear in group.gear.all %}
                             {% include 'gear/snippets/gear_extend.html' with id=gear.id name=gear.name is_running=gear.is_running %}
@@ -82,6 +82,22 @@
 {% block scripts %}
     {{ block.super }}
     <script type="application/javascript">
+        function change_group_display(json) {
+            console.log(json)
+            $.each(json, function (k, v) {
+                console.log(k, v);
+                var gid = v['id'];
+                var show = v['is_active'];
+                if (show === true) {
+                    $('div[data-group-id=' + gid + '].group-gear').show();
+                    $('div.folders').find('div[data-group-id=' + gid + '] div img').attr('src', '{% static "img/console/g3205.png" %}')
+                } else if (show == false) {
+                    $('div[data-group-id=' + gid + '].group-gear').hide();
+                    $('div.folders').find('div[data-group-id=' + gid + '] div img').attr('src', '{% static "img/console/g3277.png" %}')
+                }
+
+            });
+        }
         $(document).ready(function () {
             var is_blocked = false;
 
@@ -90,7 +106,6 @@
                 var url = a.attr('href');
                 if (is_blocked == false) {
                     is_blocked = true;
-
                     $.ajax({
                         method: "POST",
                         url: url,
@@ -130,21 +145,29 @@
                 }
                 return false;
             });
+            var session_group_store = null;
+            $.ajax({
+                method: "GET",
+                url: '{% url "home:session_store_groups" %}'
+            }).done(function (response) {
+                session_group_store = response;
+                change_group_display(session_group_store);
+            });
 
             $('div.folders div.item div.image img').on('click', function () {
-                var that = $(this).parent().parent();
-                var gear_list = $("#group_gear_" + $(that).attr('data-group-id'));
-                var show = $(gear_list).attr('data-show');
-                if (show == "True") {
-                    gear_list.hide();
-                    gear_list.attr('data-show', 'False');
-                    $(this).attr('src', '{% static "img/console/g3277.png" %}');
-                } else {
-                    gear_list.show();
-                    gear_list.attr('data-show', 'True');
-                    $(this).attr('src', '{% static "img/console/g3205.png" %}');
-                }
+                var group_name = $(this).parent().next().text().trim();
+                session_group_store[group_name]['is_active'] = !session_group_store[group_name]['is_active'];
+                $.ajax({
+                    data: JSON.stringify(session_group_store),
+                    method: "POST",
+                    url: '{% url "home:session_store_groups" %}',
+                    contentType: 'application/json'
+                }).done(function (response) {
+                    session_group_store = response;
+                });
+                change_group_display(session_group_store);
             });
+
 
             $('form#group-form, form#gear-form').on('submit', function (e) {
                 e.preventDefault();
