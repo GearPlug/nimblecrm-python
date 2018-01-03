@@ -15,48 +15,77 @@ from getresponse.client import GetResponse
 class GetResponseController(BaseController):
     _client = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(GetResponseController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(GetResponseController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._client = GetResponse(self._connection_object.api_key)
-                except Exception as e:
-                    print("Error getting the GetResponse attributes")
-                    self._client = None
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(GetResponseController, self).create_connection(
+            connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                api_key = self._connection_object.api_key
+            except Exception as e:
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.GetResponse,
+                    message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
+        else:
+            raise ControllerError(
+                code=1002,
+                controller=ConnectorEnum.GetResponse,
+                message='The controller is not instantiated correctly.')
+        try:
+            self._client = GetResponse(api_key)
+        except Exception as e:
+            raise ControllerError(
+                code=1003,
+                controller=ConnectorEnum.GetResponse,
+                message='Error in the instantiation of the client. {}'.format(str(e)))
 
     def test_connection(self):
-        return self._client is not None and self.get_campaigns() is not None
+        try:
+            response = self.get_campaigns()
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.GetResponse,
+            #                       message='Error in the connection test.')
+            return False
+        if response is not None and isinstance(response, list) and isinstance(response[0], dict) and 'id' in \
+                response[0]:
+            return True
+        else:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.GetResponse,
+            #                       message='Error in the connection test.')
+            return False
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
+    def send_stored_data(self, data_list):
         obj_list = []
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
+        _action = self._plug.action.name
+        for obj in data_list:
+            if _action == 'subscribe':
                 try:
-                    data_list = [data_list[-1]]
+                    res = self.subscribe_contact(self._plug.plug_action_specification.all()[0].value, obj)
+                    if res is True:
+                        _sent = True
+                    else:
+                        _sent = False
                 except:
-                    data_list = []
-        if self._plug is not None:
-            status = None
-            for specification in self._plug.plug_action_specification.all():
-                if specification.action_specification.action.name == 'subscribe':
-                    status = 'subscribed'
-                elif specification.action_specification.action.name == 'unsubscribe':
-                    status = 'unsubscribed'
-            extra = {'controller': 'getresponse'}
-            for obj in data_list:
-                if status == 'subscribed':
-                    res = self.subscribe_contact(
-                        self._plug.plug_action_specification.all()[0].value,
-                        obj)
-                else:
-                    res = self.unsubscribe_contact(obj)
-            return
-        raise ControllerError("Incomplete.")
+                    _sent = False
+                    res = ""
+            elif _action == 'Unsubscribe':
+                try:
+                    _campaign = self._plug.plug_action_specification.get(action_specification__name='campaign')
+                    res = self.unsubscribe_contact(obj, _campaign.value)
+                    if res is True:
+                        _sent = True
+                    else:
+                        _sent = False
+                except:
+                    _sent = False
+                    res = ""
+            else:
+                print("action not found")
+            obj_list.append({'data':dict(obj), 'response': res, 'sent':_sent, 'identifier':''})
+        return obj_list
 
     def subscribe_contact(self, campaign_id, obj):
         _dict = {
@@ -72,10 +101,22 @@ class GetResponseController(BaseController):
         if obj:
             _dict["customFieldValues"] = [{"customFieldId": k, "value": [v]}
                                           for k, v in obj.items()]
-        self._client.create_contact(_dict)
+        return self._client.create_contact(_dict)
 
-    def unsubscribe_contact(self, obj):
-        self._client.delete_contact(obj.pop('id'))
+    def unsubscribe_contact(self, obj, _campaign_id):
+        _email = obj.pop('email')
+        print("email", _email)
+        _contacts = self._client.get_campaign_contacts(_campaign_id)
+        print("contacts", _contacts)
+        _id = None
+        for contact in _contacts:
+            if contact.email == _email:
+                _id = contact.id
+        if _id is not None:
+            return self._client.delete_contact(_id)
+        else:
+            raise ControllerError("Email have not been found")
+
 
     def get_campaigns(self):
         if self._client:
@@ -111,7 +152,6 @@ class GetResponseController(BaseController):
         fields = self._client.get_custom_fields({'sort': {'name', 'desc'}})
         for field in fields:
             _list.append({
-                'id': field.id,
                 'name': field.name,
                 'required': False,
                 'type': field.field_type,
@@ -124,7 +164,7 @@ class GetResponseController(BaseController):
 
     def get_unsubscribe_target_fields(self):
         return [{
-            'name': 'id',
+            'name': 'email',
             'required': True,
             'type': 'text',
 

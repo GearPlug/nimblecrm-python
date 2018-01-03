@@ -1,5 +1,8 @@
 <form method="POST" action="{% url 'landing:signup' %}" autocomplete="off" id="signup_form">
     {% csrf_token %}
+    {% for error in form.non_field_errors %}
+        {{ error|escape }}
+    {% endfor %}
     <div class="col-md-12 col-sm-12 col-xs-12 {% if signup_form.first_name.errors %} has-error{% endif %}">
         {{ signup_form.first_name }}
         {% for error in signup_form.first_name.errors %}
@@ -33,7 +36,7 @@
                     <span class="glyphicon glyphicon-ok"></span>
                 </label>
             </div>
-            <span class="checkbox-form">{{ name }}aaa</span>
+            <span class="checkbox-form">{{ name }}</span>
         </div>
     {% endfor %}
     <div class="col-md-12 col-sm-12 col-xs-12">
