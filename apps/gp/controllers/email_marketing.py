@@ -283,17 +283,36 @@ class MandrillController(BaseController):
         super(MandrillController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
-                self._client = mandrill.Mandrill(
-                    self._connection_object.api_key)
+                api_key = self._connection_object.api_key
             except Exception as e:
-                print("Error getting the Mandrill attributes")
-                self._client = None
+                raise ControllerError(code=1001, controller=ConnectorEnum.Mandrill,
+                                      message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.Mandrill,
+                                  message='The controller is not instantiated correctly.')
+        try:
+            self._client = mandrill.Mandrill(api_key)
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.Mandrill,
+                                  message='Error in the instantiation of the client. {}'.format(
+                                      str(e)))
 
     def test_connection(self):
         try:
-            self._client.users.info()
-            return self._client is not None
+            user_info = self._client.users.info()
         except mandrill.InvalidKeyError:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.Mandrill,
+            #                       message='Error InvalidKeyError. {}'.format(
+            #                           str(e)))
+            return False
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.Mandrill,
+            #                       message='Error in the connection test.. {}'.format(
+            #                           str(e)))
+            return False
+        if user_info and 'username' in user_info and 'public_id' in user_info:
+            return True
+        else:
             return False
 
     def send_stored_data(self, data_list):
