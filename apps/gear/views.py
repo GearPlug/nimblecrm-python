@@ -227,7 +227,8 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
             if _version is not None:
                 if v is not None and (v != '' or not v.isspace()):
                     _final_version = _version.version + 1
-                    GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v, version=_final_version)
+                    GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v,
+                                               version=_final_version)
                 self.gear_map.version = _final_version
                 self.gear_map.save()
             elif _version is None:
@@ -252,10 +253,18 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         form_class = self.get_form_class()
         form = form_class(extra=self.form_field_list, **self.get_form_kwargs())
         if self.request.method == 'GET' and self.gear_map is not None:
-            all_data = GearMapData.objects.filter(gear_map=self.gear_map)
+            try:
+                _version = GearMapData.objects.filter(gear_map=self.gear_map).order_by('-version').values('version')[0]
+                all_data = GearMapData.objects.filter(gear_map=self.gear_map, version=_version['version'])
+            except IndexError:
+                all_data = None
+
             for label, field in form.fields.items():
+                print(label)
                 try:
                     field.initial = all_data.get(target_name=label).source_value
+                except AttributeError:
+                    break
                 except:
                     pass
         return form
