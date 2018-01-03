@@ -192,7 +192,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
     form_class = MapForm
     form_field_list = []
     source_object_list = []
-    success_url = reverse_lazy('%s:list' % app_name)
+    success_url = reverse_lazy('%s:sucess_create' % app_name)
     exists = False
 
     def get(self, request, *args, **kwargs):
@@ -220,6 +220,10 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         self.form_field_list = self.get_target_field_list(target_plug)
         self.gear_map = GearMap.objects.filter(gear=gear).first()
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
+
+    def get_success_url(self):
+        # async
+        return super(CreateGearMapView, self).get_success_url()
 
     def form_valid(self, form, *args, **kwargs):
         _version = GearMapData.objects.filter(gear_map=self.gear_map).last()
