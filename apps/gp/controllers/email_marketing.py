@@ -290,7 +290,7 @@ class MandrillController(BaseController):
             #                       message='Error in the connection test.. {}'.format(
             #                           str(e)))
             return False
-        if user_info is not None:
+        if user_info and 'username' in user_info and 'public_id' in user_info:
             return True
         else:
             return False
