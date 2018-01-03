@@ -34,17 +34,17 @@ class GetResponseController(BaseController):
     def test_connection(self):
         try:
             response = self.get_campaigns()
-        except:
+        except Exception as e:
             # raise ControllerError(code=1004, controller=ConnectorEnum.GetResponse,
             #                       message='Error in the connection test.')
             return False
-        if response is not None and isinstance(response, list) and isinstance(response[0], dict) and 'campaignId' in \
+        if response is not None and isinstance(response, list) and isinstance(response[0], dict) and 'id' in \
                 response[0]:
             return True
         else:
             # raise ControllerError(code=1004, controller=ConnectorEnum.GetResponse,
             #                       message='Error in the connection test.')
-            return False
+            return response
 
     def send_stored_data(self, data_list):
         obj_list = []
