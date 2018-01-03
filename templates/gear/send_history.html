@@ -93,10 +93,10 @@
                     <div class="col-md-5">
                         <div class="text">
                             {{ obj.date|localtime }}
-                            {% if obj.sent != 1 %}
-                                <b class="resend">resend</b>
-                            {% endif %}
                         </div>
+                        {% if obj.sent != 1 %}
+                            <b class="resend">resend</b>
+                        {% endif %}
                     </div>
                     <div class="col-md-12">
                         <ul style="display:none;" data-show="false" data-history="{{ obj.id }}">
@@ -225,7 +225,7 @@
             $.ajax({
                 method: "POST",
                 url: $('#retry_url').val(),
-                data: {history_id: $(this).parent().data('history')}
+                data: {history_id: button.parent().parent().data('history')}
             }).done(function (response) {
                 if (response.data) {
                     button.text('sent');
