@@ -179,34 +179,48 @@ class FacebookLeadsController(BaseController):
             try:
                 self._token = self._connection_object.token
             except AttributeError as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.FacebookLeads,
-                                      message='Failed to get the token. \n{}'.format(str(e)))
-            try:
+                raise ControllerError(code=1001,
+                                      controller=ConnectorEnum.FacebookLeads.name,
+                                      message='The attributes necessary to make the connection were not obtained {}'.format(
+                                          str(e)))
+        else:
+            raise ControllerError(code=1002,
+                                  controller=ConnectorEnum.FacebookLeads.name,
+                                  message='The controller is not instantiated correctly.')
+        try:
 
-                self._client = Client(settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET, 'v2.10')
-                self._client.set_access_token(self._token)
-            except UnknownError as e:
-                raise ControllerError(code=2, controller=ConnectorEnum.FacebookLeads,
-                                      message='Unknown error. {}'.format(str(e)))
-            try:
-                if self._plug is not None:
-                    self._page = self._plug.plug_action_specification.filter(
-                        action_specification__name='page').first().value
-                    self._form = self._plug.plug_action_specification.filter(
-                        action_specification__name='form').first().value
-            except Exception as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.FacebookLeads,
-                                      message='Error asignando los specifications. {}'.format(str(e)))
+            self._client = Client(settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET, 'v2.10')
+            self._client.set_access_token(self._token)
+        except UnknownError as e:
+            raise ControllerError(code=1003,
+                                  controller=ConnectorEnum.FacebookLeads,
+                                  message='Unknown error. {}'.format(str(e)))
+        except Exception as e:
+            raise ControllerError(code=1003,
+                                  controller=ConnectorEnum.FacebookLeads.name,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+        try:
+            if self._plug is not None:
+                self._page = self._plug.plug_action_specification.filter(
+                    action_specification__name='page').first().value
+                self._form = self._plug.plug_action_specification.filter(
+                    action_specification__name='form').first().value
+        except Exception as e:
+            raise ControllerError(
+                code=1005,
+                controller=ConnectorEnum.FacebookLeads,
+                message='Error while choosing specifications. {}'.format(str(e)))
 
     def test_connection(self):
         try:
             object_list = self.get_account()
-            if 'id' in object_list:
-                result = True
         except Exception as e:
-            print("error testing the connection\nMessage:{0}".format(str(e)))
-            result = False
-        return result
+            # raise ControllerError(code=1004, controller=ConnectorEnum.JIRA.name,
+            # message='Error in the connection test... {}'.format(str(e)))
+            return False
+        if object_list and isinstance(object_list, dict) and 'id' in object_list:
+            return True
+        return False
 
     def extend_token(self, token):
         try:
@@ -249,7 +263,6 @@ class FacebookLeadsController(BaseController):
 
     def get_leadgen(self, leadgen_id):
         try:
-            print("get lead")
             return self._client.get_leadgen(leadgen_id)
         except Exception as e:
             raise
@@ -266,13 +279,13 @@ class FacebookLeadsController(BaseController):
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, lead=None, from_date=None,
                                 **kwargs):
         """
-                :param connection_object:
-                :param plug:
-                :param last_source_record: IF the value is not None the download will ask for data after the value  recived.
-                :param limit:
-                :param kwargs:  ????  #TODO: CHECK
-                :return:
-                """
+        :param connection_object:
+        :param plug:
+        :param last_source_record: IF the value is not None the download will ask for data after the value  recived.
+        :param limit:
+        :param kwargs:  ????  #TODO: CHECK
+        :return:
+        """
         if lead is not None:
             aditional_data = {
                 'page_id': lead['value']['page_id'],
@@ -302,7 +315,6 @@ class FacebookLeadsController(BaseController):
                 aditional_data['created_time'] = lead['created_time']
                 aditional_data['created_time_timestamp'] = parse(lead['created_time']).timestamp()
                 aditional_data['leadgen_id'] = lead['id']
-                print(lead)
                 obj_raw = {d['name']: d['values'][0] if isinstance(d['values'], list) else d['values']
                            for d in lead['field_data']}
                 obj_raw.update(aditional_data)
@@ -473,7 +485,7 @@ class SurveyMonkeyController(BaseController):
             details = self.get_response_details(survey_id, response_id)
             for value in details:
                 if (
-                                        value != "page_path" and value != "logic_path" and value != "metadata" and value != "custom_variables"):
+                        value != "page_path" and value != "logic_path" and value != "metadata" and value != "custom_variables"):
                     new_data.append(
                         StoredData(name=value, value=details[value],
                                    object_id=response_id,
@@ -645,7 +657,8 @@ class TypeFormController(BaseController):
             url_base = settings.WEBHOOK_HOST
             url_path = reverse('home:webhook', kwargs={'connector': 'typeform', 'webhook_id': webhook.id})
             try:
-                response = self._client.create_webhook(url_webhook=url_base+url_path, tag_webhook=webhook.id, uid=form_id.value)
+                response = self._client.create_webhook(url_webhook=url_base + url_path, tag_webhook=webhook.id,
+                                                       uid=form_id.value)
                 _create = True
             except:
                 _create = False
@@ -690,7 +703,7 @@ class TypeFormController(BaseController):
         form = self._plug.plug_action_specification.get(action_specification__name__iexact='form')
         list_data_answers = []
         if answer is not None:
-            #con webhook
+            # con webhook
             if 'event_type' in answer and answer['event_type'] == 'form_response':
                 data_questions = {question['id']: question['title'] for question in
                                   answer['form_response']['definition']['fields']}
@@ -709,7 +722,7 @@ class TypeFormController(BaseController):
                             obj_raw[data_questions[k]] = ''
                 list_data_answers.append(obj_raw)
         else:
-            #sin webhook
+            # sin webhook
             form_data = self._client.get_form_information(form.value)
             data_questions = self._client.get_form_questions(uid=form.value)
             since = (datetime.utcnow() - timedelta(days=1)).isoformat()
