@@ -526,10 +526,10 @@ def retry_send_history(request):
         d = json.loads(history.connection)
         model = apps.get_model(*d[0]['model'].split("."))
         connection = model.objects.get(pk=d[0]['pk'])
-        controller = ConnectorEnum.get_controller(ConnectorEnum.get_connector(connection.connection.connector_id))
-        controller_instance = controller(connection.connection.related_connection, connection.connection.plug)
+        controller_class = ConnectorEnum.get_controller(ConnectorEnum.get_connector(connection.connection.connector_id))
+        controller = controller_class(connection.connection.related_connection, connection.connection.plug)
         data = json.loads(history.data)
-        response = controller_instance.send_stored_data([data])
+        response = controller.send_stored_data([data])
         history.identifier = response[0]['identifier']
         history.sent = response[0]['sent']
         history.tries = history.tries + 1

@@ -1,10 +1,10 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.utils.decorators import method_decorator
-from django.views.generic.edit import FormView
+from django.views.generic.edit import FormView, UpdateView
 from django.urls import reverse_lazy
 from .forms import SubscriptionsForm
-from apps.gp.models import Subscriptions, SubscriptionsList
+from apps.gp.models import Subscriptions, SubscriptionsList, Profile
 from django.contrib.auth.models import User
 from django.views.generic import TemplateView, View
 from django.views.decorators.csrf import csrf_exempt
@@ -16,6 +16,7 @@ import json
 
 class DashBoardView(LoginRequiredMixin, TemplateView):
     template_name = 'home/dashboard.html'
+    login_url = reverse_lazy('accounts_login')
 
     def get(self, *args, **kwargs):
         return super(DashBoardView, self).get(*args, **kwargs)
@@ -33,7 +34,6 @@ class IncomingWebhook(View):
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
-        # print('dispatch')
         return super(IncomingWebhook, self).dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -101,6 +101,7 @@ class SubscriptionsManagerView(LoginRequiredMixin, FormView):
     template_name = 'account/subscriptionsmanager.html'
     form_class = SubscriptionsForm
     success_url = reverse_lazy('home:dashboard')
+    login_url = reverse_lazy('accounts_login')
 
     def get_form_kwargs(self, **kwargs):
         kwargs = super(SubscriptionsManagerView, self).get_form_kwargs(**kwargs)
@@ -116,3 +117,24 @@ class SubscriptionsManagerView(LoginRequiredMixin, FormView):
             else:
                 Subscriptions.objects.filter(user=self.request.user, list=list).delete()
         return super(SubscriptionsManagerView, self).form_valid(form)
+
+
+class ProfileView(LoginRequiredMixin, UpdateView):
+    model = Profile
+    fields = ['avatar', 'address', 'zip_code', 'country', 'state', 'city', ]
+    login_url = reverse_lazy('accounts_login')
+    template_name = 'account/profile.html'
+    success_url = reverse_lazy('home:dashboard')
+
+    def get_object(self, queryset=None):
+        if queryset is None:
+            queryset = self.get_queryset()
+        queryset = queryset.filter(user=self.request.user)
+        try:
+            obj = queryset.get()
+        except queryset.model.DoesNotExist:
+            self.model.objects.create(user=self.request.user)
+
+            raise Http404("No %(verbose_name)s found matching the query" %
+                          {'verbose_name': queryset.model._meta.verbose_name})
+        return obj
