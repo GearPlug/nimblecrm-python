@@ -55,7 +55,7 @@ class GetResponseController(BaseController):
         else:
             # raise ControllerError(code=1004, controller=ConnectorEnum.GetResponse,
             #                       message='Error in the connection test.')
-            return response
+            return False
 
     def send_stored_data(self, data_list):
         obj_list = []
