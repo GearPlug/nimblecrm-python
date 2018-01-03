@@ -1944,14 +1944,22 @@ class ActEssentialsController(BaseController):
             try:
                 self.client = ActCRMClient(self._connection_object.api_key, settings.ACTESSENTIALS_DEVELOPER_KEY)
             except Exception as e:
-                print(e)
-                self.client = None
+                raise ControllerError(code=1003, controller=ConnectorEnum.ActEssentials,
+                                      message='Error in the instantiation of the client. {}'.format(str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.ActEssentials,
+                                  message='The controller is not instantiated correctly.')
 
     def test_connection(self):
         try:
-            metadata = self.client.get_metadata()
-            return metadata is not None
+            response = self.client.get_metadata()
         except:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.ActEssentials,
+            #                       message='Error in the connection test. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, list) and isinstance(response[0], dict) and 'id' in response:
+            return True
+        else:
             return False
 
     @property
