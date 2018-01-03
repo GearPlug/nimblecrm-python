@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.generic.edit import FormView, UpdateView
 from django.urls import reverse_lazy
@@ -138,3 +138,20 @@ class ProfileView(LoginRequiredMixin, UpdateView):
             raise Http404("No %(verbose_name)s found matching the query" %
                           {'verbose_name': queryset.model._meta.verbose_name})
         return obj
+
+
+class GroupSessionStoreView(View):
+    http_method_names = ['get', 'post']
+
+    def get(self, request, **kwargs):
+        if 'group_store' in request.session:
+            store = request.session.get('group_store')
+        else:
+            store = {k['name']: {'is_active': True, 'id': k['id']} for k in
+                     GearGroup.objects.filter(user=request.user).values('name', 'id')}
+            request.session['group_store'] = store
+        return JsonResponse(store)
+
+    def post(self, request, **kwargs):
+        request.session['group_store'] = json.loads(request.body.decode('utf-8'))
+        return JsonResponse(request.session.get('group_store'))

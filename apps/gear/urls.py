@@ -1,4 +1,5 @@
 from django.conf.urls import url
+from django.views.generic import TemplateView
 from apps.gear.views import CreateGearView, CreateGearGroupView, UpdateGearView, UpdateGearGroupView, DeleteGearView, \
     ListGearView, CreateGearMapView, gear_toggle, GearDownloadHistoryView, GearSendHistoryView, \
     GearFiltersView, GearActivityHistoryView, retry_send_history, set_gear_id_to_session, manual_queue
@@ -6,6 +7,7 @@ from apps.gear.views import CreateGearView, CreateGearGroupView, UpdateGearView,
 
 urlpatterns = [
     url(r'^create/$', CreateGearView.as_view(), name='create'),
+    url(r'^sucess_create/$', TemplateView.as_view(template_name='gear/sucess_create.html'), name='sucess_create'),
     url(r'^group/create/$', CreateGearGroupView.as_view(), name='create_group'),
     url(r'^update/(?P<pk>\d+)/$', UpdateGearView.as_view(), name='update'),
     url(r'^group/update/(?P<pk>\d+)/$', UpdateGearGroupView.as_view(), name='update_group'),

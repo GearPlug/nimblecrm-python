@@ -192,7 +192,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
     form_class = MapForm
     form_field_list = []
     source_object_list = []
-    success_url = reverse_lazy('%s:list' % app_name)
+    success_url = reverse_lazy('%s:sucess_create' % app_name)
     exists = False
 
     def get(self, request, *args, **kwargs):
@@ -221,20 +221,24 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         self.gear_map = GearMap.objects.filter(gear=gear).first()
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
 
+    def get_success_url(self):
+        # async
+        return super(CreateGearMapView, self).get_success_url()
+
     def form_valid(self, form, *args, **kwargs):
-        all_data = GearMapData.objects.filter(gear_map=self.gear_map)
+        _version = GearMapData.objects.filter(gear_map=self.gear_map).last()
         for f, v in form.cleaned_data.items():
-            try:
-                field = all_data.get(target_name=f)
+            if _version is not None:
                 if v is not None and (v != '' or not v.isspace()):
-                    _version = field.version + 1
-                    GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v, version=_version)
-                self.gear_map.version = _version
+                    _final_version = _version.version + 1
+                    GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v,
+                                               version=_final_version)
+                self.gear_map.version = _final_version
                 self.gear_map.save()
-            except GearMapData.DoesNotExist:
+            elif _version is None:
                 if v is not None and (v != '' or not v.isspace()):
                     GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v)
-            except Exception as e:
+            else:
                 raise
         self.gear_map.gear.is_active = True
         self.gear_map.gear.save()
@@ -253,10 +257,18 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         form_class = self.get_form_class()
         form = form_class(extra=self.form_field_list, **self.get_form_kwargs())
         if self.request.method == 'GET' and self.gear_map is not None:
-            all_data = GearMapData.objects.filter(gear_map=self.gear_map)
+            try:
+                _version = GearMapData.objects.filter(gear_map=self.gear_map).order_by('-version').values('version')[0]
+                all_data = GearMapData.objects.filter(gear_map=self.gear_map, version=_version['version'])
+            except IndexError:
+                all_data = None
+
             for label, field in form.fields.items():
+                print(label)
                 try:
                     field.initial = all_data.get(target_name=label).source_value
+                except AttributeError:
+                    break
                 except:
                     pass
         return form
