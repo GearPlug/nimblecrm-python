@@ -153,7 +153,7 @@ class SugarCRMController(BaseController):
             downloaded_data.append(history_obj)
         if downloaded_data:
             return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw'][
-                'date_entered']['value']}
+                'date_entered']}
         return False
 
     def dictfy(self, _dict):
