@@ -43,7 +43,7 @@ class TwitterController(BaseController):
                     message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
         else:
             raise ControllerError(code=1002, controller=ConnectorEnum.Twitter,
-                                  message='The controller is not instantiated correctly.. {}'.format(str(e)))
+                                  message='The controller is not instantiated correctly.')
 
         try:
             self._api = tweepy.API(self.get_twitter_auth())
