@@ -214,7 +214,7 @@ class MailChimpController(BaseController):
             #     message='Error in the connection test.. {}'.format(str(e)))
             return False
         if response is not None and isinstance(response,
-                                               dict) and 'id' in response and 'name' in response and 'contact' in response:
+                                               dict) and 'lists' in response and 'total_items' in response:
             return True
         else:
             return False
