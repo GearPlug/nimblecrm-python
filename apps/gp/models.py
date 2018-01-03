@@ -671,6 +671,7 @@ class SubscriptionsList(models.Model):
 class Subscriptions(models.Model):
     user = models.ForeignKey(User, related_name="subscription_user")
     list = models.ForeignKey(SubscriptionsList, related_name="subscription_list")
+    created = models.DateTimeField('created', auto_now_add=True)
 
 
 class Profile(models.Model):
@@ -683,7 +684,7 @@ class Profile(models.Model):
     city = models.CharField('country', max_length=50, default='', blank=True, null=False)
 
     def __str__(self):
-        return self.user.username
+        return self.user.email
 
 
 admin.site.register(Connector)
