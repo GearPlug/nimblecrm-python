@@ -608,7 +608,7 @@ class WunderListController(BaseController):
             #     controller=ConnectorEnum.WunderList,
             #     message='Error in the connection test. {}'.format(str(e)))
             return False
-        if response is not None and isinstance(response, list) and isinstance(response[0], dict) and id in response[0]:
+        if response is not None and isinstance(response, list) and isinstance(response[0], dict) and 'id' in response[0]:
             return True
         else:
             return False
@@ -802,4 +802,5 @@ class WunderListController(BaseController):
         }
         response = requests.get(
             'http://a.wunderlist.com/api/v1/users', headers=headers)
-        return [{'name': r['name'], 'id': r['id']} for r in response.json()]
+        # 03/01/2018 - Se modifico de tal manera que si no hay 'name' se obvie ese usuario.
+        return [{'name': r['name'], 'id': r['id']} for r in response.json() if 'name' in r]
