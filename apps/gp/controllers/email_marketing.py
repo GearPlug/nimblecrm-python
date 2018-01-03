@@ -23,13 +23,24 @@ class GetResponseController(BaseController):
             connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
-                self._client = GetResponse(self._connection_object.api_key)
+                api_key = self._connection_object.api_key
             except Exception as e:
-                raise ControllerError(code=1003, controller=ConnectorEnum.GetResponse,
-                                      message='Error in the instantiation of the client. {}'.format(str(e)))
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.GetResponse,
+                    message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
         else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.GetResponse,
-                                  message='The controller is not instantiated correctly.')
+            raise ControllerError(
+                code=1002,
+                controller=ConnectorEnum.GetResponse,
+                message='The controller is not instantiated correctly.')
+        try:
+            self._client = GetResponse(api_key)
+        except Exception as e:
+            raise ControllerError(
+                code=1003,
+                controller=ConnectorEnum.GetResponse,
+                message='Error in the instantiation of the client. {}'.format(str(e)))
 
     def test_connection(self):
         try:
