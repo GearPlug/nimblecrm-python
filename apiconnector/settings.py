@@ -86,15 +86,25 @@ DATABASES = {
             'DEPENDENCIES': ['default'],
         },
     },
+    'billing': {
+        'ENGINE': 'django.db.backends.mysql',
+        'OPTIONS': {
+            'read_default_file': os.path.join(BASE_DIR, 'apiconnector/billing.cnf', )
+        },
+        'TEST': {
+            'DEPENDENCIES': ['history'],
+        },
+    },
     'landing': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
             'read_default_file': os.path.join(BASE_DIR, 'apiconnector/landing.cnf', )
         },
         'TEST': {
-            'DEPENDENCIES': ['history'],
+            'DEPENDENCIES': ['billing'],
         },
     },
+
 }
 
 if 'test' in sys.argv:
@@ -107,9 +117,14 @@ if 'test' in sys.argv:
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': 'history.db',
         },
+        'billing': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'billing.db',
+        },
     }
 
-DATABASE_ROUTERS = ['apps.gp.routers.DefaultRouter', 'apps.gp.routers.HistoryRouter', 'apps.gp.routers.LandingRouter', ]
+DATABASE_ROUTERS = ['apps.gp.routers.DefaultRouter', 'apps.gp.routers.HistoryRouter',
+                    'apps.gp.routers.BillingRouter', 'apps.gp.routers.LandingRouter', ]
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },

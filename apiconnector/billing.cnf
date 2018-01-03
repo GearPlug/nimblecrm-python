@@ -1,0 +1,8 @@
+#my.cnf
+[client]
+host = 172.17.0.2
+port = 3306
+database = gp_billing
+user = root
+password = root
+default-character-set = utf8
