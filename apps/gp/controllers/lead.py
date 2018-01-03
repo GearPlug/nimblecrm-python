@@ -773,6 +773,7 @@ class TypeFormController(BaseController):
         if action_specification.name.lower() == 'form':
             forms = self._client.get_forms()['items']
             return tuple({'id': f['id'], 'name': f['title']} for f in forms)
+        else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
     @property
