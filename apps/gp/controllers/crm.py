@@ -55,29 +55,47 @@ class SugarCRMController(BaseController):
                     if not self._connection_object.url.endswith('/'):
                         self._url += '/'
                 self._url += 'service/v4_1/rest.php'
-                try:
-                    self._module = self._plug.plug_action_specification.get(
-                        action_specification__name__iexact='module').value
-                except AttributeError as e:
-                    print("No module found. If this is a test_connection ignore the following message."
-                          " \nMessage: {0}".format(str(e)))
-            except AttributeError as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.SugarCRM,
-                                      message='Error getting the SugarCRM attributes args. {}'.format(str(e)))
+            except Exception as e:
+                raise ControllerError(code=1001, controller=ConnectorEnum.SugarCRM,
+                                      message='The attributes necessary to make the connection were not obtained.. {}'.format(str(e)))
         else:
-            raise ControllerError('No connection.')
-        if self._url is not None and self._user is not None and self._password is not None:
-            try:
-                session = requests.Session()
-                self._client = SugarClient(self._url, self._user, self._password, session=session)
-            except requests.exceptions.MissingSchema:
-                raise
-            except InvalidLogin as e:
-                raise ControllerError(code=2, controller=ConnectorEnum.SugarCRM,
-                                      message='Invalid login. {}'.format(str(e)))
+            raise ControllerError(code=1002, controller=ConnectorEnum.SugarCRM,
+                                  message='The controller is not instantiated correctly.')
+        try:
+            session = requests.Session()
+            self._client = SugarClient(self._url, self._user, self._password, session=session)
+        except requests.exceptions.MissingSchema:
+            raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
+                                  message='Missing Schema.')
+        except InvalidLogin as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
+                                  message='Invalid login. {}'.format(str(e)))
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+        try:
+            self._module = self._plug.plug_action_specification.get(
+                action_specification__name__iexact='module').value
+        except Exception as e:
+            raise ControllerError(code=1005, controller=ConnectorEnum.SugarCRM,
+                                  message='Error while choosing specifications. {}'.format(str(e)))
 
     def test_connection(self):
-        return self._client is not None and self._client.session_id is not None
+        """
+        Debido a un mejor metodo para verificar la conexion se utiliza el metodo
+        get_available_modules()
+        :return:
+        """
+        try:
+            response = self.get_available_modules()
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.SugarCRM,
+            #                       message='Error in the connection test.. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, dict) and 'modules' in response:
+            return True
+        else:
+            return False
 
     def get_available_modules(self):
         try:
@@ -133,8 +151,6 @@ class SugarCRMController(BaseController):
                 query += " AND {0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
         entries = self.get_entry_list(self._module, max_results=limit, order_by=order_by, query=query)['entry_list']
         new_data = []
-        print(query)
-        print(len(entries))
         for item in entries:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
             if not q.exists():
@@ -1691,21 +1707,40 @@ class OdooCRMController(BaseController):
                 self._url = self._connection_object.url
                 self._database = self._connection_object.database
             except AttributeError as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.OdooCRM,
-                                      message='Error getting the OdooCRM attributes args. {}'.format(str(e)))
+                raise ControllerError(code=1001, controller=ConnectorEnum.OdooCRM,
+                                      message='The attributes necessary to make the connection were not obtained.. {}'.format(str(e)))
         else:
-            raise ControllerError('No connection.')
+            raise ControllerError(code=1002, controller=ConnectorEnum.OdooCRM,
+                                      message='The controller is not instantiated correctly.')
         if self._url is not None and self._database is not None and self._user is not None and self._password is not None:
             try:
                 self._client = OdooCRMClient(self._url, self._database, self._user, self._password)
             except requests.exceptions.MissingSchema:
-                raise
+                raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
+                                      message='Missing Schema.')
             except InvalidLogin as e:
-                raise ControllerError(code=2, controller=ConnectorEnum.OdooCRM,
+                raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
                                       message='Invalid login. {}'.format(str(e)))
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
-        return self._client is not None
+        """
+        Debido a la falta de un metodo mas apropiado, se decidio utilizar el metodo list_fields_partner()
+        para verificar la conexion con el servidor.
+        :return:
+        """
+        try:
+            response = self._client.list_fields_partner()
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.OdooCRM,
+            # message='Error in the connection test. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, dict):
+            return True
+        else:
+            return False
 
     def get_search_partner(self, query, params):
         try:
