@@ -21,6 +21,7 @@ from actcrm.client import Client as ActCRMClient
 from agilecrm.client import Client as AgileCRMClient
 from activecampaign.client import Client as ActiveCampaignClient
 from hubspot.client import Client as HubSpotClient
+import xml.etree.ElementTree as ET
 import datetime
 import time
 import requests
@@ -211,7 +212,7 @@ class ZohoCRMController(BaseController):
         super(ZohoCRMController, self).__init__(connection=connection, plug=plug, **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
-        super(ActEssentialsController, self).create_connection(connection=connection, plug=plug)
+        super(ZohoCRMController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
                 self._token = self._connection_object.token
@@ -244,22 +245,30 @@ class ZohoCRMController(BaseController):
         url = "https://crm.zoho.com/crm/private/json/Info/getModules"
         return requests.get(url, params).__dict__
 
+    @property
+    def has_webhook(self):
+        """
+        :return:
+        """
+        return False
+
     def download_to_stored_data(self, connection_object, plug, ):
         module_id = self._plug.plug_action_specification.all()[0].value
         module_name = self.get_module_name(module_id)
         data = self.get_feeds(module_name)
+        new_item = []
         new_data = []
-        for item in data:
+        for k, v in data[0].items():
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                          object_id=item[item['id']])
+                                          object_id=data[0][data[0]['id']])
             if not q.exists():
-                new_item = [(
+                new_item.append(
                     StoredData(
-                        name=column,
-                        value=item[column],
-                        object_id=item[item['id']],
+                        name=k,
+                        value=v,
+                        object_id=data[0][data[0]['id']],
                         connection=connection_object.connection,
-                        plug=plug)) for column in item]
+                        plug=plug))
                 new_data.append(new_item)
         downloaded_data = []
         for new_item in new_data:
@@ -271,7 +280,7 @@ class ZohoCRMController(BaseController):
             history_obj['identifier'] = {'name': 'id', 'value': field.object_id}
             downloaded_data.append(history_obj)
         if downloaded_data:
-            return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw']['created']}
+            return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw']['Created Time']}
         return False
 
     def send_stored_data(self, data_list, *args, **kwargs):
@@ -291,8 +300,41 @@ class ZohoCRMController(BaseController):
             obj_list.append(obj_result)
         return obj_list
 
-    def get_target_fields(self, module, **kwargs):
-        return self.get_module_fields(module, **kwargs)
+    def insert_records(self, data=None, module_id=None):
+        """
+        """
+        module_name = self.get_module_name(module_id)
+        if module_name == "Tasks":
+            module_name = "Activity"
+        elif module_name == "PriceBooks":
+            module_name = "Book"
+        xml_data = '<{0}><row no="1">'.format(module_name)
+        for k, v in data.items():
+            xml_data += '<FL val="{0}">{1}</FL>'.format(k, v)
+        xml_data += '</row></{0}>'.format(module_name)
+        params = {
+            'authtoken': self._token,
+            'scope': 'crmapi',
+            'xmlData': xml_data,
+            'duplicateCheck': 2,
+            'newFormat': 2
+        }
+        url = "https://crm.zoho.com/crm/private/xml/{0}/insertRecords?".format(module_name)
+        response = requests.post(url, data=params)
+        root = ET.fromstring(response.text)
+        d = {}
+        creation_result = []
+        try:
+            for xml in root.iter('FL'):
+                for k, v in xml.items():
+                    d['name'] = v
+                d['value'] = xml.text
+                creation_result.append(d)
+                return creation_result
+            else:
+                return ['vacio']
+        except Exception as e:
+            return None
 
     def get_mapping_fields(self):
         fields = self.get_target_fields()
@@ -369,14 +411,12 @@ class ZohoCRMController(BaseController):
         response = requests.get(url, params).__dict__['_content'].decode()
         response = json.loads(response)
         response = response['response']
-        if ("result" in response):
+        if "result" in response:
             response = response['result'][module_name]['row']
             modules = self.get_lists(response, module_name)
             return modules
         else:
-            print("no hay datos")
-            print(response)
-        return None
+            return None
 
     def get_module_name(self, module_id):
         modules = self.get_modules()['_content'].decode()
@@ -392,7 +432,7 @@ class ZohoCRMController(BaseController):
         return module_name.replace(" ", "")
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(
+        action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
         if action_specification.name.lower() == 'feed':
             modules = self.get_modules()['_content'].decode()
