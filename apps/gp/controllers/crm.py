@@ -1692,24 +1692,23 @@ class OdooCRMController(BaseController):
                 self._password = self._connection_object.connection_password
                 self._url = self._connection_object.url
                 self._database = self._connection_object.database
-            except AttributeError as e:
+            except Exception as e:
                 raise ControllerError(code=1001, controller=ConnectorEnum.OdooCRM,
                                       message='The attributes necessary to make the connection were not obtained.. {}'.format(str(e)))
         else:
             raise ControllerError(code=1002, controller=ConnectorEnum.OdooCRM,
-                                      message='The controller is not instantiated correctly.')
-        if self._url is not None and self._database is not None and self._user is not None and self._password is not None:
-            try:
-                self._client = OdooCRMClient(self._url, self._database, self._user, self._password)
-            except requests.exceptions.MissingSchema:
-                raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
-                                      message='Missing Schema.')
-            except InvalidLogin as e:
-                raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
-                                      message='Invalid login. {}'.format(str(e)))
-            except Exception as e:
-                raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
-                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
+                                  message='The controller is not instantiated correctly.')
+        try:
+            self._client = OdooCRMClient(self._url, self._database, self._user, self._password)
+        except requests.exceptions.MissingSchema:
+            raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
+                                  message='Missing Schema.')
+        except InvalidLogin as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
+                                  message='Invalid login. {}'.format(str(e)))
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         """
