@@ -14,6 +14,7 @@ from apps.gp.tasks import dispatch
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, GearGroup, GearFilter, Connector
 from apps.history.models import DownloadHistory, SendHistory
 from oauth2client import client
+from django.shortcuts import render
 import httplib2
 import json
 import datetime
@@ -221,7 +222,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         self.gear_map = GearMap.objects.filter(gear=gear).first()
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
 
-    def get_success_url(self):
+    def get_success_url(self, **kwargs):
         # async
         return super(CreateGearMapView, self).get_success_url()
 
@@ -240,7 +241,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
                     GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v)
             else:
                 raise
-        self.gear_map.gear.is_active = True
+        #self.gear_map.gear.is_active = True
         self.gear_map.gear.save()
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
@@ -289,7 +290,6 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         if controller.test_connection():
             return controller.get_mapping_fields()
         return []
-
 
 class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
     model = SendHistory
@@ -589,3 +589,8 @@ def manual_queue(request, gear_id):
         except Gear.DoesNotExist:
             return JsonResponse({'data': 'Error invalid gear id.'})
     return JsonResponse({'data': 'request needs to be ajax'})
+
+
+
+
+
