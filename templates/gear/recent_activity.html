@@ -39,10 +39,12 @@
                     </div>
                     <div class="col-md-12">
                         <ul style="display:none;" data-show="false" data-history="{{ obj.id }}">
+                            <li><b>Gear ID</b>: {{ obj.gear_id }}</li>
+                            <li><b>Gear name</b>: {{ obj.gear_name }}</li>
+                            <li><b>Identifier</b>: {{ obj.identifier }}</li>
                             {% if obj.sent != 1 %}
                                 <li><b>Response</b>: {{ obj.response }}</li>
                             {% endif %}
-                            <li><b>Identifier</b>: {{ obj.identifier }}</li>
                             {% for item in obj.data %}
                                 {% if item.value == 'item.date' %}
                                     <li>{{ item.name }}: {{ item.value|localtime }}</li>

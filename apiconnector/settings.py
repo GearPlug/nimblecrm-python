@@ -32,7 +32,8 @@ INSTALLED_APPS = [
     'apps.connection',
     'apps.gp',
     'apps.history',
-    'apps.landing'
+    'apps.landing',
+    'apps.billing',
 ]
 
 MIDDLEWARE = [

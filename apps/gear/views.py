@@ -390,7 +390,9 @@ class GearActivityHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
                      'connection': json.loads(activity.connection)[0]['fields']['name'],
                      'connector_source': current_gear.source.connection.connector,
                      'connector_target': current_gear.target.connection.connector,
-                     'data': [{'name': k, 'value': v} for k, v in json.loads(activity.data).items()], }
+                     'data': [{'name': k, 'value': v} for k, v in json.loads(activity.data).items()],
+                     'gear_id': current_gear.id,
+                     'gear_name': current_gear.name}
                 activity_result.append(a)
         return activity_result
 
