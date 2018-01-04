@@ -415,30 +415,40 @@ class SalesforceController(BaseController):
         if self._connection_object is not None:
             try:
                 self.token = json.loads(self._connection_object.token)
-            except Exception as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.Salesforce,
-                                      message='Error getting the Salesforce attributes args. {}'.format(str(e)))
-            try:
-                self._client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
-                                                settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
-                self._client.set_access_token(self.token)
-            except Exception as e:
-                raise ControllerError(code=2, controller=ConnectorEnum.Salesforce,
-                                      message='Error initializing the Salesforce client. {}'.format(str(e)))
+            except AttributeError as e:
+                raise ControllerError(code=1001, controller=ConnectorEnum.Salesforce.name,
+                                      message='The attributes necessary to make the connection were not obtained {}'.format(
+                                          str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.Salesforce.name,
+                                  message='The controller is not instantiated correctly.')
+        try:
+            self._client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
+                                            settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
+            self._client.set_access_token(self.token)
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.Salesforce.name,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
-            return True if self._client.get_user_info() else False
+            user_info = self._client.get_user_info()
         except BadOAuthTokenError as e:
             new_token = self._client.refresh_token()
-            if not new_token:
-                raise ControllerError(code=3, controller=ConnectorEnum.Salesforce,
-                                      message="Error refreshing the user's token. {}".format(str(e)))
             # Actualiza el token del controlador con el nuevo token obtenido y posteriormente guarda en BD.
             self.token.update(new_token)
             self._client.set_access_token(self.token)
             self._connection_object.token = json.dumps(self.token)
             self._connection_object.save()
+            #TODO: Intentar obtener la info nuevamente
+            return False
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.Salesforce.name,
+            # message='Error in the connection test... {}'.format(str(e)))
+            return False
+        if user_info and isinstance(user_info, dict) and 'user_id' in user_info:
+            return True
+        return False
 
     def send_stored_data(self, data_list, is_first=False):
         result_list = []
