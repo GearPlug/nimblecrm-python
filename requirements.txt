@@ -90,4 +90,4 @@ git+git://github.com/GearPlug/activecampaign-python.git
 git+git://github.com/GearPlug/bitbucket-python.git
 git+git://github.com/GearPlug/jira-python.git
 git+git://github.com/GearPlug/salesforce-python.git
-
+git+git://github.com/GearPlug/hubspot-python.git
