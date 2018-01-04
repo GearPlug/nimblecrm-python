@@ -1120,16 +1120,49 @@ class ActiveCampaignController(BaseController):
         super(ActiveCampaignController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
-                self._client = ActiveCampaignClient(self._connection_object.host,
-                                                    self._connection_object.connection_access_key)
+                host = self._connection_object.host
+                api_key = self._connection_object.connection_access_key
             except Exception as e:
-                print(e)
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.ActiveCampaign,
+                    message='The attributes necessary to make the connection were not obtained. {}'.format(
+                    str(e))
+                )
+        else:
+            raise ControllerError(
+                code=1002,
+                controller=ConnectorEnum.ActiveCampaign,
+                message='The controller is not instantiated correctly..')
+        try:
+            self._client = ActiveCampaignClient(host, api_key)
+        except Exception as e:
+            raise ControllerError(
+                code=1003,
+                controller=ConnectorEnum.ActiveCampaign,
+                message='Error in the instantiation of the client. {}'.format(
+                    str(e))
+            )
 
     def test_connection(self):
         try:
-            self._client.account.get_account_info()
+            account_info = self._client.account.get_account_info()
+        except Exception as e:
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.ActiveCampaign,
+            #     message='Error in the connection test. {}'.format(
+            #         str(e))
+            # )
+            return False
+        if account_info is not None and 'result_message' in account_info and account_info[
+            'result_message'] == "Success: Something is returned":
             return True
-        except:
+        else:
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.ActiveCampaign,
+            #     message='Error in the connection test.')
             return False
 
     def get_custom_fields(self):
@@ -1234,7 +1267,6 @@ class ActiveCampaignController(BaseController):
         ]
 
     def send_stored_data(self, data_list):
-        extra = {'controller': 'activecampaign'}
         action = self._plug.action.name
         result_list = []
         for item in data_list:

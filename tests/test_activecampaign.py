@@ -173,8 +173,10 @@ class ActiveCampaignControllerTestCases(TestCase):
                     'initiated_by': ['admin'],
                     'task[edate]': ['2017-11-25 11:15:00'],
                     'date_time': ['2017-11-24T10:09:32-06:00'],
-                    'contact[ip]': ['0.0.0.0'], 'deal[contactid]': ['9'],
-                    'contact[orgname]': [''], 'task[title]': [''],
+                    'contact[ip]': ['0.0.0.0'],
+                    'deal[contactid]': ['9'],
+                    'contact[orgname]': [''],
+                    'task[title]': [''],
                     'deal[contact_firstname]': ['Lelia'],
                     'task[type_id]': ['1'],
                     'task[edate_iso]': ['2017-11-25T11:15:00-06:00'],
@@ -381,14 +383,18 @@ class ActiveCampaignControllerTestCases(TestCase):
     def test_download_source_data(self):
         """Simula un dato de entrada (self.hook) y se verifica que este dato se cree en las tablas DownloadHistory y StoreData"""
         for _controller in self._list_source_controllers:
-            count_start = StoredData.objects.filter(connection=self.connection_source, plug=_controller['plug']).count()
             data = self._get_hooks(_controller['action'])
             data = self._clean_data(data, _controller['controller'])
+
             count_data = len(data)
             result = _controller['controller'].download_source_data(_controller['plug'].connection.related_connection,
                                                                     _controller['plug'], data=data)
             count_end = StoredData.objects.filter(connection=self.connection_source, plug=_controller['plug']).count()
-            self.assertEqual(count_end, count_start + count_data)
+            if _controller['action'] in ['new task', 'task completed']:
+                count_data += 4
+            elif _controller['action'] in ['new deal', 'deal updated']:
+                count_data += 1
+            self.assertEqual(count_end, count_data)
             self.assertTrue(result)
 
     def test_download_to_store_data(self):
