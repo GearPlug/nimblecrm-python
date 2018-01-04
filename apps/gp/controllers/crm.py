@@ -55,31 +55,30 @@ class SugarCRMController(BaseController):
                     if not self._connection_object.url.endswith('/'):
                         self._url += '/'
                 self._url += 'service/v4_1/rest.php'
-                try:
-                    self._module = self._plug.plug_action_specification.get(
-                        action_specification__name__iexact='module').value
-                except AttributeError as e:
-                    print("No module found. If this is a test_connection ignore the following message."
-                          " \nMessage: {0}".format(str(e)))
-            except AttributeError as e:
+            except Exception as e:
                 raise ControllerError(code=1001, controller=ConnectorEnum.SugarCRM,
                                       message='The attributes necessary to make the connection were not obtained.. {}'.format(str(e)))
         else:
             raise ControllerError(code=1002, controller=ConnectorEnum.SugarCRM,
-                                      message='The controller is not instantiated correctly.')
-        if self._url is not None and self._user is not None and self._password is not None:
-            try:
-                session = requests.Session()
-                self._client = SugarClient(self._url, self._user, self._password, session=session)
-            except requests.exceptions.MissingSchema:
-                raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
-                                      message='Missing Schema.')
-            except InvalidLogin as e:
-                raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
-                                      message='Invalid login. {}'.format(str(e)))
-            except Exception as e:
-                raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
-                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
+                                  message='The controller is not instantiated correctly.')
+        try:
+            session = requests.Session()
+            self._client = SugarClient(self._url, self._user, self._password, session=session)
+        except requests.exceptions.MissingSchema:
+            raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
+                                  message='Missing Schema.')
+        except InvalidLogin as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
+                                  message='Invalid login. {}'.format(str(e)))
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+        try:
+            self._module = self._plug.plug_action_specification.get(
+                action_specification__name__iexact='module').value
+        except Exception as e:
+            raise ControllerError(code=1005, controller=ConnectorEnum.SugarCRM,
+                                  message='Error while choosing specifications. {}'.format(str(e)))
 
     def test_connection(self):
         """
@@ -89,7 +88,6 @@ class SugarCRMController(BaseController):
         """
         try:
             response = self.get_available_modules()
-            print(response)
         except Exception as e:
             # raise ControllerError(code=1004, controller=ConnectorEnum.SugarCRM,
             #                       message='Error in the connection test.. {}'.format(str(e)))
