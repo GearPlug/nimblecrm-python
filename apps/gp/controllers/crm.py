@@ -89,11 +89,12 @@ class SugarCRMController(BaseController):
         """
         try:
             response = self.get_available_modules()
+            print(response)
         except Exception as e:
             # raise ControllerError(code=1004, controller=ConnectorEnum.SugarCRM,
             #                       message='Error in the connection test.. {}'.format(str(e)))
             return False
-        if response is not None and isinstance(response, type):
+        if response is not None and isinstance(response, dict) and 'modules' in response:
             return True
         else:
             return False
@@ -152,8 +153,6 @@ class SugarCRMController(BaseController):
                 query += " AND {0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
         entries = self.get_entry_list(self._module, max_results=limit, order_by=order_by, query=query)['entry_list']
         new_data = []
-        print(query)
-        print(len(entries))
         for item in entries:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
             if not q.exists():
