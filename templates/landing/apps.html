@@ -20,11 +20,11 @@
                     {% trans 'Conécta cualquiera de estas Apps' %}
                 </div>
                 <div class="search1">
-                    <input type="text">
+                    <input type="text" id="connectorsearch">
                 </div>
-                <div class="list-wrapper">
+                <div class="list-wrapper grid">
                     {% for connector in object_list %}
-                        <div class="col-xs-6 col-sm-3 col-md-2">
+                        <div class="col-xs-6 col-sm-3 col-md-2 grid-item">
                             <div class="list-item">
                                 <div class="image1">
                                     <img src="{% if connector.icon73 %}{{ connector.icon73.url }}{% endif %}" width="73"
@@ -34,6 +34,9 @@
                                 <div class="name1">
                                     {{ connector.name }}
                                 </div>
+                                <div class="category" style="display: none;">
+                                    {% for category in connector.category.all %}{{ category.name }}{% endfor %}
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
@@ -41,4 +44,43 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function () {
+            console.log('miguel')
+            var $container = $('.grid');
+            var isotope = function () {
+                var qsRegex;
+                var $grid = $container.isotope({
+                    itemSelector: '.grid-item',
+                    filter: function () {
+                        return qsRegex ? $(this).text().match(qsRegex) : true;
+                    }
+                });
+
+                var $quicksearch = $('#connectorsearch').keyup(debounce(function () {
+                    qsRegex = new RegExp($quicksearch.val(), 'gi');
+                    $grid.isotope();
+                }, 200));
+            };
+            isotope();
+        });
+
+        function debounce(fn, threshold) {
+            var timeout;
+            return function debounced() {
+                if (timeout) {
+                    clearTimeout(timeout);
+                }
+                function delayed() {
+                    fn();
+                    timeout = null;
+                }
+                timeout = setTimeout(delayed, threshold || 100);
+            }
+        }
+    </script>
 {% endblock %}
