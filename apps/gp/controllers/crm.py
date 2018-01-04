@@ -1723,7 +1723,8 @@ class OdooCRMController(BaseController):
             # raise ControllerError(code=1004, controller=ConnectorEnum.OdooCRM,
             # message='Error in the connection test. {}'.format(str(e)))
             return False
-        if response is not None and isinstance(response, dict):
+        if response is not None and isinstance(response,
+                                               dict) and 'user_id' in response and "date" in response:
             return True
         else:
             return False
