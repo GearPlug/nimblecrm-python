@@ -19,6 +19,7 @@ class FacebookControllerTestCases(TestCase):
         TEST_FACEBOOK_TOKEN: String: Token generado a partir de oAuth.
         TEST_FACEBOOK_PAGE: Int: Página la cual tiene los formularios.
         TEST_FACEBOOK_FORM: Int: Formulario el cual tiene los leads.
+        TEST_FACEBOOK_LEAD: Int: Leads.
 
     """
     fixtures = ['gp_base.json']
@@ -99,17 +100,18 @@ class FacebookControllerTestCases(TestCase):
 
         self.hook = {'entry':
                          [{'id': '299300463551366', 'changes':
-                             [{'value': {'form_id': '270207053469727',
-                                         'page_id': '299300463551366',
+                             [{'value': {'form_id': os.environ.get('TEST_FACEBOOK_FORM'),
+                                         'page_id': os.environ.get('TEST_FACEBOOK_PAGE'),
                                          'created_time': 1505494516,
-                                         'leadgen_id': '270800420077057'},
+                                         'leadgen_id': os.environ.get('TEST_FACEBOOK_LEAD')},
                                'field': 'leadgen'
                                }], 'time': 1505494516
                            }],
                      'object': 'page'}
         self.lead = {
-            'value': {'page_id': '299300463551366', 'leadgen_id': '270800420077057', 'created_time': 1505494516,
-                      'form_id': '270207053469727'}, 'field': 'leadgen'}
+            'value': {'page_id': os.environ.get('TEST_FACEBOOK_PAGE'),
+                      'leadgen_id': os.environ.get('TEST_FACEBOOK_LEAD'), 'created_time': 1505494516,
+                      'form_id': os.environ.get('TEST_FACEBOOK_FORM')}, 'field': 'leadgen'}
 
     def test_controller(self):
         """Comprueba los atributos del controlador estén instanciados.

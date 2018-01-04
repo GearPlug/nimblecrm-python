@@ -405,23 +405,27 @@ class MSSQLController(BaseController):
                 user = self._connection_object.connection_user
                 password = self._connection_object.connection_password
             except Exception as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.MSSQL.name,
-                                      message='Error getting the MSSQL attributes args. {}'.format(str(e)))
+                raise ControllerError(code=1001, controller=ConnectorEnum.MSSQL.name,
+                                      message='The attributes necessary to make the connection were not obtained {}'.format(
+                                          str(e)))
         else:
-            raise ControllerError('No connection.')
+            raise ControllerError(code=1002, controller=ConnectorEnum.MSSQL.name,
+                                  message='The controller is not instantiated correctly.')
         try:
             self._connection = pymssql.connect(host=host, port=int(port), user=user, password=password,
                                                database=self._database)
             self._cursor = self._connection.cursor()
         except Exception as e:
-            raise ControllerError(code=2, controller=ConnectorEnum.MSSQL.name,
-                                  message='Error instantiating the PostgreSQL client. {}'.format(str(e)))
+            raise ControllerError(code=1003, controller=ConnectorEnum.MSSQL.name,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
             self.describe_table()
             return True
         except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.MSSQL.name,
+            # message='Error in the connection test... {}'.format(str(e)))
             return False
 
     @property
