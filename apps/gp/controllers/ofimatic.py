@@ -593,15 +593,39 @@ class WunderListController(BaseController):
     def create_connection(self, connection=None, plug=None, **kwargs):
         super(WunderListController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
-            self._token = self._connection_object.token
+            try:
+                self._token = self._connection_object.token
+            except Exception as e:
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.WunderList,
+                    message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
+        else:
+            raise ControllerError(
+                code=1002,
+                controller=ConnectorEnum.WunderList,
+                message='The controller is not instantiated correctly.')
+        try:
             self._client = self._api.get_client(self._token, settings.WUNDERLIST_CLIENT_ID)
+        except Exception as e:
+            raise ControllerError(
+                code = 1003,
+                controller = ConnectorEnum.WunderList,
+                message = 'Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
-            a = self.get_lists()
-            return self._token is not None
+            response = self.get_lists()
         except Exception as e:
-            return self._token is None
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.WunderList,
+            #     message='Error in the connection test. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, list) and isinstance(response[0], dict) and 'id' in response[0]:
+            return True
+        else:
+            return False
 
     def get_lists(self):
         response = self._client.authenticated_request(
@@ -792,4 +816,5 @@ class WunderListController(BaseController):
         }
         response = requests.get(
             'http://a.wunderlist.com/api/v1/users', headers=headers)
-        return [{'name': r['name'], 'id': r['id']} for r in response.json()]
+        # 03/01/2018 - Se modifico de tal manera que si no hay 'name' se obvie ese usuario.
+        return [{'name': r['name'], 'id': r['id']} for r in response.json() if 'name' in r]

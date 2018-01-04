@@ -1,10 +1,6 @@
 {% extends 'layouts/base.html' %}
 {% load static i18n %}
 
-
-{% block scripts %}
-    {{ block.super }}
-{% endblock %}
 {% block styles %}
     <link href="{% static 'css/landing/style_page.css' %}" rel="stylesheet">
     <link href="{% static 'css/landing/index.css' %}" rel="stylesheet">
@@ -17,6 +13,9 @@
 {% endblock %}
 {% block body_class %}ayuda{% endblock %}
 {% block body_base %}
+    {% if request.user.is_authenticated %}
+        {% include 'account/snippets/logout.html' %}
+    {% endif %}
     <div class="content">
         {% block header_content %}
             <header>
@@ -70,21 +69,20 @@
                                         </a>
                                         <p class="text-avatar visible-xs">
                                                     {{ request.user.first_name|default:request.user.email }}
-{#                                            damanrique@grplug.com#}
-{#                                                    lulu#}
                                         </p>
-                                        <ul class="dropdown-menu">
+                                        <ul class="dropdown-menu pull-right">
                                             <li>
                                                 <p class="text-avatar">
                                                     {{ request.user.first_name|default:request.user.email }}
-{#                                                    damanrique@grplug.com#}
-{#                                                    lulu#}
                                                 </p>
                                             </li>
                                             <li><a href="{% url 'home:dashboard' %}"><p
                                                     class="border-options">Consola</p></a></li>
-                                            <li><a href="#"><p class="border-options">Configuración</p></a></li>
-                                            <li><a href="{% url 'account_logout' %}"><p>Cerrar Sesión</p></a></li>
+                                            <li><a href="{#% url 'home:profile' %#}"><p
+                                                    class="border-options">Configuración</p></a></li>
+                                            <li id="logout_menu" data-toggle="modal" data-target="#logout-modal">
+                                                <a><p>Cerrar Sesión</p></a>
+                                            </li>
                                         </ul>
                                     </li>
                                 {% endif %}
@@ -103,11 +101,17 @@
                     <div class="row not-margin">
                         <div class="col-sm-12 col-md-12 bg_nets text-center">
                             <div class="col-xs-12 col-sm-12 col-md-12">
-                                <a href="#"> <img src="{% static 'img/landing/facebook1.png' %}"
-                                                  class="padding-nets"></a>
-                                <a href="#"> <img src="{% static 'img/landing/gplus.png' %}" class="padding-nets">
+                                <a href="https://www.facebook.com/GrPlug/" target="_blank">
+                                    <img src="{% static 'img/landing/facebook1.png' %}" class="padding-nets">
                                 </a>
-                                <a href="#"> <img src="{% static 'img/landing/twitter.png' %}" class="padding-nets">
+                                <a href="https://twitter.com/gr_plug" target="_blank">
+                                    <img src="{% static 'img/landing/twitter.png' %}" class="padding-nets">
+                                </a>
+                                <a href="https://www.instagram.com/gr_plug/" target="_blank">
+                                    <img src="{% static 'img/landing/instagram.svg' %}" class="padding-nets instagram">
+                                </a>
+                                <a href="#" target="_blank">
+                                    <img src="{% static 'img/landing/linkedin.svg' %}" class="padding-nets linkedin">
                                 </a>
                             </div>
                             <div class="col-sm-12 col-md-12 text-menu hidden-xs">
@@ -137,5 +141,22 @@
         {% endblock %}
     {% endblock %}
     <span class="ir-arriba icon-arrow-up2"></span>
-    {% block scripts_gear %}{% endblock %}
+    {% block scripts %}
+        {{ block.super }}
+        <script type="application/javascript">
+            $(document).ready(function () {
+                $('#logout').on("click", function (e) {
+                    var button = $(this);
+                    $.ajax({
+                        method: "POST",
+                        url: "{% url 'account_logout' %}",
+                        data: {}
+                    }).done(function (response) {
+                        window.location.replace('{% url 'landing:index' %}')
+                    });
+                    return false;
+                })
+            })
+        </script>
+    {% endblock %}
 {% endblock %}
