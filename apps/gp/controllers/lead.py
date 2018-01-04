@@ -630,7 +630,7 @@ class TypeFormController(BaseController):
                                           str(e)))
         else:
             raise ControllerError(code=1002, controller=ConnectorEnum.TypeForm,
-                                      message='The controller is not instantiated correctly.')
+                                  message='The controller is not instantiated correctly.')
         try:
             self._client = TypeformClient(access_token=self._token)
         except Exception as e:
@@ -639,6 +639,8 @@ class TypeFormController(BaseController):
 
     def test_connection(self):
         try:
+            #TODO: Investigar que otro método se puede utilizar que no sea obtener forms, preferiblemente obtener cuenta
+            #Para mejorar la comprobación que está más abajo
             response = self._client.get_forms()
         except Exception as e:
             # raise ControllerError(code=1004, controller=ConnectorEnum.TypeForm,
