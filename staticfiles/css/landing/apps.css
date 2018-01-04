@@ -26,13 +26,13 @@
 .apps-list .search1 {
     margin-top: 1.9%;
     background-color: #005CA6;
-    width: 43.3%;
-    margin-left: 28.4%;
+    width: 22.6%;
+    margin-left: 40.2%;
     border-radius: 28px;
 }
 
 .apps-list .search1 input {
-    width: 98.4%;
+    width: 96.8%;
     height: 3.6%;
     border: 0;
     -webkit-border-radius: 22px;
@@ -45,7 +45,7 @@
     margin: 6px;
     background-image: url("../../img/landing/lupa.png");
     background-repeat: no-repeat;
-    background-position: 3% 41%;
+    background-position: 2.5% 50%;
     padding-left: 9%;
 }
 
@@ -114,6 +114,24 @@ button.btn {
     font-family: 'Sansation Bold';
 }
 
+@media only screen and (max-width:1600px) {
+    .apps-list .search1 input {
+        width: 96.2%;
+    }
+}
+
+@media only screen and (max-width:1440px) {
+    .apps-list .search1 input {
+        width: 95.9%;
+    }
+}
+
+@media only screen and (max-width:1366px) {
+    .apps-list .search1 input {
+        width: 95.7%;
+    }
+}
+
 @media only screen and (max-width:1024px) {
     .apps-banner .text1 {
         font-size: 3.3em;
@@ -126,6 +144,11 @@ button.btn {
     .apps-list .list-wrapper .list-item .name1 {
         font-size: 1.2em;
     }
+
+    .apps-list .search1 input {
+        padding-left: 13%;
+        width: 93.7%;
+    }
 }
 
 @media only screen and (max-width:768px) {
@@ -136,9 +159,20 @@ button.btn {
     .apps-list .text2 {
         font-size: 2.6em;
     }
+
+    .apps-list .search1 {
+        width: 36.6%;
+        margin-left: 32.2%;
+    }
+
+    .apps-list .search1 input {
+        padding-left: 13%;
+        width: 94.9%;
+    }
 }
 
-@media only screen and (max-width:320px) and (orientation: portrait) {
+/* Iphone 6 Plus - Portrait */
+@media only screen and (max-width:414px) and (orientation: portrait) {
     .apps-banner .text1 {
         font-size: 1.6em;
         line-height: 101%;

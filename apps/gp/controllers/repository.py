@@ -28,25 +28,41 @@ class BitbucketController(BaseController):
                 self._user = self._connection_object.connection_user
                 self._password = self._connection_object.connection_password
             except Exception as e:
-                print("Error getting the Bitbucket attributes")
-                self._connection = None
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.Bitbucket,
+                    message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
+        else:
+            raise ControllerError(
+                code=1002,
+                controller=ConnectorEnum.Bitbucket,
+                message='The controller is not instantiated correctly.')
         try:
             self._connection = BibucketClient(self._user, self._password)
         except Exception as e:
-            print("Error getting the Bitbucket attributes")
-            self._connection = None
-
+            raise ControllerError(
+                code=1003,
+                controller=ConnectorEnum.Bitbucket,
+                message='Error in the instantiation of the client. {}'.format(str(e)))
         try:
             if self._plug is not None:
                 self._repo_id = self._plug.plug_action_specification.filter(
                     action_specification__name='repository').first().value
                 self._repo_slug = self.get_repository_name(self._repo_id)
         except Exception as e:
-            raise ControllerError(code=1, controller=ConnectorEnum.Bitbucket,
-                                  message='Error asignando los specifications. {}'.format(str(e)))
+            raise ControllerError(
+                code=1005,
+                controller=ConnectorEnum.Bitbucket,
+                message='Error while choossing specifications. {}'.format(str(e)))
 
     def test_connection(self):
-        user_info = self._connection.get_user()
+        try:
+            user_info = self._connection.get_user()
+        except Exception as e:
+            raise ControllerError(
+                code=1004,
+                controller=ConnectorEnum.Bitbucket,
+                message='Error in the connection test. {}'.format(str(e)))
         if user_info is not None and 'account_id' in user_info and user_info['account_id'] != '':
             return True
         else:
