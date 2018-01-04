@@ -624,19 +624,31 @@ class TypeFormController(BaseController):
         if self._connection_object is not None:
             try:
                 self._token = self._connection_object.token
-                self._client = TypeformClient(access_token=self._token)
             except Exception as e:
-                print("Error getting the Typeform attributes")
-                self._client = None
-                self._token = None
+                raise ControllerError(code=1001, controller=ConnectorEnum.TypeForm,
+                                      message='The attributes necessary to make the connection were not obtained.. {}'.format(
+                                          str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.TypeForm,
+                                  message='The controller is not instantiated correctly.')
+        try:
+            self._client = TypeformClient(access_token=self._token)
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.TypeForm,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
-            self._client.get_forms()
-            return self._token is not None
+            #TODO: Investigar que otro método se puede utilizar que no sea obtener forms, preferiblemente obtener cuenta
+            #Para mejorar la comprobación que está más abajo
+            response = self._client.get_forms()
         except Exception as e:
-            print("error Typeform test connection")
-            print(e)
+            # raise ControllerError(code=1004, controller=ConnectorEnum.TypeForm,
+            #                       message='Error in the connection test.. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, dict):
+            return True
+        else:
             return False
 
     def create_webhook(self):
@@ -763,6 +775,7 @@ class TypeFormController(BaseController):
         if action_specification.name.lower() == 'form':
             forms = self._client.get_forms()['items']
             return tuple({'id': f['id'], 'name': f['title']} for f in forms)
+        else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
     @property
