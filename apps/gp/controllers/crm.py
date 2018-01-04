@@ -1188,7 +1188,10 @@ class ActiveCampaignController(BaseController):
             "name": "GearPlug WebHook",
             "url": url,
             "action": action,
-            "init": "admin"
+            "init[1]": "admin",
+            "init[2]": "public",
+            "init[3]": "api",
+            "init[4]": "system",
         }
         if _value is not None:
             for k, v in _value.items():
