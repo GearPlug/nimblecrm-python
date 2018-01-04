@@ -435,15 +435,16 @@ class SalesforceController(BaseController):
             user_info = self._client.get_user_info()
         except BadOAuthTokenError as e:
             new_token = self._client.refresh_token()
-            if not new_token:
-                raise ControllerError(code=3, controller=ConnectorEnum.Salesforce,
-                                      message="Error refreshing the user's token. {}".format(str(e)))
             # Actualiza el token del controlador con el nuevo token obtenido y posteriormente guarda en BD.
             self.token.update(new_token)
             self._client.set_access_token(self.token)
             self._connection_object.token = json.dumps(self.token)
             self._connection_object.save()
-            # Intentar obtener la info nuevamente
+            #TODO: Intentar obtener la info nuevamente
+            return False
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.Salesforce.name,
+            # message='Error in the connection test... {}'.format(str(e)))
             return False
         if user_info and isinstance(user_info, dict) and 'user_id' in user_info:
             return True
