@@ -465,7 +465,6 @@ class GoogleCalendarController(GoogleBaseController):
 
 class EvernoteController(BaseController):
     _token = None
-    _client = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
         super(EvernoteController, self).__init__(connection=connection, plug=plug, **kwargs)
@@ -478,14 +477,14 @@ class EvernoteController(BaseController):
             except Exception as e:
                 raise ControllerError(code=1001, controller=ConnectorEnum.Evernote,
                                       message='Error getting the attributes args. {}'.format(str(e)))
-            try:
-                self._client = EvernoteClient(self._token)
-            except Exception as e:
-                raise ControllerError(code=1003, controller=ConnectorEnum.Evernote,
-                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
         else:
             raise ControllerError(code=1002, controller=ConnectorEnum.Evernote,
                                   message='The controller is not instantiated correctly.')
+        try:
+            self._client = EvernoteClient(token=self._token)
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.Evernote,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -494,11 +493,11 @@ class EvernoteController(BaseController):
             # raise ControllerError(code=1004, controller=ConnectorEnum.Evernote,
             #                       message='Error in the connection test.. {}'.format(str(e)))
             return False
-        if response is not None and isinstance(response, dict) and 'error' not in response:
+        if response.__dict__ is not None and isinstance(response.__dict__, dict) and 'error' not in response.__dict__\
+                and '_client' in response.__dict__:
             return True
         else:
             return False
-
 
     def download_to_stored_data(self, connection_object=None, plug=None, **kwargs):
         notes = self.get_notes(self._token)
@@ -520,13 +519,13 @@ class EvernoteController(BaseController):
         for item in new_data:
             history_obj = {'identifier': None, 'is_stored': False, 'raw': {}}
             for field in item:
-                item.save()
+                field.save()
                 history_obj['raw'][field.name] = field.value
                 history_obj['is_stored'] = True
             history_obj['identifier'] = {'name': 'id', 'value': field.object_id}
             downloaded_data.append(history_obj)
         if downloaded_data:
-            return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw']['created']}
+            return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw']['id']}
         return False
 
     def get_notes(self, token):
@@ -559,10 +558,10 @@ class EvernoteController(BaseController):
         obj_list = []
         for item in data_list:
             try:
-                obj_result = {'data':dict['item']}
+                obj_result = {'data': item['data'] }
                 result = self.create_note(item)
-                obj_result['response'] = result
-                obj_result['identifier'] = result['id']
+                obj_result['response'] = result.__dict__
+                obj_result['identifier'] = result.__dict__['guid']
                 obj_result['sent'] = True
             except Exception as e:
                 obj_result['response'] = str(e)
@@ -572,14 +571,22 @@ class EvernoteController(BaseController):
         return obj_list
 
     def create_note(self, data):
+        _title = data['data']['title']
+        _content = data['data']['content']
         client = EvernoteClient(token=self._token)
-        c = data['content']
         noteStore = client.get_note_store()
         note = Types.Note()
-        note.title = data['title']
+        note.title = _title
         note.content = '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'
-        note.content += '<en-note>' + c + '</en-note>'
+        note.content += '<en-note>' + _content + '</en-note>'
         return noteStore.createNote(note)
+
+    def delete_note(self):
+        #TODO: realizar metodo.
+        """
+        :return:
+        """
+        pass
 
 
 class WunderListController(BaseController):
