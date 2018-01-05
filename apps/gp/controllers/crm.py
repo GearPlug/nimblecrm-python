@@ -1275,6 +1275,7 @@ class ActiveCampaignController(BaseController):
                     _result = self._client.contacts.create_contact(item)
                     _sent = True
                 except Exception as e:
+                    _result = str(e)
                     _sent = False
             elif action == 'subscribe contact':
                 _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
@@ -1283,6 +1284,7 @@ class ActiveCampaignController(BaseController):
                     _result = self._client.contacts.create_contact(item)
                     _sent = True
                 except Exception as e:
+                    _result = str(e)
                     _sent = False
             elif action == 'unsubscribe contact':
                 _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
@@ -1293,13 +1295,14 @@ class ActiveCampaignController(BaseController):
                     _result = self._client.contacts.edit_contact(data)
                     _sent = True
                 except Exception as e:
+                    _result = str(e)
                     _sent = False
             if _sent is True:
                 identifier = _result['subscriber_id']
                 _response = _result
             else:
-                identifier = ""
-                _response = ""
+                identifier = "-1"
+                _response = _result
             result_list.append({'data': dict(item), 'response': _response, 'sent': _sent, 'identifier': identifier})
         return result_list
 
