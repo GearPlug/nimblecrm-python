@@ -95,7 +95,6 @@ class BillingRouter(object):
     def allow_relation(self, obj1, obj2, **hints):
         if obj1._state.db == 'billing' or obj2._state.db == 'billing':
             return True
-        print("fuera {0} {1}".format(obj1, obj2))
         return None
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):

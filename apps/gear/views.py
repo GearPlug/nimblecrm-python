@@ -583,8 +583,8 @@ def manual_queue(request, gear_id):
                 return JsonResponse(
                     {'data': "You don't have permission to toggle this gear."})
             try:
-                dispatch.s(g.id).apply_async(queue='dispatch')
-                # dispatch.s(g.id).apply_async()
+                # dispatch.s(g.id).apply_async(queue='dispatch')
+                dispatch.s(g.id).apply_async()
                 pass
             except Exception as e:
                 return JsonResponse({'data': 'Problem updating Gear - {0}.'.format(e)})

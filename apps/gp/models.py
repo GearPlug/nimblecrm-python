@@ -1,10 +1,14 @@
+from django.conf import settings
 from django.contrib import admin
-from django.contrib.auth.models import User
-from apps.gp.enum import ConnectorEnum, FilterEnum
 from django.db import models
+from django.dispatch import receiver
+from apps.gp.enum import ConnectorEnum, FilterEnum
 from apps.gp.model_fields import JSONField
+from pytz import all_timezones
+from allauth.account.signals import user_signed_up
 
-connections = ['connection_{0}'.format(connector.name.lower()) for connector in ConnectorEnum.get_connector_list()]
+CONNECTIONS = tuple('connection_{0}'.format(connector.name.lower()) for connector in ConnectorEnum.get_connector_list())
+TIMEZONES = tuple((t, t) for t in all_timezones)
 
 
 class Category(models.Model):
@@ -71,7 +75,7 @@ class ActionSpecification(models.Model):
 
 
 class Connection(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     connector = models.ForeignKey(Connector, default=2, on_delete=models.CASCADE)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
@@ -80,24 +84,21 @@ class Connection(models.Model):
 
     @property
     def name(self):
-        available_connections = connections
-        for con in available_connections:
+        for con in CONNECTIONS:
             if hasattr(self, con):
                 return str(getattr(self, con))
         return 'Object not found'
 
     @property
     def related_id(self):
-        available_connections = connections
-        for con in available_connections:
+        for con in CONNECTIONS:
             if hasattr(self, con):
                 return str(getattr(self, con).id)
         return 'Object not found'
 
     @property
     def related_connection(self):
-        available_connections = connections
-        for con in available_connections:
+        for con in CONNECTIONS:
             if hasattr(self, con):
                 return getattr(self, con)
         return 'Object not found'
@@ -530,7 +531,7 @@ class Plug(models.Model):
     connection = models.ForeignKey(Connection, null=True, on_delete=models.CASCADE, related_name='plug')
     action = models.ForeignKey(Action, null=True, on_delete=models.CASCADE)
     plug_type = models.CharField(choices=ACTION_TYPE, max_length=7, default='source')
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL)
     is_active = models.BooleanField('is active', default=False)
     created = models.DateTimeField('created', auto_now_add=True)
     last_update = models.DateTimeField('last update', auto_now=True)
@@ -571,7 +572,7 @@ class StoredData(models.Model):
 
 
 class GearGroup(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField('name', max_length=64)
 
     def __str__(self):
@@ -580,7 +581,7 @@ class GearGroup(models.Model):
 
 class Gear(models.Model):
     name = models.CharField('name', max_length=120)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     source = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='gear_source')
     target = models.ForeignKey(Plug, null=True, on_delete=models.SET_NULL, related_name='gear_target')
     is_active = models.BooleanField('is active', default=False)
@@ -662,29 +663,36 @@ class ControllerLog(DBLogEntry):
 class SubscriptionsList(models.Model):
     title = models.CharField(max_length=500, default='subscription')
     description = models.CharField(max_length=500, default='description of subscription')
-    user = models.ManyToManyField(User, through='Subscriptions')
+    user = models.ManyToManyField(settings.AUTH_USER_MODEL, through='Subscriptions')
 
     def __str__(self):
         return self.title
 
 
 class Subscriptions(models.Model):
-    user = models.ForeignKey(User, related_name="subscription_user")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="subscription_user")
     list = models.ForeignKey(SubscriptionsList, related_name="subscription_list")
     created = models.DateTimeField('created', auto_now_add=True)
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
     avatar = models.ImageField('avatar', upload_to='avatar/', default='avatar/default.jpeg')
     address = models.CharField('address', max_length=500, default='', blank=True, null=False)
     zip_code = models.CharField('zip code', max_length=30, default='', blank=True, null=False)
     country = models.CharField('country', max_length=50, default='Colombia', blank=True, null=False)
     state = models.CharField('state', max_length=50, default='', blank=True, null=False)
     city = models.CharField('country', max_length=50, default='', blank=True, null=False)
+    timezone = models.CharField('timezone', max_length=50, choices=TIMEZONES, default='America/Bogota')
 
     def __str__(self):
         return self.user.email
+
+
+# TODO: ESTO NO VA AQUI
+@receiver(user_signed_up)
+def create_user_profile(sender, user=None, **kwargs):
+    Profile.objects.create(user=user)
 
 
 admin.site.register(Connector)
@@ -693,8 +701,13 @@ admin.site.register(ActionSpecification)
 admin.site.register(Connection)
 admin.site.register(Gear)
 admin.site.register(GearGroup)
+admin.site.register(GearMapData)
+admin.site.register(GearMap)
 admin.site.register(Plug)
 admin.site.register(PlugActionSpecification)
 admin.site.register(Profile)
 admin.site.register(Category)
 admin.site.register(ConnectorCategory)
+admin.site.register(SubscriptionsList)
+admin.site.register(Subscriptions)
+admin.site.register(Webhook)

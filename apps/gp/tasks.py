@@ -98,6 +98,7 @@ def dispatch(self, gear_id, skip_source=False):
                 print("This plug's target seems to be sending data already.")
         return True
     except Exception as e:
+        # raise
         print(e)
         return False
 
@@ -144,6 +145,7 @@ def do_poll(self, plug_id):
                 raise self.retry(countdown=next_retry)
             return False
     except Exception as e:
+        raise
         print(e, "EXCEPTION RAISED FOR GEAR [{0}] - PLUG [{1}] - CONNECTION [{2}]".format(gear.id, plug_id,
                                                                                           source.connection.id))
         return False
@@ -166,9 +168,11 @@ def send_data(self, plug_id, params):
         target_controller = target_controller_class(connection=target.connection.related_connection, plug=target)
         if target_controller.test_connection():
             # Gearmap falta ordenar por versiones
-            _version = GearMapData.objects.filter(gear_map=self.gear_map).order_by('-version').values('version')[0]
+            version = GearMapData.objects.filter(gear_map=gear.gear_map).order_by('-version').values('version')[0][
+                'version']
             target_fields = OrderedDict((data.target_name, data.source_value)
-                                        for data in GearMapData.objects.filter(gear_map=gear.gear_map, version=_version))
+                                        for data in
+                                        GearMapData.objects.filter(gear_map=gear.gear_map, version=version))
             source_data = [{'id': item[0], 'data': {i.name: i.value for i in stored_data.filter(object_id=item[0])}} for
                            item in stored_data.values_list('object_id').distinct()]
             is_first = gear.gear_map.last_sent_stored_data_id is None
@@ -198,6 +202,7 @@ def send_data(self, plug_id, params):
                 raise self.retry(countdown=next_retry)
             return False
     except Exception as e:
+        raise
         print(e, "EXCEPTION RAISED FOR GEAR [{0}] - PLUG [{1}] - CONNECTION [{2}]".format(gear.id, plug_id,
                                                                                           target.connection.id))
         return False

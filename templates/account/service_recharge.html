@@ -6,7 +6,7 @@
     <form method="post" action="" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">Update</button>
+        <button type="submit">recharge</button>
     </form>
     <br>
     <a href="{% url 'billing:profile' %}">BILLING</ahref>

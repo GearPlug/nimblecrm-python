@@ -5,7 +5,6 @@ from django.views.generic.edit import FormView, UpdateView
 from django.urls import reverse_lazy
 from .forms import SubscriptionsForm
 from apps.gp.models import Subscriptions, SubscriptionsList, Profile
-from django.contrib.auth.models import User
 from django.views.generic import TemplateView, View
 from django.views.decorators.csrf import csrf_exempt
 from apps.gp.models import GearGroup, Gear
@@ -16,7 +15,7 @@ import json
 
 class DashBoardView(LoginRequiredMixin, TemplateView):
     template_name = 'home/dashboard.html'
-    login_url = reverse_lazy('accounts_login')
+    login_url = reverse_lazy('account_login')
 
     def get(self, *args, **kwargs):
         return super(DashBoardView, self).get(*args, **kwargs)
@@ -101,7 +100,7 @@ class SubscriptionsManagerView(LoginRequiredMixin, FormView):
     template_name = 'account/subscriptionsmanager.html'
     form_class = SubscriptionsForm
     success_url = reverse_lazy('home:dashboard')
-    login_url = reverse_lazy('accounts_login')
+    login_url = reverse_lazy('account_login')
 
     def get_form_kwargs(self, **kwargs):
         kwargs = super(SubscriptionsManagerView, self).get_form_kwargs(**kwargs)
@@ -121,8 +120,8 @@ class SubscriptionsManagerView(LoginRequiredMixin, FormView):
 
 class ProfileView(LoginRequiredMixin, UpdateView):
     model = Profile
-    fields = ['avatar', 'address', 'zip_code', 'country', 'state', 'city', ]
-    login_url = reverse_lazy('accounts_login')
+    fields = ['avatar', 'address', 'zip_code', 'country', 'state', 'city', 'timezone']
+    login_url = reverse_lazy('account_login')
     template_name = 'account/profile.html'
     success_url = reverse_lazy('home:dashboard')
 
@@ -130,13 +129,7 @@ class ProfileView(LoginRequiredMixin, UpdateView):
         if queryset is None:
             queryset = self.get_queryset()
         queryset = queryset.filter(user=self.request.user)
-        try:
-            obj = queryset.get()
-        except queryset.model.DoesNotExist:
-            self.model.objects.create(user=self.request.user)
-
-            raise Http404("No %(verbose_name)s found matching the query" %
-                          {'verbose_name': queryset.model._meta.verbose_name})
+        obj = queryset[0]
         return obj
 
 

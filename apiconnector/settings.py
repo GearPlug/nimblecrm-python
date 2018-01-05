@@ -93,7 +93,7 @@ DATABASES = {
             'read_default_file': os.path.join(BASE_DIR, 'apiconnector/billing.cnf', )
         },
         'TEST': {
-            'DEPENDENCIES': ['history'],
+            'DEPENDENCIES': ['default'],
         },
     },
     'landing': {
@@ -102,7 +102,7 @@ DATABASES = {
             'read_default_file': os.path.join(BASE_DIR, 'apiconnector/landing.cnf', )
         },
         'TEST': {
-            'DEPENDENCIES': ['billing'],
+            'DEPENDENCIES': ['default'],
         },
     },
 
@@ -209,3 +209,7 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
 LOGIN_REDIRECT_URL = '/dashboard/'
+
+
+# BILLING
+BILLING_DEFAULT_FEE = 1
