@@ -18,5 +18,5 @@ DEFAULT_FROM_EMAIL = 'noreply@grplug.com'
 CONTACT_EMAIL = ['support@grplug.com']
 
 # ACCOUNT
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http'

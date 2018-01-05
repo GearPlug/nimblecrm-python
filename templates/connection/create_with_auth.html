@@ -1,19 +1,11 @@
-{% extends 'layouts/base.html' %}
+{% extends 'layouts/console_base.html' %}
+{% load static i18n %}
 
-{% block body_base %}
-    <form id="formCreateConnection" class="" action="" method="post" autocomplete="off">
-        <a href="javascript:authorize('{{ authorization_url }}')"
-           style="color:blue;font-size: 16px;">Authorize: {{ connector_name }}</a>
-        {% csrf_token %}
-    </form>
-{% endblock %}
-
-
-{% block scripts %}
-    {{ block.super }}
-    <script type="application/javascript">
-        function authorize(url) {
-            window.location = url;
-        }
-    </script>
+{% block content %}
+    <div class="row connection">
+        <div class="title">
+            <span>{% trans 'Creación de Conexión' %}:{% block connector_name %}{{ connector_name }}{% endblock %}</span>
+        </div>
+        <a href="{{ authorization_url }}"><h3>Authorize</h3></a>
+    </div>
 {% endblock %}

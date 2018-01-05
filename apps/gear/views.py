@@ -206,11 +206,8 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
             pk=gear.source.id)
         target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
             pk=gear.target.id)
-        # Source options
-        self.source_object_list = self.get_available_source_fields(source_plug)
-        # Target fields
-        self.form_field_list = self.get_target_field_list(target_plug)
-        self.gear_map = GearMap.objects.filter(gear=gear).first()
+        self.source_object_list = self.get_available_source_fields(source_plug)  # Source options
+        self.form_field_list = self.get_target_field_list(target_plug)  # Target fields
         return super(CreateGearMapView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -218,7 +215,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         gear = Gear.objects.filter(pk=gear_id).select_related('source', 'target').get(pk=gear_id)
         target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
             pk=gear.target.id)
-        self.form_field_list = self.get_target_field_list(target_plug)
+        self.form_field_list = self.get_target_field_list(target_plug)  # Target fields
         self.gear_map = GearMap.objects.filter(gear=gear).first()
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
 
@@ -227,21 +224,15 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         return super(CreateGearMapView, self).get_success_url()
 
     def form_valid(self, form, *args, **kwargs):
-        _version = GearMapData.objects.filter(gear_map=self.gear_map).last()
+        if self.gear_map is not None:
+            version = self.gear_map.version + 1
+        else:
+            version = 1
         for f, v in form.cleaned_data.items():
-            if _version is not None:
-                if v is not None and (v != '' or not v.isspace()):
-                    _final_version = _version.version + 1
-                    GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v,
-                                               version=_final_version)
-                self.gear_map.version = _final_version
-                self.gear_map.save()
-            elif _version is None:
-                if v is not None and (v != '' or not v.isspace()):
-                    GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v)
-            else:
-                raise
-        #self.gear_map.gear.is_active = True
+            if v is not None and (v != '' or not v.isspace()):
+                GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v, version=version)
+        self.gear_map.version = version
+        self.gear_map.save()
         self.gear_map.gear.save()
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
@@ -251,13 +242,13 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
     def get_context_data(self, *args, **kwargs):
         context = super(CreateGearMapView, self).get_context_data(**kwargs)
         context['source_object_list'] = self.source_object_list
-        context['action'] = 'Create' if self.gear_map is None else 'Update'
+        context['action'] = 'set map'
         return context
 
     def get_form(self, *args, **kwargs):
         form_class = self.get_form_class()
         form = form_class(extra=self.form_field_list, **self.get_form_kwargs())
-        if self.request.method == 'GET' and self.gear_map is not None:
+        if self.request.method == 'GET' and hasattr(self, 'gear_map') and self.gear_map is not None:
             try:
                 _version = GearMapData.objects.filter(gear_map=self.gear_map).order_by('-version').values('version')[0]
                 all_data = GearMapData.objects.filter(gear_map=self.gear_map, version=_version['version'])
@@ -290,6 +281,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         if controller.test_connection():
             return controller.get_mapping_fields()
         return []
+
 
 class GearSendHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
     model = SendHistory
@@ -373,7 +365,8 @@ class GearActivityHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
     def get_queryset(self, **kwargs):
         NOW = timezone.now()
         gears = Gear.objects.filter(user_id=self.request.user.id).prefetch_related(
-            Prefetch('source__connection__connector'), Prefetch('target__connection__connector'))
+            Prefetch('source__connection__connector'), Prefetch('target__connection__connector'),
+            Prefetch('source__action'), Prefetch('target__action'))
         activity_result = []
         min_date = NOW - timezone.timedelta(hours=24)
         activity_list = self.model.objects.filter(gear_id__in=[str(g.id) for g in gears.iterator()],
@@ -391,6 +384,8 @@ class GearActivityHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
                      'connector_source': current_gear.source.connection.connector,
                      'connector_target': current_gear.target.connection.connector,
                      'data': [{'name': k, 'value': v} for k, v in json.loads(activity.data).items()],
+                     'action_source': current_gear.source.action.name,
+                     'action_target': current_gear.target.action.name,
                      'gear_id': current_gear.id,
                      'gear_name': current_gear.name}
                 activity_result.append(a)
@@ -591,8 +586,3 @@ def manual_queue(request, gear_id):
         except Gear.DoesNotExist:
             return JsonResponse({'data': 'Error invalid gear id.'})
     return JsonResponse({'data': 'request needs to be ajax'})
-
-
-
-
-
