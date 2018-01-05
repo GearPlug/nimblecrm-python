@@ -1,0 +1,33 @@
+{% extends 'layouts/console_base.html' %}
+
+{% block content %}
+
+    <h1> Gear creado</h1>
+    <h2><a href="/dashboard">Dashboard</a></h2>
+    {{ request.session.gear_id }}
+    <form method="POST" action="{% url 'gear:toggle' gear_id=request.session.gear_id %}">
+        {% csrf_token %}
+        <button type="submit"> Activate Gear</button>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            $('form').on("submit", function (e) {
+                console.log("voy a enviar");
+                $.ajax({
+                    url: $(this).attr('action'),
+                    data : $(this).serialize(),
+                    method : 'POST'
+                }).done(function (response) {
+                    console.log(response);
+                })
+                e.stopPropagation();
+                e.preventDefault();
+            });
+
+        })
+    </script>
+{% endblock %}
