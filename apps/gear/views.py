@@ -248,7 +248,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
     def get_form(self, *args, **kwargs):
         form_class = self.get_form_class()
         form = form_class(extra=self.form_field_list, **self.get_form_kwargs())
-        if self.request.method == 'GET' and self.gear_map is not None:
+        if self.request.method == 'GET' and hasattr(self, 'gear_map') and self.gear_map is not None:
             try:
                 _version = GearMapData.objects.filter(gear_map=self.gear_map).order_by('-version').values('version')[0]
                 all_data = GearMapData.objects.filter(gear_map=self.gear_map, version=_version['version'])
@@ -365,7 +365,8 @@ class GearActivityHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
     def get_queryset(self, **kwargs):
         NOW = timezone.now()
         gears = Gear.objects.filter(user_id=self.request.user.id).prefetch_related(
-            Prefetch('source__connection__connector'), Prefetch('target__connection__connector'))
+            Prefetch('source__connection__connector'), Prefetch('target__connection__connector'),
+            Prefetch('source__action'), Prefetch('target__action'))
         activity_result = []
         min_date = NOW - timezone.timedelta(hours=24)
         activity_list = self.model.objects.filter(gear_id__in=[str(g.id) for g in gears.iterator()],
@@ -383,6 +384,8 @@ class GearActivityHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
                      'connector_source': current_gear.source.connection.connector,
                      'connector_target': current_gear.target.connection.connector,
                      'data': [{'name': k, 'value': v} for k, v in json.loads(activity.data).items()],
+                     'action_source': current_gear.source.action.name,
+                     'action_target': current_gear.target.action.name,
                      'gear_id': current_gear.id,
                      'gear_name': current_gear.name}
                 activity_result.append(a)

@@ -2,13 +2,17 @@
 
 {% block content %}
 
-    <h1> Gear creado</h1>
-    <h2><a href="/dashboard">Dashboard</a></h2>
-    {{ request.session.gear_id }}
+    <h1>Tu Gear se ha creado exitosamente!</h1>
+
+
     <form method="POST" action="{% url 'gear:toggle' gear_id=request.session.gear_id %}">
         {% csrf_token %}
-        <button type="submit"> Activate Gear</button>
+        Con el siguiente boton podrás activarlo.
+        <button type="submit">Activate Gear</button>
     </form>
+
+    <br/>
+    <h2><a href="/dashboard">Dashboard</a></h2>
 {% endblock %}
 
 {% block scripts %}
@@ -19,8 +23,8 @@
                 console.log("voy a enviar");
                 $.ajax({
                     url: $(this).attr('action'),
-                    data : $(this).serialize(),
-                    method : 'POST'
+                    data: $(this).serialize(),
+                    method: 'POST'
                 }).done(function (response) {
                     console.log(response);
                 })
