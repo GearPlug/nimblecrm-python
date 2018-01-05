@@ -357,7 +357,7 @@
     </div>
 {% endblock %}
 {% block scripts %}
-    {{ super.block }}
+    {{ block.super }}
     <script type="application/javascript">
         $(document).ready(function () {
             $('form#signup_form').on('submit', function (e) {
