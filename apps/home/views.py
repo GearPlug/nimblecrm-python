@@ -137,7 +137,7 @@ class GroupSessionStoreView(View):
     http_method_names = ['get', 'post']
 
     def get(self, request, **kwargs):
-        if 'group_store' in request.session:
+        if 'group_store' in request.session and bool(request.session['group_store']):
             store = request.session.get('group_store')
         else:
             store = {k['name']: {'is_active': True, 'id': k['id']} for k in
