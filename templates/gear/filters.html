@@ -1,11 +1,15 @@
 {% extends 'layouts/console_base.html' %}
-{% load static %}
+{% load static i18n %}
+
 
 {% block content %}
     <form method="POST" action="{% url 'gear:filters' pk=request.session.gear_id %}" autocomplete="off"/>
     {% csrf_token %}
     {{ formset.management_form }}
-    <div class="formset-list">
+    <div class="formset-list filter">
+        <div class="title">
+            <span>Filters</span>
+        </div>
         {% for form in formset %}
             <div id="id-form-{{ forloop.counter }}" class="formset-form">
                 {{ form.id }}
