@@ -1,1 +1,67 @@
-{% include "account/email/email_confirmation_message.html" %}
+{% load account i18n static %}
+{% user_display user as user_display %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<table style="width: 750px;
+        background: url({{ current_site.domain }}{% static 'mailing/img/bg_welcome.png' %}) 0 0px no-repeat scroll
+        transparent; background-size: cover;" border="0" cellspacing="0" cellpadding="0">
+    <tbody>
+    <tr>
+        <td style="font-family: Trebuchet MS; font-size: 70px; color: #005CA6; text-align: center;
+                padding-top: 17%; font-weight: bold;">
+            Bienvenido
+        </td>
+    </tr>
+    <tr>
+        <td style="font-family: Trebuchet MS; font-size: 21px; color: #09DF8E; text-align: center;
+                padding-top: 2%; font-style: italic">
+            ¡Gracias por registrarte con nosotros!
+        </td>
+    </tr>
+    <tr>
+        <td style="font-family: Trebuchet MS; font-size: 17px; color: #9C9AA0; text-align: center;
+                padding: 3% 12% 0">
+            A partir de ahora podrás crear los Gear que quieras para optimizar el marketing digital
+            de tu empresa, si tienes alguna duda, comunícate con nosotros aquí:
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align: center; padding-top: 2%;">
+            <a href="mailto:soporte@grplug.com">
+                <img src="{{ current_site.domain }}{% static 'mailing/img/bt_support.png' %}" style="width: 25%">
+            </a>
+        </td>
+    </tr>
+    <tr>
+        <td style="font-family: Trebuchet MS; font-size: 17px; color: #9C9AA0; text-align: center;
+                padding: 3% 12% 0">
+            No olvides validar tu dirección de correo en el siguiente enlace:
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align: center; padding-top: 2%;">
+            <a href="{{ activate_url }}">
+                Validar dirección de correo electrónico ahora
+            </a>
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align: center; padding: 7% 0 1% 0">
+            <a href="#"><img src="{{ current_site.domain }}{% static 'mailing/img/facebook.png' %}"
+                             style="width: 3%"></a>
+            <a href="#"><img src="{{ current_site.domain }}{% static 'mailing/img/gplus.png' %}" style="width: 3%"></a>
+            <a href="#"><img src="{{ current_site.domain }}{% static 'mailing/img/twitter.png' %}"
+                             style="width: 3%"></a>
+            <a href="https://grplug.com/" style="font-family: Trebuchet MS; font-size: 21px; color: #005CA4;
+                        text-decoration: none">{{ current_site.domain }}</a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
