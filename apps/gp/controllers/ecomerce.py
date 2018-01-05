@@ -91,11 +91,13 @@ class MercadoLibreController(BaseController):
             try:
                 result = self.list_product(obj)
                 identifier = result['id']
+                response = str(result)
                 sent = True
-            except:
+            except Exception as e:
                 identifier = "-1"
+                response = str(e)
                 sent = False
-            result_list.append({'data': dict(obj), 'response': '', 'sent': sent, 'identifier': identifier})
+            result_list.append({'data': dict(obj), 'response': response, 'sent': sent, 'identifier': identifier})
         return result_list
 
     def list_product(self, obj):
