@@ -1299,7 +1299,7 @@ class ActiveCampaignController(BaseController):
                 _response = _result
             else:
                 identifier = ""
-                _response = e
+                _response = ""
             result_list.append({'data': dict(item), 'response': _response, 'sent': _sent, 'identifier': identifier})
         return result_list
 
@@ -1319,6 +1319,7 @@ class ActiveCampaignController(BaseController):
             elif action in ['new deal', 'deal updated']:
                 _user = self._client.users.view_user(data['deal_owner'])
                 data['deal_owner_email'] = _user['email']
+                data['deal_owner_username'] = _user['username']
                 object_id = int(data['deal_id'])
             q = StoredData.objects.filter(object_id=object_id, connection=connection_object.id, plug=plug.id)
             if not q.exists():

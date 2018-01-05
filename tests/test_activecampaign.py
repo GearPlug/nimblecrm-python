@@ -393,7 +393,7 @@ class ActiveCampaignControllerTestCases(TestCase):
             if _controller['action'] in ['new task', 'task completed']:
                 count_data += 4
             elif _controller['action'] in ['new deal', 'deal updated']:
-                count_data += 1
+                count_data = count_data+2
             self.assertEqual(count_end, count_data)
             self.assertTrue(result)
 
