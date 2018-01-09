@@ -675,8 +675,8 @@ class HubSpotController(BaseController):
             try:
                 self.get_refresh_token()
             except Exception as e:
-                # raise ControllerError(code=1001, controller=ConnectorEnum.HubSpot,
-                #                       message='Error refreshing HubSpot tokens. {}'.format(str(e)))
+                # raise ControllerError(code=1004, controller=ConnectorEnum.HubSpot,
+                #                       message='Error in the connection test. {}'.format(str(e)))
                 return False
             try: # Se reintenta obtener response despues de haber hecho un refresh_token()
                 response = self._client.contacts.get_contacts()
@@ -684,7 +684,7 @@ class HubSpotController(BaseController):
                 # raise ControllerError(code=1004, controller=ConnectorEnum.HubSpot,
                 #                   message='Error in the connection test. {}'.format(str(e)))
                 return False
-        if response is not None and isinstance(response, dict) and 'contacts' in response:
+        if response.json() is not None and 'contacts' in response.json():
             return True
         else:
             return False
