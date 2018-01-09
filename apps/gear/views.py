@@ -460,9 +460,12 @@ class GearFiltersView(FormView, LoginRequiredMixin):
     def post(self, request, *args, **kwargs):
         modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
         formset = modelformset(self.request.POST, queryset=GearFilter.objects.filter(gear_id=kwargs['pk']))
+        print(request.POST)
         if formset.is_valid():
             filters = formset.save(commit=False)
             for filter in filters:
+                print("filter_id", filter.id)
+                print("filter_activo", filter.is_active)
                 _gear = Gear.objects.get(id=kwargs['pk'])
                 filter.gear = _gear
                 filter.save()
@@ -477,8 +480,22 @@ class GearFiltersView(FormView, LoginRequiredMixin):
         context = super(GearFiltersView, self).get_context_data(**kwargs)
         modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
         formset = modelformset(queryset=GearFilter.objects.filter(gear_id=self.kwargs['pk']))
+        _gear = Gear.objects.filter(pk=self.kwargs['pk']).select_related('source', 'target').get(pk=self.kwargs['pk'])
+        source_plug = Plug.objects.filter(pk=_gear.source.id).select_related('connection__connector').get(
+            pk=_gear.source.id)
+        _source_object_list = self.get_available_source_fields(source_plug)
         context['formset'] = formset
+        context['source_object_list'] =_source_object_list
         return context
+
+
+    def get_available_source_fields(self, plug):
+        c = ConnectorEnum.get_connector(plug.connection.connector.id)
+        if c == ConnectorEnum.GoogleContacts:
+            self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
+            return ['{0}'.format(field) for field in self.google_contacts_controller.get_contact_fields()]
+        return [('{0}'.format(item['name']), item['value']) for item in
+                StoredData.objects.filter(plug=plug, connection=plug.connection).values()]
 
 
 def gear_toggle(request, gear_id):

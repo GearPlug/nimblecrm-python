@@ -202,6 +202,7 @@
                     'position': 'absolute'
                 });
                 $('div#context-menu a#menu-editar-gear').attr('href', '{% url "gear:update" pk=1234 %}'.replace('1234', gear_id));
+                $('div#context-menu a#menu-editar-filtro').attr('href', '{% url "gear:filters" pk=1234 %}'.replace('1234', gear_id));
                 $('#context-menu').show();
             });
 

@@ -597,10 +597,11 @@ class Gear(models.Model):
 class GearFilter(models.Model):
     OPTIONS = tuple((field.value, field.name) for field in FilterEnum)
     gear = models.ForeignKey(Gear, related_name='gear_filter')
-    field_name = models.CharField('field name', max_length=256)
+    field_name = models.IntegerField('field name', choices=OPTIONS)
+    #field_name = models.CharField('field name', max_length=256)
     option = models.IntegerField('option', choices=OPTIONS)
     comparison_data = models.CharField('comparison data', max_length=100)
-    is_active = models.BooleanField('is active', default=False)
+    is_active = models.BooleanField('is active', default=True)
 
 
 class GearMap(models.Model):
