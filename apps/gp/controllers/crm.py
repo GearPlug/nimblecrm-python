@@ -252,23 +252,16 @@ class ZohoCRMController(BaseController):
         """
         return False
 
-    def download_to_stored_data(self, connection_object, plug, ):
+    def download_to_stored_data(self, connection_object, plug, **kwargs):
         module_id = self._plug.plug_action_specification.all()[0].value
         module_name = self.get_module_name(module_id)
         data = self.get_feeds(module_name)
         new_item = []
         new_data = []
         for k, v in data[0].items():
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                          object_id=data[0][data[0]['id']])
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=data[0][data[0]['id']])
             if not q.exists():
-                new_item.append(
-                    StoredData(
-                        name=k,
-                        value=v,
-                        object_id=data[0][data[0]['id']],
-                        connection=connection_object.connection,
-                        plug=plug))
+                new_item.append(StoredData(name=k, value=v, object_id=data[0][data[0]['id']], connection=connection_object.connection, plug=plug))
                 new_data.append(new_item)
         downloaded_data = []
         for new_item in new_data:
@@ -446,9 +439,7 @@ class ZohoCRMController(BaseController):
                     module_list.append({'id': m['id'], 'name': m['pl']})
             return tuple(module_list)
         else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector."
-            )
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class SalesforceController(BaseController):
