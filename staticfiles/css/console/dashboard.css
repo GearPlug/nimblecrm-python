@@ -300,7 +300,8 @@ body {
 .content-body .specifications .title,
 .content-body .plug-test .title,
 .content-body .gear-update .title,
-.content-body .management .title {
+.content-body .management .title,
+.content-body .filter .title {
     font-family: "Sansation Bold";
     font-size: 1.60em;
     color: #005ca7;
@@ -316,7 +317,8 @@ body {
 .content-body .specifications .title span,
 .content-body .plug-test .title span,
 .content-body .gear-update .title span,
-.content-body .management .title span {
+.content-body .management .title span,
+.content-body .filter .title span {
     border-bottom: 3px solid #00e08f;
     display: inline-block;
     line-height: 1em;
