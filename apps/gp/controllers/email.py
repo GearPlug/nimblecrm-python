@@ -46,14 +46,17 @@ class GmailController(GoogleBaseController):
 
     def test_connection(self):
         try:
+            self._refresh_token()
             profile = self.get_profile()
+        except GoogleClient.HttpAccessTokenRefreshError:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.Gmail.name,
+            # message='Error in the connection test... {}'.format(str(e)))
+            self._report_broken_token()
+            return False
         except Exception as e:
-            try:
-                self._refresh_token()
-            except GoogleClient.HttpAccessTokenRefreshError:
-                self._report_broken_token()
-                return False
-            profile = self.get_profile()
+            # raise ControllerError(code=1004, controller=ConnectorEnum.Gmail.name,
+            # message='Error in the connection test... {}'.format(str(e)))
+            return False
         if profile and isinstance(profile, dict) and 'emailAddress' in profile:
             return True
         return False

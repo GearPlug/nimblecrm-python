@@ -36,27 +36,30 @@ class GoogleSpreadSheetsController(GoogleBaseController):
                                       **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
-        credentials_json = None
-        super(GoogleSpreadSheetsController, self).create_connection(
-            connection=connection, plug=plug)
+        super(GoogleSpreadSheetsController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
                 credentials_json = self._connection_object.credentials_json
-                if self._plug is not None:
-                    try:
-                        self._spreadsheet_id = self._plug.plug_action_specification.get(
-                            action_specification__name__iexact='spreadsheet').value
-                        self._worksheet_name = self._plug.plug_action_specification.get(
-                            action_specification__name__iexact='worksheet').value
-                    except Exception as e:
-                        print("Error asignando los specifications GoogleSpreadSheets 2")
             except Exception as e:
-                print("Error getting the GoogleSpreadSheets attributes 1")
-                print(e)
-                credentials_json = None
-        if credentials_json is not None:
-            self._credential = GoogleClient.OAuth2Credentials.from_json(
-                json.dumps(credentials_json))
+                raise ControllerError(code=1001, controller=ConnectorEnum.GoogleSpreadSheets.name,
+                                      message='The attributes necessary to make the connection were not obtained {}'.format(
+                                          str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.GoogleSpreadSheets.name,
+                                  message='The controller is not instantiated correctly.')
+        try:
+            self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.GoogleSpreadSheets.name,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+        try:
+            self._spreadsheet_id = self._plug.plug_action_specification.get(
+                action_specification__name__iexact='spreadsheet').value
+            self._worksheet_name = self._plug.plug_action_specification.get(
+                action_specification__name__iexact='worksheet').value
+        except Exception as e:
+            raise ControllerError(code=1005, controller=ConnectorEnum.GoogleSpreadSheets,
+                                  message='Error while choosing specifications. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -65,9 +68,17 @@ class GoogleSpreadSheetsController(GoogleBaseController):
             drive_service = discovery.build('drive', 'v3', http=http_auth)
             files = drive_service.files().list().execute()
         except GoogleClient.HttpAccessTokenRefreshError:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.GoogleSpreadSheets.name,
+            # message='Error in the connection test... {}'.format(str(e)))
             self._report_broken_token()
-            files = None
-        return files is not None
+            return False
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.GoogleSpreadSheets.name,
+            # message='Error in the connection test... {}'.format(str(e)))
+            return False
+        if files and isinstance(files, dict) and 'files' in files:
+            return True
+        return False
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, **kwargs):
         if not self._spreadsheet_id or not self._worksheet_name:
@@ -213,7 +224,6 @@ class GoogleSpreadSheetsController(GoogleBaseController):
                                          **kwargs):
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
-        print("GSS->", action_specification.name, kwargs)
         if action_specification.name.lower() == 'spreadsheet':
             return tuple({'id': p['id'], 'name': p['name']} for p in
                          self.get_sheet_list())
@@ -595,9 +605,9 @@ class WunderListController(BaseController):
             self._client = self._api.get_client(self._token, settings.WUNDERLIST_CLIENT_ID)
         except Exception as e:
             raise ControllerError(
-                code = 1003,
-                controller = ConnectorEnum.WunderList,
-                message = 'Error in the instantiation of the client.. {}'.format(str(e)))
+                code=1003,
+                controller=ConnectorEnum.WunderList,
+                message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -608,7 +618,8 @@ class WunderListController(BaseController):
             #     controller=ConnectorEnum.WunderList,
             #     message='Error in the connection test. {}'.format(str(e)))
             return False
-        if response is not None and isinstance(response, list) and isinstance(response[0], dict) and 'id' in response[0]:
+        if response is not None and isinstance(response, list) and isinstance(response[0], dict) and 'id' in response[
+            0]:
             return True
         else:
             return False
