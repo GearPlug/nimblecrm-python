@@ -36,27 +36,30 @@ class GoogleSpreadSheetsController(GoogleBaseController):
                                       **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
-        credentials_json = None
-        super(GoogleSpreadSheetsController, self).create_connection(
-            connection=connection, plug=plug)
+        super(GoogleSpreadSheetsController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
                 credentials_json = self._connection_object.credentials_json
-                if self._plug is not None:
-                    try:
-                        self._spreadsheet_id = self._plug.plug_action_specification.get(
-                            action_specification__name__iexact='spreadsheet').value
-                        self._worksheet_name = self._plug.plug_action_specification.get(
-                            action_specification__name__iexact='worksheet').value
-                    except Exception as e:
-                        print("Error asignando los specifications GoogleSpreadSheets 2")
             except Exception as e:
-                print("Error getting the GoogleSpreadSheets attributes 1")
-                print(e)
-                credentials_json = None
-        if credentials_json is not None:
-            self._credential = GoogleClient.OAuth2Credentials.from_json(
-                json.dumps(credentials_json))
+                raise ControllerError(code=1001, controller=ConnectorEnum.GoogleSpreadSheets.name,
+                                      message='The attributes necessary to make the connection were not obtained {}'.format(
+                                          str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.GoogleSpreadSheets.name,
+                                  message='The controller is not instantiated correctly.')
+        try:
+            self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.GoogleSpreadSheets.name,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+        try:
+            self._spreadsheet_id = self._plug.plug_action_specification.get(
+                action_specification__name__iexact='spreadsheet').value
+            self._worksheet_name = self._plug.plug_action_specification.get(
+                action_specification__name__iexact='worksheet').value
+        except Exception as e:
+            raise ControllerError(code=1005, controller=ConnectorEnum.GoogleSpreadSheets,
+                                  message='Error while choosing specifications. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -65,9 +68,17 @@ class GoogleSpreadSheetsController(GoogleBaseController):
             drive_service = discovery.build('drive', 'v3', http=http_auth)
             files = drive_service.files().list().execute()
         except GoogleClient.HttpAccessTokenRefreshError:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.GoogleSpreadSheets.name,
+            # message='Error in the connection test... {}'.format(str(e)))
             self._report_broken_token()
-            files = None
-        return files is not None
+            return False
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.GoogleSpreadSheets.name,
+            # message='Error in the connection test... {}'.format(str(e)))
+            return False
+        if files and isinstance(files, dict) and 'files' in files:
+            return True
+        return False
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, **kwargs):
         if not self._spreadsheet_id or not self._worksheet_name:
@@ -213,7 +224,6 @@ class GoogleSpreadSheetsController(GoogleBaseController):
                                          **kwargs):
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
-        print("GSS->", action_specification.name, kwargs)
         if action_specification.name.lower() == 'spreadsheet':
             return tuple({'id': p['id'], 'name': p['name']} for p in
                          self.get_sheet_list())
@@ -231,81 +241,89 @@ class GoogleCalendarController(GoogleBaseController):
     _credential = None
 
     def __init__(self, connection=None, plug=None, **kwargs):
-        GoogleBaseController.__init__(self, connection=connection, plug=plug,
-                                      **kwargs)
+        GoogleBaseController.__init__(self, connection=connection, plug=plug, **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
-        credentials_json = None
-        super(GoogleCalendarController, self).create_connection(
-            connection=connection, plug=plug)
+        super(GoogleCalendarController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
                 credentials_json = self._connection_object.credentials_json
             except Exception as e:
-                print("Error GoogleCalendar attributes {}".format(e))
-        if credentials_json is not None:
+                raise ControllerError(code=1001, controller=ConnectorEnum.GoogleCalendar.name,
+                                      message='The attributes necessary to make the connection were not obtained {}'.format(
+                                          str(e)))
             try:
                 self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
                 http_auth = self._credential.authorize(httplib2.Http())
                 self._connection = discovery.build('calendar', 'v3', http=http_auth)
             except Exception as e:
-                print("Error GoogleCalendar attributes {}".format(e))
+                raise ControllerError(code=1003, controller=ConnectorEnum.GoogleCalendar.name,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
             self._refresh_token()
-            calendar_list = self._connection.calendarList().list().execute()
-            calendars = calendar_list['items']
-            return calendars is not None
+            calendars = self._connection.calendarList().list().execute()
         except GoogleClient.HttpAccessTokenRefreshError:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.GoogleCalendar.name,
+            # message='Error in the connection test... {}'.format(str(e)))
             self._report_broken_token()
-            calendars = None
+            return False
         except Exception as e:
-            print("Error Test connection GoogleCalendar")
-            calendars = None
-        return calendars
-
-    def download_to_stored_data(self, connection_object=None, plug=None,
-                                events=None, **kwargs):
-        print("download store data")
-        if events is not None:
-            _items = []
-            for event in events:
-                q = StoredData.objects.filter(
-                    connection=connection_object.connection, plug=plug,
-                    object_id=event['id'])
-                if not q.exists():
-                    for k, v in event.items():
-                        obj = StoredData(
-                            connection=connection_object.connection, plug=plug,
-                            object_id=event['id'], name=k, value=v or '')
-                        _items.append(obj)
-            extra = {}
-            for item in _items:
-                extra['status'] = 's'
-                extra = {'controller': 'googlecalendar'}
-                self._log.info(
-                    'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                        item.object_id, item.plug.id, item.connection.id),
-                    extra=extra)
-                item.save()
+            # raise ControllerError(code=1004, controller=ConnectorEnum.GoogleCalendar.name,
+            # message='Error in the connection test... {}'.format(str(e)))
+            return False
+        if calendars and isinstance(calendars, dict) and 'items' in calendars:
+            return True
         return False
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
+    def download_to_stored_data(self, connection_object=None, plug=None, events=None, **kwargs):
+        if events is None:
+            return False
+        new_data = []
+        raw_data = []
+        for event in events:
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=event['id'])
+            if not q.exists():
+                item_data = []
+                for k, v in event.items():
+                    item_data.append(
+                        StoredData(connection=connection_object.connection, plug=plug, object_id=event['id'], name=k,
+                                   value=v or ''))
+
+                new_data.append(item_data)
+                raw_data.append(event)
+        is_stored = False
+        result_list = []
+        for item in new_data:
+            for stored_data in item:
                 try:
-                    data_list = [data_list[-1]]
-                except:
-                    data_list = []
+                    stored_data.save()
+                    is_stored = True
+                except Exception as e:
+                    print(e)
+            for obj in raw_data:
+                if stored_data.object_id == obj['id']:
+                    obj_raw = obj
+                    break
+            result_list.append(
+                {'raw': obj_raw, 'is_stored': is_stored, 'identifier': {'name': 'id', 'value': stored_data.object_id}})
+        return {'downloaded_data': result_list, 'last_source_record': result_list[-1]['identifier']['value']}
+
+    def send_stored_data(self, data_list, is_first=False):
+        result_list = []
         if self._plug is not None:
             for obj in data_list:
-                res = self.create_issue(
-                    self._plug.plug_action_specification.all()[0].value, obj)
-            extra = {'controller': 'googlecalendar'}
-            return
-        raise ControllerError("Incomplete.")
+                try:
+                    _result = self.create_issue(self._plug.plug_action_specification.all()[0].value, obj)
+                    identifier = _result['id']
+                    _sent = True
+                except Exception as e:
+                    _result = str(e)
+                    identifier = '-1'
+                    _sent = False
+                result_list.append({'data': dict(obj), 'response': _result, 'sent': _sent, 'identifier': identifier})
+        return result_list
 
     def create_issue(self, calendar_id, event):
         if 'start_dateTime' in event:
@@ -334,8 +352,7 @@ class GoogleCalendarController(GoogleBaseController):
                 event['end'] = {'timeZone': end_timezone}
             else:
                 event['end']['timeZone'] = end_timezone
-        return self._connection.events().insert(calendarId=calendar_id,
-                                                body=event).execute()
+        return self._connection.events().insert(calendarId=calendar_id, body=event).execute()
 
     def _parse_datetime(self, datetime):
         return parse(datetime).strftime('%Y-%m-%dT%H:%M:%S%z')
@@ -351,10 +368,8 @@ class GoogleCalendarController(GoogleBaseController):
 
     def create_webhook(self):
         calendar_id = self._plug.plug_action_specification.first().value
-        url = 'https://www.googleapis.com/calendar/v3/calendars/{}/events/watch'.format(
-            calendar_id)
-        webhook = Webhook.objects.create(name='googlecalendar',
-                                         plug=self._plug, url='')
+        url = 'https://www.googleapis.com/calendar/v3/calendars/{}/events/watch'.format(calendar_id)
+        webhook = Webhook.objects.create(name='googlecalendar', plug=self._plug, url='')
         headers = {
             'Authorization': 'Bearer {}'.format(
                 self._connection_object.credentials_json['access_token']),
@@ -386,11 +401,9 @@ class GoogleCalendarController(GoogleBaseController):
         return False
 
     def get_events(self, limit=10):
-        calendar_id = self._plug.plug_action_specification.get(
-            action_specification__name__iexact='calendar').value
-        eventsResult = self._connection.events().list(
-            calendarId=calendar_id, maxResults=limit, singleEvents=True,
-            orderBy='updated').execute()
+        calendar_id = self._plug.plug_action_specification.get(action_specification__name__iexact='calendar').value
+        eventsResult = self._connection.events().list(calendarId=calendar_id, maxResults=limit, singleEvents=True,
+                                                      orderBy='updated').execute()
         return eventsResult.get('items', None)
 
     def get_meta(self):
@@ -432,16 +445,13 @@ class GoogleCalendarController(GoogleBaseController):
 
     def get_mapping_fields(self, **kwargs):
         fields = self.get_meta()
-        return [MapField(f, controller=ConnectorEnum.GoogleCalendar) for f in
-                fields]
+        return [MapField(f, controller=ConnectorEnum.GoogleCalendar) for f in fields]
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.get(
-            pk=action_specification_id)
+        action_specification = ActionSpecification.objects.get(pk=action_specification_id)
         calendar_list = self._connection.calendarList().list().execute()
         if action_specification.name.lower() == "calendar":
-            return tuple({"name": c["summary"], "id": c["id"]} for c in
-                         calendar_list['items'])
+            return tuple({"name": c["summary"], "id": c["id"]} for c in calendar_list['items'])
         else:
             raise ControllerError(
                 "That specification doesn't belong to an action in this connector.")
