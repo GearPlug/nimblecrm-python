@@ -138,60 +138,60 @@ class GetResponseControllerTestCases(TestCase):
              ('ipAddress', ''), ('name', '')])
 
 
-    # def test_controller(self):
-    #     """
-    #     Comprueba que los atributos del controlador esten instanciados
-    #     """
-    #     for _controller in self._list_target_controllers:
-    #         self.assertIsInstance(_controller['controller']._connection_object, GetResponseConnection)
-    #         self.assertIsInstance(_controller['plug'], Plug)
-    #         self.assertIsInstance(_controller['controller']._client, GetResponse)
-    #
-    # def test_test_connection(self):
-    #     """
-    #     Comprueba que la conexión sea valida
-    #     """
-    #     for _controller in self._list_target_controllers:
-    #         result = _controller['controller'].test_connection()
-    #         self.assertTrue(result)
+    def test_controller(self):
+        """
+        Comprueba que los atributos del controlador esten instanciados
+        """
+        for _controller in self._list_target_controllers:
+            self.assertIsInstance(_controller['controller']._connection_object, GetResponseConnection)
+            self.assertIsInstance(_controller['plug'], Plug)
+            self.assertIsInstance(_controller['controller']._client, GetResponse)
 
-    # def test_get_campaigns(self):
-    #     for _controller in self._list_target_controllers:
-    #         _result = _controller['controller'].get_campaigns()
-    #         _id = None
-    #         for _campaign in _result:
-    #             if _campaign['id'] == os.environ.get('TEST_GET_RESPONSE_CAMPAIGN'):
-    #                 _id = _campaign['id']
-    #         self.assertIsInstance(_result, list)
-    #         self.assertIsNotNone(_id)
-    #
-    # def test_get_meta(self):
-    #     for _controller in self._list_target_controllers:
-    #         _result = _controller['controller'].get_meta()
-    #         self.assertIsInstance(_result, list)
-    #         self.assertIsInstance(_result[0], dict)
-    #
-    # def test_get_target_fields(self):
-    #     for _controller in self._list_target_controllers:
-    #         _meta = _controller['controller'].get_meta()
-    #         _result = _controller['controller'].get_target_fields()
-    #         self.assertEqual(_meta, _result)
-    #
-    # def test_get_unsubscribe_target_fields(self):
-    #     for _controller in self._list_target_controllers:
-    #         if _controller['action'] == 'Unsubscribe':
-    #             _result = _controller['controller'].get_unsubscribe_target_fields()
-    #             self.assertIsInstance(_result,list)
-    #             self.assertIn('name', _result[0])
-    #             self.assertIn('required', _result[0])
-    #             self.assertIn('type', _result[0])
+    def test_test_connection(self):
+        """
+        Comprueba que la conexión sea valida
+        """
+        for _controller in self._list_target_controllers:
+            result = _controller['controller'].test_connection()
+            self.assertTrue(result)
 
-    # def test_get_mapping_fields(self):
-    #     """Testea que retorne los Mapping Fields de manera correcta"""
-    #     for _controller in self._list_target_controllers:
-    #         result = _controller['controller'].get_mapping_fields()
-    #         self.assertIsInstance(result, list)
-    #         self.assertIsInstance(result[0], MapField)
+    def test_get_campaigns(self):
+        for _controller in self._list_target_controllers:
+            _result = _controller['controller'].get_campaigns()
+            _id = None
+            for _campaign in _result:
+                if _campaign['id'] == os.environ.get('TEST_GET_RESPONSE_CAMPAIGN'):
+                    _id = _campaign['id']
+            self.assertIsInstance(_result, list)
+            self.assertIsNotNone(_id)
+
+    def test_get_meta(self):
+        for _controller in self._list_target_controllers:
+            _result = _controller['controller'].get_meta()
+            self.assertIsInstance(_result, list)
+            self.assertIsInstance(_result[0], dict)
+
+    def test_get_target_fields(self):
+        for _controller in self._list_target_controllers:
+            _meta = _controller['controller'].get_meta()
+            _result = _controller['controller'].get_target_fields()
+            self.assertEqual(_meta, _result)
+
+    def test_get_unsubscribe_target_fields(self):
+        for _controller in self._list_target_controllers:
+            if _controller['action'] == 'Unsubscribe':
+                _result = _controller['controller'].get_unsubscribe_target_fields()
+                self.assertIsInstance(_result,list)
+                self.assertIn('name', _result[0])
+                self.assertIn('required', _result[0])
+                self.assertIn('type', _result[0])
+
+    def test_get_mapping_fields(self):
+        """Testea que retorne los Mapping Fields de manera correcta"""
+        for _controller in self._list_target_controllers:
+            result = _controller['controller'].get_mapping_fields()
+            self.assertIsInstance(result, list)
+            self.assertIsInstance(result[0], MapField)
 
     def test_get_action_specification_options(self):
         for _controller in self._list_target_controllers:
