@@ -1919,17 +1919,33 @@ class BatchbookController(BaseController):
             try:
                 self._account_name = self._connection_object.account_name
                 self._api_key = self._connection_object.access_key
-                self._client = ClientBatchbook(api_key=self._api_key, account_name=self._account_name)
             except Exception as e:
-                print(e)
-                raise
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.Batchbook,
+                    message='The attributes necessary to make the connection were not obtained.. {}'.format(
+                                          str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.Batchbook,
+                                  message='The controller is not instantiated correctly.')
+        try:
+            self._client = ClientBatchbook(api_key=self._api_key, account_name=self._account_name)
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.Batchbook,
+                                  message='Error in the instantiation of the client. {}'.format(str(e)))
 
     def test_connection(self):
         try:
-            self._client.get_contacts()
-            return self._api_key is not None
+            response = self._client.get_contacts()
         except:
-            return None
+            # raise ControllerError(code=1004, controller=ConnectorEnum.SugarCRM,
+            #                       message='Error in the connection test.. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, list) and isinstance(response[-1], dict) and 'id' in \
+                response[-1] and 'updated_at' in response[-1]:
+            return True
+        else:
+            return False
 
     def download_to_stored_data(self, connection_object, plug, last_source_record=None, **kwargs):
         if last_source_record:
