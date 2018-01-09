@@ -465,52 +465,62 @@ class GoogleCalendarController(GoogleBaseController):
 
 class EvernoteController(BaseController):
     _token = None
+    _client = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(EvernoteController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(EvernoteController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token = self._connection_object.token
-                except Exception as e:
-                    print("Error getting the Evernote token")
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(EvernoteController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+            except Exception as e:
+                raise ControllerError(code=1001, controller=ConnectorEnum.Evernote,
+                                      message='Error getting the attributes args. {}'.format(str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.Evernote,
+                                  message='The controller is not instantiated correctly.')
+        try:
+            self._client = EvernoteClient(token=self._token)
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.Evernote,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
-        client = EvernoteClient(self._token)
         try:
-            client.get_note_store()
-            return self._token is not None
+            response = self._client.get_note_store()
+            data = response.__dict__
         except Exception as e:
-            return self._token is None
+            # raise ControllerError(code=1004, controller=ConnectorEnum.Evernote,
+            #                       message='Error in the connection test.. {}'.format(str(e)))
+            return False
+        if data is not None and isinstance(data, dict) and 'error' not in data and '_client' in data:
+            return True
+        else:
+            return False
 
-    def download_to_stored_data(self, connection_object, plug, list=None):
-        print("source from evernote")
+    def download_to_stored_data(self, connection_object=None, plug=None, **kwargs):
         notes = self.get_notes(self._token)
-        print("notes")
-        print(notes)
         new_data = []
         for item in notes:
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=item['id'])
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
             if not q.exists():
-                for column in item:
-                    new_data.append(StoredData(name=column, value=item[column],
-                                               object_id=item['id'],
-                                               connection=connection_object.connection,
-                                               plug=plug))
-        extra = {}
+                new_item = [(
+                    StoredData(name=column, value=item[column], object_id=item['id'],
+                               connection=connection_object.connection, plug=plug)) for column in item]
+                new_data.append(new_item)
+        downloaded_data = []
         for item in new_data:
-            extra['status'] = 's'
-            extra = {'controller': 'evernote'}
-            self._log.info(
-                'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                    item.object_id, item.plug.id, item.connection.id),
-                extra=extra)
-            item.save()
+            history_obj = {'identifier': None, 'is_stored': False, 'raw': {}}
+            for field in item:
+                field.save()
+                history_obj['raw'][field.name] = field.value
+                history_obj['is_stored'] = True
+            history_obj['identifier'] = {'name': 'id', 'value': field.object_id}
+            downloaded_data.append(history_obj)
+        if downloaded_data:
+            return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw']['id']}
         return False
 
     def get_notes(self, token):
@@ -539,33 +549,40 @@ class EvernoteController(BaseController):
         fields = self.get_target_fields()
         return [MapField(f, controller=ConnectorEnum.Evernote) for f in fields]
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if self._plug is not None:
-            obj_list = []
-            extra = {'controller': 'evernote'}
-            for item in data_list:
-                note = self.create_note(item)
-                if note.guid:
-                    extra['status'] = 's'
-                    self._log.info('Item: %s successfully sent.' %
-                                   (note.guid), extra=extra)
-                    obj_list.append(note.guid)
-                else:
-                    extra['status'] = 'f'
-                    self._log.info('Item: failed to send.', extra=extra)
-            return obj_list
-        raise ControllerError("There's no plug")
+    def send_stored_data(self, data_list, *args, **kwargs):
+        obj_list = []
+        for item in data_list:
+            try:
+                obj_result = {'data': item['data']}
+                result = self.create_note(item)
+                data = result.__dict__
+                obj_result['response'] = data
+                obj_result['identifier'] = data['guid']
+                obj_result['sent'] = True
+            except Exception as e:
+                obj_result['response'] = str(e)
+                obj_result['identifier'] = '-1'
+                obj_result['sent'] = False
+            obj_list.append(obj_result)
+        return obj_list
 
     def create_note(self, data):
+        _title = data['data']['title']
+        _content = data['data']['content']
         client = EvernoteClient(token=self._token)
-        c = data['content']
         noteStore = client.get_note_store()
         note = Types.Note()
-        note.title = data['title']
+        note.title = _title
         note.content = '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'
-        note.content += '<en-note>' + c + '</en-note>'
+        note.content += '<en-note>' + _content + '</en-note>'
         return noteStore.createNote(note)
+
+    def delete_note(self):
+        # TODO: realizar metodo.
+        """
+        :return:
+        """
+        pass
 
 
 class WunderListController(BaseController):
@@ -595,9 +612,9 @@ class WunderListController(BaseController):
             self._client = self._api.get_client(self._token, settings.WUNDERLIST_CLIENT_ID)
         except Exception as e:
             raise ControllerError(
-                code = 1003,
-                controller = ConnectorEnum.WunderList,
-                message = 'Error in the instantiation of the client.. {}'.format(str(e)))
+                code=1003,
+                controller=ConnectorEnum.WunderList,
+                message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -608,7 +625,8 @@ class WunderListController(BaseController):
             #     controller=ConnectorEnum.WunderList,
             #     message='Error in the connection test. {}'.format(str(e)))
             return False
-        if response is not None and isinstance(response, list) and isinstance(response[0], dict) and 'id' in response[0]:
+        if response is not None and isinstance(response, list) and isinstance(response[0], dict) and 'id' in response[
+            0]:
             return True
         else:
             return False
