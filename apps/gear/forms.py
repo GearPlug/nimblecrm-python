@@ -88,6 +88,13 @@ class DownloadHistoryForm(forms.Form):
 
 
 class FiltersForm(forms.ModelForm):
+    field_name = forms.ChoiceField()
+
+    def __init__(self, **kwargs):
+        super(FiltersForm, self).__init__()
+        source_fields = kwargs.pop('source_fields', [])
+        self.fields['field_name'].choices = tuple((f, f) for f in source_fields)
+
     class Meta:
         model = GearFilter
         fields = ('field_name', 'option', 'comparison_data', 'is_active')

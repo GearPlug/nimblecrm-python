@@ -478,24 +478,23 @@ class GearFiltersView(FormView, LoginRequiredMixin):
 
     def get_context_data(self, **kwargs):
         context = super(GearFiltersView, self).get_context_data(**kwargs)
-        modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
-        formset = modelformset(queryset=GearFilter.objects.filter(gear_id=self.kwargs['pk']))
-        _gear = Gear.objects.filter(pk=self.kwargs['pk']).select_related('source', 'target').get(pk=self.kwargs['pk'])
-        source_plug = Plug.objects.filter(pk=_gear.source.id).select_related('connection__connector').get(
-            pk=_gear.source.id)
-        _source_object_list = self.get_available_source_fields(source_plug)
+        my_data = self.get_available_source_fields()
+        modelformset = modelformset_factory(GearFilter, form=self.get_form_class(), extra=0, min_num=1, max_num=100,
+                                            can_delete=True, )
+        formset = modelformset(queryset=GearFilter.objects.filter(gear_id=self.kwargs['pk']),
+                               form_kwargs={"source_fields": my_data})
+
         context['formset'] = formset
-        context['source_object_list'] =_source_object_list
         return context
 
+    # def get_form(self, form_class=None):
+    #     if form_class is None:
+    #         form_class = self.get_form_class()
+    #     return form_class(**self.get_form_kwargs())
 
-    def get_available_source_fields(self, plug):
-        c = ConnectorEnum.get_connector(plug.connection.connector.id)
-        if c == ConnectorEnum.GoogleContacts:
-            self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
-            return ['{0}'.format(field) for field in self.google_contacts_controller.get_contact_fields()]
-        return [('{0}'.format(item['name']), item['value']) for item in
-                StoredData.objects.filter(plug=plug, connection=plug.connection).values()]
+    def get_available_source_fields(self):
+        plug = Plug.objects.filter(gear_source__id=self.kwargs['pk']).select_related('connection__connector')[0]
+        return tuple(item['name'] for item in StoredData.objects.filter(plug=plug, connection=plug.connection).values())
 
 
 def gear_toggle(request, gear_id):

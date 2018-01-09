@@ -68,14 +68,6 @@
             $('#' + id).remove();
         };
         $(document).ready(function () {
-{#            $("#id_form-0-field_name").empty();#}
-            {#            var new_options = [{% for item in source_object_list %}'{{ item.0 }}',{% endfor %}];#}
-{#            var new_options2 = [('1', 'option1'), ('2', 'option2'), ('3', 'option3')];#}
-{#            $each(new_options, function (value) {#}
-{#                new Element('option')#}
-{#                    .set('text', value)#}
-{#                    .inject($('yourSelectList'));#}
-{#            });#}
             $(document).on("click", "button#btnAdd", function () {
                 add_new_form();
                 delete_element(_delete)
@@ -84,6 +76,14 @@
                 console.log("in")
                 $(this).parent().remove();
             });
+            $(document).on("change", "select[name=option]", function () {
+                console.log($(this).val(), ["5", "6"].indexOf($(this).val()) > -1)
+                if (["5", "6"].indexOf($(this).val()) > -1) {
+                    $(this).parent().find("input[type=text]").prop("disabled", true);
+                } else {
+                    $(this).parent().find("input[type=text]").prop("disabled", false);
+                }
+            })
         })
 
 
