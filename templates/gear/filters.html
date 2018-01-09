@@ -3,35 +3,38 @@
 
 
 {% block content %}
-    <form method="POST" action="{% url 'gear:filters' pk=request.session.gear_id %}" autocomplete="off"/>
-    {% csrf_token %}
-    {{ formset.management_form }}
-    <div class="formset-list filter">
-        <div class="title">
-            <span>Filters</span>
-        </div>
-        {% for form in formset %}
-            <div id="id-form-{{ forloop.counter }}" class="formset-form">
-                {{ form.id }}
-                {{ form.field_name.label_tag }}
-                {{ form.field_name }}
-                {{ form.option.label_tag }}
-                {{ form.option }}
-                {{ form.comparison_data.label_tag }}
-                {{ form.comparison_data }}
-                {{ form.is_active.label_tag }}
-                {{ form.is_active }}
-                {{ form.DELETE.label_tag }}
-                {{ form.DELETE }}
-
+    <div class="row filters">
+        <form method="POST" action="{% url 'gear:filters' pk=request.session.gear_id %}" autocomplete="off"/>
+        {% csrf_token %}
+        {{ formset.management_form }}
+        <div class="formset-list filter">
+            <div class="title">
+                <span>Filters</span>
             </div>
-        {% endfor %}
-    </div>
-    <br>
+            {% for form in formset %}
+                <div id="id-form-{{ forloop.counter }}" class="formset-form">
+                    {{ form.id }}
+                    {{ form.field_name.label_tag }}
+                    {{ form.field_name }}
+                    {{ form.option.label_tag }}
+                    {{ form.option }}
+                    {{ form.comparison_data.label_tag }}
+                    {{ form.comparison_data }}
+                    {{ form.is_active.label_tag }}
+                    {{ form.is_active }}
+                    {{ form.DELETE.label_tag }}
+                    {{ form.DELETE }}
 
-    <button type="button" id="btnAdd"> Add</button>
-    <button type="submit"> Submit</button>
-    </form>
+                </div>
+            {% endfor %}
+        </div>
+        <br>
+
+        <button type="button" id="btnAdd"> Add</button>
+        <button type="submit"> Submit</button>
+        </form>
+    </div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -65,6 +68,14 @@
             $('#' + id).remove();
         };
         $(document).ready(function () {
+{#            $("#id_form-0-field_name").empty();#}
+            {#            var new_options = [{% for item in source_object_list %}'{{ item.0 }}',{% endfor %}];#}
+{#            var new_options2 = [('1', 'option1'), ('2', 'option2'), ('3', 'option3')];#}
+{#            $each(new_options, function (value) {#}
+{#                new Element('option')#}
+{#                    .set('text', value)#}
+{#                    .inject($('yourSelectList'));#}
+{#            });#}
             $(document).on("click", "button#btnAdd", function () {
                 add_new_form();
                 delete_element(_delete)

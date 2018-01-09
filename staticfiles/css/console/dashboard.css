@@ -837,6 +837,14 @@ body {
     text-align: center;
 }
 
+.filters .filter input[type="text"] {
+    width: 14%;
+    height: 24px;
+    margin: 12px 0;
+    border: 1px solid #000000;
+    text-align: center;
+}
+
 .gp-modal .modal-content2 .form textarea,
 .content-body .connection .form textarea,
 .content-body .mapping .form textarea {
@@ -876,6 +884,13 @@ body {
 .content-body .mapping .form label:not(.btn),
 .content-body .gear-update .form label:not(.btn) {
     font-size: 1.80em;
+    color: #9d9ba1;
+    font-weight: 400;
+    margin: 0;
+}
+
+.filters .filter label {
+    font-size: 1em;
     color: #9d9ba1;
     font-weight: 400;
     margin: 0;
@@ -1065,6 +1080,13 @@ body {
     color: #FFFFFF;
 }
 
+.filters .filter select {
+    background-color: white;
+    border: 1px solid black;
+    font-size: 1em;
+    color: black;
+}
+
 .content-body .apps-list .search1 .box-wrapper .rail-select select option {
     color: #000000;
 }
@@ -1153,6 +1175,25 @@ body {
     background-color: #bbbcc2;
     color: #FFFFFF;
 
+    display: inline-block;
+    vertical-align: top;
+    cursor: pointer;
+}
+
+.filters button {
+    font-family: "Sansation Bold";
+    font-size: 1.2em;
+    min-width: 122px;
+    padding: 5px 15px 0 15px;
+    height: 34px;
+    margin: 0 0;
+    border-radius: 25px 25px 25px 25px;
+    -moz-border-radius: 25px 25px 25px 25px;
+    -webkit-border-radius: 25px 25px 25px 25px;
+    border: 0px solid #000000;
+    text-align: center;
+    background-color: #005ca7;
+    color: #FFFFFF;
     display: inline-block;
     vertical-align: top;
     cursor: pointer;
