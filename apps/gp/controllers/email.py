@@ -27,28 +27,36 @@ class GmailController(GoogleBaseController):
         GoogleBaseController.__init__(self, connection=connection, plug=plug, **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
-        credentials_json = None
         super(GmailController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
                 credentials_json = self._connection_object.credentials_json
             except Exception as e:
-                print(e)
-                credentials_json = None
-        if credentials_json is not None:
+                raise ControllerError(code=1001, controller=ConnectorEnum.Gmail.name,
+                                      message='The attributes necessary to make the connection were not obtained {}'.format(str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.Gmail.name,
+                                  message='The controller is not instantiated correctly.')
+        try:
             self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
             self._service = discovery.build('gmail', 'v1', http=self._credential.authorize(httplib2.Http()))
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.Gmail.name,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
-            self.get_profile()
-        except:
+            profile = self.get_profile()
+        except Exception as e:
             try:
                 self._refresh_token()
             except GoogleClient.HttpAccessTokenRefreshError:
                 self._report_broken_token()
-                return None
-        return self._credential is not None
+                return False
+            profile = self.get_profile()
+        if profile and isinstance(profile, dict) and 'emailAddress' in profile:
+            return True
+        return False
 
     def create_webhook(self):
         """
@@ -66,10 +74,9 @@ class GmailController(GoogleBaseController):
             }
             try:
                 res_watch = self._service.users().watch(userId='me', body=request).execute()
-            except:
-                res_watch is None
+            except Exception as e:
+                res_watch = None
             if res_watch is not None:
-                _profile = self.get_profile()
                 self._connection_object.history = self.get_profile()['historyId']
                 self._connection_object.save(update_fields=['history'])
                 webhook.url = settings.WEBHOOK_HOST + reverse('home:webhook',
@@ -85,26 +92,26 @@ class GmailController(GoogleBaseController):
         return False
 
     def download_to_stored_data(self, connection_object=None, plug=None, message=None, **kwargs):
+        if message is None:
+            return False
         message_stored_data = []
-        if message is not None:
-            _id = message['Id']
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=_id)
-            if not q.exists():
-                message_stored_data = []
-                for k, v in message.items():
-                    message_stored_data.append(
-                        StoredData(connection=connection_object.connection, plug=plug, name=k, value=v, object_id=_id))
-            if message_stored_data:
-                for msg in message_stored_data:
-                    try:
-                        msg.save()
-                        is_stored = True
-                    except Exception as e:
-                        is_stored = False
-                        print(e)
-            result_list = [{'raw': message, 'is_stored': is_stored, 'identifier': {'name': 'Id', 'value': _id}}]
-            return {'downloaded_data': result_list, 'last_source_record': _id}
-        return False
+        _id = message['Id']
+        q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=_id)
+        if not q.exists():
+            message_stored_data = []
+            for k, v in message.items():
+                message_stored_data.append(
+                    StoredData(connection=connection_object.connection, plug=plug, name=k, value=v, object_id=_id))
+        if message_stored_data:
+            for msg in message_stored_data:
+                try:
+                    msg.save()
+                    is_stored = True
+                except Exception as e:
+                    is_stored = False
+                    print(e)
+        result_list = [{'raw': message, 'is_stored': is_stored, 'identifier': {'name': 'Id', 'value': _id}}]
+        return {'downloaded_data': result_list, 'last_source_record': _id}
 
     def get_target_fields(self, **kwargs):
         return [{'name': 'to', 'label': 'To', 'type': 'varchar', 'required': True},
@@ -163,8 +170,7 @@ class GmailController(GoogleBaseController):
             p = self.get_profile()
             return ({'id': p['emailAddress'], 'name': p['emailAddress']},)
         else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector.")
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
     def get_history(self, history_id, f=None):
         params = {'userId': 'me', 'startHistoryId': history_id}
