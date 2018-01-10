@@ -16,7 +16,7 @@ from requests_oauthlib import OAuth2Session
 from slacker import Slacker
 from evernote.api.client import EvernoteClient
 from mercadolibre.client import Client as MercadolibreClient
-from instagram.client import InstagramAPI
+from instagram.client import Client as InstagramClient
 from salesforce.client import Client as SalesforceClient
 import tweepy
 import httplib2
@@ -195,14 +195,13 @@ class CreateConnectionView(LoginRequiredMixin, CreateView):
         elif connector == ConnectorEnum.Shopify:
             context['authorization_url'] = get_shopify_url()
         elif connector == ConnectorEnum.Instagram:
-            flow = InstagramAPI(client_id=settings.INSTAGRAM_CLIENT_ID, client_secret=settings.INSTAGRAM_CLIENT_SECRET,
-                                redirect_uri=settings.INSTAGRAM_AUTH_URL)
-            context['authorizaton_url'] = flow.get_authorize_login_url(scope=settings.INSTAGRAM_SCOPE)
+            flow = InstagramClient(settings.INSTAGRAM_CLIENT_ID, settings.INSTAGRAM_CLIENT_SECRET)
+            context['authorization_url'] = flow.authorization_url(settings.INSTAGRAM_AUTH_URL, settings.INSTAGRAM_SCOPE)
         elif connector == ConnectorEnum.Salesforce:
             flow = get_salesforce_auth()
             context['authorization_url'] = flow
         elif connector == ConnectorEnum.HubSpot:
-            context['authorizaton_url'] = get_hubspot_url()
+            context['authorization_url'] = get_hubspot_url()
         elif connector == ConnectorEnum.Evernote:
             client = EvernoteClient(consumer_key=settings.EVERNOTE_CONSUMER_KEY,
                                     consumer_secret=settings.EVERNOTE_CONSUMER_SECRET, sandbox=True)
@@ -367,10 +366,9 @@ class GoogleAuthView(View):
 
 class InstagramAuthView(View):
     def get(self, request, *args, **kwargs):
-        flow = InstagramAPI(client_id=settings.INSTAGRAM_CLIENT_ID, client_secret=settings.INSTAGRAM_CLIENT_SECRET,
-                            redirect_uri=settings.INSTAGRAM_AUTH_URL)
-        access_token = flow.exchange_code_for_access_token(request.GET['code'])
-        request.session['connector_data'] = {'token': access_token[0]}
+        flow = InstagramClient(settings.INSTAGRAM_CLIENT_ID, settings.INSTAGRAM_CLIENT_SECRET)
+        token = flow.exchange_code(settings.INSTAGRAM_AUTH_URL, request.GET['code'])
+        request.session['connection_data'] = {'token': token['access_token']}
         request.session['connector_name'] = ConnectorEnum.Instagram.name
         return redirect(reverse('connection:create_token_authorized_connection'))
 
@@ -697,14 +695,13 @@ class UpdateConnectionView(UpdateView):
         elif connector == ConnectorEnum.Shopify:
             context['authorization_url'] = get_shopify_url()
         elif connector == ConnectorEnum.Instagram:
-            flow = InstagramAPI(client_id=settings.INSTAGRAM_CLIENT_ID, client_secret=settings.INSTAGRAM_CLIENT_SECRET,
-                                redirect_uri=settings.INSTAGRAM_AUTH_URL)
-            context['authorizaton_url'] = flow.get_authorize_login_url(scope=settings.INSTAGRAM_SCOPE)
+            flow = InstagramClient(settings.INSTAGRAM_CLIENT_ID, settings.INSTAGRAM_CLIENT_SECRET)
+            context['authorization_url'] = flow.authorization_url(settings.INSTAGRAM_AUTH_URL, settings.INSTAGRAM_SCOPE)
         elif connector == ConnectorEnum.Salesforce:
             flow = get_salesforce_auth()
             context['authorization_url'] = flow
         elif connector == ConnectorEnum.HubSpot:
-            context['authorizaton_url'] = get_hubspot_url()
+            context['authorization_url'] = get_hubspot_url()
         elif connector == ConnectorEnum.Evernote:
             client = EvernoteClient(consumer_key=settings.EVERNOTE_CONSUMER_KEY,
                                     consumer_secret=settings.EVERNOTE_CONSUMER_SECRET, sandbox=True)

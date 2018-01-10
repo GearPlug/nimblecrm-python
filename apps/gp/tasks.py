@@ -17,9 +17,10 @@ def dispatch_all_gears():
     # TODO: AGREGAR FILTROS PARA COMPROBAR SI TIENE SOURCE Y TARGET. Y VALIDAR QUE EL MAPEO ES CORRECTO.
     # TODO: DESACTIVAR LOS GEARS QUE NO CUMPLAN LAS VALIDACIONES DE MAPEO O QUE NO TENGAN SOURCE Y TARGET. (EMAIL)
     for gear in active_gears:
-        res = dispatch.s(str(gear['id'])).apply_async(queue='dispatch')
+        res = dispatch.s(gear['id']).apply_async()
+        # res = dispatch.s(str(gear['id'])).apply_async(queue='dispatch')
         print("DISPATCH GEAR {0} WITH TASK [{1}]".format(gear['id'], res.task_id))
-        # dispatch.s(gear['id']).apply_async()
+        #
     return True
 
 
@@ -41,8 +42,8 @@ def dispatch(self, gear_id, skip_source=False):
                     existing_task = con.hgetall(source_task_name)
                     if not existing_task:
                         con.hmset(source_task_name, {"task": source.id, 'initial-time': NOW})
-                        # result_s = do_poll.s(source.id).apply_async()
-                        result_s = do_poll.s(source.id).apply_async(queue='polling')
+                        result_s = do_poll.s(source.id).apply_async()
+                        # result_s = do_poll.s(source.id).apply_async(queue='polling')
                         print("Agregando el Plug: {0} ({1}) al queue: POLLING. \nTASK: [{2}]"
                               "".format(source.id, source_controller.connector, result_s.task_id))
                     else:
@@ -63,8 +64,9 @@ def dispatch(self, gear_id, skip_source=False):
                             '{3}].\nPlease review your connection is still valid and turn on your Gear again.\n' \
                             '{4}'.format(gear.name, gear.id, source_controller.connector, source.connection.id,
                                          settings.CURRENT_HOST)
-                        send_notification_email.s(m, 'Deactivated Gear', recipient=gear.user.email).apply_async(
-                            queue='misc')
+                        send_notification_email.s(m, 'Deactivated Gear', recipient=gear.user.email).apply_async()
+                        # send_notification_email.s(m, 'Deactivated Gear', recipient=gear.user.email).apply_async(
+                        #     queue='misc')
                     else:
                         next_retry = 2 ** (self.request.retries + 1)
                         print("Retrying [{0}] in: {1} seconds.".format(self.request.retries, next_retry))
@@ -82,8 +84,8 @@ def dispatch(self, gear_id, skip_source=False):
             existing_task = con.hgetall(target_task_name)
             if not existing_task:
                 con.hmset(target_task_name, {"task": target.id, 'initial-time': NOW})
-                # result_t = send_data.s(target.id, query_params).apply_async()
-                result_t = send_data.s(target.id, query_params).apply_async(queue='send')
+                result_t = send_data.s(target.id, query_params).apply_async()
+                # result_t = send_data.s(target.id, query_params).apply_async(queue='send')
                 print("Agregando el Plug: {0} ({1}) al queue: SEND. \nTASK: [{2}]"
                       "".format(source.id, target.connection.connector.name, result_t.task_id))
             else:
@@ -121,7 +123,8 @@ def do_poll(self, plug_id):
                 gear.gear_map.last_source_update = timezone.now()
                 gear.gear_map.last_source_order_by_field_value = last_source_record
                 gear.gear_map.save(update_fields=['last_source_order_by_field_value', 'last_source_update'])
-                dispatch.s(str(gear.id), skip_source=True).apply_async(queue='dispatch')
+                result = dispatch.s(str(gear.id), skip_source=True).apply_async()
+                # result = dispatch.s(str(gear.id), skip_source=True).apply_async(queue='dispatch')
                 return True
         else:
             if self.request.retries >= 6:
@@ -133,7 +136,8 @@ def do_poll(self, plug_id):
                     '{3}].\nPlease review your connection is still valid and turn on your Gear again.\n' \
                     '{4}'.format(gear.name, gear.id, source_controller.connector, source.connection.id,
                                  settings.CURRENT_HOST)
-                send_notification_email.s(m, 'Deactivated Gear', recipient=gear.user.email).apply_async(queue='misc')
+                send_notification_email.s(m, 'Deactivated Gear', recipient=gear.user.email).apply_async()
+                # send_notification_email.s(m, 'Deactivated Gear', recipient=gear.user.email).apply_async(queue='misc')
             else:
                 next_retry = 2 ** (self.request.retries + 1)
                 print("Retrying [{0}] in: {1} seconds.".format(self.request.retries, next_retry))
@@ -172,7 +176,7 @@ def send_data(self, plug_id, params):
             if entries or target_controller.connector == ConnectorEnum.MailChimp:
                 gear.gear_map.last_sent_stored_data_id = last_sent_data.id
                 gear.gear_map.save(update_fields=['last_sent_stored_data_id'])
-                dispose_gear_stored_data.s(gear.id).apply_async(queue="misc")
+                # dispose_gear_stored_data.s(gear.id).apply_async(queue="misc")
             return True
         else:
             if self.request.retries >= 6:
@@ -184,7 +188,8 @@ def send_data(self, plug_id, params):
                     '{3}].\nPlease review your connection is still valid and turn on your Gear again.\n' \
                     '{4}'.format(gear.name, gear.id, target_controller.connector, target.connection.id,
                                  settings.CURRENT_HOST)
-                send_notification_email.s(m, 'Deactivated Gear', recipient=gear.user.email).apply_async(queue='misc')
+                send_notification_email.s(m, 'Deactivated Gear', recipient=gear.user.email).apply_async()
+                # send_notification_email.s(m, 'Deactivated Gear', recipient=gear.user.email).apply_async(queue='misc')
             else:
                 next_retry = 2 ** (self.request.retries + 1)
                 print("Retrying [{0}] in: {1} seconds.".format(self.request.retries, next_retry))

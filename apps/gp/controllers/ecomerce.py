@@ -31,50 +31,74 @@ class MercadoLibreController(BaseController):
                                                      **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
-        super(MercadoLibreController, self).create_connection(connection=connection,
-                                                              plug=plug)
+        super(MercadoLibreController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
                 self._token = self._connection_object.token
                 self._site = self._connection_object.site
-            except AttributeError as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.MercadoLibre,
-                                      message='Failed to get the token. \n{}'.format(str(e)))
-            try:
-                self._client = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
-                                                  client_secret=settings.MERCADOLIBRE_CLIENT_SECRET,
-                                                  site=self._site or 'MCO')
             except Exception as e:
-                raise ControllerError(code=2, controller=ConnectorEnum.MercadoLibre,
-                                      message='Cannot instantiate the client. {}'.format(str(e)))
-            try:
-                self._client.set_token(ast.literal_eval(self._token))
-            except Exception as e:
-                pass
+                raise ControllerError(code=1001, controller=ConnectorEnum.MercadoLibre.name,
+                                      message='The attributes necessary to make the connection were not obtained {}'.format(
+                                          str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.MercadoLibre.name,
+                                  message='The controller is not instantiated correctly.')
+        try:
+            self._client = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
+                                              client_secret=settings.MERCADOLIBRE_CLIENT_SECRET,
+                                              site=self._site or 'MCO')
+            self._client.set_token(ast.literal_eval(self._token))
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.MercadoLibre.name,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
-        if self._client.access_token and not self._client.is_valid_token:
-            new_token = self._client.refresh_token()
-            self._client.set_token(new_token)
-            self._connection_object.token = new_token
-            self._connection_object.save()
-        return self.get_me() is not None
+        try:
+            if self._client.access_token and not self._client.is_valid_token:
+                new_token = self._client.refresh_token()
+                self._client.set_token(new_token)
+                self._connection_object.token = new_token
+                self._connection_object.save()
+            me = self.get_me()
+        except Exception as e:
+            return False
+        if me and isinstance(me, dict) and 'id' in me:
+            return True
+        return False
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        obj_list = []
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if is_first:
-            if data_list:
-                try:
-                    data_list = [data_list[-1]]
-                except:
-                    data_list = []
-        if self._plug is not None:
-            extra = {'controller': 'mercadolibre'}
-            for obj in data_list:
-                res = self.list_product(obj)
-            return
-        raise ControllerError("Incomplete.")
+    def download_to_stored_data(self, connection_object=None, plug=None, event=None, **kwargs):
+        if event is None:
+            return False
+        resource = event['resource']
+        _items = []
+        q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=resource)
+        if not q.exists():
+            for k, v in event.items():
+                obj = StoredData(connection=connection_object.connection, plug=plug, object_id=resource, name=k, value=v or '')
+                _items.append(obj)
+        is_stored = False
+        raw = {}
+        for item in _items:
+            raw[item.name] = item.value
+            item.save()
+            is_stored = True
+        result = [{'raw': raw, 'is_stored': is_stored, 'identifier': {'name': 'resource', 'value': resource}}]
+        return {'downloaded_data': result, 'last_source_record': resource}
+
+    def send_stored_data(self, data_list, **kwargs):
+        result_list = []
+        for obj in data_list:
+            try:
+                result = self.list_product(obj)
+                identifier = result['id']
+                response = str(result)
+                sent = True
+            except Exception as e:
+                identifier = "-1"
+                response = str(e)
+                sent = False
+            result_list.append({'data': dict(obj), 'response': response, 'sent': sent, 'identifier': identifier})
+        return result_list
 
     def list_product(self, obj):
         try:
@@ -146,7 +170,6 @@ class MercadoLibreController(BaseController):
                 'required': False,
                 'type': 'text'
             },
-
         ]
 
     def get_me(self):
@@ -177,25 +200,6 @@ class MercadoLibreController(BaseController):
             if self.test_connection():
                 self.download_source_data(event=body)
         return HttpResponse(status=200)
-
-    def download_to_stored_data(self, connection_object=None, plug=None, event=None, **kwargs):
-        if event is not None:
-            _items = []
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                          object_id=event['resource'])
-            if not q.exists():
-                for k, v in event.items():
-                    obj = StoredData(connection=connection_object.connection, plug=plug,
-                                     object_id=event['resource'], name=k, value=v or '')
-                    _items.append(obj)
-            extra = {}
-            for item in _items:
-                extra['status'] = 's'
-                extra = {'controller': 'mercadolibre'}
-                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                    item.object_id, item.plug.id, item.connection.id), extra=extra)
-                item.save()
-        return False
 
 
 class AmazonSellerCentralController(BaseController):

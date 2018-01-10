@@ -117,6 +117,13 @@ class OdooCRMControllerTestCases(TestCase):
         # self.assertIsInstance(self.controller._connector, ConnectorEnum.OdooCRM)
         self.assertIsInstance(self.source_controller._client, OdooCRMClient)
 
+    def test_test_connection(self):
+        """
+
+        :return:
+        """
+        self.assertTrue(self.source_controller.test_connection())
+
     def test_get_mapping_fields(self):
         """Comprueba que la llamada al metodo devuelva el tipo de dato esperado.
 

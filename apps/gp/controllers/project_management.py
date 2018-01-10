@@ -30,30 +30,43 @@ class JIRAController(BaseController):
                 user = self._connection_object.connection_user
                 password = self._connection_object.connection_password
             except AttributeError as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.JIRA.name,
-                                      message='Error getting the JIRA attributes args. {}'.format(str(e)))
-            try:
-                if host and user and password:
-                    self._connection = JIRAClient(host, user, password)
-            except Exception as e:
-                raise ControllerError(code=2, controller=ConnectorEnum.JIRA.name,
-                                      message='Error instantiating the JIRA client. {}'.format(str(e)))
+                raise ControllerError(code=1001, controller=ConnectorEnum.JIRA.name,
+                                      message='The attributes necessary to make the connection were not obtained {}'.format(str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.JIRA.name,
+                                      message='The controller is not instantiated correctly.')
+        try:
+            if host and user and password:
+                self._connection = JIRAClient(host, user, password)
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.JIRA.name,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
-        return True if self._connection.get_permissions() else False
+        try:
+            response = self._connection.get_permissions()
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.JIRA.name,
+            # message='Error in the connection test... {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, dict) and 'permissions' in response:
+            return True
+        else:
+            return False
 
     def send_stored_data(self, data_list, **kwargs):
         result_list = []
         for obj in data_list:
-            extra = {'controller': 'jira'}
             try:
                 result = self.create_issue(self._plug.plug_action_specification.all()[0].value, obj)
                 identifier = result['id']
+                response = str(result)
                 sent = True
-            except:
-                identifier = ""
+            except Exception as e:
+                identifier = "-1"
+                response = str(e)
                 sent = False
-            result_list.append({'data': dict(obj), 'response': '', 'sent': sent, 'identifier': identifier})
+            result_list.append({'data': dict(obj), 'response': response, 'sent': sent, 'identifier': identifier})
         return result_list
 
     def download_to_stored_data(self, connection_object=None, plug=None, issue=None, **kwargs):

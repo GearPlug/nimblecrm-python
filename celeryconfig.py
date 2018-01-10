@@ -7,7 +7,8 @@ BROKER_URL = 'redis://localhost:6379'
 CELERYBEAT_SCHEDULE = {
     'update-plugs-1-minutes': {
         'task': 'apps.gp.tasks.dispatch_all_gears',
-        'schedule': timedelta(seconds=60, ),
+        'schedule': timedelta(seconds=45, ),
+        'options': {'queue': 'dispatch'},
     },
 }
 

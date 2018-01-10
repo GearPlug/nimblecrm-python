@@ -55,29 +55,47 @@ class SugarCRMController(BaseController):
                     if not self._connection_object.url.endswith('/'):
                         self._url += '/'
                 self._url += 'service/v4_1/rest.php'
-                try:
-                    self._module = self._plug.plug_action_specification.get(
-                        action_specification__name__iexact='module').value
-                except AttributeError as e:
-                    print("No module found. If this is a test_connection ignore the following message."
-                          " \nMessage: {0}".format(str(e)))
-            except AttributeError as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.SugarCRM,
-                                      message='Error getting the SugarCRM attributes args. {}'.format(str(e)))
+            except Exception as e:
+                raise ControllerError(code=1001, controller=ConnectorEnum.SugarCRM,
+                                      message='The attributes necessary to make the connection were not obtained.. {}'.format(str(e)))
         else:
-            raise ControllerError('No connection.')
-        if self._url is not None and self._user is not None and self._password is not None:
-            try:
-                session = requests.Session()
-                self._client = SugarClient(self._url, self._user, self._password, session=session)
-            except requests.exceptions.MissingSchema:
-                raise
-            except InvalidLogin as e:
-                raise ControllerError(code=2, controller=ConnectorEnum.SugarCRM,
-                                      message='Invalid login. {}'.format(str(e)))
+            raise ControllerError(code=1002, controller=ConnectorEnum.SugarCRM,
+                                  message='The controller is not instantiated correctly.')
+        try:
+            session = requests.Session()
+            self._client = SugarClient(self._url, self._user, self._password, session=session)
+        except requests.exceptions.MissingSchema:
+            raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
+                                  message='Missing Schema.')
+        except InvalidLogin as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
+                                  message='Invalid login. {}'.format(str(e)))
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+        try:
+            self._module = self._plug.plug_action_specification.get(
+                action_specification__name__iexact='module').value
+        except Exception as e:
+            raise ControllerError(code=1005, controller=ConnectorEnum.SugarCRM,
+                                  message='Error while choosing specifications. {}'.format(str(e)))
 
     def test_connection(self):
-        return self._client is not None and self._client.session_id is not None
+        """
+        Debido a un mejor metodo para verificar la conexion se utiliza el metodo
+        get_available_modules()
+        :return:
+        """
+        try:
+            response = self.get_available_modules()
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.SugarCRM,
+            #                       message='Error in the connection test.. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, dict) and 'modules' in response:
+            return True
+        else:
+            return False
 
     def get_available_modules(self):
         try:
@@ -133,8 +151,6 @@ class SugarCRMController(BaseController):
                 query += " AND {0}.date_entered > '{1}'".format(self._module.lower(), last_source_record)
         entries = self.get_entry_list(self._module, max_results=limit, order_by=order_by, query=query)['entry_list']
         new_data = []
-        print(query)
-        print(len(entries))
         for item in entries:
             q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=item['id'])
             if not q.exists():
@@ -153,7 +169,7 @@ class SugarCRMController(BaseController):
             downloaded_data.append(history_obj)
         if downloaded_data:
             return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw'][
-                'date_entered']['value']}
+                'date_entered']}
         return False
 
     def dictfy(self, _dict):
@@ -415,30 +431,40 @@ class SalesforceController(BaseController):
         if self._connection_object is not None:
             try:
                 self.token = json.loads(self._connection_object.token)
-            except Exception as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.Salesforce,
-                                      message='Error getting the Salesforce attributes args. {}'.format(str(e)))
-            try:
-                self._client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
-                                                settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
-                self._client.set_access_token(self.token)
-            except Exception as e:
-                raise ControllerError(code=2, controller=ConnectorEnum.Salesforce,
-                                      message='Error initializing the Salesforce client. {}'.format(str(e)))
+            except AttributeError as e:
+                raise ControllerError(code=1001, controller=ConnectorEnum.Salesforce.name,
+                                      message='The attributes necessary to make the connection were not obtained {}'.format(
+                                          str(e)))
+        else:
+            raise ControllerError(code=1002, controller=ConnectorEnum.Salesforce.name,
+                                  message='The controller is not instantiated correctly.')
+        try:
+            self._client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
+                                            settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
+            self._client.set_access_token(self.token)
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.Salesforce.name,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
-            return True if self._client.get_user_info() else False
+            user_info = self._client.get_user_info()
         except BadOAuthTokenError as e:
             new_token = self._client.refresh_token()
-            if not new_token:
-                raise ControllerError(code=3, controller=ConnectorEnum.Salesforce,
-                                      message="Error refreshing the user's token. {}".format(str(e)))
             # Actualiza el token del controlador con el nuevo token obtenido y posteriormente guarda en BD.
             self.token.update(new_token)
             self._client.set_access_token(self.token)
             self._connection_object.token = json.dumps(self.token)
             self._connection_object.save()
+            #TODO: Intentar obtener la info nuevamente
+            return False
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.Salesforce.name,
+            # message='Error in the connection test... {}'.format(str(e)))
+            return False
+        if user_info and isinstance(user_info, dict) and 'user_id' in user_info:
+            return True
+        return False
 
     def send_stored_data(self, data_list, is_first=False):
         result_list = []
@@ -1094,16 +1120,49 @@ class ActiveCampaignController(BaseController):
         super(ActiveCampaignController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
-                self._client = ActiveCampaignClient(self._connection_object.host,
-                                                    self._connection_object.connection_access_key)
+                host = self._connection_object.host
+                api_key = self._connection_object.connection_access_key
             except Exception as e:
-                print(e)
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.ActiveCampaign,
+                    message='The attributes necessary to make the connection were not obtained. {}'.format(
+                    str(e))
+                )
+        else:
+            raise ControllerError(
+                code=1002,
+                controller=ConnectorEnum.ActiveCampaign,
+                message='The controller is not instantiated correctly..')
+        try:
+            self._client = ActiveCampaignClient(host, api_key)
+        except Exception as e:
+            raise ControllerError(
+                code=1003,
+                controller=ConnectorEnum.ActiveCampaign,
+                message='Error in the instantiation of the client. {}'.format(
+                    str(e))
+            )
 
     def test_connection(self):
         try:
-            self._client.account.get_account_info()
+            account_info = self._client.account.get_account_info()
+        except Exception as e:
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.ActiveCampaign,
+            #     message='Error in the connection test. {}'.format(
+            #         str(e))
+            # )
+            return False
+        if account_info is not None and 'result_message' in account_info and account_info[
+            'result_message'] == "Success: Something is returned":
             return True
-        except:
+        else:
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.ActiveCampaign,
+            #     message='Error in the connection test.')
             return False
 
     def get_custom_fields(self):
@@ -1162,7 +1221,10 @@ class ActiveCampaignController(BaseController):
             "name": "GearPlug WebHook",
             "url": url,
             "action": action,
-            "init": "admin"
+            "init[1]": "admin",
+            "init[2]": "public",
+            "init[3]": "api",
+            "init[4]": "system",
         }
         if _value is not None:
             for k, v in _value.items():
@@ -1205,7 +1267,6 @@ class ActiveCampaignController(BaseController):
         ]
 
     def send_stored_data(self, data_list):
-        extra = {'controller': 'activecampaign'}
         action = self._plug.action.name
         result_list = []
         for item in data_list:
@@ -1214,6 +1275,7 @@ class ActiveCampaignController(BaseController):
                     _result = self._client.contacts.create_contact(item)
                     _sent = True
                 except Exception as e:
+                    _result = str(e)
                     _sent = False
             elif action == 'subscribe contact':
                 _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
@@ -1222,6 +1284,7 @@ class ActiveCampaignController(BaseController):
                     _result = self._client.contacts.create_contact(item)
                     _sent = True
                 except Exception as e:
+                    _result = str(e)
                     _sent = False
             elif action == 'unsubscribe contact':
                 _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
@@ -1232,13 +1295,14 @@ class ActiveCampaignController(BaseController):
                     _result = self._client.contacts.edit_contact(data)
                     _sent = True
                 except Exception as e:
+                    _result = str(e)
                     _sent = False
             if _sent is True:
                 identifier = _result['subscriber_id']
                 _response = _result
             else:
-                identifier = ""
-                _response = e
+                identifier = "-1"
+                _response = _result
             result_list.append({'data': dict(item), 'response': _response, 'sent': _sent, 'identifier': identifier})
         return result_list
 
@@ -1258,6 +1322,7 @@ class ActiveCampaignController(BaseController):
             elif action in ['new deal', 'deal updated']:
                 _user = self._client.users.view_user(data['deal_owner'])
                 data['deal_owner_email'] = _user['email']
+                data['deal_owner_username'] = _user['username']
                 object_id = int(data['deal_id'])
             q = StoredData.objects.filter(object_id=object_id, connection=connection_object.id, plug=plug.id)
             if not q.exists():
@@ -1680,22 +1745,41 @@ class OdooCRMController(BaseController):
                 self._password = self._connection_object.connection_password
                 self._url = self._connection_object.url
                 self._database = self._connection_object.database
-            except AttributeError as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.OdooCRM,
-                                      message='Error getting the OdooCRM attributes args. {}'.format(str(e)))
+            except Exception as e:
+                raise ControllerError(code=1001, controller=ConnectorEnum.OdooCRM,
+                                      message='The attributes necessary to make the connection were not obtained.. {}'.format(str(e)))
         else:
-            raise ControllerError('No connection.')
-        if self._url is not None and self._database is not None and self._user is not None and self._password is not None:
-            try:
-                self._client = OdooCRMClient(self._url, self._database, self._user, self._password)
-            except requests.exceptions.MissingSchema:
-                raise
-            except InvalidLogin as e:
-                raise ControllerError(code=2, controller=ConnectorEnum.OdooCRM,
-                                      message='Invalid login. {}'.format(str(e)))
+            raise ControllerError(code=1002, controller=ConnectorEnum.OdooCRM,
+                                  message='The controller is not instantiated correctly.')
+        try:
+            self._client = OdooCRMClient(self._url, self._database, self._user, self._password)
+        except requests.exceptions.MissingSchema:
+            raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
+                                  message='Missing Schema.')
+        except InvalidLogin as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
+                                  message='Invalid login. {}'.format(str(e)))
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
-        return self._client is not None
+        """
+        Debido a la falta de un metodo mas apropiado, se decidio utilizar el metodo list_fields_partner()
+        para verificar la conexion con el servidor.
+        :return:
+        """
+        try:
+            response = self._client.list_fields_partner()
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.OdooCRM,
+            # message='Error in the connection test. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response,
+                                               dict) and 'user_id' in response and "date" in response:
+            return True
+        else:
+            return False
 
     def get_search_partner(self, query, params):
         try:
