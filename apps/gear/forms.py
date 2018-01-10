@@ -90,12 +90,15 @@ class DownloadHistoryForm(forms.Form):
 class FiltersForm(forms.ModelForm):
     field_name = forms.ChoiceField()
 
-    def __init__(self, **kwargs):
-        super(FiltersForm, self).__init__()
+    def __init__(self, *args, **kwargs):
         source_fields = kwargs.pop('source_fields', [])
+        super(FiltersForm, self).__init__(*args, **kwargs)
         self.fields['field_name'].choices = tuple((f, f) for f in source_fields)
 
     class Meta:
         model = GearFilter
         fields = ('field_name', 'option', 'comparison_data', 'is_active')
         exclude = ('gear',)
+
+
+FilterFormSet = modelformset_factory(GearFilter, form=FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)

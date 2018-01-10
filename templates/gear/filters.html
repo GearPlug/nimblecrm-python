@@ -11,6 +11,7 @@
             <div class="title">
                 <span>Filters</span>
             </div>
+
             {% for form in formset %}
                 <div id="id-form-{{ forloop.counter }}" class="formset-form">
                     {{ form.id }}
@@ -24,7 +25,6 @@
                     {{ form.is_active }}
                     {{ form.DELETE.label_tag }}
                     {{ form.DELETE }}
-
                 </div>
             {% endfor %}
         </div>
@@ -40,40 +40,44 @@
 {% block scripts %}
     {{ block.super }}
     <script type="application/javascript">
-        var pattern = /\d+/g;
-        var pattern2 = new RegExp('\\b' + "DELETE" + '\\b');
-        function add_new_form() {
-            var new_form = $("div.formset-form:last").clone().find("input, select").val("").end();
-            $(new_form).find("input, select").each(function (index, element) {
-                init_value = element.name.match(pattern);
-                final_value = Number(init_value) + 1;
-                element.name = element.name.replace(init_value, final_value);
-                element.id = element.id.replace(init_value, final_value);
-                var btnremove = '<button type="button" class="removeClass"> Remove </button>';
-                if (pattern2.test(element.name)) {
-                    _delete = element.id;
-                    new_form.append(btnremove);
-                }
-            })
-            $(new_form).find("label").each(function (index, element) {
-                if ($(element).text() == 'Delete:') {
-                    $(element).remove()
-                }
-            })
-            var form_count = Number($("#id_form-TOTAL_FORMS").val()) + 1;
-            $("#id_form-TOTAL_FORMS").val(form_count);
-            $("form div.formset-list").append(new_form);
-        };
-        function delete_element(id) {
-            $('#' + id).remove();
-        };
+        var newForms = 0;
+        function cloneMore(selector, type) {
+            var newElement = $(selector).clone(true);
+            var total = $('#id_' + type + '-TOTAL_FORMS').val();
+            newElement.find(':input:not("button")').each(function () {
+                console.log($(this))
+                var name = $(this).attr('name').replace('-' + (total - 1) + '-', '-' + total + '-');
+                var id = 'id_' + name;
+                $(this).attr({'name': name, 'id': id}).val('').removeAttr('checked');
+            });
+            newElement.find('label').each(function () {
+                var newFor = $(this).attr('for').replace('-' + (total - 1) + '-', '-' + total + '-');
+                $(this).attr('for', newFor);
+            });
+            total++;
+            $('#id_' + type + '-TOTAL_FORMS').val(total);
+            $(selector).after(newElement);
+            if (newForms === 0) {
+                $(newElement).append('<button type="button" class="removeClass"> Remove </button>');
+                newForms += 1;
+            }
+        }
+
         $(document).ready(function () {
+            $('#add_more').click(function () {
+
+            });
             $(document).on("click", "button#btnAdd", function () {
-                add_new_form();
-                delete_element(_delete)
+                cloneMore('div.formset-form:last', 'filter');
             });
             $(document).on("click", "button.removeClass", function () {
-                console.log("in")
+                if (newForms > 0) {
+                    newForms -= 1;
+                }
+                var type = 'filter';
+                var total = $('#id_' + type + '-TOTAL_FORMS').val();
+                total--;
+                $('#id_' + type + '-TOTAL_FORMS').val(total);
                 $(this).parent().remove();
             });
             $(document).on("change", "select[name=option]", function () {

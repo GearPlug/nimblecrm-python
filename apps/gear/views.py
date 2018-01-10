@@ -1,23 +1,21 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Prefetch, prefetch_related_objects
+from django.db.models import Prefetch
 from django.forms import modelform_factory, modelformset_factory
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView, TemplateView
 from django.views.generic.edit import FormMixin
 from django.http.response import JsonResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from apps.gear.apps import APP_NAME as app_name
-from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm, FiltersForm
+from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm, FiltersForm, FilterFormSet
 from apps.gp.enum import ConnectorEnum
 from apps.gp.tasks import dispatch
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, GearGroup, GearFilter, Connector
 from apps.history.models import DownloadHistory, SendHistory
 from oauth2client import client
-from django.shortcuts import render
 import httplib2
 import json
-import datetime
 from django.apps import apps
 from apiconnector import settings
 
@@ -450,47 +448,32 @@ class GearDownloadHistoryView(GearSendHistoryView):
                  } for item in self.model.objects.filter(gear_id=self.kwargs['pk'], **kwargs).order_by(order)]
 
 
-class GearFiltersView(FormView, LoginRequiredMixin):
+class GearFiltersView(TemplateView, LoginRequiredMixin):
     login_url = '/accounts/login/'
     template_name = 'gear/filters.html'
-    form_class = FiltersForm
     success_url = reverse_lazy('connection:connector_list', kwargs={'type': 'target'})
     exists = False
 
     def post(self, request, *args, **kwargs):
-        modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
-        formset = modelformset(self.request.POST, queryset=GearFilter.objects.filter(gear_id=kwargs['pk']))
-        print(request.POST)
+        formset = FilterFormSet(request.POST, queryset=GearFilter.objects.filter(gear_id=kwargs['pk']), prefix='filter',
+                                form_kwargs={"source_fields": self.get_available_source_fields()})
         if formset.is_valid():
             filters = formset.save(commit=False)
             for filter in filters:
-                print("filter_id", filter.id)
-                print("filter_activo", filter.is_active)
                 _gear = Gear.objects.get(id=kwargs['pk'])
                 filter.gear = _gear
                 filter.save()
             for filter in formset.deleted_forms:
                 if 'DELETE' in filter.cleaned_data and filter.cleaned_data['DELETE'] is True:
                     filter.cleaned_data['id'].delete()
-        else:
-            print("no es valido")
         return HttpResponseRedirect(self.success_url)
 
     def get_context_data(self, **kwargs):
         context = super(GearFiltersView, self).get_context_data(**kwargs)
-        my_data = self.get_available_source_fields()
-        modelformset = modelformset_factory(GearFilter, form=self.get_form_class(), extra=0, min_num=1, max_num=100,
-                                            can_delete=True, )
-        formset = modelformset(queryset=GearFilter.objects.filter(gear_id=self.kwargs['pk']),
-                               form_kwargs={"source_fields": my_data})
-
+        formset = FilterFormSet(queryset=GearFilter.objects.filter(gear_id=kwargs['pk']), prefix='filter',
+                                form_kwargs={"source_fields": self.get_available_source_fields()})
         context['formset'] = formset
         return context
-
-    # def get_form(self, form_class=None):
-    #     if form_class is None:
-    #         form_class = self.get_form_class()
-    #     return form_class(**self.get_form_kwargs())
 
     def get_available_source_fields(self):
         plug = Plug.objects.filter(gear_source__id=self.kwargs['pk']).select_related('connection__connector')[0]
