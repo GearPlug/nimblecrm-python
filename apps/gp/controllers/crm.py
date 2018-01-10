@@ -22,6 +22,7 @@ from agilecrm.client import Client as AgileCRMClient
 from activecampaign.client import Client as ActiveCampaignClient
 from hubspot.client import Client as HubSpotClient
 from hubspot.exception import Unauthorized
+import xml.etree.ElementTree as ET
 import datetime
 import time
 import requests
@@ -208,96 +209,126 @@ class SugarCRMController(BaseController):
 class ZohoCRMController(BaseController):
     _token = None
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        super(ZohoCRMController, self).__init__(connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        if args:
-            super(ZohoCRMController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    self._token = self._connection_object.token
-                except Exception as e:
-                    print("Error getting zohocrm token")
-                    print(e)
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(ZohoCRMController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                self._token = self._connection_object.token
+            except Exception as e:
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.ZohoCRM,
+                    message='The attributes necessary to make the connection were not obtained.. {}'.format(str(e)))
 
     def test_connection(self):
-        if self._token is not None:
+        try:
             response = json.loads(self.get_modules()['_content'].decode())
-            if "result" in response["response"]:
-                return self._token is not None
-        return False
+        except Exception as e:
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.ZohoCRM,
+            #     message='Error in the connection test. {}'.format(str(e)))
+            return False
+        if "result" in response["response"]:
+            return True
+        else:
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.ZohoCRM,
+            #     message='Error in the connection test. {}'.format(str(e)))
+            return False
 
     def get_modules(self):
         params = {'authtoken': self._token, 'scope': 'crmapi'}
         url = "https://crm.zoho.com/crm/private/json/Info/getModules"
         return requests.get(url, params).__dict__
 
-    def download_to_stored_data(self, connection_object, plug, ):
+    @property
+    def has_webhook(self):
+        """
+        :return:
+        """
+        return False
+
+    def download_to_stored_data(self, connection_object, plug, **kwargs):
         module_id = self._plug.plug_action_specification.all()[0].value
         module_name = self.get_module_name(module_id)
         data = self.get_feeds(module_name)
+        new_item = []
         new_data = []
-        for item in data:
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                          object_id=item[item['id']])
+        for k, v in data[0].items():
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=data[0][data[0]['id']])
             if not q.exists():
-                for column in item:
-                    new_data.append(
-                        StoredData(
-                            name=column,
-                            value=item[column],
-                            object_id=item[item['id']],
-                            connection=connection_object.connection,
-                            plug=plug))
-        if new_data:
-            field_count = len(data)
-            extra = {'controller': 'zohocrm'}
-            for i, item in enumerate(new_data):
-                try:
-                    item.save()
-                    if (i + 1) % field_count == 0:
-                        extra['status'] = 's'
-                        self._log.info(
-                            'Item ID: %s, Connection: %s, Plug: %s successfully stored.'
-                            % (item.object_id, item.plug.id,
-                               item.connection.id),
-                            extra=extra)
-                except:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Field: %s, Connection: %s, Plug: %s failed to save.'
-                        % (item.object_id, item.name, item.plug.id,
-                           item.connection.id),
-                        extra=extra)
-            return True
+                new_item.append(StoredData(name=k, value=v, object_id=data[0][data[0]['id']], connection=connection_object.connection, plug=plug))
+                new_data.append(new_item)
+        downloaded_data = []
+        for new_item in new_data:
+            history_obj = {'identifier': None, 'is_stored': False, 'raw': {}}
+            for field in new_item:
+                field.save()
+                history_obj['raw'][field.name] = field.value
+                history_obj['is_stored'] = True
+            history_obj['identifier'] = {'name': 'id', 'value': field.object_id}
+            downloaded_data.append(history_obj)
+        if downloaded_data:
+            return {'downloaded_data': downloaded_data, 'last_source_record': downloaded_data[0]['raw']['Created Time']}
         return False
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if self._plug is not None:
-            obj_list = []
-            module_id = self._plug.plug_action_specification.all()[0].value
-            extra = {'controller': 'zohocrm'}
-            for item in data_list:
-                try:
-                    response = self.insert_records(item, module_id)
-                    self._log.info(
-                        'Item: %s successfully sent.' %
-                        (int(response['#text'])),
-                        extra=extra)
-                    obj_list.append(id)
-                except Exception as e:
-                    print(e)
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item: %s failed to send.' % (int(response['#text'])),
-                        extra=extra)
-            return obj_list
-        raise ControllerError("There's no plug")
+    def send_stored_data(self, data_list, *args, **kwargs):
+        obj_list = []
+        module_id = self._plug.plug_action_specification.all()[0].value
+        for item in data_list:
+            try:
+                result = self.insert_records(item, module_id)
+                obj_result = {'data': dict(item)}
+                obj_result['response'] = result
+                obj_result['identifier'] = result['id']
+                obj_result['sent'] = True
+            except Exception as e:
+                obj_result['response'] = str(e)
+                obj_result['identifier'] = '-1'
+                obj_result['sent'] = False
+            obj_list.append(obj_result)
+        return obj_list
 
-    def get_target_fields(self, module, **kwargs):
-        return self.get_module_fields(module, **kwargs)
+    def insert_records(self, data=None, module_id=None):
+        """
+        """
+        module_name = self.get_module_name(module_id)
+        if module_name == "Tasks":
+            module_name = "Activity"
+        elif module_name == "PriceBooks":
+            module_name = "Book"
+        xml_data = '<{0}><row no="1">'.format(module_name)
+        for k, v in data.items():
+            xml_data += '<FL val="{0}">{1}</FL>'.format(k, v)
+        xml_data += '</row></{0}>'.format(module_name)
+        params = {
+            'authtoken': self._token,
+            'scope': 'crmapi',
+            'xmlData': xml_data,
+            'duplicateCheck': 2,
+            'newFormat': 2
+        }
+        url = "https://crm.zoho.com/crm/private/xml/{0}/insertRecords?".format(module_name)
+        response = requests.post(url, data=params)
+        root = ET.fromstring(response.text)
+        d = {}
+        creation_result = []
+        try:
+            for xml in root.iter('FL'):
+                for k, v in xml.items():
+                    d['name'] = v
+                d['value'] = xml.text
+                creation_result.append(d)
+                return creation_result
+            else:
+                return ['vacio']
+        except Exception as e:
+            return None
 
     def get_mapping_fields(self):
         fields = self.get_target_fields()
@@ -374,14 +405,12 @@ class ZohoCRMController(BaseController):
         response = requests.get(url, params).__dict__['_content'].decode()
         response = json.loads(response)
         response = response['response']
-        if ("result" in response):
+        if "result" in response:
             response = response['result'][module_name]['row']
             modules = self.get_lists(response, module_name)
             return modules
         else:
-            print("no hay datos")
-            print(response)
-        return None
+            return None
 
     def get_module_name(self, module_id):
         modules = self.get_modules()['_content'].decode()
@@ -397,7 +426,7 @@ class ZohoCRMController(BaseController):
         return module_name.replace(" ", "")
 
     def get_action_specification_options(self, action_specification_id):
-        action_specification = ActionSpecification.objects.filter(
+        action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
         if action_specification.name.lower() == 'feed':
             modules = self.get_modules()['_content'].decode()
@@ -411,9 +440,7 @@ class ZohoCRMController(BaseController):
                     module_list.append({'id': m['id'], 'name': m['pl']})
             return tuple(module_list)
         else:
-            raise ControllerError(
-                "That specification doesn't belong to an action in this connector."
-            )
+            raise ControllerError("That specification doesn't belong to an action in this connector.")
 
 
 class SalesforceController(BaseController):
@@ -1137,16 +1164,49 @@ class ActiveCampaignController(BaseController):
         super(ActiveCampaignController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
             try:
-                self._client = ActiveCampaignClient(self._connection_object.host,
-                                                    self._connection_object.connection_access_key)
+                host = self._connection_object.host
+                api_key = self._connection_object.connection_access_key
             except Exception as e:
-                print(e)
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.ActiveCampaign,
+                    message='The attributes necessary to make the connection were not obtained. {}'.format(
+                    str(e))
+                )
+        else:
+            raise ControllerError(
+                code=1002,
+                controller=ConnectorEnum.ActiveCampaign,
+                message='The controller is not instantiated correctly..')
+        try:
+            self._client = ActiveCampaignClient(host, api_key)
+        except Exception as e:
+            raise ControllerError(
+                code=1003,
+                controller=ConnectorEnum.ActiveCampaign,
+                message='Error in the instantiation of the client. {}'.format(
+                    str(e))
+            )
 
     def test_connection(self):
         try:
-            self._client.account.get_account_info()
+            account_info = self._client.account.get_account_info()
+        except Exception as e:
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.ActiveCampaign,
+            #     message='Error in the connection test. {}'.format(
+            #         str(e))
+            # )
+            return False
+        if account_info is not None and 'result_message' in account_info and account_info[
+            'result_message'] == "Success: Something is returned":
             return True
-        except:
+        else:
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.ActiveCampaign,
+            #     message='Error in the connection test.')
             return False
 
     def get_custom_fields(self):
@@ -1205,7 +1265,10 @@ class ActiveCampaignController(BaseController):
             "name": "GearPlug WebHook",
             "url": url,
             "action": action,
-            "init": "admin"
+            "init[1]": "admin",
+            "init[2]": "public",
+            "init[3]": "api",
+            "init[4]": "system",
         }
         if _value is not None:
             for k, v in _value.items():
@@ -1248,7 +1311,6 @@ class ActiveCampaignController(BaseController):
         ]
 
     def send_stored_data(self, data_list):
-        extra = {'controller': 'activecampaign'}
         action = self._plug.action.name
         result_list = []
         for item in data_list:
@@ -1257,6 +1319,7 @@ class ActiveCampaignController(BaseController):
                     _result = self._client.contacts.create_contact(item)
                     _sent = True
                 except Exception as e:
+                    _result = str(e)
                     _sent = False
             elif action == 'subscribe contact':
                 _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
@@ -1265,6 +1328,7 @@ class ActiveCampaignController(BaseController):
                     _result = self._client.contacts.create_contact(item)
                     _sent = True
                 except Exception as e:
+                    _result = str(e)
                     _sent = False
             elif action == 'unsubscribe contact':
                 _list_id = self._plug.plug_action_specification.get(action_specification__name='list').value
@@ -1275,13 +1339,14 @@ class ActiveCampaignController(BaseController):
                     _result = self._client.contacts.edit_contact(data)
                     _sent = True
                 except Exception as e:
+                    _result = str(e)
                     _sent = False
             if _sent is True:
                 identifier = _result['subscriber_id']
                 _response = _result
             else:
-                identifier = ""
-                _response = e
+                identifier = "-1"
+                _response = _result
             result_list.append({'data': dict(item), 'response': _response, 'sent': _sent, 'identifier': identifier})
         return result_list
 
@@ -1301,6 +1366,7 @@ class ActiveCampaignController(BaseController):
             elif action in ['new deal', 'deal updated']:
                 _user = self._client.users.view_user(data['deal_owner'])
                 data['deal_owner_email'] = _user['email']
+                data['deal_owner_username'] = _user['username']
                 object_id = int(data['deal_id'])
             q = StoredData.objects.filter(object_id=object_id, connection=connection_object.id, plug=plug.id)
             if not q.exists():
