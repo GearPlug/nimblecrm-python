@@ -5,7 +5,7 @@ from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
 from django.conf import settings
 from apps.gp.models import StoredData, ActionSpecification, PlugActionSpecification, Webhook
-from instagram.client import InstagramAPI
+from instagram.client import Client as InstagramClient
 from apps.gp.enum import ConnectorEnum
 from apps.gp.map import MapField
 from apiclient import discovery, errors, http
@@ -125,73 +125,85 @@ class InstagramController(BaseController):
     _client = None
     TOKEN = 'GearPlug2017'
 
-    def __init__(self, *args, **kwargs):
-        BaseController.__init__(self, *args, **kwargs)
+    def __init__(self, connection=None, plug=None, **kwargs):
+        BaseController.__init__(self, connection=connection, plug=plug, **kwargs)
 
-    def create_connection(self, *args, **kwargs):
-        token = None
-        if args:
-            super(InstagramController, self).create_connection(*args)
-            if self._connection_object is not None:
-                try:
-                    token = self._connection_object.token
-                except Exception as e:
-                    print("Error getting the Instagram Token")
-                    print(e)
-        elif kwargs:
-            if 'token' in kwargs:
-                token = kwargs['token']
-        me = None
-        if token:
-            self._client = InstagramAPI(access_token=token, client_secret=settings.INSTAGRAM_CLIENT_SECRET)
-            me = self._client.user()
-        return me is not None
+    def create_connection(self, connection=None, plug=None, **kwargs):
+        super(InstagramController, self).create_connection(connection=connection, plug=plug)
+        if self._connection_object is not None:
+            try:
+                token = self._connection_object.token
+            except Exception as e:
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.Instagram,
+                    message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
+            try:
+                self._client = InstagramClient(settings.INSTAGRAM_CLIENT_ID, settings.INSTAGRAM_CLIENT_SECRET)
+                self._client.set_access_token(token)
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.Instagram,
+                                      message='Error in the instantiation of the client. {}'.format(str(e)))
 
     def test_connection(self, *args, **kwargs):
-        return self._client is not None
-
-    def download_to_stored_data(self, connection_object=None, plug=None, media=None, **kwargs):
-        if media is not None:
-            _items = []
-            # media es un objecto, se debe convertir a diccionario:
-            _dict = media.__dict__
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
-                                          object_id=media.id)
-            if not q.exists():
-                for k, v in _dict.items():
-                    obj = StoredData(connection=connection_object.connection, plug=plug,
-                                     object_id=media.id, name=k, value=v or '')
-                    _items.append(obj)
-            extra = {}
-            for item in _items:
-                extra['status'] = 's'
-                extra = {'controller': 'instagram'}
-                self._log.info('Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                    item.object_id, item.plug.id, item.connection.id), extra=extra)
-                item.save()
-        return False
-
-    def create_webhook(self):
-        url = 'https://api.instagram.com/v1/subscriptions/'
-        body = {
-            'client_id': settings.INSTAGRAM_CLIENT_ID,
-            'client_secret': settings.INSTAGRAM_CLIENT_SECRET,
-            'object': 'user',
-            'aspect': 'media',
-            'verify_token': 'GearPlug2017',
-            'callback_url': '%s/wizard/instagram/webhook/event/' % settings.WEBHOOK_HOST
-        }
-        r = requests.post(url, data=body)
-        if r.status_code == 201:
+        try:
+            response = self._client.get_account()
+        except Exception as e:
+            # raise ControllerError(code=1004, controller=ConnectorEnum.Instagram,
+            #                       message='Error in the connection test.. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, dict) and "data" in response and response['data']:
             return True
         return False
 
+    def download_to_stored_data(self, connection_object=None, plug=None, media=None, **kwargs):
+        if media is None:
+            return False
+        new_data = []
+        # media es un objecto, se debe convertir a diccionario:
+        _dict = media['data']
+        media_id = _dict['id']
+        q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=media_id)
+        if not q.exists():
+            for k, v in _dict.items():
+                obj = StoredData(connection=connection_object.connection, plug=plug, object_id=media_id, name=k, value=v or '')
+                new_data.append(obj)
+        is_stored = False
+        for item in new_data:
+            try:
+                item.save()
+                is_stored = True
+            except Exception as e:
+                print(e)
+        result_list = [{'raw': _dict, 'is_stored': is_stored, 'identifier': {'name': 'id', 'value': media_id}}]
+        return {'downloaded_data': result_list, 'last_source_record': media_id}
+
+    def create_webhook(self):
+        # Creacion de Webhook
+        webhook = Webhook.objects.create(name='instagram', plug=self._plug, url='', expiration='')
+        # Verificar host para determinar url_base
+        url_base = settings.WEBHOOK_HOST
+        url_path = reverse('home:webhook', kwargs={'connector': 'instagram', 'webhook_id': webhook.id})
+        url = url_base + url_path
+        response = self._client.create_subscription('user', 'media', 'GearPlug2017', url)
+
+        if response and isinstance(response, dict) and 'data' in response and response['data']:
+            webhook.url = url_base + url_path
+            webhook.generated_id = response['data']['id']
+            webhook.is_active = True
+            webhook.save(update_fields=['url', 'generated_id', 'is_active'])
+            return True
+        else:
+            webhook.is_deleted = True
+            webhook.save(update_fields=['is_deleted', ])
+            return False
+
     def get_account(self):
-        user = self._client.user()
-        return [(user.id, user.username)]
+        user = self._client.get_account()
+        return [(user['data']['id'], user['data']['username'])]
 
     def get_media(self, media_id):
-        media = self._client.media(media_id)
+        media = self._client.get_media(media_id)
         return media
 
     def get_action_specification_options(self, action_specification_id):
@@ -201,20 +213,18 @@ class InstagramController(BaseController):
         else:
             raise ControllerError("That specification doesn't belong to an action in this connector.")
 
-    def do_webhook_process(self, body=None, post=None, force_update=False, **kwargs):
+    def do_webhook_process(self, body=None, post=None, webhook_id=None, **kwargs):
         if body[0]['changed_aspect'] == 'media':
             media_id = body[0]['data']['media_id']
-            object_id = body[0]['object_id']
-            instagram_list = PlugActionSpecification.objects.filter(
-                action_specification__action__action_type='source',
-                action_specification__action__connector__name__iexact="instagram",
-                value=object_id,
-                plug__source_gear__is_active=True)
-            for instagram in instagram_list:
-                self._connection_object, self._plug = instagram.plug.connection.related_connection, instagram.plug
+            webhook = Webhook.objects.get(pk=webhook_id)
+            if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+                if not webhook.plug.is_tested:
+                    webhook.plug.is_tested = True
+                self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
                 if self.test_connection():
                     media = self.get_media(media_id)
                     self.download_source_data(media=media)
+                    webhook.plug.save()
         return HttpResponse(status=200)
 
     @property
