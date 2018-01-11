@@ -32,28 +32,23 @@ class BitbucketController(BaseController):
                     code=1001,
                     controller=ConnectorEnum.Bitbucket,
                     message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
-        else:
-            raise ControllerError(
-                code=1002,
-                controller=ConnectorEnum.Bitbucket,
-                message='The controller is not instantiated correctly.')
-        try:
-            self._connection = BibucketClient(self._user, self._password)
-        except Exception as e:
-            raise ControllerError(
-                code=1003,
-                controller=ConnectorEnum.Bitbucket,
-                message='Error in the instantiation of the client. {}'.format(str(e)))
-        try:
-            if self._plug is not None:
-                self._repo_id = self._plug.plug_action_specification.filter(
-                    action_specification__name='repository').first().value
-                self._repo_slug = self.get_repository_name(self._repo_id)
-        except Exception as e:
-            raise ControllerError(
-                code=1005,
-                controller=ConnectorEnum.Bitbucket,
-                message='Error while choossing specifications. {}'.format(str(e)))
+            try:
+                self._connection = BibucketClient(self._user, self._password)
+            except Exception as e:
+                raise ControllerError(
+                    code=1003,
+                    controller=ConnectorEnum.Bitbucket,
+                    message='Error in the instantiation of the client. {}'.format(str(e)))
+            try:
+                if self._plug is not None:
+                    self._repo_id = self._plug.plug_action_specification.filter(
+                        action_specification__name='repository').first().value
+                    self._repo_slug = self.get_repository_name(self._repo_id)
+            except Exception as e:
+                raise ControllerError(
+                    code=1005,
+                    controller=ConnectorEnum.Bitbucket,
+                    message='Error while choossing specifications. {}'.format(str(e)))
 
     def test_connection(self):
         try:

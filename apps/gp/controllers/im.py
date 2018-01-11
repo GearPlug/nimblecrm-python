@@ -25,15 +25,13 @@ class SlackController(BaseController):
                 self._token = self._connection_object.token
             except Exception as e:
                 raise ControllerError(code=1001, controller=ConnectorEnum.Slack.name,
-                                      message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.Slack.name,
-                                  message='The controller is not instantiated correctly. {}')
-        try:
-            self._slacker = Slacker(self._token)
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.Slack.name,
-                                  message='Error in the instantiation of the client. {}'.format(str(e)))
+                                      message='The attributes necessary to make the connection were not obtained. {}'.format(
+                                          str(e)))
+            try:
+                self._slacker = Slacker(self._token)
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.Slack.name,
+                                      message='Error in the instantiation of the client. {}'.format(str(e)))
 
     def test_connection(self):
         try:

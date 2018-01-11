@@ -150,3 +150,25 @@ class FilterEnum(Enum):
 
     def get_filter(filter):
         return dynamic_import(filter.name.lower(), path="apps.gp.controllers.filters")
+
+
+class ErrorEnum(Enum):
+    AttributeError = 1001, 'The attributes necessary to make the connection were not obtained. {}'
+    NoConnectionError = 1002, ''
+    InstantiationError = 1003, 'Error in the instantiation of the client. {}'
+    TestConnectionError = 1004, 'Error in the connection test. {}'
+    SpecificationError = 1005, 'Error while choosing specifications. {}'
+
+    def __new__(cls, *args, **kwargs):
+        obj = object.__new__(cls)
+        obj._value_ = args[0]
+        obj.message = args[1]
+        return obj
+
+    def get_message(self, connector, exception):
+        _dict = {
+            'code': self._value_,
+            'controller': connector,
+            'message': self.message.format(str(exception))
+        }
+        return _dict

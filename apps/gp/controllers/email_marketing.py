@@ -29,18 +29,13 @@ class GetResponseController(BaseController):
                     code=1001,
                     controller=ConnectorEnum.GetResponse,
                     message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
-        else:
-            raise ControllerError(
-                code=1002,
-                controller=ConnectorEnum.GetResponse,
-                message='The controller is not instantiated correctly.')
-        try:
-            self._client = GetResponse(api_key)
-        except Exception as e:
-            raise ControllerError(
-                code=1003,
-                controller=ConnectorEnum.GetResponse,
-                message='Error in the instantiation of the client. {}'.format(str(e)))
+            try:
+                self._client = GetResponse(api_key)
+            except Exception as e:
+                raise ControllerError(
+                    code=1003,
+                    controller=ConnectorEnum.GetResponse,
+                    message='Error in the instantiation of the client. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -84,7 +79,7 @@ class GetResponseController(BaseController):
                     res = ""
             else:
                 print("action not found")
-            obj_list.append({'data':dict(obj), 'response': res, 'sent':_sent, 'identifier':''})
+            obj_list.append({'data': dict(obj), 'response': res, 'sent': _sent, 'identifier': ''})
         return obj_list
 
     def subscribe_contact(self, campaign_id, obj):
@@ -116,7 +111,6 @@ class GetResponseController(BaseController):
             return self._client.delete_contact(_id)
         else:
             raise ControllerError("Email have not been found")
-
 
     def get_campaigns(self):
         if self._client:
@@ -211,18 +205,13 @@ class MailChimpController(BaseController):
                     code=1001,
                     controller=ConnectorEnum.MailChimp,
                     message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
-        else:
-            raise ControllerError(
-                code=1002,
-                controller=ConnectorEnum.MailChimp,
-                message='The controller is not instantiated correctly.')
-        try:
-            self._client = Client(access_token=self._token)
-        except Exception as e:
-            raise ControllerError(
-                code=1003,
-                controller=ConnectorEnum.MailChimp,
-                message='Error in the instantiation of the client. {}'.format(str(e)))
+            try:
+                self._client = Client(access_token=self._token)
+            except Exception as e:
+                raise ControllerError(
+                    code=1003,
+                    controller=ConnectorEnum.MailChimp,
+                    message='Error in the instantiation of the client. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -304,16 +293,14 @@ class MandrillController(BaseController):
                 api_key = self._connection_object.api_key
             except Exception as e:
                 raise ControllerError(code=1001, controller=ConnectorEnum.Mandrill,
-                                      message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.Mandrill,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            self._client = mandrill.Mandrill(api_key)
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.Mandrill,
-                                  message='Error in the instantiation of the client. {}'.format(
-                                      str(e)))
+                                      message='The attributes necessary to make the connection were not obtained. {}'.format(
+                                          str(e)))
+            try:
+                self._client = mandrill.Mandrill(api_key)
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.Mandrill,
+                                      message='Error in the instantiation of the client. {}'.format(
+                                          str(e)))
 
     def test_connection(self):
         try:
