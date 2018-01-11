@@ -33,25 +33,39 @@ class MySQLController(BaseController):
                 port = self._connection_object.port
                 user = self._connection_object.connection_user
                 password = self._connection_object.connection_password
-            except AttributeError as e:
-                raise ControllerError(code=1, controller=ConnectorEnum.MySQL.name,
-                                      message='Error getting the MySQL attributes args. {}'.format(str(e)))
+            except Exception as e:
+                raise ControllerError(code=1001, controller=ConnectorEnum.MySQL.name,
+                                      message='The attributes necessary to make the connection were not obtained {}'.format(
+                                          str(e)))
         else:
-            raise ControllerError('No connection.')
+            raise ControllerError(code=1002, controller=ConnectorEnum.MySQL.name,
+                                  message='The controller is not instantiated correctly.')
         try:
             self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self._database)
             self._cursor = self._connection.cursor()
         except MySQLdb.OperationalError as e:
-            raise ControllerError(code=2, controller=ConnectorEnum.MySQL.name,
-                                  message='Error instantiating the MySQL client. {}'.format(str(e)))
+            raise ControllerError(code=1003, controller=ConnectorEnum.MySQL.name,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+        except Exception as e:
+            raise ControllerError(code=1003, controller=ConnectorEnum.MySQL.name,
+                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
             self.describe_table()
             return True
         except Exception as e:
-            print(e)
+            # raise ControllerError(code=1004, controller=ConnectorEnum.MySQL.name,
+            # message='Error in the connection test... {}'.format(str(e)))
             return False
+
+    @property
+    def has_webhook(self):
+        return False
+
+    @property
+    def needs_polling(self):
+        return True
 
     def describe_table(self):
         try:
