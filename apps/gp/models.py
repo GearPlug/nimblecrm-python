@@ -1,11 +1,9 @@
 from django.conf import settings
 from django.contrib import admin
 from django.db import models
-from django.dispatch import receiver
 from apps.gp.enum import ConnectorEnum, FilterEnum
 from apps.gp.model_fields import JSONField
 from pytz import all_timezones
-from allauth.account.signals import user_signed_up
 
 CONNECTIONS = tuple('connection_{0}'.format(connector.name.lower()) for connector in ConnectorEnum.get_connector_list())
 TIMEZONES = tuple((t, t) for t in all_timezones)
@@ -687,12 +685,6 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.email
-
-
-# TODO: ESTO NO VA AQUI
-@receiver(user_signed_up)
-def create_user_profile(sender, user=None, **kwargs):
-    Profile.objects.create(user=user)
 
 
 admin.site.register(Connector)

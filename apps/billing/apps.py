@@ -1,10 +1,10 @@
 from django.apps import AppConfig
 
-APP_NAME = 'gp'
+APP_NAME = 'billing'
 
 
 class GPConfig(AppConfig):
     name = 'apps.%s' % APP_NAME
 
     def ready(self):
-        import apps.gp.signals
+        import apps.billing.signals
