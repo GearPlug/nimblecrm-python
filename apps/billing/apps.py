@@ -3,7 +3,7 @@ from django.apps import AppConfig
 APP_NAME = 'billing'
 
 
-class GPConfig(AppConfig):
+class BillingConfig(AppConfig):
     name = 'apps.%s' % APP_NAME
 
     def ready(self):

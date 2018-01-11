@@ -43,29 +43,3 @@ class SendHistory(models.Model):
     class Meta:
         db_table = "gp_sendhistory"
         app_label = "history"
-
-
-# TODO: ESTO NO VA AQUI
-@receiver(post_save, sender=SendHistory)
-def discount_balance(sender, instance=None, created=False, **kwargs):
-    if created is True:
-        if instance.sent == SendHistory.SENT_STATUS.SUCCESS:
-            queryset = Gear.objects.filter(pk=int(instance.gear_id)).prefetch_related('user')
-            gear = queryset[0]
-            print(gear)
-            print(gear.user)
-            service_validity = ServiceValidity.objects.get(user_id=str(gear.user.id))
-            service_validity.current_balance -= service_validity.current_fee.value
-            # HISTORY  #TODO: CHANGE DEFAULT OEPRATION
-            history = ServiceValidityHistory(
-                service_validity=service_validity,
-                operation=3,
-                amount=service_validity.current_fee.value,
-                comment="automatic history for: consumed {}".format(service_validity.current_fee.value))
-
-            service_validity.save(update_fields=['current_balance', ])
-            history.save()
-            # service_validity = instance.service_validity
-            # service_validity.current_balance += instance.recharge_amount
-            # service_validity.total_recharged += instance.recharge_amount
-            # service_validity.save()

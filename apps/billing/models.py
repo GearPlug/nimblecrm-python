@@ -24,7 +24,15 @@ class ServiceValidity(models.Model):
 
 
 class ServiceValidityHistory(models.Model):
-    OPERATION = (
+    class OPERATION:
+        RECHARGE = 1
+        REVOKE = 2
+        CONSUMED = 3
+        BONUS_RECHARGE = 4
+        REFUNDED = 5
+        MODIFY_FEE = 6
+
+    SERVICE_OPERATION = (
         (1, 'Recharge'),
         (2, 'Revoke'),
         (3, 'Consumed'),
@@ -34,7 +42,7 @@ class ServiceValidityHistory(models.Model):
     )
     service_validity = models.ForeignKey(ServiceValidity, on_delete=models.CASCADE,
                                          related_name='service_validity_history')
-    operation = models.SmallIntegerField(_('operation'), choices=OPERATION, default=0)
+    operation = models.SmallIntegerField(_('operation'), choices=SERVICE_OPERATION, default=0)
     amount = models.DecimalField(_('amount'), decimal_places=4, max_digits=10)
     comment = models.CharField(_('operation'), max_length=150)
     created = models.DateTimeField(_('created'), auto_now_add=True)
