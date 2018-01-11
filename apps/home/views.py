@@ -48,7 +48,7 @@ class IncomingWebhook(View):
             mode = request.GET.get('hub.mode', None)
             challenge = request.GET.get('hub.challenge', None)
             token = request.GET.get('hub.verify_token', None)
-            if mode != 'subscribe' or not token or token != self.INSTAGRAM_TOKEN:
+            if mode == 'subscribe' and token and token == self.INSTAGRAM_TOKEN:
                 response.status_code = 200
                 response.content = challenge
         if connector == ConnectorEnum.YouTube:

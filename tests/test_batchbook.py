@@ -81,7 +81,6 @@ class BatchbookControllerTestCases(TestCase):
         cls.gear = Gear.objects.create(**gear)
         cls.gear_map = GearMap.objects.create(gear=cls.gear)
 
-
     def setUp(self):
         """Crea la base de datos y genera datos falsos en las tablas respectivas.
         """
@@ -96,7 +95,6 @@ class BatchbookControllerTestCases(TestCase):
         self._source_data=[{'id': '1', 'data': {'id': '1', 'name': 'Eric', 'lname': 'Krause'}}]
         self._target_fields={'last_name': '%%lname%%', 'first_name': '%%name%%'}
 
-
     def _get_fields(self):
         return [
             {'name': 'prefix', 'label': 'Prefix', 'type': 'varchar', 'required': False},
@@ -104,7 +102,6 @@ class BatchbookControllerTestCases(TestCase):
             {'name': 'middle_name', 'label': 'Middle Name', 'type': 'varchar', 'required': False},
             {'name': 'last_name', 'label': 'Last Name', 'type': 'varchar', 'required': True},
         ]
-
 
     def test_controller(self):
         """

@@ -223,29 +223,6 @@ class AsanaController(BaseController):
     _token_expiration_timestamp = None
     __refresh_url = 'https://app.asana.com/-/oauth_token'
 
-    # # Codigo para traer proyectos por workspace en especifico
-    # def proj_from_wp():
-    #     headers = {
-    #         'Authorization': 'Bearer {0}'.format(
-    #             'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdXRob3JpemF0aW9uIjozODU0ODgxMjc0OTgxOTAsInNjb3BlIjoiZGVmYXVsdCIsImlhdCI6MTUwMTcwNzQ3NSwiZXhwIjoxNTAxNzExMDc1fQ.SDq4AF7I7miM5LbjOo1u9sDkQcYQkTNlnXt8K73VN34'),
-    #     }
-    #     # Request para obtener datos de usuario creador de la tarea
-    #     resp_user_info = requests.get('https://app.asana.com/api/1.0/users/me',
-    #                                   headers=headers)
-    #
-    #     # Request para obtener proyectos de los workspaces del usuario.
-    #     params_proj = {('archived', 'false')}
-    #     proj_list = {}
-    #     for ws in resp_user_info.json()['data']['workspaces']:
-    #         resp_user_wp = requests.get(
-    #             'https://app.asana.com/api/1.0/workspaces/' + str(
-    #                 ws['id']) + '/projects', headers=headers,
-    #             params=params_proj)
-    #         try:
-    #             proj_list = {ws['id']: resp_user_wp.json()['data'][0]}
-    #         except Exception as e:
-    #             print('NO PROJECT IN WORKSPACE ', ws['id'])
-    #     print(proj_list)
 
     def __init__(self, connection=None, plug=None, **kwargs):
         super(AsanaController, self).__init__(connection=connection, plug=plug, **kwargs)
@@ -253,15 +230,31 @@ class AsanaController(BaseController):
     def create_connection(self, connection=None, plug=None, **kwargs):
         super(AsanaController, self).create_connection(connection=connection, plug=plug)
         if self._connection_object is not None:
-            self._token = self._connection_object.token
-            self._refresh_token = self._connection_object.refresh_token
-            self._token_expiration_timestamp = self._connection_object.token_expiration_timestamp
+            try:
+                self._token = self._connection_object.token
+                self._refresh_token = self._connection_object.refresh_token
+                self._token_expiration_timestamp = self._connection_object.token_expiration_timestamp
+            except Exception as e:
+                raise ControllerError(
+                    code=1001,
+                    controller=ConnectorEnum.Asana,
+                    message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
 
     def test_connection(self):
         if self.is_token_expired():
             self.refresh_token()
-        information = self.get_user_information()
-        return information is not None
+        try:
+            response = self.get_user_information()
+        except Exception as e:
+            # raise ControllerError(
+            #     code=1004,
+            #     controller=ConnectorEnum.Asana,
+            #     message='Error in the connection test. {}'.format(str(e)))
+            return False
+        if response is not None and isinstance(response, dict) and 'email' in response and  'id' in response:
+            return True
+        else:
+            return False
 
     def is_token_expired(self):
         return float(self._token_expiration_timestamp) < time.time()
@@ -278,53 +271,48 @@ class AsanaController(BaseController):
             ]
             new_token = requests.post(self.__refresh_url,
                                       data=data_refresh_token).json()
-            print('3600 //', datetime.timedelta(seconds=float(new_token['expires_in'])).seconds,
-                  type(datetime.timedelta(seconds=float(new_token['expires_in'])).seconds))
+            # print('3600 //', datetime.timedelta(seconds=float(new_token['expires_in'])).seconds,
+            #       type(datetime.timedelta(seconds=float(new_token['expires_in'])).seconds))
             self._connection_object.token = new_token['access_token']
-            print('old_stamp',
-                  self._connection_object.token_expiration_timestamp)
+            # print('old_stamp',
+            #       self._connection_object.token_expiration_timestamp)
             self._connection_object.token_expiration_timestamp = time.time() + float(
                 datetime.timedelta(
                     seconds=float(new_token['expires_in'])).seconds)
-            print('new stamp',
-                  self._connection_object.token_expiration_timestamp)
-            # print('time', time.time(), type(time.time()))
+            # print('new stamp',
+            #       self._connection_object.token_expiration_timestamp)
             self._connection_object.save()
             self._token = self._connection_object.token
             return self._token
         except Exception as e:
-            raise
             return None
 
     def get_user_information(self):
-        # Headers para Request de usuario principal
-        headers_1 = {  # data = {'resource', project.value,
-            #             'target', url_base + url_path}
-            #
-            #     response = requests.post('https://app.asana.com/api/1.0/webhooks',
-            #                              headers=headers, data=data)
-            #     print("response", response.json())
-            #     print("code", response.status_code)
+        if self.is_token_expired():
+            self.refresh_token()
+        headers_1 = {
             'Authorization': 'Bearer {0}'.format(self._token),
         }
-        # Request para obtener datos de usuario creador de la tarea
         r = requests.get('https://app.asana.com/api/1.0/users/me',
                          headers=headers_1)
         try:
             response = r.json()
             return response['data']
         except Exception as e:
-            print(e)
+            return None
         return None
 
     def get_workspaces(self):
+        if self.is_token_expired():
+            self.refresh_token()
         try:
             return self.get_user_information()['workspaces']
         except Exception as e:
-            print(e)
-            return []
+            return None
 
-    def get_projects(self, workspace=None):
+    def get_projects(self):
+        if self.is_token_expired():
+            self.refresh_token()
         # Diccionario de proyectos, manejo interno del metodo
         p_dict = {}
 
@@ -344,16 +332,19 @@ class AsanaController(BaseController):
                                        params=params_proj)
             temp_data_3 = r_list_proj.json()
             if temp_data_3['data']:
-                return temp_data_3['data']
+                projects_list.append(temp_data_3)
             else:
                 raise ControllerError(code=1, message="No projects in this workspace")
+        return projects_list
 
     def get_action_specification_options(self, action_specification_id):
+        if self.is_token_expired():
+            self.refresh_token()
         action_specification = ActionSpecification.objects.get(
             pk=action_specification_id)
         if action_specification.name.lower() == 'project':
             return tuple(
-                {'id': p['id'], 'name': p['name']} for p in self.get_projects())
+                {'id': p['data'][0]['id'], 'name': p['data'][0]['name']} for p in self.get_projects())
         elif action_specification.name.lower() == 'workspace':
             return tuple(
                 {'id': w['id'], 'name': w['name']} for w in
@@ -363,14 +354,18 @@ class AsanaController(BaseController):
                 "That specification doesn't belong to an action in this connector.")
 
     def create_webhook(self):
+        """
+        :return:
+        """
+        if self.is_token_expired():
+            self.refresh_token()
         action = self._plug.action.name
         if action == 'new task created':
             project = self._plug.plug_action_specification.get(
                 action_specification__name='project')
             # Creacion de Webhook
             webhook = Webhook.objects.create(name='asana', plug=self._plug, url='')
-            # Verificar ngrok para determinar url_base
-            url_base = settings.WEBHOOK_HOST
+            url_base = 'https://97dc7613.ngrok.io'
             url_path = reverse('home:webhook', kwargs={'connector': 'asana', 'webhook_id': webhook.id})
             headers = {
                 'Authorization': 'Bearer {}'.format(self._token),
@@ -387,11 +382,28 @@ class AsanaController(BaseController):
             else:
                 webhook.is_deleted = True
                 webhook.save(update_fields=['is_deleted', ])
-            return True
-        return False
+                return False
+
+    def get_created_webhook(self, webhook_id):
+        """
+        Metodo de verificacion de creacion de webhook
+        NO APLICAR UNITTEST.
+        :return:
+        """
+        if self.is_token_expired():
+            self.refresh_token()
+        headers = {
+            'Authorization': 'Bearer {}'.format(self._token),
+        }
+        data = [('webhook-id', webhook_id)]
+        response = requests.get('https://app.asana.com/api/1.0/webhooks',
+                                     headers=headers, data=data)
+        return response
 
     def create_task(self, name=None, notes=None, assignee=None, followers=None,
                     **kwargs):
+        if self.is_token_expired():
+            self.refresh_token()
         try:
             workspace = self._plug.plug_action_specification.get(
                 action_specification__name='workspace').value
@@ -413,15 +425,18 @@ class AsanaController(BaseController):
         if followers is not None:
             data['followers'] = followers
         if workspace is not None:
-            data['workspace'] = workspace
+            data['workspace'] = str(workspace)
         if project is not None:
             data['memberships'] = [{'project': project}, ]
 
         data_task = {'data': data}
         payload = json.dumps(data_task)
-        r = requests.post('https://app.asana.com/api/1.0/tasks', data=payload,
-                          headers=headers)
-        return r
+        response = requests.post(
+            'https://app.asana.com/api/1.0/tasks',
+            data=payload,
+            headers=headers
+        ).json()
+        return response
 
     def get_task(self, resource):
         if self.is_token_expired():
@@ -429,6 +444,7 @@ class AsanaController(BaseController):
         # Headers para Request de usuario principal
         headers_comparing_data = {
             'Authorization': 'Bearer {}'.format(self._token),
+            'Content': 'application/json'
         }
 
         # Request para obtener datos de usuario creador de la tarea
@@ -440,47 +456,77 @@ class AsanaController(BaseController):
 
     def download_to_stored_data(self, connection_object=None, plug=None,
                                 event=None, **kwargs):
+        if self.is_token_expired():
+            self.refresh_token()
         if event is not None:
-            event_resource = event['resource']
-            q = StoredData.objects.filter(
-                connection=connection_object.connection, plug=plug,
-                object_id=event_resource)
-            task_stored_data = []
-            if not q.exists():
-                task_data = self.get_task(event_resource).json()['data']
-                for k, v in task_data.items():
-                    if type(v) not in [list, dict]:
-                        task_stored_data.append(
-                            StoredData(connection=connection_object.connection,
-                                       plug=plug, object_id=event_resource,
-                                       name=k, value=v or ''))
-                for key, value in task_data['memberships'][0].items():
-                    if key == 'project':
-                        for k, v in value.items():
+            # Si llegan mas de 1 evento a la vez, Asana enviara en el contenido del
+            # webhook una lista de eventos.
+            if ("events" in event and isinstance(event["events"], list)) or\
+                    ("event" in event and isinstance(event['event'])):
+                for events in event['events']:
+                    q = StoredData.objects.filter(
+                        connection=connection_object.connection, plug=plug,
+                        object_id=events['resource'])
+                    task_stored_data = []
+                    new_data = []
+                    if not q.exists():
+                        task_data = self.get_task(events['resource']).json()['data']
+                        for k, v in task_data.items():
+                            if type(v) not in [list, dict]:
+                                task_stored_data.append(
+                                    StoredData(connection=connection_object.connection,
+                                               plug=plug, object_id=events['resource'],
+                                               name=k, value=v or ''))
+                            new_data.append(task_stored_data)
+                        for key, value in task_data['memberships'][0].items():
+                            if key == 'project':
+                                for k, v in value.items():
+                                    task_stored_data.append(
+                                        StoredData(connection=connection_object.connection,
+                                                   plug=plug, object_id=events['resource'],
+                                                   name='{0}_{1}'.format(key, k),
+                                                   value=v or ''))
+                                    new_data.append(task_stored_data)
+            if  "resource" in event:
+                event_resource = event['resource']
+                q = StoredData.objects.filter(
+                    connection=connection_object.connection, plug=plug,
+                    object_id=event_resource)
+                task_stored_data = []
+                new_data = []
+                if not q.exists():
+                    task_data = self.get_task(event_resource).json()['data']
+                    for k, v in task_data.items():
+                        if type(v) not in [list, dict]:
                             task_stored_data.append(
                                 StoredData(connection=connection_object.connection,
                                            plug=plug, object_id=event_resource,
-                                           name='{0}_{1}'.format(key, k),
-                                           value=v or ''))
-            extra = {}
-            for task in task_stored_data:
-                try:
-                    extra['status'] = 's'
-                    extra = {'controller': 'asana'}
-                    task.save()
-                    self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s successfully stored.' % (
-                            task.object_id, task.plug.id,
-                            task.connection.id),
-                        extra=extra)
-                except Exception as e:
-                    extra['status'] = 'f'
-                    self._log.info(
-                        'Item ID: %s, Connection: %s, Plug: %s failed.' % (
-                            task.object_id, task.plug.id,
-                            task.connection.id),
-                        extra=extra)
-            return True
+                                           name=k, value=v or ''))
+                        new_data.append(task_stored_data)
+                    for key, value in task_data['memberships'][0].items():
+                        if key == 'project':
+                            for k, v in value.items():
+                                task_stored_data.append(
+                                    StoredData(connection=connection_object.connection,
+                                               plug=plug, object_id=event_resource,
+                                               name='{0}_{1}'.format(key, k),
+                                               value=v or ''))
+                                new_data.append(task_stored_data)
+            downloaded_data = []
+            for new_item in new_data:
+                history_obj = {'identifier': None, 'is_stored': False, 'raw': {}}
+                for field in new_item:
+                    field.save()
+                    history_obj['raw'][field.name] = field.value
+                    history_obj['is_stored'] = True
+                history_obj['identifier'] = {'name': 'id', 'value': field.object_id}
+                downloaded_data.append(history_obj)
+            if downloaded_data:
+                return {
+                    'downloaded_data': downloaded_data,
+                    'last_source_record': downloaded_data[0]['raw']['created_at']
+                }
+            return False
         return False
 
     def get_target_fields(self, **kwargs):
@@ -498,40 +544,56 @@ class AsanaController(BaseController):
         fields = self.get_target_fields()
         return [MapField(f, controller=ConnectorEnum.Asana) for f in fields]
 
-    def send_stored_data(self, source_data, target_fields, is_first=False):
-        data_list = get_dict_with_source_data(source_data, target_fields)
-        if self._plug is not None:
-            obj_list = []
-            extra = {'controller': 'Asana'}
-            for item in data_list:
-                task = self.create_task(**item)
-                if task.status_code in [200, 201]:
-                    extra['status'] = 's'
-                    self._log.info('Item: %s successfully sent.' % (task.json()['data']['name']),
-                                   extra=extra)
-                    obj_list.append(task)
-                else:
-                    extra['status'] = 'f'
-                    self._log.info('Item: failed to send.', extra=extra)
-            return obj_list
-        raise ControllerError("There's no plug")
+    def send_stored_data(self, data_list, *args, **kwargs):
+        if self.is_token_expired():
+            self.refresh_token()
+        obj_list = []
+        for item in data_list:
+            try:
+                obj_result = {'data': dict(item)}
+                result = self.create_task(**item)
+                obj_result['response'] = result
+                obj_result['identifier'] = result['id']
+                obj_result['sent'] = True
+            except Exception as e:
+                obj_result['response'] = str(e)
+                obj_result['identifier'] = '-1'
+                obj_result['sent'] = False
+            obj_list.append(obj_result)
+        return obj_list
 
     def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
-        if 'HTTP_X_HOOK_SECRET' in META:
-            response = HttpResponse()
-            response['X-Hook-Secret'] = META['HTTP_X_HOOK_SECRET']
-            response.status_code = 200
-            return response
-        events = body['events']
-        for event in events:
-            if event['type'] == 'task' and event['action'] == 'added':
+        if self.is_token_expired():
+            self.refresh_token()
+        if META is not None:
+            if 'HTTP_X_HOOK_SECRET' in META:
+                response = HttpResponse()
+                response['X-Hook-Secret'] = META['HTTP_X_HOOK_SECRET']
+                response.status_code = 200
+                return response
+        # events = body['events']
+        events = body
+        if isinstance(events, list):
+            for event in events:
+                if event['type'] == 'task' and (event['action'] == 'added' or event['action'] == 'added'):
+                    webhook = Webhook.objects.get(pk=webhook_id)
+                    if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
+                        if not webhook.plug.is_tested:
+                            webhook.plug.is_tested = True
+                        self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
+                        if self.test_connection():
+                            self.download_source_data(event=event)
+            return HttpResponse(status=200)
+        if isinstance(events, dict):
+            # for k, v in events.items():
+            if events['type'] == 'task' and (events['action'] == 'added' or events['action'] == 'added'):
                 webhook = Webhook.objects.get(pk=webhook_id)
                 if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
                     if not webhook.plug.is_tested:
                         webhook.plug.is_tested = True
                     self.create_connection(connection=webhook.plug.connection.related_connection, plug=webhook.plug)
                     if self.test_connection():
-                        self.download_source_data(event=event)
+                        self.download_source_data(event=events)
         return HttpResponse(status=200)
 
     @property

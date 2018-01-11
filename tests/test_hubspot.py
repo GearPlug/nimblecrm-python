@@ -140,6 +140,10 @@ class HubSpotControllerTestCases(TestCase):
             self.assertTrue(result)
 
     def test_get_data(self):
+        """
+        Antes de realizar este test, verificar la existencia de contactos en instacia de HubSpot.
+        :return:
+        """
         for _controller in self._list_source_controllers:
             result = _controller['controller'].get_data(_controller['action'])
             self.assertIsInstance(result, list)
@@ -213,6 +217,10 @@ class HubSpotControllerTestCases(TestCase):
             self.assertIsInstance(result[0], MapField)
 
     def test_insert_data(self):
+        """
+        Verificar que TEST_HUBSPOT_EMAIL no exista en la instancia de hubspot.
+        :return:
+        """
         data = {'create contact':{'email':os.environ.get('TEST_HUBSPOT_EMAIL')}, 'create company': {'name': 'my company'}, 'create deal': {'dealname': 'my deal'}}
         for _controller in self._list_target_controllers:
 
@@ -228,6 +236,10 @@ class HubSpotControllerTestCases(TestCase):
                 _controller['controller']._client.deals.delete_deal(result['response']['dealId'])
 
     def test_send_stored_data(self):
+        """
+        Verificar que TEST_HUBSPOT_EMAIL no exista en la instancia de hubspot.
+        :return:
+        """
         data = {'create contact': {'email': os.environ.get('TEST_HUBSPOT_EMAIL')},
                 'create company': {'name': 'my company'}, 'create deal': {'dealname': 'my deal'}}
         for _controller in self._list_target_controllers:
@@ -250,6 +262,10 @@ class HubSpotControllerTestCases(TestCase):
                 _controller['controller']._client.deals.delete_deal(result[-1]['identifier'])
 
     def test_send_target_data(self):
+        """
+        Verificar que TEST_HUBSPOT_EMAIL no exista en la instancia de hubspot.
+        :return:
+        """
         data = {'create contact': {'email': os.environ.get('TEST_HUBSPOT_EMAIL')},
                 'create company': {'name': 'my company'}, 'create deal': {'dealname': 'my deal'}}
         fields = {'create contact': 'email', 'create company': 'name', 'create deal': 'dealname'}
