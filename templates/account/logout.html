@@ -1,0 +1,27 @@
+{% extends 'layouts/base.html' %}
+{% load static i18n %}
+
+{% block styles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/console/login.css' %}">
+{% endblock %}
+
+{% block body_base %}
+    <div class="content">
+        <div class="login-wrapper">
+            <div class="logo">
+                <img src="{% static 'img/console/logo1.png' %}" width="35%">
+            </div>
+
+            <h2 style="text-align: center">{% trans 'Are you sure you want to sign out?' %}</h2>
+            <div class="form">
+                <form method="post" action="{% url 'account_logout' %}">
+                    {% csrf_token %}
+                    {% if redirect_field_value %}
+                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+                    {% endif %}
+                    <button type="submit">{% trans 'Sign Out' %}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

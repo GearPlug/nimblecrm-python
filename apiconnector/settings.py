@@ -32,7 +32,8 @@ INSTALLED_APPS = [
     'apps.connection',
     'apps.gp',
     'apps.history',
-    'apps.landing'
+    'apps.landing',
+    'apps.billing',
 ]
 
 MIDDLEWARE = [
@@ -86,15 +87,25 @@ DATABASES = {
             'DEPENDENCIES': ['default'],
         },
     },
+    'billing': {
+        'ENGINE': 'django.db.backends.mysql',
+        'OPTIONS': {
+            'read_default_file': os.path.join(BASE_DIR, 'apiconnector/billing.cnf', )
+        },
+        'TEST': {
+            'DEPENDENCIES': ['default'],
+        },
+    },
     'landing': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': {
             'read_default_file': os.path.join(BASE_DIR, 'apiconnector/landing.cnf', )
         },
         'TEST': {
-            'DEPENDENCIES': ['history'],
+            'DEPENDENCIES': ['default'],
         },
     },
+
 }
 
 if 'test' in sys.argv:
@@ -107,9 +118,14 @@ if 'test' in sys.argv:
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': 'history.db',
         },
+        'billing': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'billing.db',
+        },
     }
 
-DATABASE_ROUTERS = ['apps.gp.routers.DefaultRouter', 'apps.gp.routers.HistoryRouter', 'apps.gp.routers.LandingRouter', ]
+DATABASE_ROUTERS = ['apps.gp.routers.DefaultRouter', 'apps.gp.routers.HistoryRouter',
+                    'apps.gp.routers.BillingRouter', 'apps.gp.routers.LandingRouter', ]
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
@@ -188,8 +204,13 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Account
+ACCOUNT_ADAPTER = 'apps.gp.account_adapter.MyAccountAdapter'
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
+ACCOUNT_EMAIL_SUBJECT_PREFIX = ''
 LOGIN_REDIRECT_URL = '/dashboard/'
+
+# BILLING
+BILLING_DEFAULT_FEE = 1

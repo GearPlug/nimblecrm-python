@@ -1,0 +1,6 @@
+python manage.py dumpdata gp.Connector gp.Action gp.ActionSpecification gp.Category gp.ConnectorCategory gp.SubscriptionsList sites > apps/gp/fixtures/gp_base.json --indent=2
+python manage.py dumpdata billing.ServiceFee --database=billing > apps/billing/fixtures/gp_billing.json
+
+# Este no se hace siempre
+python manage.py dumpdata auth.User gp.Connection gp.SMTPConnection gp.SMSConnection gp.WebhookConnection > apps/gp/fixtures/gp_admin.json
+

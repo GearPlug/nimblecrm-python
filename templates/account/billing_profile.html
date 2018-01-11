@@ -1,0 +1,12 @@
+{% extends 'layouts/console_base.html' %}
+
+{% block content %}
+    <p>BALANCE: {{ service_validity.current_balance }}</p>
+    <p>FEE: {{ service_validity.current_fee.value }} per transaction</p>
+
+    <br/>
+    <a href="{% url 'billing:recharge' %}">RECHARGE</a>
+
+
+
+{% endblock %}

@@ -12,6 +12,7 @@ urlpatterns = [
                   url(r'^connection/', include('apps.connection.urls', namespace='connection')),
                   url(r'^', include('apps.landing.urls', namespace='landing')),
                   url(r'^', include('apps.home.urls', namespace='home')),
+                  url(r'^', include('apps.billing.urls', namespace='billing')),
                   url(r'^accounts/', include('allauth.urls')),
               ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
               + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

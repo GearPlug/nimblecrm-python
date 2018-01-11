@@ -68,7 +68,7 @@
                                             <img src="{% static 'img/landing/avatar.png' %}" class="img-avatar">
                                         </a>
                                         <p class="text-avatar visible-xs">
-                                                    {{ request.user.first_name|default:request.user.email }}
+                                            {{ request.user.first_name|default:request.user.email }}
                                         </p>
                                         <ul class="dropdown-menu pull-right">
                                             <li>
@@ -91,8 +91,8 @@
                     </div>
                 </nav>
             </header>
-        </div>
-    {% endblock %}
+            </div>
+        {% endblock %}
     {% block content %}{% endblock %}
     {% block footer_base %}
         {% block footer_content %}
@@ -141,22 +141,21 @@
         {% endblock %}
     {% endblock %}
     <span class="ir-arriba icon-arrow-up2"></span>
-    {% block scripts %}
-        {{ block.super }}
-        <script type="application/javascript">
-            $(document).ready(function () {
-                $('#logout').on("click", function (e) {
-                    var button = $(this);
-                    $.ajax({
-                        method: "POST",
-                        url: "{% url 'account_logout' %}",
-                        data: {}
-                    }).done(function (response) {
-                        window.location.replace('{% url 'landing:index' %}')
-                    });
-                    return false;
-                })
+{% endblock %}
+{% block scripts %}
+    <script type="application/javascript">
+        $(document).ready(function () {
+            $('#logout').on("click", function (e) {
+                var button = $(this);
+                $.ajax({
+                    method: "POST",
+                    url: "{% url 'account_logout' %}",
+                    data: {}
+                }).done(function (response) {
+                    window.location.replace('{% url 'landing:index' %}')
+                });
+                return false;
             })
-        </script>
-    {% endblock %}
+        })
+    </script>
 {% endblock %}

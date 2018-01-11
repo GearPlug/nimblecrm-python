@@ -9,7 +9,7 @@ def progress(request):
     try:
         gear = Gear.objects.get(id=request.session['gear_id'])
         view_name = request.resolver_match.view_name
-    except KeyError:
+    except (KeyError, Gear.DoesNotExist) as e:
         view_name = None
     if view_name == 'gear:update':
         context_extras['progress'] = 1

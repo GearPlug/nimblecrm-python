@@ -29,7 +29,7 @@
                     <button type="submit">{% trans 'Iniciar Sesión' %}</button>
                 </form>
                 <div class="account-link">
-                    <a href="#" class="forgot-password">
+                    <a href="{% url 'account_reset_password' %}" class="forgot-password">
                         {% trans '¿Olvidaste la contraseña?' %}
                     </a>
                 </div>

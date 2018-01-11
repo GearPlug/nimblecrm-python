@@ -6,9 +6,16 @@
         <form class="form" method="post" action="">
             {% csrf_token %}
             <div class="title">
-                <span>{% trans 'Plug Test' %} </span> <a href="{% url 'gear:filters' pk=request.session.gear_id %}">Agregar
-                Filtros</a>
+                <span>{% trans 'Plug Test' %} </span>
             </div>
+            <a href="{% url 'gear:filters' pk=request.session.gear_id%}">
+                <div class="new-connection">
+                    <div class="image2">
+                        <img src="{% static 'img/console/g3261.png' %}" width="28" height="28">
+                        {% trans 'Agregar Filtro' %}
+                    </div><br/>
+                </div>
+            </a>
             {% if test_information %}
                 <div>{{ test_information }}</div><br/>
             {% endif %}

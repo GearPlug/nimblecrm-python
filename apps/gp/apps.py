@@ -3,5 +3,8 @@ from django.apps import AppConfig
 APP_NAME = 'gp'
 
 
-class ApiConfig(AppConfig):
-    name = APP_NAME
+class GPConfig(AppConfig):
+    name = 'apps.%s' % APP_NAME
+
+    def ready(self):
+        import apps.gp.signals

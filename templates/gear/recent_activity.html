@@ -16,9 +16,13 @@
             <div class="row">
                 <div class="item history-item" data-history="{{ obj.id }}">
                     <div class="col-md-1">
-                        <img src="{{ obj.connector_source.icon73.url }}" width="30px"></img>
+                        <img src="{{ obj.connector_source.icon73.url }}" width="30px"
+                             alt="{{ obj.connector_source.name }}"
+                             title="{{ obj.connector_source.name }}: {{ obj.action_source }}">
                         <img src="{% static 'img/console/g7316.png' %}" width="9">
-                        <img src="{{ obj.connector_target.icon73.url }}" width="30px"></img>
+                        <img src="{{ obj.connector_target.icon73.url }}" width="30px"
+                             alt="{{ obj.connector_target.name }}"
+                             title="{{ obj.connector_target.name }}: {{ obj.action_target }}">
                     </div>
                     <div class="col-md-1">
                         {% if obj.sent == 0 %}
@@ -39,10 +43,14 @@
                     </div>
                     <div class="col-md-12">
                         <ul style="display:none;" data-show="false" data-history="{{ obj.id }}">
+                            <li><b>Gear ID</b>: {{ obj.gear_id }}</li>
+                            <li><b>Source action</b>: {{ obj.action_source }}</li>
+                            <li><b>Target action</b>: {{ obj.action_target }}</li>
+                            <li><b>Gear name</b>: {{ obj.gear_name }}</li>
+                            <li><b>Identifier</b>: {{ obj.identifier }}</li>
                             {% if obj.sent != 1 %}
                                 <li><b>Response</b>: {{ obj.response }}</li>
                             {% endif %}
-                            <li><b>Identifier</b>: {{ obj.identifier }}</li>
                             {% for item in obj.data %}
                                 {% if item.value == 'item.date' %}
                                     <li>{{ item.name }}: {{ item.value|localtime }}</li>

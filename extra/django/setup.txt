@@ -1,0 +1,7 @@
+1. Actualizar el proyecto, asegurarse de hacer pull del branch en el que trabajaran.
+2. Crear las bases de datos 'gp_default', 'gp_landing', 'gp_history'  y 'gp_billing'. Se recomienda una base de datos
+ limpia para cada desarrollo.
+3. Hacer migrate. utilizar: 'python manage.py migrate'. Deben utilizar el parametro '--database={nombre}' sustiyendo
+ {nombre} por el nombre de cada base de datos. ->  '--database=history' -> '--database=landing' -> '--database=billing'
+4. Hacer 'python manage.py loaddata gp_base gp_admin' y 'python manage.py loaddata gp_billing --database=billing'
+5. runserver

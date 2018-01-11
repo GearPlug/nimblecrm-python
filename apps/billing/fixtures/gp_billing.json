@@ -1,0 +1,10 @@
+[
+{
+  "model": "billing.servicefee",
+  "pk": 1,
+  "fields": {
+    "name": "TEST FEE",
+    "value": "0.1000"
+  }
+}
+]

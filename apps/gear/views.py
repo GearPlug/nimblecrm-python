@@ -1,14 +1,14 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Prefetch, prefetch_related_objects
+from django.db.models import Prefetch
 from django.forms import modelform_factory, modelformset_factory
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView, FormView, TemplateView
 from django.views.generic.edit import FormMixin
 from django.http.response import JsonResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from apps.gear.apps import APP_NAME as app_name
-from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm, FiltersForm
+from apps.gear.forms import MapForm, SendHistoryForm, DownloadHistoryForm, FiltersForm, FilterFormSet
 from apps.gp.enum import ConnectorEnum
 from apps.gp.tasks import dispatch
 from apps.gp.models import Gear, Plug, StoredData, GearMap, GearMapData, GearGroup, GearFilter, Connector
@@ -16,7 +16,6 @@ from apps.history.models import DownloadHistory, SendHistory
 from oauth2client import client
 import httplib2
 import json
-import datetime
 from django.apps import apps
 from apiconnector import settings
 
@@ -192,7 +191,7 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
     form_class = MapForm
     form_field_list = []
     source_object_list = []
-    success_url = reverse_lazy('%s:list' % app_name)
+    success_url = reverse_lazy('%s:sucess_create' % app_name)
     exists = False
 
     def get(self, request, *args, **kwargs):
@@ -205,11 +204,8 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
             pk=gear.source.id)
         target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
             pk=gear.target.id)
-        # Source options
-        self.source_object_list = self.get_available_source_fields(source_plug)
-        # Target fields
-        self.form_field_list = self.get_target_field_list(target_plug)
-        self.gear_map = GearMap.objects.filter(gear=gear).first()
+        self.source_object_list = self.get_available_source_fields(source_plug)  # Source options
+        self.form_field_list = self.get_target_field_list(target_plug)  # Target fields
         return super(CreateGearMapView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -217,27 +213,24 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         gear = Gear.objects.filter(pk=gear_id).select_related('source', 'target').get(pk=gear_id)
         target_plug = Plug.objects.filter(pk=gear.target.id).select_related('connection__connector').get(
             pk=gear.target.id)
-        self.form_field_list = self.get_target_field_list(target_plug)
+        self.form_field_list = self.get_target_field_list(target_plug)  # Target fields
         self.gear_map = GearMap.objects.filter(gear=gear).first()
         return super(CreateGearMapView, self).post(request, *args, **kwargs)
 
+    def get_success_url(self, **kwargs):
+        # async
+        return super(CreateGearMapView, self).get_success_url()
+
     def form_valid(self, form, *args, **kwargs):
-        all_data = GearMapData.objects.filter(gear_map=self.gear_map)
+        if self.gear_map is not None:
+            version = self.gear_map.version + 1
+        else:
+            version = 1
         for f, v in form.cleaned_data.items():
-            try:
-                field = all_data.get(target_name=f)
-                if isinstance(v, str) and (v == '' or v.isspace()):
-                    field.delete()
-                else:
-                    if field.source_value != v:
-                        field.source_value = v
-                        field.save(update_fields=['source_value'])
-            except GearMapData.DoesNotExist:
-                if v is not None and (v != '' or not v.isspace()):
-                    GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v)
-            except Exception as e:
-                raise
-        self.gear_map.gear.is_active = True
+            if v is not None and (v != '' or not v.isspace()):
+                GearMapData.objects.create(gear_map=self.gear_map, target_name=f, source_value=v, version=version)
+        self.gear_map.version = version
+        self.gear_map.save()
         self.gear_map.gear.save()
         return super(CreateGearMapView, self).form_valid(form, *args, **kwargs)
 
@@ -247,17 +240,25 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
     def get_context_data(self, *args, **kwargs):
         context = super(CreateGearMapView, self).get_context_data(**kwargs)
         context['source_object_list'] = self.source_object_list
-        context['action'] = 'Create' if self.gear_map is None else 'Update'
+        context['action'] = 'set map'
         return context
 
     def get_form(self, *args, **kwargs):
         form_class = self.get_form_class()
         form = form_class(extra=self.form_field_list, **self.get_form_kwargs())
-        if self.request.method == 'GET' and self.gear_map is not None:
-            all_data = GearMapData.objects.filter(gear_map=self.gear_map)
+        if self.request.method == 'GET' and hasattr(self, 'gear_map') and self.gear_map is not None:
+            try:
+                _version = GearMapData.objects.filter(gear_map=self.gear_map).order_by('-version').values('version')[0]
+                all_data = GearMapData.objects.filter(gear_map=self.gear_map, version=_version['version'])
+            except IndexError:
+                all_data = None
+
             for label, field in form.fields.items():
+                print(label)
                 try:
                     field.initial = all_data.get(target_name=label).source_value
+                except AttributeError:
+                    break
                 except:
                     pass
         return form
@@ -267,8 +268,8 @@ class CreateGearMapView(FormView, LoginRequiredMixin):
         if c == ConnectorEnum.GoogleContacts:
             self.google_contacts_controller.create_connection(plug.connection.related_connection, plug)
             return ['%%{0}%%'.format(field) for field in self.google_contacts_controller.get_contact_fields()]
-        return ['%%{0}%%'.format(item['name']) for item in
-                StoredData.objects.filter(plug=plug, connection=plug.connection).values('name').distinct()]
+        return [('%%{0}%%'.format(item['name']), item['value']) for item in
+                StoredData.objects.filter(plug=plug, connection=plug.connection).values()]
 
     def get_target_field_list(self, plug):
         c = ConnectorEnum.get_connector(plug.connection.connector.id)
@@ -362,7 +363,8 @@ class GearActivityHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
     def get_queryset(self, **kwargs):
         NOW = timezone.now()
         gears = Gear.objects.filter(user_id=self.request.user.id).prefetch_related(
-            Prefetch('source__connection__connector'), Prefetch('target__connection__connector'))
+            Prefetch('source__connection__connector'), Prefetch('target__connection__connector'),
+            Prefetch('source__action'), Prefetch('target__action'))
         activity_result = []
         min_date = NOW - timezone.timedelta(hours=24)
         activity_list = self.model.objects.filter(gear_id__in=[str(g.id) for g in gears.iterator()],
@@ -379,7 +381,11 @@ class GearActivityHistoryView(FormMixin, LoginRequiredMixin, ListView, ):
                      'connection': json.loads(activity.connection)[0]['fields']['name'],
                      'connector_source': current_gear.source.connection.connector,
                      'connector_target': current_gear.target.connection.connector,
-                     'data': [{'name': k, 'value': v} for k, v in json.loads(activity.data).items()], }
+                     'data': [{'name': k, 'value': v} for k, v in json.loads(activity.data).items()],
+                     'action_source': current_gear.source.action.name,
+                     'action_target': current_gear.target.action.name,
+                     'gear_id': current_gear.id,
+                     'gear_name': current_gear.name}
                 activity_result.append(a)
         return activity_result
 
@@ -442,16 +448,15 @@ class GearDownloadHistoryView(GearSendHistoryView):
                  } for item in self.model.objects.filter(gear_id=self.kwargs['pk'], **kwargs).order_by(order)]
 
 
-class GearFiltersView(FormView, LoginRequiredMixin):
+class GearFiltersView(TemplateView, LoginRequiredMixin):
     login_url = '/accounts/login/'
     template_name = 'gear/filters.html'
-    form_class = FiltersForm
     success_url = reverse_lazy('connection:connector_list', kwargs={'type': 'target'})
     exists = False
 
     def post(self, request, *args, **kwargs):
-        modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
-        formset = modelformset(self.request.POST, queryset=GearFilter.objects.filter(gear_id=kwargs['pk']))
+        formset = FilterFormSet(request.POST, queryset=GearFilter.objects.filter(gear_id=kwargs['pk']), prefix='filter',
+                                form_kwargs={"source_fields": self.get_available_source_fields()})
         if formset.is_valid():
             filters = formset.save(commit=False)
             for filter in filters:
@@ -461,16 +466,18 @@ class GearFiltersView(FormView, LoginRequiredMixin):
             for filter in formset.deleted_forms:
                 if 'DELETE' in filter.cleaned_data and filter.cleaned_data['DELETE'] is True:
                     filter.cleaned_data['id'].delete()
-        else:
-            print("no es valido")
         return HttpResponseRedirect(self.success_url)
 
     def get_context_data(self, **kwargs):
         context = super(GearFiltersView, self).get_context_data(**kwargs)
-        modelformset = modelformset_factory(GearFilter, FiltersForm, extra=0, min_num=1, max_num=100, can_delete=True)
-        formset = modelformset(queryset=GearFilter.objects.filter(gear_id=self.kwargs['pk']))
+        formset = FilterFormSet(queryset=GearFilter.objects.filter(gear_id=kwargs['pk']), prefix='filter',
+                                form_kwargs={"source_fields": self.get_available_source_fields()})
         context['formset'] = formset
         return context
+
+    def get_available_source_fields(self):
+        plug = Plug.objects.filter(gear_source__id=self.kwargs['pk']).select_related('connection__connector')[0]
+        return tuple(item['name'] for item in StoredData.objects.filter(plug=plug, connection=plug.connection).values())
 
 
 def gear_toggle(request, gear_id):
@@ -527,10 +534,10 @@ def retry_send_history(request):
         d = json.loads(history.connection)
         model = apps.get_model(*d[0]['model'].split("."))
         connection = model.objects.get(pk=d[0]['pk'])
-        controller = ConnectorEnum.get_controller(ConnectorEnum.get_connector(connection.connection.connector_id))
-        controller_instance = controller(connection.connection.related_connection, connection.connection.plug)
+        controller_class = ConnectorEnum.get_controller(ConnectorEnum.get_connector(connection.connection.connector_id))
+        controller = controller_class(connection.connection.related_connection, connection.connection.plug)
         data = json.loads(history.data)
-        response = controller_instance.send_stored_data([data])
+        response = controller.send_stored_data([data])
         history.identifier = response[0]['identifier']
         history.sent = response[0]['sent']
         history.tries = history.tries + 1
@@ -570,8 +577,8 @@ def manual_queue(request, gear_id):
                 return JsonResponse(
                     {'data': "You don't have permission to toggle this gear."})
             try:
-                dispatch.s(g.id).apply_async(queue='dispatch')
-                # dispatch.s(g.id).apply_async()
+                # dispatch.s(g.id).apply_async(queue='dispatch')
+                dispatch.s(g.id).apply_async()
                 pass
             except Exception as e:
                 return JsonResponse({'data': 'Problem updating Gear - {0}.'.format(e)})
