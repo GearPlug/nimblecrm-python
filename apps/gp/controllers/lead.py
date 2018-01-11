@@ -37,20 +37,17 @@ class GoogleFormsController(GoogleBaseController):
                 raise ControllerError(code=1001, controller=ConnectorEnum.GoogleForms.name,
                                       message='The attributes necessary to make the connection were not obtained {}'.format(
                                           str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.GoogleForms.name,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.GoogleForms.name,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
-        try:
-            self._spreadsheet_id = self._plug.plug_action_specification.get(
-                action_specification__name__iexact='form').value
-        except Exception as e:
-            raise ControllerError(code=1005, controller=ConnectorEnum.GoogleForms,
-                                  message='Error while choosing specifications. {}'.format(str(e)))
+            try:
+                self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.GoogleForms.name,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
+            try:
+                self._spreadsheet_id = self._plug.plug_action_specification.get(
+                    action_specification__name__iexact='form').value
+            except Exception as e:
+                raise ControllerError(code=1005, controller=ConnectorEnum.GoogleForms,
+                                      message='Error while choosing specifications. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -194,33 +191,28 @@ class FacebookLeadsController(BaseController):
                                       controller=ConnectorEnum.FacebookLeads.name,
                                       message='The attributes necessary to make the connection were not obtained {}'.format(
                                           str(e)))
-        else:
-            raise ControllerError(code=1002,
-                                  controller=ConnectorEnum.FacebookLeads.name,
-                                  message='The controller is not instantiated correctly.')
-        try:
-
-            self._client = Client(settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET, 'v2.10')
-            self._client.set_access_token(self._token)
-        except UnknownError as e:
-            raise ControllerError(code=1003,
-                                  controller=ConnectorEnum.FacebookLeads,
-                                  message='Unknown error. {}'.format(str(e)))
-        except Exception as e:
-            raise ControllerError(code=1003,
-                                  controller=ConnectorEnum.FacebookLeads.name,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
-        try:
-            if self._plug is not None:
-                self._page = self._plug.plug_action_specification.filter(
-                    action_specification__name='page').first().value
-                self._form = self._plug.plug_action_specification.filter(
-                    action_specification__name='form').first().value
-        except Exception as e:
-            raise ControllerError(
-                code=1005,
-                controller=ConnectorEnum.FacebookLeads,
-                message='Error while choosing specifications. {}'.format(str(e)))
+            try:
+                self._client = Client(settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET, 'v2.10')
+                self._client.set_access_token(self._token)
+            except UnknownError as e:
+                raise ControllerError(code=1003,
+                                      controller=ConnectorEnum.FacebookLeads,
+                                      message='Unknown error. {}'.format(str(e)))
+            except Exception as e:
+                raise ControllerError(code=1003,
+                                      controller=ConnectorEnum.FacebookLeads.name,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
+            try:
+                if self._plug is not None:
+                    self._page = self._plug.plug_action_specification.filter(
+                        action_specification__name='page').first().value
+                    self._form = self._plug.plug_action_specification.filter(
+                        action_specification__name='form').first().value
+            except Exception as e:
+                raise ControllerError(
+                    code=1005,
+                    controller=ConnectorEnum.FacebookLeads,
+                    message='Error while choosing specifications. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -639,14 +631,11 @@ class TypeFormController(BaseController):
                 raise ControllerError(code=1001, controller=ConnectorEnum.TypeForm,
                                       message='The attributes necessary to make the connection were not obtained.. {}'.format(
                                           str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.TypeForm,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            self._client = TypeformClient(access_token=self._token)
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.TypeForm,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+            try:
+                self._client = TypeformClient(access_token=self._token)
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.TypeForm,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:

@@ -44,22 +44,19 @@ class GoogleSpreadSheetsController(GoogleBaseController):
                 raise ControllerError(code=1001, controller=ConnectorEnum.GoogleSpreadSheets.name,
                                       message='The attributes necessary to make the connection were not obtained {}'.format(
                                           str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.GoogleSpreadSheets.name,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.GoogleSpreadSheets.name,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
-        try:
-            self._spreadsheet_id = self._plug.plug_action_specification.get(
-                action_specification__name__iexact='spreadsheet').value
-            self._worksheet_name = self._plug.plug_action_specification.get(
-                action_specification__name__iexact='worksheet').value
-        except Exception as e:
-            raise ControllerError(code=1005, controller=ConnectorEnum.GoogleSpreadSheets,
-                                  message='Error while choosing specifications. {}'.format(str(e)))
+            try:
+                self._credential = GoogleClient.OAuth2Credentials.from_json(json.dumps(credentials_json))
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.GoogleSpreadSheets.name,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
+            try:
+                self._spreadsheet_id = self._plug.plug_action_specification.get(
+                    action_specification__name__iexact='spreadsheet').value
+                self._worksheet_name = self._plug.plug_action_specification.get(
+                    action_specification__name__iexact='worksheet').value
+            except Exception as e:
+                raise ControllerError(code=1005, controller=ConnectorEnum.GoogleSpreadSheets,
+                                      message='Error while choosing specifications. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -488,14 +485,11 @@ class EvernoteController(BaseController):
             except Exception as e:
                 raise ControllerError(code=1001, controller=ConnectorEnum.Evernote,
                                       message='Error getting the attributes args. {}'.format(str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.Evernote,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            self._client = EvernoteClient(token=self._token)
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.Evernote,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+            try:
+                self._client = EvernoteClient(token=self._token)
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.Evernote,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -613,18 +607,13 @@ class WunderListController(BaseController):
                     code=1001,
                     controller=ConnectorEnum.WunderList,
                     message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
-        else:
-            raise ControllerError(
-                code=1002,
-                controller=ConnectorEnum.WunderList,
-                message='The controller is not instantiated correctly.')
-        try:
-            self._client = self._api.get_client(self._token, settings.WUNDERLIST_CLIENT_ID)
-        except Exception as e:
-            raise ControllerError(
-                code=1003,
-                controller=ConnectorEnum.WunderList,
-                message='Error in the instantiation of the client.. {}'.format(str(e)))
+            try:
+                self._client = self._api.get_client(self._token, settings.WUNDERLIST_CLIENT_ID)
+            except Exception as e:
+                raise ControllerError(
+                    code=1003,
+                    controller=ConnectorEnum.WunderList,
+                    message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:

@@ -1,5 +1,4 @@
 from hashlib import md5
-from urllib.parse import urlparse
 from dateutil.parser import parse
 from django.core.urlresolvers import reverse
 from django.db.models import Q
@@ -10,9 +9,9 @@ from sugarcrm.exception import BaseError, WrongParameter, InvalidLogin
 from apps.gp.controllers.base import BaseController
 from apps.gp.controllers.exception import ControllerError
 from apps.gp.controllers.utils import get_dict_with_source_data
-from apps.gp.models import ActionSpecification, Plug, PlugActionSpecification, StoredData, Webhook
+from apps.gp.models import ActionSpecification, Plug, StoredData, Webhook
 from apps.gp.map import MapField
-from apps.gp.enum import ConnectorEnum
+from apps.gp.enum import ConnectorEnum, ErrorEnum
 from django.conf import settings
 from django.http import HttpResponse
 from odoocrm.client import Client as OdooCRMClient
@@ -58,29 +57,21 @@ class SugarCRMController(BaseController):
                         self._url += '/'
                 self._url += 'service/v4_1/rest.php'
             except Exception as e:
-                raise ControllerError(code=1001, controller=ConnectorEnum.SugarCRM,
-                                      message='The attributes necessary to make the connection were not obtained.. {}'.format(str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.SugarCRM,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            session = requests.Session()
-            self._client = SugarClient(self._url, self._user, self._password, session=session)
-        except requests.exceptions.MissingSchema:
-            raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
-                                  message='Missing Schema.')
-        except InvalidLogin as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
-                                  message='Invalid login. {}'.format(str(e)))
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.SugarCRM,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
-        try:
-            self._module = self._plug.plug_action_specification.get(
-                action_specification__name__iexact='module').value
-        except Exception as e:
-            raise ControllerError(code=1005, controller=ConnectorEnum.SugarCRM,
-                                  message='Error while choosing specifications. {}'.format(str(e)))
+                raise ControllerError(ErrorEnum.AttributeError.get_message(ConnectorEnum.SugarCRM, e))
+            try:
+                session = requests.Session()
+                self._client = SugarClient(self._url, self._user, self._password, session=session)
+            except requests.exceptions.MissingSchema as e:
+                raise ControllerError(ErrorEnum.InstantiationError.get_message(ConnectorEnum.SugarCRM, e))
+            except InvalidLogin as e:
+                raise ControllerError(ErrorEnum.InstantiationError.get_message(ConnectorEnum.SugarCRM, e))
+            except Exception as e:
+                raise ControllerError(ErrorEnum.InstantiationError.get_message(ConnectorEnum.SugarCRM, e))
+            try:
+                self._module = self._plug.plug_action_specification.get(
+                    action_specification__name__iexact='module').value
+            except Exception as e:
+                raise ControllerError(ErrorEnum.SpecificationError.get_message(ConnectorEnum.SugarCRM, e))
 
     def test_connection(self):
         """
@@ -91,8 +82,7 @@ class SugarCRMController(BaseController):
         try:
             response = self.get_available_modules()
         except Exception as e:
-            # raise ControllerError(code=1004, controller=ConnectorEnum.SugarCRM,
-            #                       message='Error in the connection test.. {}'.format(str(e)))
+            # raise ControllerError(ErrorEnum.TestConnectionError.get_message(ConnectorEnum.SugarCRM, e))
             return False
         if response is not None and isinstance(response, dict) and 'modules' in response:
             return True
@@ -260,9 +250,11 @@ class ZohoCRMController(BaseController):
         new_item = []
         new_data = []
         for k, v in data[0].items():
-            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=data[0][data[0]['id']])
+            q = StoredData.objects.filter(connection=connection_object.connection, plug=plug,
+                                          object_id=data[0][data[0]['id']])
             if not q.exists():
-                new_item.append(StoredData(name=k, value=v, object_id=data[0][data[0]['id']], connection=connection_object.connection, plug=plug))
+                new_item.append(StoredData(name=k, value=v, object_id=data[0][data[0]['id']],
+                                           connection=connection_object.connection, plug=plug))
                 new_data.append(new_item)
         downloaded_data = []
         for new_item in new_data:
@@ -463,16 +455,13 @@ class SalesforceController(BaseController):
                 raise ControllerError(code=1001, controller=ConnectorEnum.Salesforce.name,
                                       message='The attributes necessary to make the connection were not obtained {}'.format(
                                           str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.Salesforce.name,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            self._client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
-                                            settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
-            self._client.set_access_token(self.token)
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.Salesforce.name,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+            try:
+                self._client = SalesforceClient(settings.SALESFORCE_CLIENT_ID, settings.SALESFORCE_CLIENT_SECRET,
+                                                settings.SALESFORCE_INSTANCE_URL, settings.SALESFORCE_VERSION)
+                self._client.set_access_token(self.token)
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.Salesforce.name,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -484,7 +473,7 @@ class SalesforceController(BaseController):
             self._client.set_access_token(self.token)
             self._connection_object.token = json.dumps(self.token)
             self._connection_object.save()
-            #TODO: Intentar obtener la info nuevamente
+            # TODO: Intentar obtener la info nuevamente
             return False
         except Exception as e:
             # raise ControllerError(code=1004, controller=ConnectorEnum.Salesforce.name,
@@ -682,18 +671,14 @@ class HubSpotController(BaseController):
             try:
                 self._token = self._connection_object.token
                 self._refresh_token = self._connection_object.refresh_token
-
             except Exception as e:
                 raise ControllerError(code=1001, controller=ConnectorEnum.HubSpot,
                                       message='The attributes necessary to make the connection were not obtained.')
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.HubSpot,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            self._client = HubSpotClient(self._token)
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.HubSpot,
-                                  message='Error in the instantiation of the client. {}'.format(str(e)))
+            try:
+                self._client = HubSpotClient(self._token)
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.HubSpot,
+                                      message='Error in the instantiation of the client. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -705,7 +690,7 @@ class HubSpotController(BaseController):
                 # raise ControllerError(code=1004, controller=ConnectorEnum.HubSpot,
                 #                       message='Error in the connection test. {}'.format(str(e)))
                 return False
-            try: # Se reintenta obtener response despues de haber hecho un refresh_token()
+            try:  # Se reintenta obtener response despues de haber hecho un refresh_token()
                 response = self._client.contacts.get_contacts()
             except Exception as e:
                 # raise ControllerError(code=1004, controller=ConnectorEnum.HubSpot,
@@ -723,7 +708,8 @@ class HubSpotController(BaseController):
         _id_name = self.get_id(action)
         for item in data:
             _new_item = self.get_item(action, item[_id_name])
-            _new_item['properties']['createdate']['value'] = datetime.datetime.fromtimestamp(int(_new_item['properties']['createdate']['value']) / 1000)
+            _new_item['properties']['createdate']['value'] = datetime.datetime.fromtimestamp(
+                int(_new_item['properties']['createdate']['value']) / 1000)
             if last_source_record is not None:
                 if _new_item['properties']['createdate']['value'] > last_source_record:
                     _new = True
@@ -737,7 +723,7 @@ class HubSpotController(BaseController):
                     plug=plug,
                     object_id=item[_id_name])
                 if not q.exists():
-                    for k,v in _new_item['properties'].items():
+                    for k, v in _new_item['properties'].items():
                         new_data.append(
                             StoredData(
                                 name=k,
@@ -753,8 +739,10 @@ class HubSpotController(BaseController):
                         _is_stored = True
                     except:
                         _is_stored = False
-                result_list.append({'identifier': {'name': _id_name, 'value': item[_id_name]}, 'is_stored': _is_stored, 'raw': ''.join(_new_item['properties'])})
-            return {'downloaded_data': result_list, 'last_source_record':_new_item['properties']['createdate']['value']}
+                result_list.append({'identifier': {'name': _id_name, 'value': item[_id_name]}, 'is_stored': _is_stored,
+                                    'raw': ''.join(_new_item['properties'])})
+            return {'downloaded_data': result_list,
+                    'last_source_record': _new_item['properties']['createdate']['value']}
 
     def get_item(self, action, _id):
         if (action == 'new contact'):
@@ -773,7 +761,7 @@ class HubSpotController(BaseController):
         elif (action == 'new deal'):
             result = self._client.deals.get_recently_created_deals(30).json()['results']
         else:
-            print ("This action don't belong to this controller")
+            print("This action don't belong to this controller")
             return None
         return result
 
@@ -790,7 +778,7 @@ class HubSpotController(BaseController):
 
     def get_target_fields(self, **kwargs):
         action = self._plug.action.name
-        actions = {'create contact': 'contacts', 'create company' : 'companies', 'create deal': 'deals'}
+        actions = {'create contact': 'contacts', 'create company': 'companies', 'create deal': 'deals'}
         response = self._client.fields.get_fields(actions[action]).json()
         return [
             i for i in response if "label" in i and i['readOnlyValue'] == False
@@ -806,7 +794,8 @@ class HubSpotController(BaseController):
             except Exception as e:
                 print(e)
                 sent = False
-            result_list.append({'data': dict(item), 'response': response['response'], 'sent': sent, 'identifier': response['id']})
+            result_list.append(
+                {'data': dict(item), 'response': response['response'], 'sent': sent, 'identifier': response['id']})
         return result_list
 
     def insert_data(self, data, action):
@@ -1171,22 +1160,17 @@ class ActiveCampaignController(BaseController):
                     code=1001,
                     controller=ConnectorEnum.ActiveCampaign,
                     message='The attributes necessary to make the connection were not obtained. {}'.format(
-                    str(e))
+                        str(e))
                 )
-        else:
-            raise ControllerError(
-                code=1002,
-                controller=ConnectorEnum.ActiveCampaign,
-                message='The controller is not instantiated correctly..')
-        try:
-            self._client = ActiveCampaignClient(host, api_key)
-        except Exception as e:
-            raise ControllerError(
-                code=1003,
-                controller=ConnectorEnum.ActiveCampaign,
-                message='Error in the instantiation of the client. {}'.format(
-                    str(e))
-            )
+            try:
+                self._client = ActiveCampaignClient(host, api_key)
+            except Exception as e:
+                raise ControllerError(
+                    code=1003,
+                    controller=ConnectorEnum.ActiveCampaign,
+                    message='Error in the instantiation of the client. {}'.format(
+                        str(e))
+                )
 
     def test_connection(self):
         try:
@@ -1791,21 +1775,19 @@ class OdooCRMController(BaseController):
                 self._database = self._connection_object.database
             except Exception as e:
                 raise ControllerError(code=1001, controller=ConnectorEnum.OdooCRM,
-                                      message='The attributes necessary to make the connection were not obtained.. {}'.format(str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.OdooCRM,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            self._client = OdooCRMClient(self._url, self._database, self._user, self._password)
-        except requests.exceptions.MissingSchema:
-            raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
-                                  message='Missing Schema.')
-        except InvalidLogin as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
-                                  message='Invalid login. {}'.format(str(e)))
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+                                      message='The attributes necessary to make the connection were not obtained.. {}'.format(
+                                          str(e)))
+            try:
+                self._client = OdooCRMClient(self._url, self._database, self._user, self._password)
+            except requests.exceptions.MissingSchema:
+                raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
+                                      message='Missing Schema.')
+            except InvalidLogin as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
+                                      message='Invalid login. {}'.format(str(e)))
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.OdooCRM,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         """
@@ -1968,15 +1950,12 @@ class BatchbookController(BaseController):
                     code=1001,
                     controller=ConnectorEnum.Batchbook,
                     message='The attributes necessary to make the connection were not obtained.. {}'.format(
-                                          str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.Batchbook,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            self._client = ClientBatchbook(api_key=self._api_key, account_name=self._account_name)
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.Batchbook,
-                                  message='Error in the instantiation of the client. {}'.format(str(e)))
+                        str(e)))
+            try:
+                self._client = ClientBatchbook(api_key=self._api_key, account_name=self._account_name)
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.Batchbook,
+                                      message='Error in the instantiation of the client. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -2090,9 +2069,6 @@ class ActEssentialsController(BaseController):
             except Exception as e:
                 raise ControllerError(code=1003, controller=ConnectorEnum.ActEssentials,
                                       message='Error in the instantiation of the client. {}'.format(str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.ActEssentials,
-                                  message='The controller is not instantiated correctly.')
 
     def test_connection(self):
         try:

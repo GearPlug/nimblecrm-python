@@ -40,17 +40,14 @@ class MercadoLibreController(BaseController):
                 raise ControllerError(code=1001, controller=ConnectorEnum.MercadoLibre.name,
                                       message='The attributes necessary to make the connection were not obtained {}'.format(
                                           str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.MercadoLibre.name,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            self._client = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
-                                              client_secret=settings.MERCADOLIBRE_CLIENT_SECRET,
-                                              site=self._site or 'MCO')
-            self._client.set_token(ast.literal_eval(self._token))
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.MercadoLibre.name,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+            try:
+                self._client = MercadolibreClient(client_id=settings.MERCADOLIBRE_CLIENT_ID,
+                                                  client_secret=settings.MERCADOLIBRE_CLIENT_SECRET,
+                                                  site=self._site or 'MCO')
+                self._client.set_token(ast.literal_eval(self._token))
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.MercadoLibre.name,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -74,7 +71,8 @@ class MercadoLibreController(BaseController):
         q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=resource)
         if not q.exists():
             for k, v in event.items():
-                obj = StoredData(connection=connection_object.connection, plug=plug, object_id=resource, name=k, value=v or '')
+                obj = StoredData(connection=connection_object.connection, plug=plug, object_id=resource, name=k,
+                                 value=v or '')
                 _items.append(obj)
         is_stored = False
         raw = {}
@@ -409,7 +407,7 @@ class ShopifyController(BaseController):
         return values
 
     def do_webhook_process(self, body=None, POST=None, META=None, webhook_id=None, **kwargs):
-        webhook= Webhook.objects.get(pk=webhook_id)
+        webhook = Webhook.objects.get(pk=webhook_id)
         if webhook.plug.gear_source.first().is_active or not webhook.plug.is_tested:
             if not webhook.plug.is_tested:
                 webhook.plug.is_tested = True
@@ -422,6 +420,7 @@ class ShopifyController(BaseController):
     @property
     def has_webhook(self):
         return True
+
 
 class MagentoController(BaseController):
     _connection = None

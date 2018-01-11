@@ -37,18 +37,16 @@ class MySQLController(BaseController):
                 raise ControllerError(code=1001, controller=ConnectorEnum.MySQL.name,
                                       message='The attributes necessary to make the connection were not obtained {}'.format(
                                           str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.MySQL.name,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password, db=self._database)
-            self._cursor = self._connection.cursor()
-        except MySQLdb.OperationalError as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.MySQL.name,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.MySQL.name,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+            try:
+                self._connection = MySQLdb.connect(host=host, port=int(port), user=user, passwd=password,
+                                                   db=self._database)
+                self._cursor = self._connection.cursor()
+            except MySQLdb.OperationalError as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.MySQL.name,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.MySQL.name,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -232,19 +230,16 @@ class PostgreSQLController(BaseController):
                 raise ControllerError(code=1001, controller=ConnectorEnum.PostgreSQL.name,
                                       message='The attributes necessary to make the connection were not obtained {}'.format(
                                           str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.PostgreSQL.name,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            self._connection = psycopg2.connect(host=host, port=int(port), user=user, password=password,
-                                                database=self._database)
-            self._cursor = self._connection.cursor()
-        except psycopg2.OperationalError as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.PostgreSQL.name,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.PostgreSQL.name,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+            try:
+                self._connection = psycopg2.connect(host=host, port=int(port), user=user, password=password,
+                                                    database=self._database)
+                self._cursor = self._connection.cursor()
+            except psycopg2.OperationalError as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.PostgreSQL.name,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.PostgreSQL.name,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -431,16 +426,13 @@ class MSSQLController(BaseController):
                 raise ControllerError(code=1001, controller=ConnectorEnum.MSSQL.name,
                                       message='The attributes necessary to make the connection were not obtained {}'.format(
                                           str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.MSSQL.name,
-                                  message='The controller is not instantiated correctly.')
-        try:
-            self._connection = pymssql.connect(host=host, port=int(port), user=user, password=password,
-                                               database=self._database)
-            self._cursor = self._connection.cursor()
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.MSSQL.name,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+            try:
+                self._connection = pymssql.connect(host=host, port=int(port), user=user, password=password,
+                                                   database=self._database)
+                self._cursor = self._connection.cursor()
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.MSSQL.name,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:

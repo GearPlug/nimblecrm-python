@@ -17,7 +17,7 @@ class GoogleContactsController(GoogleBaseController):
 
     def __init__(self, connection=None, plug=None, **kwargs):
         GoogleBaseController.__init__(self, connection=connection, plug=plug,
-                                **kwargs)
+                                      **kwargs)
 
     def create_connection(self, connection=None, plug=None, **kwargs):
         super(GoogleContactsController, self).create_connection(

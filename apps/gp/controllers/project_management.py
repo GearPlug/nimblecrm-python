@@ -31,16 +31,14 @@ class JIRAController(BaseController):
                 password = self._connection_object.connection_password
             except AttributeError as e:
                 raise ControllerError(code=1001, controller=ConnectorEnum.JIRA.name,
-                                      message='The attributes necessary to make the connection were not obtained {}'.format(str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.JIRA.name,
-                                      message='The controller is not instantiated correctly.')
-        try:
-            if host and user and password:
-                self._connection = JIRAClient(host, user, password)
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.JIRA.name,
-                                  message='Error in the instantiation of the client.. {}'.format(str(e)))
+                                      message='The attributes necessary to make the connection were not obtained {}'.format(
+                                          str(e)))
+            try:
+                if host and user and password:
+                    self._connection = JIRAClient(host, user, password)
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.JIRA.name,
+                                      message='Error in the instantiation of the client.. {}'.format(str(e)))
 
     def test_connection(self):
         try:
@@ -223,7 +221,6 @@ class AsanaController(BaseController):
     _token_expiration_timestamp = None
     __refresh_url = 'https://app.asana.com/-/oauth_token'
 
-
     def __init__(self, connection=None, plug=None, **kwargs):
         super(AsanaController, self).__init__(connection=connection, plug=plug, **kwargs)
 
@@ -251,7 +248,7 @@ class AsanaController(BaseController):
             #     controller=ConnectorEnum.Asana,
             #     message='Error in the connection test. {}'.format(str(e)))
             return False
-        if response is not None and isinstance(response, dict) and 'email' in response and  'id' in response:
+        if response is not None and isinstance(response, dict) and 'email' in response and 'id' in response:
             return True
         else:
             return False
@@ -397,7 +394,7 @@ class AsanaController(BaseController):
         }
         data = [('webhook-id', webhook_id)]
         response = requests.get('https://app.asana.com/api/1.0/webhooks',
-                                     headers=headers, data=data)
+                                headers=headers, data=data)
         return response
 
     def create_task(self, name=None, notes=None, assignee=None, followers=None,
@@ -461,7 +458,7 @@ class AsanaController(BaseController):
         if event is not None:
             # Si llegan mas de 1 evento a la vez, Asana enviara en el contenido del
             # webhook una lista de eventos.
-            if ("events" in event and isinstance(event["events"], list)) or\
+            if ("events" in event and isinstance(event["events"], list)) or \
                     ("event" in event and isinstance(event['event'])):
                 for events in event['events']:
                     q = StoredData.objects.filter(
@@ -487,7 +484,7 @@ class AsanaController(BaseController):
                                                    name='{0}_{1}'.format(key, k),
                                                    value=v or ''))
                                     new_data.append(task_stored_data)
-            if  "resource" in event:
+            if "resource" in event:
                 event_resource = event['resource']
                 q = StoredData.objects.filter(
                     connection=connection_object.connection, plug=plug,

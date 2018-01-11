@@ -41,15 +41,12 @@ class TwitterController(BaseController):
                     code=1001,
                     controller=ConnectorEnum.Twitter,
                     message='The attributes necessary to make the connection were not obtained. {}'.format(str(e)))
-        else:
-            raise ControllerError(code=1002, controller=ConnectorEnum.Twitter,
-                                  message='The controller is not instantiated correctly.')
+            try:
+                self._api = tweepy.API(self.get_twitter_auth())
+            except Exception as e:
+                raise ControllerError(code=1003, controller=ConnectorEnum.Twitter,
+                                      message='Error in the instantiation of the client. {}'.format(str(e)))
 
-        try:
-            self._api = tweepy.API(self.get_twitter_auth())
-        except Exception as e:
-            raise ControllerError(code=1003, controller=ConnectorEnum.Twitter,
-                                  message='Error in the instantiation of the client. {}'.format(str(e)))
     # api deberia ir en el test connection
     def test_connection(self):
         try:
@@ -166,7 +163,8 @@ class InstagramController(BaseController):
         q = StoredData.objects.filter(connection=connection_object.connection, plug=plug, object_id=media_id)
         if not q.exists():
             for k, v in _dict.items():
-                obj = StoredData(connection=connection_object.connection, plug=plug, object_id=media_id, name=k, value=v or '')
+                obj = StoredData(connection=connection_object.connection, plug=plug, object_id=media_id, name=k,
+                                 value=v or '')
                 new_data.append(obj)
         is_stored = False
         for item in new_data:
