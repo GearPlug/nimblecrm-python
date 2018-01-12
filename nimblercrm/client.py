@@ -12,11 +12,10 @@ class Client(object):
     _VALID_VERSIONS = ['v1']
     _api_key = None
 
-    def __init__(self, api_key=None, redirect_url=None, oauth_url=None, base_url=None):
+    def __init__(self, api_key=None):
 
         self._api_key = api_key
-        self.oauth_url = oauth_url
-        self.base_url = base_url
+        self.base_url = 'https://app.nimble.com/api/v1'
 
     def _post(self, endpoint, data=None):
         return self._request('POST', endpoint, data=data)
@@ -34,10 +33,8 @@ class Client(object):
         url = '{0}/{1}'.format(self.base_url, endpoint)
         headers = {
             'Authorization': 'Bearer {0}'.format(self._api_key),
-            'Content-Type': 'application/json; charset=utf-8',
         }
         response = requests.request(method, url, headers=headers, data=data)
-        print(response.text)
         return (response)
 
     def _parse(self, response):
