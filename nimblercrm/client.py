@@ -1,29 +1,22 @@
 import requests
 from .exceptions import *
 from .enumerator import ErrorEnum
-from .clientauth import ClientAuth
 import urllib.parse
-from urllib.parse import parse_qsl
 import json
-from datetime import datetime, timedelta
 
 
 class Client(object):
+    """
+    Libreria para API de NimbleCRM pero utilizando Api Key como metodo de autenticacion.
+    """
     _VALID_VERSIONS = ['v1']
+    _api_key = None
 
-    def __init__(self, client_id=None, client_secret=None, redirect_url=None, oauth_url=None, base_url=None,
-                 code_url=None, token=None, token_expiration_time=None, refresh_token=None):
+    def __init__(self, api_key=None, redirect_url=None, oauth_url=None, base_url=None):
 
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.redirect_uri = redirect_url
+        self._api_key = api_key
         self.oauth_url = oauth_url
-        self.code_url = code_url
         self.base_url = base_url
-        self.code = None
-        self.token = token
-        self.token_expiration_time = token_expiration_time
-        self.refresh_token = refresh_token
 
     def _post(self, endpoint, data=None):
         return self._request('POST', endpoint, data=data)
@@ -38,14 +31,9 @@ class Client(object):
         return self._request('DELETE', endpoint, data=data)
 
     def _request(self, method, endpoint, data=None):
-        try:
-            self.token_expiration_checker()
-        except Exception as e:
-            print(e)
-
         url = '{0}/{1}'.format(self.base_url, endpoint)
         headers = {
-            'Authorization': 'Bearer {0}'.format(self.token),
+            'Authorization': 'Bearer {0}'.format(self._api_key),
             'Content-Type': 'application/json; charset=utf-8',
         }
         response = requests.request(method, url, headers=headers, data=data)
@@ -92,44 +80,6 @@ class Client(object):
             return data
         else:
             return response
-
-    def get_token(self, code):
-        ca = ClientAuth(
-            client_id=self.client_id,
-            client_secret=self.client_secret,
-            oauth_url=self.oauth_url,
-            redirect_url=self.redirect_uri,
-            code_url=None,
-            base_url=self.base_url)
-        return ca.get_token(code=code)
-
-    def token_expiration_checker(self):
-        dt = datetime.now()
-        if dt > self.token_expiration_time:
-            self.to_refresh_token()
-        else:
-            pass
-
-    def to_refresh_token(self):
-        oauth_vars = {'client_id': self.client_id,
-                      'client_secret': self.client_secret,
-                      'redirect_uri': self.redirect_uri,
-                      'refresh_token': self.refresh_token,
-                      'grant_type': 'refresh_token'}
-        headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        }
-        try:
-            token = requests.post(url='https://api.nimble.com/oauth/token', headers=headers, params=oauth_vars)
-            token = token.json()
-            self.token = token['access_token']
-            expiration_time = datetime.now() + timedelta(seconds=token['expires_in'])
-            expiration_time = str(expiration_time)
-            self.token_expiration_time = datetime.strptime(expiration_time, '%Y-%m-%d %H:%M:%S.%f')
-            self.refresh_token = token['refresh_token']
-        except Exception as e:
-            print(e)
 
     def get_contact_list(self):
         """Returns all contacts.
