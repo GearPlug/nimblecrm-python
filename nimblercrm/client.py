@@ -1,29 +1,21 @@
 import requests
 from .exceptions import *
 from .enumerator import ErrorEnum
-from .clientauth import ClientAuth
 import urllib.parse
-from urllib.parse import parse_qsl
 import json
-from datetime import datetime, timedelta
 
 
 class Client(object):
+    """
+    Libreria para API de NimbleCRM pero utilizando Api Key como metodo de autenticacion.
+    """
     _VALID_VERSIONS = ['v1']
+    _api_key = None
 
-    def __init__(self, client_id=None, client_secret=None, redirect_url=None, oauth_url=None, base_url=None,
-                 code_url=None, token=None, token_expiration_time=None, refresh_token=None):
+    def __init__(self, api_key=None):
 
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.redirect_uri = redirect_url
-        self.oauth_url = oauth_url
-        self.code_url = code_url
-        self.base_url = base_url
-        self.code = None
-        self.token = token
-        self.token_expiration_time = token_expiration_time
-        self.refresh_token = refresh_token
+        self._api_key = api_key
+        self.base_url = 'https://app.nimble.com/api/v1'
 
     def _post(self, endpoint, data=None):
         return self._request('POST', endpoint, data=data)
@@ -38,18 +30,11 @@ class Client(object):
         return self._request('DELETE', endpoint, data=data)
 
     def _request(self, method, endpoint, data=None):
-        try:
-            self.token_expiration_checker()
-        except Exception as e:
-            print(e)
-
         url = '{0}/{1}'.format(self.base_url, endpoint)
         headers = {
-            'Authorization': 'Bearer {0}'.format(self.token),
-            'Content-Type': 'application/json; charset=utf-8',
+            'Authorization': 'Bearer {0}'.format(self._api_key),
         }
         response = requests.request(method, url, headers=headers, data=data)
-        print(response.text)
         return (response)
 
     def _parse(self, response):
@@ -68,7 +53,8 @@ class Client(object):
                 except Exception as e:
                     print(e)
             except Exception:
-                raise UnexpectedError('Error:{0}{1}.Message{2}'.format(code, response.status_code, message))
+                raise UnexpectedError('Error:{0}{1}.Message{2}'.format(
+                    code, response.status_code, message))
             if error_enum == ErrorEnum.Forbidden:
                 raise Forbidden(message)
             if error_enum == ErrorEnum.Not_Found:
@@ -88,48 +74,11 @@ class Client(object):
             if error_enum == ErrorEnum.QuotaExceeded:
                 raise Unauthorized(message)
             else:
-                raise BaseError('Error: {0}{1}. Message {2}'.format(code, response.status_code, message))
+                raise BaseError('Error: {0}{1}. Message {2}'.format(
+                    code, response.status_code, message))
             return data
         else:
             return response
-
-    def get_token(self, code):
-        ca = ClientAuth(
-            client_id=self.client_id,
-            client_secret=self.client_secret,
-            oauth_url=self.oauth_url,
-            redirect_url=self.redirect_uri,
-            code_url=None,
-            base_url=self.base_url)
-        return ca.get_token(code=code)
-
-    def token_expiration_checker(self):
-        dt = datetime.now()
-        if dt > self.token_expiration_time:
-            self.to_refresh_token()
-        else:
-            pass
-
-    def to_refresh_token(self):
-        oauth_vars = {'client_id': self.client_id,
-                      'client_secret': self.client_secret,
-                      'redirect_uri': self.redirect_uri,
-                      'refresh_token': self.refresh_token,
-                      'grant_type': 'refresh_token'}
-        headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        }
-        try:
-            token = requests.post(url='https://api.nimble.com/oauth/token', headers=headers, params=oauth_vars)
-            token = token.json()
-            self.token = token['access_token']
-            expiration_time = datetime.now() + timedelta(seconds=token['expires_in'])
-            expiration_time = str(expiration_time)
-            self.token_expiration_time = datetime.strptime(expiration_time, '%Y-%m-%d %H:%M:%S.%f')
-            self.refresh_token = token['refresh_token']
-        except Exception as e:
-            print(e)
 
     def get_contact_list(self):
         """Returns all contacts.
@@ -144,7 +93,14 @@ class Client(object):
         endpoint = "contacts?sort=created:desc&query="
         if start_date is not None:
             qs1 = {"record type": {"is": "person"}}
-            qs2 = {"created": {"range": {"start_date": start_date, "end_date": "2018-11-17T15:02:48-0500"}}}
+            qs2 = {
+                "created": {
+                    "range": {
+                        "start_date": start_date,
+                        "end_date": "2018-11-17T15:02:48-0500"
+                    }
+                }
+            }
             values_with_date = {"and": [qs1, qs2]}
             values = json.dumps(values_with_date)
         else:
@@ -162,7 +118,14 @@ class Client(object):
         endpoint = "contacts?sort=created:desc&query="
         if start_date is not None:
             qs1 = {"record type": {"is": "company"}}
-            qs2 = {"created": {"range": {"start_date": start_date, "end_date": "2018-11-17T15:02:48-0500"}}}
+            qs2 = {
+                "created": {
+                    "range": {
+                        "start_date": start_date,
+                        "end_date": "2018-11-17T15:02:48-0500"
+                    }
+                }
+            }
             values_with_date = {"and": [qs1, qs2]}
             values = json.dumps(values_with_date)
         else:
@@ -188,7 +151,8 @@ class Client(object):
             except Exception as e:
                 print(e)
         else:
-            raise ErrorEnum.DataRequired("Please verified ID or IDs of contact/s to get.")
+            raise ErrorEnum.DataRequired(
+                "Please verified ID or IDs of contact/s to get.")
 
     def create_contact(self, data):
         """Returns response for contact creation attemp.
@@ -218,7 +182,9 @@ class Client(object):
             except Exception as e:
                 print(e)
         else:
-            raise ErrorEnum.DataRequired("Please verified that all data required for contact creation is present.")
+            raise ErrorEnum.DataRequired(
+                "Please verified that all data required for contact creation is present."
+            )
 
     def full_contact_update(self, id, data):
         """Returns response for contact update attemp.
@@ -238,7 +204,9 @@ class Client(object):
             except Exception as e:
                 print(e)
         else:
-            raise ErrorEnum.DataRequired("Please verified that all data required for contact update is present.")
+            raise ErrorEnum.DataRequired(
+                "Please verified that all data required for contact update is present."
+            )
 
     def partial_contact_update(self, id, data):
         """Returns response for contact update attemp.
@@ -258,7 +226,9 @@ class Client(object):
             except Exception as e:
                 print(e)
         else:
-            raise ErrorEnum.DataRequired("Please verified that all data required for contact update is present.")
+            raise ErrorEnum.DataRequired(
+                "Please verified that all data required for contact update is present."
+            )
 
     def delete_contact(self, id):
         """Returns response for contact creation attemp.
@@ -273,7 +243,8 @@ class Client(object):
             except Exception as e:
                 print(e)
         else:
-            raise ErrorEnum.DataRequired("Please verified that the ids were sent.")
+            raise ErrorEnum.DataRequired(
+                "Please verified that the ids were sent.")
 
     def create_task(self, data):
         """Returns response for contact creation attemp.
@@ -295,7 +266,8 @@ class Client(object):
             except Exception as e:
                 print(e)
         else:
-            raise ErrorEnum.DataRequired("Please verified that the ids were sent.")
+            raise ErrorEnum.DataRequired(
+                "Please verified that the ids were sent.")
 
     def get_last_register(self, limit=None, date=None):
         """
@@ -307,7 +279,14 @@ class Client(object):
         """
         endpoint = 'contacts'
         values = {
-            'query': {"created": {"range": {"start_date": "2012-10-16", "end_date": "2012-10-18"}}},
+            'query': {
+                "created": {
+                    "range": {
+                        "start_date": "2012-10-16",
+                        "end_date": "2012-10-18"
+                    }
+                }
+            },
             'per_page': limit,
             'fields': 'created'
         }
